@@ -12,18 +12,21 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
+import net.folivo.trixnity.client.cryptodriver.vodozemac.vodozemac
+import net.folivo.trixnity.client.media.inMemory
 import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.eventId
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState
 import net.folivo.trixnity.client.verification.ActiveVerificationState
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
+import net.folivo.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
+import net.folivo.trixnity.clientserverapi.client.classicLogin
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.Mentions
@@ -55,9 +58,9 @@ class KeySharingIT {
             port = synapseDocker.firstMappedPort
         ).build()
         startedClient1 =
-            registerAndStartClient("client1", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
+            registerAndStartClient("client1", "user1", baseUrl, RepositoriesModule.exposed(newDatabase()))
         startedClient2 =
-            registerAndStartClient("client2", "user2", baseUrl, createExposedRepositoriesModule(newDatabase()))
+            registerAndStartClient("client2", "user2", baseUrl, RepositoriesModule.exposed(newDatabase()))
     }
 
     @AfterTest
@@ -102,20 +105,23 @@ class KeySharingIT {
             }
             withCluePrintln("login with another client and look if keybackup works") {
                 val database = newDatabase()
-                val repositoriesModule = createExposedRepositoriesModule(database)
+                val repositoriesModule = RepositoriesModule.exposed(database)
 
-                val client3 = MatrixClient.login(
-                    baseUrl = URLBuilder(
-                        protocol = URLProtocol.HTTP,
-                        host = synapseDocker.host,
-                        port = synapseDocker.firstMappedPort
-                    ).build(),
-                    identifier = IdentifierType.User("user1"),
-                    password = "user$1passw0rd",
+                val baseUrl = URLBuilder(
+                    protocol = URLProtocol.HTTP,
+                    host = synapseDocker.host,
+                    port = synapseDocker.firstMappedPort
+                ).build()
+                val client3 = MatrixClient.create(
                     repositoriesModule = repositoriesModule,
-                    mediaStoreModule = createInMemoryMediaStoreModule(),
-                    deviceId = "client3"
-                ) { name = "client3" }.getOrThrow()
+                    mediaStoreModule = MediaStoreModule.inMemory(),
+                    cryptoDriverModule = CryptoDriverModule.vodozemac(),
+                    authProviderData = MatrixClientAuthProviderData.classicLogin(
+                        baseUrl = baseUrl,
+                        identifier = IdentifierType.User("user1"),
+                        password = "user$1passw0rd",
+                    ).getOrThrow(),
+                ).getOrThrow()
                 client3.startSync()
                 client3.syncState.firstWithTimeout { it == SyncState.RUNNING }
 

@@ -32,8 +32,8 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.crypto.driver.CryptoDriver
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.driver.megolm.InboundGroupSession
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.invoke
 import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
@@ -51,7 +51,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")

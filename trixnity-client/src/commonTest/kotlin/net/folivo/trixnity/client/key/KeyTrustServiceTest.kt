@@ -31,7 +31,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.createAesHmacSha2MacFromKey
 import net.folivo.trixnity.crypto.driver.CryptoDriver
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.key.encryptSecret
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -46,7 +46,7 @@ import kotlin.test.Test
 
 class KeyTrustServiceTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val aliceDevice = "ALICE_DEVICE"

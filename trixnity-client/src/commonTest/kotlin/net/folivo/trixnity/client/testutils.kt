@@ -4,6 +4,7 @@ import io.kotest.assertions.nondeterministic.continuallyConfig
 import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.common.KotestInternal
 import io.kotest.common.NonDeterministicTestVirtualTimeEnabled
+import io.ktor.http.*
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -13,10 +14,7 @@ import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.clientserverapi.client.MatrixAuthProvider
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
-import net.folivo.trixnity.clientserverapi.client.SyncBatchTokenStore
-import net.folivo.trixnity.clientserverapi.client.classicInMemory
+import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
 import net.folivo.trixnity.clientserverapi.model.server.GetVersions
 import net.folivo.trixnity.core.UserInfo
@@ -59,7 +57,12 @@ fun TrixnityBaseTest.mockMatrixClientServerApiClient(
             contentMappings,
             portableConfig = config
         ),
-        authProvider = MatrixAuthProvider.classicInMemory("accessToken"),
+        authProvider = ClassicMatrixClientAuthProvider(
+            Url("http://matrix.home"),
+            MatrixClientAuthProviderDataStore.inMemory(
+                MatrixClientAuthProviderData.classic(Url("http://matrix.home"), "access_token")
+            ), {}
+        ),
         syncBatchTokenStore = syncBatchTokenStore,
         coroutineContext = testScope.backgroundScope.coroutineContext,
     )
@@ -86,7 +89,6 @@ fun TrixnityBaseTest.getInMemoryAccountStore(setup: suspend AccountStore.() -> U
                 backgroundFilterId = null,
                 displayName = null,
                 avatarUrl = null,
-                isLocked = false
             )
         }
         setup()
@@ -98,7 +100,7 @@ fun TrixnityBaseTest.getInMemoryServerDataStore(setup: suspend ServerDataStore.(
         scheduleSetup {
             save(
                 1,
-                ServerData(GetVersions.Response(listOf("v1.11"), mapOf()), GetMediaConfig.Response(10_000))
+                ServerData(GetVersions.Response(listOf("v1.11"), mapOf()), GetMediaConfig.Response(10_000), null)
             )
         }
     },

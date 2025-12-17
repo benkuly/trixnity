@@ -49,7 +49,7 @@ internal class RoomAccountRepository(
         dao.get(key)?.let { entity ->
             Account(
                 olmPickleKey = entity.olmPickleKey,
-                baseUrl = entity.baseUrl ?: throw IllegalStateException("baseUrl not found"),
+                baseUrl = entity.baseUrl,
                 userId = entity.userId ?: throw IllegalStateException("userId not found"),
                 deviceId = entity.deviceId ?: throw IllegalStateException("deviceId not found"),
                 accessToken = entity.accessToken,
@@ -59,15 +59,13 @@ internal class RoomAccountRepository(
                 backgroundFilterId = entity.backgroundFilterId,
                 displayName = entity.displayName,
                 avatarUrl = entity.avatarUrl,
-                isLocked = entity.isLocked,
-                oauth2ClientId = entity.oauth2ClientId,
-                oauth2Login = entity.oauth2Login,
             )
         }
     }
 
     override suspend fun save(key: Long, value: Account) = withRoomWrite {
         dao.insert(
+            @Suppress("DEPRECATION")
             RoomAccount(
                 id = key,
                 olmPickleKey = value.olmPickleKey,
@@ -81,9 +79,6 @@ internal class RoomAccountRepository(
                 backgroundFilterId = value.backgroundFilterId,
                 displayName = value.displayName,
                 avatarUrl = value.avatarUrl,
-                isLocked = value.isLocked,
-                oauth2ClientId = value.oauth2ClientId,
-                oauth2Login = value.oauth2Login
             )
         )
     }

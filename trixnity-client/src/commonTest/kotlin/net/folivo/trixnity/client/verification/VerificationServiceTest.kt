@@ -58,7 +58,7 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.crypto.driver.CryptoDriverException
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -75,7 +75,7 @@ import kotlin.time.Instant
 @OptIn(ExperimentalCoroutinesApi::class)
 class VerificationServiceTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     init {
         testScope.testScheduler.advanceTimeBy(10.days)

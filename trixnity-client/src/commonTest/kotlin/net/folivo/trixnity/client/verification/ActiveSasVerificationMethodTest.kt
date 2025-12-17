@@ -30,7 +30,7 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.driver.CryptoDriver
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.invoke
 import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -41,7 +41,7 @@ import kotlin.test.Test
 
 class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val aliceDevice = "AAAAAA"

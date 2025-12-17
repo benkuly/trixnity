@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.utils.toByteArrayFlow
 import web.blob.arrayBuffer
 import web.fs.*
@@ -19,22 +20,21 @@ import web.navigator.navigator
 import web.storage.getDirectory
 import web.streams.close
 import kotlin.test.Test
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
 class OpfsMediaStoreTest {
 
-    @Suppress("DEPRECATION")
-    lateinit var cut: OpfsMediaStore
+    private lateinit var cut: OpfsMediaStore
     lateinit var basePath: FileSystemDirectoryHandle
     lateinit var tmpPath: FileSystemDirectoryHandle
     lateinit var coroutineScope: CoroutineScope
 
     fun test(testBody: suspend TestScope.() -> Unit): TestResult = runTest {
         basePath = navigator.storage.getDirectory()
-        tmpPath = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
-        @Suppress("DEPRECATION")
-        cut = OpfsMediaStore(basePath)
         coroutineScope = CoroutineScope(Dispatchers.Default)
+        tmpPath = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
+        cut = OpfsMediaStore(basePath, coroutineScope, MatrixClientConfiguration(), Clock.System)
         try {
             testBody()
         } catch (throwable: Throwable) {

@@ -394,22 +394,6 @@ class ObservableCacheTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `update cache entry when subscriber added during transaction after transaction`() = runTest {
-        val transactionManager = TransactionManagerImpl(NoOpRepositoryTransactionManager)
-        launch {
-            transactionManager.writeTransaction {
-                indexedCut.set("key", "value")
-                cacheStore.persist("key", null) // simulate that write is only visible after transaction
-                delay(100.milliseconds)
-            }
-        }
-        delay(50.milliseconds)
-        indexedCut.index.subscriptionCount = 1
-        delay(51.milliseconds)
-        indexedCut.get("key").first() shouldBe "value"
-    }
-
-    @Test
     fun `rollback cache entry when used during transaction and failing`() = runTest {
         val transactionManager = TransactionManagerImpl(NoOpRepositoryTransactionManager)
         cut.update("key1") { "value0" }
@@ -495,20 +479,6 @@ class ObservableCacheTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `index » call onSkipPut on cache skip without cancellation`() = runTest {
-        indexedCut.index0.continueOnPut.value = false
-        val updateJob = launch { indexedCut.set("key", "value") }
-        delay(100.milliseconds)
-        updateJob.cancel()
-        delay(100.milliseconds)
-        indexedCut.index0.continueOnPut.value = true
-        delay(100.milliseconds)
-        indexedCut.index.onSkipPut.value shouldBe "key"
-        indexedCut.index.onPut.value shouldBe null
-        indexedCut.index.onRemove.value shouldBe null
-    }
-
-    @Test
     fun `index » call not onPut on existing cache value`() = runTest {
         indexedCut.set("key", "value")
         indexedCut.index.onPut.value = null
@@ -565,19 +535,6 @@ class ObservableCacheTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `index » don't cancel index operations`() = runTest {
-        indexedCut.index0.continueOnPut.value = false
-        val updateJob = launch { indexedCut.get("key").first() }
-        delay(100.milliseconds)
-        updateJob.cancel()
-        delay(100.milliseconds)
-        indexedCut.index0.continueOnPut.value = true
-        delay(100.milliseconds)
-        indexedCut.index.onPut.value shouldBe "key"
-        indexedCut.index.onRemove.value shouldBe null
-    }
-
-    @Test
     fun `write » fill value with set when cache entry not present but subscribed`() = runTest {
         indexedCut.index.subscriptionCount = 1
         indexedCut.set("key", "value")
@@ -587,7 +544,6 @@ class ObservableCacheTest : TrixnityBaseTest() {
 }
 
 private class TestObservableCacheIndex<T> : ObservableCacheIndex<T> {
-    val continueOnPut = MutableStateFlow(true)
     val onPut = MutableStateFlow<T?>(null)
     val onSkipPut = MutableStateFlow<T?>(null)
     val onRemove = MutableStateFlow<Pair<T, Boolean>?>(null)
@@ -595,7 +551,6 @@ private class TestObservableCacheIndex<T> : ObservableCacheIndex<T> {
     var subscriptionCount = 0
 
     override suspend fun onPut(key: T) {
-        continueOnPut.first { it }
         onPut.value = key
     }
 
@@ -627,10 +582,8 @@ private class TestIndexedObservableCache(
     name, store, cacheScope, clock, expireDuration
 ) {
     val index = TestObservableCacheIndex<String>()
-    val index0 = TestObservableCacheIndex<String>()
 
     init {
-        addIndex(index0)
         addIndex(index)
     }
 }

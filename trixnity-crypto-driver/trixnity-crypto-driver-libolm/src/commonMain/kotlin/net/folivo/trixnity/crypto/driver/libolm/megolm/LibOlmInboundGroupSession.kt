@@ -5,7 +5,7 @@ import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmPickleKey
 import net.folivo.trixnity.crypto.driver.libolm.rethrow
 import net.folivo.trixnity.crypto.driver.megolm.InboundGroupSession
 import net.folivo.trixnity.crypto.driver.megolm.MegolmMessage
-import net.folivo.trixnity.olm.OlmInboundGroupSession
+import net.folivo.trixnity.libolm.OlmInboundGroupSession
 import kotlin.jvm.JvmInline
 
 @JvmInline

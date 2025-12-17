@@ -84,34 +84,34 @@ class OlmEventHandler(
                 .use { olmAccount ->
 
                     newOneTimeKeys = olmAccount.oneTimeKeys.toCurve25519Keys()
-                if (newOneTimeKeys != null) log.debug { "found one time keys marked as unpublished" }
-                if (oneTimeKeysCount != null // violates the spec, but Synapse is doing it
-                    && newOneTimeKeys.isNullOrEmpty()
-                ) {
-                    val generateOneTimeKeysCount =
-                        (olmAccount.maxNumberOfOneTimeKeys / 2 - (oneTimeKeysCount[KeyAlgorithm.SignedCurve25519] ?: 0))
-                            .coerceAtLeast(0)
-                    if (generateOneTimeKeysCount > 0) {
-                        val generateOneTimeKeysCountWithBuffer =
-                            generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4 // TODO why 4
-                        log.debug { "generate $generateOneTimeKeysCountWithBuffer new one time key" }
-                        olmAccount.generateOneTimeKeys(generateOneTimeKeysCountWithBuffer)
-                        newOneTimeKeys = olmAccount.oneTimeKeys.toCurve25519Keys()
+                    if (newOneTimeKeys != null) log.debug { "found one time keys marked as unpublished" }
+                    if (oneTimeKeysCount != null // violates the spec, but Synapse is doing it
+                        && newOneTimeKeys.isNullOrEmpty()
+                    ) {
+                        val generateOneTimeKeysCount =
+                            (olmAccount.maxNumberOfOneTimeKeys - (oneTimeKeysCount[KeyAlgorithm.SignedCurve25519] ?: 0))
+                                .coerceAtLeast(0)
+                        if (generateOneTimeKeysCount > 0) {
+                            val generateOneTimeKeysCountWithBuffer =
+                                generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 2
+                            log.debug { "generate $generateOneTimeKeysCountWithBuffer new one time key" }
+                            olmAccount.generateOneTimeKeys(generateOneTimeKeysCountWithBuffer)
+                            newOneTimeKeys = olmAccount.oneTimeKeys.toCurve25519Keys()
+                        }
                     }
-                }
 
                     newFallbackKeys = olmAccount.fallbackKey?.let(::mapOf)?.toCurve25519Keys(fallback = true)
-                if (newFallbackKeys != null) log.debug { "found fallback key marked as unpublished" }
-                if (newFallbackKeys.isNullOrEmpty()
-                    && fallbackKeyTypes != null // violates the spec, but Synapse is doing it
-                    && fallbackKeyTypes.contains(KeyAlgorithm.SignedCurve25519).not()
-                ) {
-                    log.debug { "generate new fallback key" }
-                    olmAccount.generateFallbackKey()
-                    newFallbackKeys = olmAccount.fallbackKey?.let(::mapOf)?.toCurve25519Keys(fallback = true)
-                }
+                    if (newFallbackKeys != null) log.debug { "found fallback key marked as unpublished" }
+                    if (newFallbackKeys.isNullOrEmpty()
+                        && fallbackKeyTypes != null // violates the spec, but Synapse is doing it
+                        && fallbackKeyTypes.contains(KeyAlgorithm.SignedCurve25519).not()
+                    ) {
+                        log.debug { "generate new fallback key" }
+                        olmAccount.generateFallbackKey()
+                        newFallbackKeys = olmAccount.fallbackKey?.let(::mapOf)?.toCurve25519Keys(fallback = true)
+                    }
                     olmAccount.pickle(driver.key.pickleKey(store.getOlmPickleKey()))
-            }
+                }
         }
         if (newOneTimeKeys != null || newFallbackKeys != null) {
             log.debug { "upload ${newOneTimeKeys?.size ?: 0} one time keys and ${newFallbackKeys?.size ?: 0} fallback keys." }

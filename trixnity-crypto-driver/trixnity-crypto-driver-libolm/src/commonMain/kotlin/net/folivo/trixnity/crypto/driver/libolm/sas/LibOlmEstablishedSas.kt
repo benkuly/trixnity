@@ -4,8 +4,8 @@ import net.folivo.trixnity.crypto.driver.CryptoDriverException
 import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519PublicKey
 import net.folivo.trixnity.crypto.driver.sas.EstablishedSas
 import net.folivo.trixnity.crypto.driver.sas.Mac
-import net.folivo.trixnity.olm.OlmLibraryException
-import net.folivo.trixnity.olm.OlmSAS
+import net.folivo.trixnity.libolm.OlmLibraryException
+import net.folivo.trixnity.libolm.OlmSAS
 
 class LibOlmEstablishedSas(
     private val inner: OlmSAS,

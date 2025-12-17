@@ -17,7 +17,6 @@ class AppserviceApiClientTest : TrixnityBaseTest() {
     fun shouldPing() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory("token"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v1/appservice/appId/ping", request.url.fullPath)

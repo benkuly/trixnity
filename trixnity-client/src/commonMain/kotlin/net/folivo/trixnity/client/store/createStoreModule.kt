@@ -15,6 +15,7 @@ fun createStoreModule() = module {
         bind<ObservableCacheStatisticCollector>()
     }
     singleOf(::AccountStore)
+    singleOf(::AuthenticationStore)
     singleOf(::ServerDataStore)
     singleOf(::GlobalAccountDataStore)
     single {
@@ -49,6 +50,7 @@ fun createStoreModule() = module {
         RootStore(
             listOfNotNull(
                 getOrNull<AccountStore>(),
+                getOrNull<AuthenticationStore>(),
                 getOrNull<ServerDataStore>(),
                 getOrNull<GlobalAccountDataStore>(),
                 getOrNull<KeyStore>(),

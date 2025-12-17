@@ -10,9 +10,9 @@ import net.folivo.trixnity.crypto.driver.libolm.rethrow
 import net.folivo.trixnity.crypto.driver.olm.Account
 import net.folivo.trixnity.crypto.driver.olm.Message
 import net.folivo.trixnity.crypto.driver.olm.Session
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.OlmMessage
-import net.folivo.trixnity.olm.OlmSession
+import net.folivo.trixnity.libolm.OlmAccount
+import net.folivo.trixnity.libolm.OlmMessage
+import net.folivo.trixnity.libolm.OlmSession
 import kotlin.jvm.JvmInline
 
 @JvmInline
@@ -26,7 +26,7 @@ value class LibOlmAccount(
         get() = LibOlmCurve25519PublicKey(inner.identityKeys.curve25519)
 
     override val maxNumberOfOneTimeKeys: Int
-        get() = inner.maxNumberOfOneTimeKeys.toInt()
+        get() = inner.maxNumberOfOneTimeKeys.toInt() / 2 // adapted to vodozemac behavior (recommendation how many keys to upload)
 
     override val storedOneTimeKeyCount: Int
         get() = inner.oneTimeKeys.curve25519.size

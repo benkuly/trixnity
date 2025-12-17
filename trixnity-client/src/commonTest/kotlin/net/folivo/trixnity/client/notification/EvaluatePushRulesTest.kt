@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.notification
 
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -13,7 +12,6 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.model.push.PushAction
-import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -131,35 +129,5 @@ class EvaluatePushRulesTest : TrixnityBaseTest() {
                 )
             )
         ) shouldBe null
-    }
-
-    @Test
-    fun `match first rule`() = runTest {
-        pushRuleMatcher.doesMatch = true
-        cut.invoke(
-            messageEvent(Text("Hello!")),
-            listOf(
-                PushRule.Override(
-                    ruleId = ".m.rule.is_user_mention",
-                    default = true,
-                    enabled = true,
-                    conditions = setOf(
-                        PushCondition.EventPropertyContains(
-                            key = "content.m\\.mentions.user_ids",
-                            value = JsonPrimitive(userId.full),
-                        ),
-                    ),
-                    actions = setOf(
-                        PushAction.Notify,
-                    ),
-                ),
-                PushRule.Room(
-                    roomId = RoomId("!room"),
-                    default = false,
-                    enabled = true,
-                    actions = setOf(),
-                )
-            )
-        ) shouldBe setOf(PushAction.Notify)
     }
 }

@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import net.folivo.trixnity.client.crypto.createCryptoModule
+import net.folivo.trixnity.client.cryptodriver.createCryptoModule
 import net.folivo.trixnity.client.key.KeyBackupService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.OutgoingRoomKeyRequestEventHandler
@@ -25,6 +25,7 @@ import net.folivo.trixnity.client.store.createStoreModule
 import net.folivo.trixnity.client.user.*
 import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.client.verification.createVerificationModule
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
@@ -33,7 +34,6 @@ import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.named
 import org.koin.core.module.dsl.singleOf
@@ -72,23 +72,13 @@ fun createDefaultMatrixJsonModule() = module {
     }
 }
 
-@Deprecated("replace with createTrixnityDefaultModuleFactories")
-fun createDefaultTrixnityModules(): List<Module> = listOf(
-    createMatrixClientStartedModule(),
-    createClockModule(),
-    createServerModule(),
-    createDefaultEventContentSerializerMappingsModule(),
-    createDefaultOutboxMessageMediaUploaderMappingsModule(),
-    createDefaultMatrixJsonModule(),
-    createStoreModule(),
-    createRoomModule(),
-    createUserModule(),
-    createKeyModule(),
-    createCryptoModule(),
-    createVerificationModule(),
-    createMediaModule(),
-    createNotificationModule(),
-)
+fun createDefaultMatrixClientAuthProviderSerializerMappings() = module {
+    single<MatrixClientAuthProviderDataSerializerMappings> { MatrixClientAuthProviderDataSerializerMappings.default() }
+}
+
+fun createCurrentSyncStateModule() = module {
+    single<CurrentSyncState> { CurrentSyncState(get<MatrixClientServerApiClient>()) }
+}
 
 fun createTrixnityDefaultModuleFactories(): List<ModuleFactory> = listOf(
     ::createMatrixClientStartedModule,
@@ -97,6 +87,8 @@ fun createTrixnityDefaultModuleFactories(): List<ModuleFactory> = listOf(
     ::createDefaultEventContentSerializerMappingsModule,
     ::createDefaultOutboxMessageMediaUploaderMappingsModule,
     ::createDefaultMatrixJsonModule,
+    ::createDefaultMatrixClientAuthProviderSerializerMappings,
+    ::createCurrentSyncStateModule,
     ::createStoreModule,
     ::createRoomModule,
     ::createUserModule,
@@ -123,6 +115,8 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
     ::createDefaultEventContentSerializerMappingsModule,
     ::createDefaultOutboxMessageMediaUploaderMappingsModule,
     ::createDefaultMatrixJsonModule,
+    ::createDefaultMatrixClientAuthProviderSerializerMappings,
+    ::createCurrentSyncStateModule,
     ::createStoreModule,
     ::createKeyModule,
     ::createCryptoModule,

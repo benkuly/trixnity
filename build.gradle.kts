@@ -79,9 +79,14 @@ val trixnityBinaries by tasks.registering {
 dependencies {
     dokka(projects.trixnityUtils)
     dokka(projects.trixnityCore)
-    dokka(projects.trixnityCryptoCore)
     dokka(projects.trixnityCrypto)
-    dokka(projects.trixnityOlm)
+    dokka(projects.trixnityCryptoCore)
+    dokka(projects.trixnityCryptoDriver)
+    dokka(projects.trixnityCryptoDriver.trixnityCryptoDriverLibolm)
+    dokka(projects.trixnityCryptoDriver.trixnityCryptoDriverVodozemac)
+    dokka(projects.trixnityLibolm)
+    dokka(projects.trixnityVodozemac)
+    dokka(projects.trixnityVodozemac.trixnityVodozemacBinaries)
     dokka(projects.trixnityApiClient)
     dokka(projects.trixnityApiServer)
     dokka(projects.trixnityClientserverapi.trixnityClientserverapiModel)
@@ -99,6 +104,8 @@ dependencies {
     dokka(projects.trixnityClient.trixnityClientRepositoryExposed)
     dokka(projects.trixnityClient.trixnityClientRepositoryIndexeddb)
     dokka(projects.trixnityClient.trixnityClientRepositoryRoom)
+    dokka(projects.trixnityClient.trixnityClientCryptodriverLibolm)
+    dokka(projects.trixnityClient.trixnityClientCryptodriverVodozemac)
     dokka(projects.trixnityApplicationservice)
 }
 

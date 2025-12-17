@@ -40,7 +40,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.crypto.SecretType.*
 import net.folivo.trixnity.crypto.driver.CryptoDriver
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -51,7 +51,7 @@ import kotlin.test.Test
 @OptIn(MSC3814::class)
 class KeyServiceTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val aliceDevice = "ALICEDEVICE"

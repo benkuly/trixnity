@@ -5,16 +5,15 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.MatrixClient.*
+import net.folivo.trixnity.client.MatrixClient.LoginState
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.repository.RepositoryMigration
 import net.folivo.trixnity.clientserverapi.client.*
-import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
-import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ServerMetadata
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.EventHandler
@@ -30,13 +29,11 @@ import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.utils.retry
 import org.koin.core.Koin
-import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.jvm.JvmName
 import kotlin.time.Duration
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.MatrixClient")
@@ -74,24 +71,9 @@ interface MatrixClient : AutoCloseable {
         LOCKED,
     }
 
-    /**
-     * If providerMetadata AND client ID is not null, this Login info is being handled as a login with the OAuth 2.0
-     * login API which is available since Matrix v1.15. For compatibility, these fields is set null by default.
-     */
     data class LoginInfo(
         val userId: UserId,
         val deviceId: String,
-        val accessToken: String,
-        val refreshToken: String?,
-        val providerMetadata: OAuth2ServerMetadata? = null,
-        val oauth2ClientId: String? = null
-    )
-
-    data class SoftLoginInfo(
-        val identifier: IdentifierType,
-        val password: String? = null,
-        val token: String? = null,
-        val loginType: LoginType = LoginType.Password,
     )
 
     suspend fun logout(): Result<Unit>
@@ -127,639 +109,266 @@ interface MatrixClient : AutoCloseable {
     suspend fun closeSuspending()
 }
 
-private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
-    log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
+fun interface RepositoriesModule {
+    suspend fun create(): Module
+
+    companion object
 }
 
-@Deprecated("use login with mediaStoreModuleFactory")
-@JvmName("loginDeprecatedMediaStoreFactory")
-@Suppress("DEPRECATION")
-suspend fun MatrixClient.Companion.login(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    password: String? = null,
-    token: String? = null,
-    loginType: LoginType = LoginType.Password,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
-    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> =
-    loginWith(
-        baseUrl = baseUrl,
-        repositoriesModuleFactory = repositoriesModuleFactory,
-        mediaStoreFactory = mediaStoreFactory,
-        getLoginInfo = { api ->
-            api.authentication.login(
-                identifier = identifier,
-                password = password,
-                token = token,
-                type = loginType,
-                deviceId = deviceId,
-                initialDeviceDisplayName = initialDeviceDisplayName,
-            ).map { login ->
-                LoginInfo(
-                    userId = login.userId,
-                    deviceId = login.deviceId,
-                    accessToken = login.accessToken,
-                    refreshToken = login.refreshToken,
-                )
-            }
-        },
-        configuration = configuration,
-        coroutineContext = coroutineContext,
-    )
+fun interface MediaStoreModule {
+    suspend fun create(): Module
 
-suspend fun MatrixClient.Companion.login(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    password: String? = null,
-    token: String? = null,
-    loginType: LoginType = LoginType.Password,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
-    mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> =
-    loginWith(
-        baseUrl = baseUrl,
-        repositoriesModuleFactory = repositoriesModuleFactory,
-        mediaStoreModuleFactory = mediaStoreModuleFactory,
-        getLoginInfo = { api ->
-            api.authentication.login(
-                identifier = identifier,
-                password = password,
-                token = token,
-                type = loginType,
-                deviceId = deviceId,
-                initialDeviceDisplayName = initialDeviceDisplayName,
-            ).map { login ->
-                LoginInfo(
-                    userId = login.userId,
-                    deviceId = login.deviceId,
-                    accessToken = login.accessToken,
-                    refreshToken = login.refreshToken,
-                )
-            }
-        },
-        configuration = configuration,
-        coroutineContext = coroutineContext,
-    )
+    companion object
+}
 
+fun interface CryptoDriverModule {
+    suspend fun create(): Module
 
-@Deprecated("use login with mediaStoreModule")
-@JvmName("loginDeprecatedMediaStore")
-@Suppress("DEPRECATION")
-suspend fun MatrixClient.Companion.login(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    password: String? = null,
-    token: String? = null,
-    loginType: LoginType = LoginType.Password,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModule: Module,
-    mediaStore: MediaStore,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> = login(
-    baseUrl = baseUrl,
-    identifier = identifier,
-    password = password,
-    token = token,
-    loginType = loginType,
-    deviceId = deviceId,
-    initialDeviceDisplayName = initialDeviceDisplayName,
-    repositoriesModuleFactory = { repositoriesModule },
-    mediaStoreFactory = { mediaStore },
-    configuration = configuration,
-    coroutineContext = coroutineContext,
-)
+    companion object
+}
 
-suspend fun MatrixClient.Companion.login(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    password: String? = null,
-    token: String? = null,
-    loginType: LoginType = LoginType.Password,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModule: Module,
-    mediaStoreModule: Module,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> = login(
-    baseUrl = baseUrl,
-    identifier = identifier,
-    password = password,
-    token = token,
-    loginType = loginType,
-    deviceId = deviceId,
-    initialDeviceDisplayName = initialDeviceDisplayName,
-    repositoriesModuleFactory = { repositoriesModule },
-    mediaStoreModuleFactory = { mediaStoreModule },
-    configuration = configuration,
-    coroutineContext = coroutineContext,
-)
-
-@Deprecated("use loginWithPassword with mediaStoreModuleFactory")
-@JvmName("loginWithPasswordDeprecatedMediaStoreFactory")
-@Suppress("DEPRECATION")
-suspend fun MatrixClient.Companion.loginWithPassword(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    password: String,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
-    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> =
-    login(
-        baseUrl = baseUrl,
-        identifier = identifier,
-        password = password,
-        token = null,
-        loginType = LoginType.Password,
-        deviceId = deviceId,
-        initialDeviceDisplayName = initialDeviceDisplayName,
-        repositoriesModuleFactory = repositoriesModuleFactory,
-        mediaStoreFactory = mediaStoreFactory,
-        configuration = configuration,
-        coroutineContext = coroutineContext,
-    )
-
-suspend fun MatrixClient.Companion.loginWithPassword(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    password: String,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
-    mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> =
-    login(
-        baseUrl = baseUrl,
-        identifier = identifier,
-        password = password,
-        token = null,
-        loginType = LoginType.Password,
-        deviceId = deviceId,
-        initialDeviceDisplayName = initialDeviceDisplayName,
-        repositoriesModuleFactory = repositoriesModuleFactory,
-        mediaStoreModuleFactory = mediaStoreModuleFactory,
-        configuration = configuration,
-        coroutineContext = coroutineContext,
-    )
-
-@Deprecated("use loginWithPassword with mediaStoreModule")
-@JvmName("loginWithPasswordDeprecatedMediaStore")
-@Suppress("DEPRECATION")
-suspend fun MatrixClient.Companion.loginWithPassword(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    password: String,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModule: Module,
-    mediaStore: MediaStore,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> = loginWithPassword(
-    baseUrl = baseUrl,
-    identifier = identifier,
-    password = password,
-    deviceId = deviceId,
-    initialDeviceDisplayName = initialDeviceDisplayName,
-    repositoriesModuleFactory = { repositoriesModule },
-    mediaStoreFactory = { mediaStore },
-    configuration = configuration,
-    coroutineContext = coroutineContext,
-)
-
-suspend fun MatrixClient.Companion.loginWithPassword(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    password: String,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModule: Module,
-    mediaStoreModule: Module,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> = loginWithPassword(
-    baseUrl = baseUrl,
-    identifier = identifier,
-    password = password,
-    deviceId = deviceId,
-    initialDeviceDisplayName = initialDeviceDisplayName,
-    repositoriesModuleFactory = { repositoriesModule },
-    mediaStoreModuleFactory = { mediaStoreModule },
-    configuration = configuration,
-    coroutineContext = coroutineContext,
-)
-
-@Deprecated("use loginWithToken with mediaStoreModuleFactory")
-@JvmName("loginWithTokenDeprecatedMediaStoreFactory")
-@Suppress("DEPRECATION")
-suspend fun MatrixClient.Companion.loginWithToken(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    token: String,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
-    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> =
-    login(
-        baseUrl = baseUrl,
-        identifier = identifier,
-        password = null,
-        token = token,
-        loginType = LoginType.Token(),
-        deviceId = deviceId,
-        initialDeviceDisplayName = initialDeviceDisplayName,
-        repositoriesModuleFactory = repositoriesModuleFactory,
-        mediaStoreFactory = mediaStoreFactory,
-        configuration = configuration,
-        coroutineContext = coroutineContext,
-    )
-
-suspend fun MatrixClient.Companion.loginWithToken(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    token: String,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
-    mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> =
-    login(
-        baseUrl = baseUrl,
-        identifier = identifier,
-        password = null,
-        token = token,
-        loginType = LoginType.Token(),
-        deviceId = deviceId,
-        initialDeviceDisplayName = initialDeviceDisplayName,
-        repositoriesModuleFactory = repositoriesModuleFactory,
-        mediaStoreModuleFactory = mediaStoreModuleFactory,
-        configuration = configuration,
-        coroutineContext = coroutineContext,
-    )
-
-@Deprecated("use loginWithToken with mediaStoreModule")
-@JvmName("loginWithWithTokenDeprecatedMediaStore")
-@Suppress("DEPRECATION")
-suspend fun MatrixClient.Companion.loginWithToken(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    token: String,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModule: Module,
-    mediaStore: MediaStore,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> = loginWithToken(
-    baseUrl = baseUrl,
-    identifier = identifier,
-    token = token,
-    deviceId = deviceId,
-    initialDeviceDisplayName = initialDeviceDisplayName,
-    repositoriesModuleFactory = { repositoriesModule },
-    mediaStoreFactory = { mediaStore },
-    configuration = configuration,
-    coroutineContext = coroutineContext,
-)
-
-suspend fun MatrixClient.Companion.loginWithToken(
-    baseUrl: Url,
-    identifier: IdentifierType? = null,
-    token: String,
-    deviceId: String? = null,
-    initialDeviceDisplayName: String? = null,
-    repositoriesModule: Module,
-    mediaStoreModule: Module,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> = loginWithToken(
-    baseUrl = baseUrl,
-    identifier = identifier,
-    token = token,
-    deviceId = deviceId,
-    initialDeviceDisplayName = initialDeviceDisplayName,
-    repositoriesModuleFactory = { repositoriesModule },
-    mediaStoreModuleFactory = { mediaStoreModule },
-    configuration = configuration,
-    coroutineContext = coroutineContext,
-)
-
-@Deprecated("use loginWith with mediaStoreModuleFactory")
-@JvmName("loginWithDeprecatedMediaStoreFactory")
-suspend fun MatrixClient.Companion.loginWith(
-    baseUrl: Url,
-    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
-    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> = loginWith(
-    baseUrl = baseUrl,
-    repositoriesModuleFactory = repositoriesModuleFactory,
-    mediaStoreModuleFactory = {
-        val mediaStore = mediaStoreFactory(it)
-        module { single<MediaStore> { mediaStore } }
-    },
-    getLoginInfo = getLoginInfo,
-    coroutineContext = coroutineContext,
-    configuration = configuration,
-)
-
-suspend fun MatrixClient.Companion.loginWith(
-    baseUrl: Url,
-    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
-    mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
-    getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
+suspend fun MatrixClient.Companion.create(
+    repositoriesModule: RepositoriesModule,
+    mediaStoreModule: MediaStoreModule,
+    cryptoDriverModule: CryptoDriverModule,
+    authProviderData: MatrixClientAuthProviderData? = null,
     coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
     val finalCoroutineContext = (config.name?.let { CoroutineName(it) } ?: EmptyCoroutineContext) + coroutineContext
-
-    val loginInfo = config.matrixClientServerApiClientFactory.create(
-        baseUrl = baseUrl,
-        httpClientEngine = config.httpClientEngine,
-        httpClientConfig = config.httpClientConfig,
-    ).use { loginApi ->
-        getLoginInfo(loginApi).getOrThrow()
-    }
-
-    val isOAuth2Login = loginInfo.providerMetadata != null && loginInfo.oauth2ClientId != null
-    log.trace { "Create base API client for MatrixClient '${loginInfo.userId}' (providerMetadata=${loginInfo.providerMetadata}, oauth2ClientId=${loginInfo.oauth2ClientId})" }
-    val oauth2ClientId = if (isOAuth2Login) loginInfo.oauth2ClientId else null
-    val (displayName, avatarUrl) = config.matrixClientServerApiClientFactory.create(
-        baseUrl = baseUrl,
-        authProvider = when (isOAuth2Login) {
-            false -> MatrixAuthProvider.classicInMemory(loginInfo.accessToken, loginInfo.refreshToken)
-            true -> MatrixAuthProvider.oauth2InMemory(
-                loginInfo.accessToken,
-                loginInfo.refreshToken,
-                loginInfo.providerMetadata,
-                loginInfo.oauth2ClientId
-            )
-        },
-        httpClientEngine = config.httpClientEngine,
-        httpClientConfig = config.httpClientConfig,
-        coroutineContext = finalCoroutineContext,
-    ).use { loginApi ->
-        loginApi.user.getProfile(loginInfo.userId).getOrThrow()
-    }
-
-    val mediaStoreModule = mediaStoreModuleFactory(loginInfo)
-    val repositoriesModule = repositoriesModuleFactory(loginInfo)
-
-    val koinApplication = initMatrixClientKoinApplication(
-        repositoriesModule = repositoriesModule,
-        mediaStoreModule = mediaStoreModule,
-        coroutineContext = finalCoroutineContext,
-        config = config
-    )
-    val di = koinApplication.koin
-
-    val accountStore = di.get<AccountStore>()
-
-    accountStore.updateAccount {
-        Account(
-            olmPickleKey = null,
-            baseUrl = baseUrl.toString(),
-            accessToken = loginInfo.accessToken,
-            refreshToken = loginInfo.refreshToken,
-            userId = loginInfo.userId,
-            deviceId = loginInfo.deviceId,
-            displayName = displayName,
-            avatarUrl = avatarUrl,
-            backgroundFilterId = null,
-            filterId = null,
-            syncBatchToken = null,
-            isLocked = false,
-            oauth2ClientId = oauth2ClientId,
-            oauth2Login = isOAuth2Login
-        )
-    }
-
-    koinApplication.createMatrixClient(
-        baseUrl = baseUrl,
-        userId = loginInfo.userId,
-        deviceId = loginInfo.deviceId,
-        olmPickleKey = null,
-        json = di.get(),
-        eventContentSerializerMappings = di.get(),
-        accountStore = accountStore,
-        olmCryptoStore = di.get(),
-        coroutineContext = finalCoroutineContext,
-        providerMetadata = loginInfo.providerMetadata,
-        config = config
-    ) { matrixClient ->
-        val keyStore = di.get<KeyStore>()
-
-        val selfSignedDeviceKeys = di.get<SignService>().getSelfSignedDeviceKeys()
-        selfSignedDeviceKeys.signed.keys.forEach {
-            keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value.value))
-        }
-        matrixClient.api.key.setKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
-        keyStore.updateOutdatedKeys { it + loginInfo.userId }
-        matrixClient.also {
-            log.trace { "finished creating MatrixClient" }
-        }
-    }
-}
-
-suspend fun MatrixClient.Companion.loginWith(
-    baseUrl: Url,
-    repositoriesModule: Module,
-    mediaStoreModule: Module,
-    getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> = loginWith(
-    baseUrl = baseUrl,
-    repositoriesModuleFactory = { repositoriesModule },
-    mediaStoreModuleFactory = { mediaStoreModule },
-    getLoginInfo = getLoginInfo,
-    configuration = configuration,
-    coroutineContext = coroutineContext,
-)
-
-@Deprecated("use loginWithToken with mediaStoreModule")
-@JvmName("fromStoreDeprecatedMediaStore")
-suspend fun MatrixClient.Companion.fromStore(
-    repositoriesModule: Module,
-    mediaStore: MediaStore,
-    onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient?> =
-    fromStore(
-        repositoriesModule = repositoriesModule,
-        mediaStoreModule = module { single<MediaStore> { mediaStore } },
-        onSoftLogin = onSoftLogin,
-        coroutineContext = coroutineContext,
-        configuration = configuration,
-    )
-
-suspend fun MatrixClient.Companion.fromStore(
-    repositoriesModule: Module,
-    mediaStoreModule: Module,
-    onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    providerMetadata: OAuth2ServerMetadata? = null,
-    configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient?> = kotlin.runCatching {
-    val config = MatrixClientConfiguration().apply(configuration)
-
-    val koinApplication = initMatrixClientKoinApplication(
-        repositoriesModule = repositoriesModule,
-        mediaStoreModule = mediaStoreModule,
-        coroutineContext = coroutineContext,
-        config = config
-    )
-    val di = koinApplication.koin
-
-    val accountStore = di.get<AccountStore>()
-    val olmCryptoStore = di.get<OlmCryptoStore>()
-
-    val account = accountStore.getAccount() ?: return@runCatching null
-    if (olmCryptoStore.getOlmAccount() == null) return@runCatching null
-
-    koinApplication.createMatrixClient(
-        baseUrl = Url(account.baseUrl),
-        userId = account.userId,
-        deviceId = account.deviceId,
-        olmPickleKey = account.olmPickleKey,
-        json = di.get(),
-        eventContentSerializerMappings = di.get(),
-        accountStore = accountStore,
-        olmCryptoStore = olmCryptoStore,
-        config = config,
-        coroutineContext = coroutineContext,
-        providerMetadata = providerMetadata,
-    ) { matrixClient ->
-        val accessToken = account.accessToken ?: onSoftLogin?.let {
-            val (identifier, password, token, loginType) = onSoftLogin()
-            matrixClient.api.authentication.login(
-                identifier = identifier,
-                password = password,
-                token = token,
-                type = loginType,
-                deviceId = account.deviceId,
-            ).getOrThrow().accessToken
-                .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
-        }
-        if (accessToken != null) matrixClient
-        else null
-    }
-}
-
-private suspend fun initMatrixClientKoinApplication(
-    repositoriesModule: Module,
-    mediaStoreModule: Module,
-    coroutineContext: CoroutineContext,
-    config: MatrixClientConfiguration
-): KoinApplication {
     val coroutineScope =
-        CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
+        CoroutineScope(finalCoroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
-    val koinApplication = koinApplication {
-        modules(module {
-            single { coroutineScope }
-            single { config }
-        })
-        modules(repositoriesModule)
-        modules(mediaStoreModule)
+    try {
+        val extraModules = listOf(
+            repositoriesModule.create(),
+            mediaStoreModule.create(),
+            cryptoDriverModule.create(),
+        )
+        val koinApplication = koinApplication {
+            modules(module {
+                single { coroutineScope }
+                single { config }
+            })
+            modules(extraModules)
+            modules(config.modulesFactories.map { it.invoke() })
+        }
+        val di = koinApplication.koin
+
+        runMigrationsAndInitStores(di)
+
+        val authenticationStore = di.get<AuthenticationStore>()
+        val accountStore = di.get<AccountStore>()
+
+        val userId: UserId
+        val deviceId: String
+        val initialAccount = accountStore.getAccount()
+        val initialAuthentication = authenticationStore.getAuthentication()
+        val isFirstInit = initialAccount == null
+
+        val authProviderDataStore =
+            AuthenticationStoreMatrixClientAuthProviderDataStore(
+                di.get<MatrixClientAuthProviderDataSerializerMappings>(),
+                authenticationStore
+            )
+
+        if (isFirstInit) {
+            requireNotNull(authProviderData) { "authProviderData must not be null when repositories are empty." }
+            val whoAmI = authProviderData.useApi(
+                coroutineContext = finalCoroutineContext,
+                httpClientEngine = config.httpClientEngine,
+                httpClientConfig = config.httpClientConfig,
+            ) {
+                it.authentication.whoAmI().getOrThrow()
+            }
+            userId = whoAmI.userId
+            deviceId = checkNotNull(whoAmI.deviceId) { "deviceId in whoAmI response must not be null" }
+        } else {
+            userId = initialAccount.userId
+            deviceId = initialAccount.deviceId
+        }
+
         @Suppress("DEPRECATION")
-        modules(config.modules ?: config.modulesFactory?.invoke() ?: config.modulesFactories.map { it.invoke() })
+        val finalAuthProviderData =
+            when {
+                initialAccount?.accessToken != null && initialAccount.baseUrl != null -> {
+                    log.debug { "migrate to new authentication system" }
+                    accountStore.updateAccount { it?.copy(baseUrl = null, accessToken = null, refreshToken = null) }
+                    ClassicMatrixClientAuthProviderData(
+                        baseUrl = Url(initialAccount.baseUrl),
+                        accessToken = initialAccount.accessToken,
+                        accessTokenExpiresInMs = null,
+                        refreshToken = initialAccount.refreshToken
+                    ).also { authProviderDataStore.setAuthData(it) }
+                }
+
+                initialAuthentication != null && authProviderData != null -> {
+                    log.debug { "re-authenticate" }
+                    val (newUserId, newDeviceId) = authProviderData.useApi(
+                        coroutineContext = finalCoroutineContext,
+                        httpClientEngine = config.httpClientEngine,
+                        httpClientConfig = config.httpClientConfig,
+                    ) {
+                        it.authentication.whoAmI().getOrThrow()
+                    }
+                    require(newUserId != userId || newDeviceId != deviceId) {
+                        "newly authenticated userId ($newUserId) and deviceId ($newDeviceId) " +
+                                "must match stored authenticated userId ($userId) and deviceId ($deviceId). "
+                    }
+                    authProviderDataStore.setAuthData(authProviderData)
+                    authProviderData
+                }
+
+                isFirstInit && authProviderData != null -> {
+                    authProviderDataStore.setAuthData(authProviderData)
+                    authProviderData
+                }
+
+                else -> checkNotNull(authProviderDataStore.getAuthData()) { "No stored authProviderData found, you need to provide one." }
+            }
+
+        val authProvider = finalAuthProviderData.createAuthProvider(
+            store = authProviderDataStore,
+            onLogout = { onLogout(it, authenticationStore) },
+            httpClientEngine = config.httpClientEngine,
+            httpClientConfig = config.httpClientConfig
+        )
+
+        val api = config.matrixClientServerApiClientFactory.create(
+            authProvider = authProvider,
+            json = di.get(),
+            eventContentSerializerMappings = di.get(),
+            syncBatchTokenStore = AccountStoreSyncBatchTokenStore(accountStore),
+            syncErrorDelayConfig = config.syncErrorDelayConfig,
+            coroutineContext = finalCoroutineContext,
+            httpClientEngine = config.httpClientEngine,
+            httpClientConfig = config.httpClientConfig,
+        )
+        try {
+            if (isFirstInit) {
+                val (displayName, avatarUrl) = api.user.getProfile(userId).getOrThrow()
+                accountStore.updateAccount {
+                    Account(
+                        olmPickleKey = null,
+                        userId = userId,
+                        deviceId = deviceId,
+                        displayName = displayName,
+                        avatarUrl = avatarUrl,
+                        backgroundFilterId = null,
+                        filterId = null,
+                        syncBatchToken = null,
+                    )
+                }
+            }
+
+            val userInfo = getUserInfo(userId, deviceId, di)
+
+            koinApplication.modules(module {
+                single { userInfo }
+                single<MatrixClientServerApiClient> { api }
+            })
+
+            if (isFirstInit) {
+                val keyStore = di.get<KeyStore>()
+
+                val selfSignedDeviceKeys = di.get<SignService>().getSelfSignedDeviceKeys()
+
+                api.key.setKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
+                selfSignedDeviceKeys.signed.keys.forEach {
+                    keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value.value))
+                }
+                keyStore.updateOutdatedKeys { it + userId }
+            }
+
+            log.trace { "finished create MatrixClient" }
+            MatrixClientImpl(finalAuthProviderData.baseUrl, di)
+        } catch (t: Throwable) {
+            api.close()
+            throw t
+        }
+    } catch (t: Throwable) {
+        coroutineScope.cancel()
+        throw t
+    }
+}
+
+private class AuthenticationStoreMatrixClientAuthProviderDataStore(
+    private val mappings: MatrixClientAuthProviderDataSerializerMappings,
+    private val store: AuthenticationStore,
+) : MatrixClientAuthProviderDataStore {
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        explicitNulls = false
     }
 
-    koinApplication.koin.getAll<RepositoryMigration>()
-        .forEach { it.run() }
+    override suspend fun getAuthData(): MatrixClientAuthProviderData? =
+        store.getAuthentication()?.let { authentication ->
+            val mapping = checkNotNull(mappings.find { it.id == authentication.providerId }) {
+                "authProviderData id=${authentication.providerId} is not supported. Supported ids: ${mappings.map { it.id }}"
+            }
+            json.decodeFromString(mapping.serializer, authentication.providerData)
+        }
 
-    val di = koinApplication.koin
+    override suspend fun setAuthData(authData: MatrixClientAuthProviderData?) = store.updateAuthentication {
+        if (authData != null) {
+            val mapping = checkNotNull(mappings.find { it.kClass == authData::class }) {
+                "authProviderData kClass=${authData::class} is not supported. Supported types: ${mappings.map { it.kClass }}"
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            val providerData =
+                json.encodeToString(mapping.serializer as KSerializer<MatrixClientAuthProviderData>, authData)
+            it?.copy(providerData = providerData)
+                ?: Authentication(
+                    providerId = mapping.id,
+                    providerData = providerData,
+                    logoutInfo = null,
+                )
+        } else null
+    }
+}
+
+private class AccountStoreSyncBatchTokenStore(
+    private val store: AccountStore,
+) : SyncBatchTokenStore {
+    override suspend fun getSyncBatchToken(): String? =
+        store.getAccount()?.syncBatchToken
+
+    override suspend fun setSyncBatchToken(token: String) {
+        store.updateAccount { it?.copy(syncBatchToken = token) }
+    }
+}
+
+private suspend fun onLogout(
+    logoutInfo: LogoutInfo,
+    authenticationStore: AuthenticationStore,
+) {
+    log.debug { "This device has been logged out ($logoutInfo)." }
+    withContext(NonCancellable) {
+        authenticationStore.updateAuthentication {
+            it?.copy(logoutInfo = logoutInfo)
+        }
+    }
+}
+
+private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
+    log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
+}
+
+private suspend fun runMigrationsAndInitStores(di: Koin) {
+    di.getAll<RepositoryMigration>().forEach { it.run() }
     val rootStore = di.get<RootStore>()
     rootStore.init(di.get())
-    return koinApplication
 }
 
-private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
-    baseUrl: Url,
-    userId: UserId,
-    deviceId: String,
-    olmPickleKey: String?,
-    json: Json,
-    eventContentSerializerMappings: EventContentSerializerMappings,
-    accountStore: AccountStore,
-    olmCryptoStore: OlmCryptoStore,
-    config: MatrixClientConfiguration,
-    coroutineContext: CoroutineContext,
-    providerMetadata: OAuth2ServerMetadata? = null,
-    doFinally: suspend (MatrixClient) -> T,
-): T {
-    val api = config.matrixClientServerApiClientFactory.create(
-        baseUrl = baseUrl,
-        authProvider = run {
-            val store = AccountStoreBearerAccessTokenStore(accountStore)
-            val bearerTokens = store.getBearerTokens()
-            log.debug { "Initializing auth provider of MatrixClient '$userId' (oauth2Login=${bearerTokens?.oauth2Login}, oauth2ClientId=${bearerTokens?.oauth2ClientId})" }
-            if (bearerTokens?.oauth2Login ?: false) {
-                val providerMetadata = providerMetadata
-                    ?: config.matrixClientServerApiClientFactory.create(baseUrl).use {
-                        it.authentication.getOAuth2ServerMetadata()
-                    }.getOrThrow()
+private suspend fun getUserInfo(userId: UserId, deviceId: String, di: Koin): UserInfo {
+    val driver = di.get<CryptoDriver>()
 
-                MatrixAuthProvider.oauth2(
-                    store,
-                    providerMetadata,
-                    requireNotNull(bearerTokens.oauth2ClientId)
-                ) {
-                    onLogout(it, accountStore)
-                }
-            } else {
-                MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)) {
-                    onLogout(it, accountStore)
-                }
-            }
-        },
-        httpClientEngine = config.httpClientEngine,
-        httpClientConfig = config.httpClientConfig,
-        json = json,
-        eventContentSerializerMappings = eventContentSerializerMappings,
-        syncBatchTokenStore = object : SyncBatchTokenStore {
-            override suspend fun getSyncBatchToken(): String? =
-                accountStore.getAccount()?.syncBatchToken
+    val pickleKey = driver.key.pickleKey(di.get<AccountStore>().getAccount()?.olmPickleKey)
 
-            override suspend fun setSyncBatchToken(token: String) {
-                accountStore.updateAccount { if (it?.accessToken != null) it.copy(syncBatchToken = token) else it }
-            }
-        },
-        syncErrorDelayConfig = config.syncErrorDelayConfig,
-        coroutineContext = coroutineContext,
-    )
-
-    val driver = koin.get<CryptoDriver>()
-
-    val pickleKey = driver.key.pickleKey(olmPickleKey)
-
+    val olmCryptoStore = di.get<OlmCryptoStore>()
     val (signingKey, identityKey) = (olmCryptoStore.getOlmAccount()
         ?.let { driver.olm.account.fromPickle(it, pickleKey) }
         ?: driver.olm.account())
@@ -773,65 +382,7 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
                 Key.of(deviceId, signingKey) to Key.of(deviceId, identityKey)
             }
         }
-
-    modules(module {
-        single { UserInfo(userId, deviceId, signingKey, identityKey) }
-        single<MatrixClientServerApiClient> { api }
-        single { CurrentSyncState(api.sync.currentSyncState) }
-    })
-    val matrixClient = MatrixClientImpl(baseUrl, koin)
-    try {
-        return doFinally(matrixClient)
-    } catch (e: Exception) {
-        matrixClient.logout()
-        matrixClient.deleteAll()
-        matrixClient.close()
-        throw e
-    }
-}
-
-private class AccountStoreBearerAccessTokenStore(
-    private val accountStore: AccountStore
-) : BearerTokensStore {
-    override suspend fun getBearerTokens(): BearerTokens? {
-        val currentAccount = accountStore.getAccount()
-        return if (currentAccount?.accessToken != null)
-            BearerTokens(
-                accessToken = currentAccount.accessToken,
-                refreshToken = currentAccount.refreshToken,
-                oauth2Login = currentAccount.oauth2Login,
-                oauth2ClientId = currentAccount.oauth2ClientId,
-            )
-        else null
-    }
-
-    override suspend fun setBearerTokens(bearerTokens: BearerTokens) {
-        accountStore.updateAccount {
-            it?.copy(
-                accessToken = bearerTokens.accessToken,
-                refreshToken = bearerTokens.refreshToken,
-                oauth2Login = bearerTokens.oauth2Login,
-                oauth2ClientId = bearerTokens.oauth2ClientId
-            )
-        }
-    }
-}
-
-private suspend fun onLogout(
-    logoutInfo: LogoutInfo,
-    accountStore: AccountStore
-) {
-    log.debug { "This device has been logged out ($logoutInfo)." }
-    withContext(NonCancellable) {
-        accountStore.updateAccount {
-            it?.copy(
-                accessToken = if (logoutInfo.isLocked) it.accessToken else null,
-                refreshToken = if (logoutInfo.isLocked) it.refreshToken else null,
-                syncBatchToken = if (logoutInfo.isSoft) it.syncBatchToken else null,
-                isLocked = logoutInfo.isLocked
-            )
-        }
-    }
+    return UserInfo(userId, deviceId, signingKey, identityKey)
 }
 
 class MatrixClientImpl internal constructor(
@@ -840,6 +391,7 @@ class MatrixClientImpl internal constructor(
 ) : MatrixClient {
     private val coroutineScope: CoroutineScope = di.get()
     private val rootStore: RootStore = di.get()
+    private val authenticationStore: AuthenticationStore = di.get()
     private val accountStore: AccountStore = di.get()
     private val mediaStore: MediaStore = di.get()
     private val mediaCacheMappingStore: MediaCacheMappingStore = di.get()
@@ -869,11 +421,12 @@ class MatrixClientImpl internal constructor(
             .stateIn(coroutineScope, Eagerly, true)
 
     override val loginState: StateFlow<LoginState?> =
-        accountStore.getAccountAsFlow().map { account ->
+        authenticationStore.getAuthenticationAsFlow().map { authentication ->
+            val logoutInfo = authentication?.logoutInfo
             when {
-                account?.isLocked == true -> LOCKED
-                account?.accessToken != null -> LOGGED_IN
-                account?.syncBatchToken != null -> LOGGED_OUT_SOFT
+                logoutInfo == null -> LOGGED_IN
+                logoutInfo.isSoft -> LOGGED_OUT_SOFT
+                logoutInfo.isLocked -> LOCKED
                 else -> LOGGED_OUT
             }
         }.stateIn(coroutineScope, Eagerly, null)
@@ -908,7 +461,7 @@ class MatrixClientImpl internal constructor(
                         LOCKED -> {
                             log.info { "account is locked - waiting for successful sync for unlocking" }
                             api.sync.subscribeAsFlow(ClientEventEmitter.Priority.FIRST).first()
-                            accountStore.updateAccount { it?.copy(isLocked = false) }
+                            authenticationStore.updateAuthentication { it?.copy(logoutInfo = null) }
                             log.info { "account unlocked" }
                         }
 

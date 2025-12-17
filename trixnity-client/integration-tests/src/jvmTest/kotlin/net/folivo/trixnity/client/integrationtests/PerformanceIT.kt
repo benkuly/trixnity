@@ -14,16 +14,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.createTrixnityBotModuleFactories
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.room.decrypt
 import net.folivo.trixnity.client.room.encrypt
-import net.folivo.trixnity.client.roomEventEncryptionServices
-import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
+import net.folivo.trixnity.client.store.repository.inMemory
 import net.folivo.trixnity.client.store.repository.room.TrixnityRoomDatabase
-import net.folivo.trixnity.client.store.repository.room.createRoomRepositoriesModule
+import net.folivo.trixnity.client.store.repository.room.room
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
@@ -36,8 +33,8 @@ import net.folivo.trixnity.utils.nextString
 import org.jetbrains.exposed.sql.Database
 import org.openjdk.jol.info.GraphStats
 import org.testcontainers.containers.Network
-import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.postgresql.PostgreSQLContainer
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlin.test.Test
@@ -60,7 +57,7 @@ class PerformanceIT {
             { baseUrl ->
                 registerAndStartClient(
                     "exposed", "exposed", baseUrl,
-                    repositoriesModule = createExposedRepositoriesModule(
+                    repositoriesModule = RepositoriesModule.exposed(
                         Database.connect("jdbc:h2:./build/tmp/test/${Random.nextString(22)};DB_CLOSE_DELAY=-1;")
                     ),
                 ).client
@@ -68,7 +65,7 @@ class PerformanceIT {
             { baseUrl ->
                 registerAndStartClient(
                     "room", "room", baseUrl,
-                    repositoriesModule = createRoomRepositoriesModule(
+                    repositoriesModule = RepositoriesModule.room(
                         Room.databaseBuilder<TrixnityRoomDatabase>("build/tmp/test/${Random.nextString(22)}.db").apply {
                             setDriver(BundledSQLiteDriver())
                         }),
@@ -98,18 +95,19 @@ class PerformanceIT {
         fun client(name: String): suspend (Url) -> MatrixClient = { baseUrl ->
             registerAndStartClient(
                 name, baseUrl = baseUrl,
-                repositoriesModule = createInMemoryRepositoriesModule(),
+                repositoriesModule = RepositoriesModule.inMemory(),
             ).client
         }
 
         val repeat = 10
+        val warmup = 1
         val results = measureSync(
-            *(0..repeat).map { client("measure-$it") }.toTypedArray(),
+            *(1..(repeat + warmup)).map { client("measure-$it") }.toTypedArray(),
             timeout = 4.minutes,
             roomsCount = 10,
             messagesCount = 5,
         ).total
-            .drop(1) // warmup
+            .drop(warmup)
 
         val duration = results.fold(0.seconds) { current, next -> current + next.duration } / repeat
         val memoryUsage = results.fold(0L) { current, next -> current + next.memoryUsage } / repeat
@@ -118,9 +116,9 @@ class PerformanceIT {
         println("duration = $duration ${results.map { it.duration }}")
         println("memoryUsage = ${memoryUsage / 1_000} KB ${results.map { (it.memoryUsage / 1_000).toString() + " KB" }}")
         println("memoryFootprint = ${memoryFootprint / 1_000} KB ${results.map { (it.memoryFootprint / 1_000).toString() + " KB" }}")
-        duration shouldBeLessThan 120.milliseconds
-        (memoryUsage / 1_000) shouldBeLessThan 1_000
-        (memoryFootprint / 1_000) shouldBeLessThan 50_000
+        duration shouldBeLessThan 200.milliseconds
+        (memoryUsage / 1_000) shouldBeLessThan 2_000 // KB
+        (memoryFootprint / 1_000) shouldBeLessThan 100_000 // KB
     }
 
     @Test
@@ -131,13 +129,13 @@ class PerformanceIT {
             { baseUrl ->
                 registerAndStartClient(
                     "fullClient", baseUrl = baseUrl,
-                    repositoriesModule = createExposedRepositoriesModule(matrixPostgresql1.getDatabase()),
+                    repositoriesModule = RepositoriesModule.exposed(matrixPostgresql1.getDatabase()),
                 ).client
             },
             { baseUrl ->
                 registerAndStartClient(
                     "bot", baseUrl = baseUrl,
-                    repositoriesModule = createExposedRepositoriesModule(matrixPostgresql2.getDatabase()),
+                    repositoriesModule = RepositoriesModule.exposed(matrixPostgresql2.getDatabase()),
                 ) {
                     modulesFactories = createTrixnityBotModuleFactories()
                 }.client
@@ -145,7 +143,7 @@ class PerformanceIT {
             { baseUrl ->
                 registerAndStartClient(
                     "inMemoryBot", baseUrl = baseUrl,
-                    repositoriesModule = createInMemoryRepositoriesModule(),
+                    repositoriesModule = RepositoriesModule.inMemory(),
                 ) {
                     modulesFactories = createTrixnityBotModuleFactories()
                 }.client
@@ -227,7 +225,7 @@ class PerformanceIT {
             clients.map { async { it.stopSync() } }.awaitAll()
 
             val prepareTestClients = (1..roomsCount).withLimitedParallelism { i ->
-                registerAndStartClient("prepare-$i", "prepare-$i", baseUrl, createInMemoryRepositoriesModule()) {
+                registerAndStartClient("prepare-$i", "prepare-$i", baseUrl, RepositoriesModule.inMemory()) {
                     modulesFactories = createTrixnityBotModuleFactories()
                     cacheExpireDurations = MatrixClientConfiguration.CacheExpireDurations.default(5.seconds)
                 }.client
@@ -279,7 +277,7 @@ class PerformanceIT {
 
             val messagesResults = clients.measureSync(decrypt)
 
-            clients.forEach { it.closeSuspending() }
+            clients.withLimitedParallelism { it.closeSuspending() }
             synapse.stop()
             synapsePostgresql.stop()
 

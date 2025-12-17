@@ -16,12 +16,14 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.RepositoriesModule
 import net.folivo.trixnity.client.createDefaultEventContentSerializerMappingsModule
 import net.folivo.trixnity.client.createDefaultMatrixJsonModule
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.client.store.repository.*
+import net.folivo.trixnity.clientserverapi.client.LogoutInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -50,7 +52,6 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 import org.koin.core.Koin
-import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import kotlin.coroutines.cancellation.CancellationException
@@ -62,7 +63,7 @@ import kotlin.time.Instant
 
 abstract class RepositoryTestSuite(
     private val customRepositoryTransactionManager: suspend () -> RepositoryTransactionManager? = { null },
-    private val repositoriesModuleBuilder: suspend () -> Module
+    private val repositoriesModule: RepositoriesModule
 ) {
     lateinit var di: Koin
     lateinit var rtm: RepositoryTransactionManager
@@ -75,7 +76,7 @@ abstract class RepositoryTestSuite(
     }
 
     private fun runTestWithSetup(testBody: suspend TestScope.() -> Unit) = runTest {
-        val repositoriesModule = repositoriesModuleBuilder()
+        val repositoriesModule = repositoriesModule.create()
         coroutineScope = CoroutineScope(Dispatchers.Default)
         di = koinApplication {
             modules(
@@ -109,7 +110,6 @@ abstract class RepositoryTestSuite(
                 backgroundFilterId = null,
                 displayName = null,
                 avatarUrl = null,
-                isLocked = false
             )
         )
     }
@@ -337,6 +337,25 @@ abstract class RepositoryTestSuite(
             val accountCopy = account.copy(syncBatchToken = "otherSyncToken")
             cut.save(1, accountCopy)
             cut.get(1) shouldBe accountCopy
+            cut.delete(1)
+            cut.get(1) shouldBe null
+        }
+    }
+
+    @Test
+    fun `AuthenticationRepository - save get and delete`() = runTestWithSetup {
+        val cut = di.get<AuthenticationRepository>()
+        val authentication = Authentication(
+            providerId = "provider.id",
+            providerData = """{"accessToken":"accessToken"}""",
+            logoutInfo = LogoutInfo(false, false)
+        )
+        rtm.writeTransaction {
+            cut.save(1, authentication)
+            cut.get(1) shouldBe authentication
+            val authenticationCopy = authentication.copy(logoutInfo = null)
+            cut.save(1, authenticationCopy)
+            cut.get(1) shouldBe authenticationCopy
             cut.delete(1)
             cut.get(1) shouldBe null
         }

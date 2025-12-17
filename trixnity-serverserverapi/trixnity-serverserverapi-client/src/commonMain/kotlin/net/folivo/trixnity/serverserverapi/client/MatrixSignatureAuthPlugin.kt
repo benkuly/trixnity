@@ -7,14 +7,12 @@ import io.ktor.client.utils.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.util.*
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.serverserverapi.model.requestAuthenticationBody
 
 class MatrixSignatureAuthPlugin(
     private val hostname: String,
     private val sign: (String) -> Key.Ed25519Key,
-    private val json: Json,
 ) : HttpClientPlugin<Unit, Unit> {
     override val key: AttributeKey<Unit> = AttributeKey("MatrixSignatureAuthPlugin")
 

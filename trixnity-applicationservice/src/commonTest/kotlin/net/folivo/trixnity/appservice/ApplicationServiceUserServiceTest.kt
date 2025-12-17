@@ -5,7 +5,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExistingState.CAN_BE_CREATED
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
@@ -17,6 +17,7 @@ import net.folivo.trixnity.core.serialization.createDefaultEventContentSerialize
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
 import kotlin.test.Test
@@ -27,10 +28,22 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
     private val mappings = createDefaultEventContentSerializerMappings()
     private val userId = UserId("user", "server")
 
+    private val baseUrl = Url("https://matrix.host")
+
+    private val classicAuthProviderStore =
+        MatrixClientAuthProviderDataStore.inMemory(MatrixClientAuthProviderData.classic(baseUrl, "access")).apply {
+            scheduleSetup {
+                setAuthData(MatrixClientAuthProviderData.classic(baseUrl, "access"))
+            }
+        }
+    private val classicAuthProvider =
+        ClassicMatrixClientAuthProvider(baseUrl, classicAuthProviderStore, {})
+
     @Test
     fun `should create and save user`() = runTest {
         var setDisplayNameCalled = false
         val api = MatrixClientServerApiClientImpl(
+            authProvider = classicAuthProvider,
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) { requestBody ->
@@ -62,6 +75,7 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
     @Test
     fun `should have error when register fails`() = runTest {
         val api = MatrixClientServerApiClientImpl(
+            authProvider = classicAuthProvider,
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {
@@ -86,6 +100,7 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
     fun `should catch error when register fails due to already existing id`() = runTest {
         var setDisplayNameCalled = false
         val api = MatrixClientServerApiClientImpl(
+            authProvider = classicAuthProvider,
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {
@@ -114,6 +129,7 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
     @Test
     fun `should have error when saving by user service fails`() = runTest {
         val api = MatrixClientServerApiClientImpl(
+            authProvider = classicAuthProvider,
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {
@@ -135,6 +151,7 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
     fun `should not set displayName if null`() = runTest {
         var setDisplayNameCalled = false
         val api = MatrixClientServerApiClientImpl(
+            authProvider = classicAuthProvider,
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {
@@ -157,6 +174,7 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
     fun `should not have error when setting displayName fails`() = runTest {
         var setDisplayNameCalled = false
         val api = MatrixClientServerApiClientImpl(
+            authProvider = classicAuthProvider,
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {

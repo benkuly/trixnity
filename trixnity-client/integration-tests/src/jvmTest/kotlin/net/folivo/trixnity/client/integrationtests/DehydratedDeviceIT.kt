@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
@@ -11,7 +10,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
 import net.folivo.trixnity.client.verification.SelfVerificationMethod
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
 import net.folivo.trixnity.clientserverapi.client.UIA
@@ -50,11 +49,11 @@ class DehydratedDeviceIT {
         ).build()
         startedClient1 = registerAndStartClient(
             "client1", "user1", baseUrl,
-            createExposedRepositoriesModule(newDatabase())
+            RepositoriesModule.exposed(newDatabase())
         )
         startedClient2 = registerAndStartClient(
             "client2", "user2", baseUrl,
-            createExposedRepositoriesModule(newDatabase())
+            RepositoriesModule.exposed(newDatabase())
         ) {
             experimentalFeatures.enableMSC3814 = true
         }
@@ -98,7 +97,7 @@ class DehydratedDeviceIT {
             )
 
             val startedClient3 =
-                startClient("client3", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
+                startClient("client3", "user2", baseUrl, RepositoriesModule.exposed(newDatabase())) {
                     experimentalFeatures.enableMSC3814 = true
                 }
             withCluePrintln("self verify client3") {
@@ -147,7 +146,7 @@ class DehydratedDeviceIT {
             startedClient2.client.closeSuspending()
 
             val startedClient3 =
-                startClient("client3", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
+                startClient("client3", "user2", baseUrl, RepositoriesModule.exposed(newDatabase())) {
                     experimentalFeatures.enableMSC3814 = true
                 }
             val secondDehydratedDeviceId = withCluePrintln("bootstrap client3 first time") {
@@ -182,7 +181,7 @@ class DehydratedDeviceIT {
                 )
 
             val startedClient4 =
-                startClient("client4", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
+                startClient("client4", "user2", baseUrl, RepositoriesModule.exposed(newDatabase())) {
                     experimentalFeatures.enableMSC3814 = true
                 }
             withCluePrintln("self verify client4") {

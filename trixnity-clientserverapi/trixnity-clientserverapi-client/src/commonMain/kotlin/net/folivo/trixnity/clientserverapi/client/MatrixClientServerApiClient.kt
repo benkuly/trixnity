@@ -11,11 +11,14 @@ import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializ
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.utils.RetryFlowDelayConfig
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient")
 
 interface MatrixClientServerApiClient : AutoCloseable {
+    val baseUrl: Url
     val baseClient: MatrixClientServerApiBaseClient
+    val authProviderType: KClass<out MatrixClientAuthProvider>
     val appservice: AppserviceApiClient
     val authentication: AuthenticationApiClient
     val discovery: DiscoveryApiClient
@@ -36,8 +39,28 @@ interface MatrixClientServerApiClient : AutoCloseable {
 
 interface MatrixClientServerApiClientFactory {
     fun create(
-        baseUrl: Url? = null,
-        authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
+        authProvider: MatrixClientAuthProvider,
+        eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+        json: Json = createMatrixEventJson(eventContentSerializerMappings),
+        syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
+        syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
+        coroutineContext: CoroutineContext = Dispatchers.Default,
+        httpClientEngine: HttpClientEngine? = null,
+        httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
+    ): MatrixClientServerApiClient =
+        MatrixClientServerApiClientImpl(
+            authProvider = authProvider,
+            eventContentSerializerMappings = eventContentSerializerMappings,
+            json = json,
+            syncBatchTokenStore = syncBatchTokenStore,
+            syncErrorDelayConfig = syncErrorDelayConfig,
+            coroutineContext = coroutineContext,
+            httpClientEngine = httpClientEngine,
+            httpClientConfig = httpClientConfig,
+        )
+
+    fun create(
+        baseUrl: Url,
         eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
         json: Json = createMatrixEventJson(eventContentSerializerMappings),
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
@@ -48,7 +71,6 @@ interface MatrixClientServerApiClientFactory {
     ): MatrixClientServerApiClient =
         MatrixClientServerApiClientImpl(
             baseUrl = baseUrl,
-            authProvider = authProvider,
             eventContentSerializerMappings = eventContentSerializerMappings,
             json = json,
             syncBatchTokenStore = syncBatchTokenStore,
@@ -57,11 +79,12 @@ interface MatrixClientServerApiClientFactory {
             httpClientEngine = httpClientEngine,
             httpClientConfig = httpClientConfig,
         )
+
+    companion object Default : MatrixClientServerApiClientFactory
 }
 
 class MatrixClientServerApiClientImpl(
-    baseUrl: Url? = null,
-    authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
+    private val authProvider: MatrixClientAuthProvider,
     override val eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     override val json: Json = createMatrixEventJson(eventContentSerializerMappings),
     syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
@@ -70,14 +93,37 @@ class MatrixClientServerApiClientImpl(
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixClientServerApiClient {
+    constructor(
+        baseUrl: Url,
+        eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+        json: Json = createMatrixEventJson(eventContentSerializerMappings),
+        syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
+        syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
+        coroutineContext: CoroutineContext = Dispatchers.Default,
+        httpClientEngine: HttpClientEngine? = null,
+        httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
+    ) : this(
+        authProvider = UnauthenticatedMatrixClientAuthProvider(baseUrl),
+        eventContentSerializerMappings = eventContentSerializerMappings,
+        json = json,
+        syncBatchTokenStore = syncBatchTokenStore,
+        syncErrorDelayConfig = syncErrorDelayConfig,
+        coroutineContext = coroutineContext,
+        httpClientEngine = httpClientEngine,
+        httpClientConfig = httpClientConfig
+    )
+
+    override val baseUrl = authProvider.baseUrl
+
     override val baseClient = MatrixClientServerApiBaseClient(
-        baseUrl = baseUrl,
         authProvider = authProvider,
         eventContentSerializerMappings = eventContentSerializerMappings,
         json = json,
         httpClientEngine = httpClientEngine,
         httpClientConfig = httpClientConfig
     )
+
+    override val authProviderType: KClass<out MatrixClientAuthProvider> = authProvider::class
 
     private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
         log.error(exception) { "There was an unexpected exception in sync. This should never happen!!!" }
@@ -86,7 +132,7 @@ class MatrixClientServerApiClientImpl(
         CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
     override val appservice: AppserviceApiClient = AppserviceApiClientImpl(baseClient)
-    override val authentication = AuthenticationApiClientImpl(baseClient, authProvider, coroutineScope)
+    override val authentication = AuthenticationApiClientImpl(baseClient, authProvider)
     override val discovery = DiscoveryApiClientImpl(baseClient)
     override val server = ServerApiClientImpl(baseClient)
     override val user = UserApiClientImpl(baseClient, eventContentSerializerMappings)

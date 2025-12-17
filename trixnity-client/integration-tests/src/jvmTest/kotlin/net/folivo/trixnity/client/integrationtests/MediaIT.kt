@@ -6,12 +6,13 @@ import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.loginWith
-import net.folivo.trixnity.client.media
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.cryptodriver.vodozemac.vodozemac
+import net.folivo.trixnity.client.media.inMemory
+import net.folivo.trixnity.client.store.repository.exposed.exposed
+import net.folivo.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.classicLoginWith
 import net.folivo.trixnity.utils.toByteArrayFlow
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
@@ -39,13 +40,15 @@ class MediaIT {
         ).build()
         database = newDatabase()
 
-        val repositoriesModule1 = createExposedRepositoriesModule(database)
+        val repositoriesModule1 = RepositoriesModule.exposed(database)
 
-        client = MatrixClient.loginWith(
-            baseUrl = baseUrl,
+        client = MatrixClient.create(
             repositoriesModule = repositoriesModule1,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user1", password) }
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user1", password)
+            }.getOrThrow()
         ).getOrThrow()
         client.startSync()
         client.syncState.firstWithTimeout { it == SyncState.RUNNING }

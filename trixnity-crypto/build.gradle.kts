@@ -30,7 +30,7 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityTestUtils)
 
-                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverLibolm)
+                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverVodozemac)
             }
         }
     }

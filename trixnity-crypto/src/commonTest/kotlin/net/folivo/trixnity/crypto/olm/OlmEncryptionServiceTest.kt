@@ -44,9 +44,9 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.crypto.driver.CryptoDriverException
 import net.folivo.trixnity.crypto.driver.keys.Curve25519PublicKey
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.driver.olm.Account
 import net.folivo.trixnity.crypto.driver.olm.Message
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.invoke
 import net.folivo.trixnity.crypto.key.DeviceTrustLevel
 import net.folivo.trixnity.crypto.mocks.OlmEncryptionServiceRequestHandlerMock
@@ -66,7 +66,7 @@ import kotlin.time.Instant.Companion.fromEpochMilliseconds
 
 class OlmEncryptionServiceTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val account = driver.olm.account
     private val message = driver.olm.message

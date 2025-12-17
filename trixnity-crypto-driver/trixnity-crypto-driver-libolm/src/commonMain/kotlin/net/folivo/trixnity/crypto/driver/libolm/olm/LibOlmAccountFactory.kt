@@ -3,7 +3,7 @@ package net.folivo.trixnity.crypto.driver.libolm.olm
 import net.folivo.trixnity.crypto.driver.keys.PickleKey
 import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmPickleKey
 import net.folivo.trixnity.crypto.driver.olm.AccountFactory
-import net.folivo.trixnity.olm.OlmAccount
+import net.folivo.trixnity.libolm.OlmAccount
 
 object LibOlmAccountFactory : AccountFactory {
     override fun invoke(): LibOlmAccount = LibOlmAccount(OlmAccount.create())

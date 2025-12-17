@@ -46,6 +46,11 @@ data class UIAState(
         }
 
         @Serializable
+        data class OAuth2(
+            @SerialName("url") val url: String
+        ) : Parameter
+
+        @Serializable
         data class Unknown(val raw: JsonElement) : Parameter
     }
 }
@@ -62,6 +67,8 @@ class UIAStateParameterMapSerializer : KSerializer<Map<AuthenticationType, Param
                 AuthenticationType.TermsOfService ->
                     decoder.json.decodeFromJsonElement<Parameter.TermsOfService>(value)
 
+                AuthenticationType.OAuth2 -> decoder.json.decodeFromJsonElement<Parameter.OAuth2>(value)
+
                 else -> Parameter.Unknown(value)
             }
         }
@@ -75,6 +82,7 @@ class UIAStateParameterMapSerializer : KSerializer<Map<AuthenticationType, Param
                     put(
                         key.name, when (value) {
                             is Parameter.TermsOfService -> encoder.json.encodeToJsonElement(value)
+                            is Parameter.OAuth2 -> encoder.json.encodeToJsonElement(value)
                             is Parameter.Unknown -> value.raw
                         }
                     )

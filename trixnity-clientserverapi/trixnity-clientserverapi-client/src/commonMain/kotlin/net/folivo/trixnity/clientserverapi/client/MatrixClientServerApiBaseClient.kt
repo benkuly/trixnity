@@ -13,6 +13,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.*
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -28,21 +29,12 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiBaseClient")
 
+@Serializable
 data class LogoutInfo(
     val isSoft: Boolean,
     val isLocked: Boolean,
 )
 
-interface MatrixAuthProvider : AuthProvider {
-    /**
-     * Invoke authentication provider specific behaviour when logging out.
-     *
-     * @return The result if the logout is implemented, null if no logout was implemented by the authentication provider
-     */
-    suspend fun logout(authApiClient: AuthenticationApiClient): Result<Unit>? = null
-
-    companion object
-}
 
 /**
  * Plugin to fully disable auth for requests with AuthRequired set to NEVER
@@ -61,8 +53,7 @@ internal val IsUIA = AttributeKey<Unit>("IsUIA")
 private class UIAInterception(val body: JsonObject, val errorResponse: ErrorResponse?) : RuntimeException()
 
 class MatrixClientServerApiBaseClient(
-    val baseUrl: Url? = null,
-    private val authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
+    private val authProvider: MatrixClientAuthProvider,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     httpClientEngine: HttpClientEngine? = null,
@@ -73,7 +64,7 @@ class MatrixClientServerApiBaseClient(
     httpClientEngine,
     {
         install(DefaultRequest) {
-            if (baseUrl != null) url.takeFrom(baseUrl)
+            url.takeFrom(authProvider.baseUrl)
         }
 
         install(SkipAuthenticationIfDisabled)
@@ -152,10 +143,6 @@ class MatrixClientServerApiBaseClient(
         responseSerializer: KSerializer<RESPONSE>,
         jsonRequest: suspend (body: JsonObject) -> JsonObject
     ): Result<UIA<RESPONSE>> = kotlin.runCatching {
-        if (authProvider is OAuth2AuthProvider) {
-            throw IllegalStateException("Unable to perform UIA request when OAuth 2.0 is used as auth provider")
-        }
-
         val jsonBody = json.encodeToJsonElement(requestSerializer, requestBody)
         require(jsonBody is JsonObject)
         try {
@@ -166,8 +153,7 @@ class MatrixClientServerApiBaseClient(
             val state = json.decodeFromJsonElement<UIAState>(responseObject)
             val getFallbackUrl: (AuthenticationType) -> Url = { authenticationType ->
                 URLBuilder().apply {
-                    val localBaseUlr = baseUrl
-                    if (localBaseUlr != null) takeFrom(localBaseUlr)
+                    takeFrom(authProvider.baseUrl)
                     encodedPath += "_matrix/client/v3/auth/${authenticationType.name}/fallback/web"
                     state.session?.let { parameters.append("session", it) }
                 }.build()

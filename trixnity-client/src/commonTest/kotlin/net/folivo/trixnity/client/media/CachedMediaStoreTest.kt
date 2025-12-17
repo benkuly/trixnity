@@ -27,7 +27,7 @@ class CachedMediaStoreTest : TrixnityBaseTest() {
         )
     )
 
-    private fun TestScope.cut() = InMemoryCachedMediaStore(
+    private fun TestScope.cut() = InMemoryMediaStore(
         coroutineScope = backgroundScope,
         configuration = config,
         clock = testClock,

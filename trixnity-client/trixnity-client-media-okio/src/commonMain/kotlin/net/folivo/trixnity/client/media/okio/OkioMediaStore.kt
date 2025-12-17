@@ -6,9 +6,9 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.MediaStoreModule
 import net.folivo.trixnity.client.media.CachedMediaStore
 import net.folivo.trixnity.client.media.MediaStore
-import net.folivo.trixnity.client.media.PlatformMedia
 import net.folivo.trixnity.utils.*
 import okio.ByteString.Companion.toByteString
 import okio.FileSystem
@@ -20,13 +20,14 @@ import kotlin.time.Clock
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.media.okio.OkioMediaStore")
 
-@Deprecated("switch to createOkioMediaStoreModule", ReplaceWith("createOkioMediaStoreModule(basePath)"))
-class OkioMediaStore(
+internal class OkioMediaStore(
     private val basePath: Path,
     private val fileSystem: FileSystem = defaultFileSystem,
     private val coroutineContext: CoroutineContext = ioContext,
-    private val toByteArray: (suspend (uri: String, media: ByteArrayFlow, coroutineScope: CoroutineScope?, expectedSize: Long?, maxSize: Long?) -> ByteArray?)? = null,
-) : MediaStore {
+    coroutineScope: CoroutineScope,
+    configuration: MatrixClientConfiguration,
+    clock: Clock,
+) : CachedMediaStore(coroutineScope, configuration, clock) {
     private val tmpPath = basePath.resolve("tmp")
     private val downloadsPath = basePath.resolve("downloads")
 
@@ -53,9 +54,7 @@ class OkioMediaStore(
         }
     }
 
-    override suspend fun clearCache() = deleteAll()
-
-    override suspend fun deleteAll() = withContext(coroutineContext) {
+    override suspend fun deleteAllFromStore() = withContext(coroutineContext) {
         fileSystem.deleteRecursively(basePath)
         createDirs()
     }
@@ -138,7 +137,7 @@ class OkioMediaStore(
             expectedSize: Long?,
             maxSize: Long?
         ): ByteArray? =
-            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+            toByteArray(url, delegate, coroutineScope, expectedSize, maxSize)
                 ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 
@@ -171,7 +170,7 @@ class OkioMediaStore(
             expectedSize: Long?,
             maxSize: Long?
         ): ByteArray? =
-            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+            toByteArray(url, delegate, coroutineScope, expectedSize, maxSize)
                 ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 
@@ -186,40 +185,22 @@ class OkioMediaStore(
     }
 }
 
-internal class OkioCachedMediaStore(
+fun MediaStoreModule.Companion.okio(
     basePath: Path,
     fileSystem: FileSystem = defaultFileSystem,
     coroutineContext: CoroutineContext = ioContext,
-    coroutineScope: CoroutineScope,
-    configuration: MatrixClientConfiguration,
-    clock: Clock,
-) : CachedMediaStore(coroutineScope, configuration, clock) {
-    @Suppress("DEPRECATION")
-    private val delegate = OkioMediaStore(basePath, fileSystem, coroutineContext, ::toByteArray)
-
-    override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)
-    override suspend fun addMedia(url: String, content: ByteArrayFlow) = delegate.addMedia(url, content)
-    override suspend fun getMedia(url: String): PlatformMedia? = delegate.getMedia(url)
-    override suspend fun deleteMedia(url: String) = delegate.deleteMedia(url)
-    override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = delegate.changeMediaUrl(oldUrl, newUrl)
-    override suspend fun clearCache() = delegate.clearCache()
-    override suspend fun deleteAll() = delegate.deleteAll()
-}
-
-fun createOkioMediaStoreModule(
-    basePath: Path,
-    fileSystem: FileSystem = defaultFileSystem,
-    coroutineContext: CoroutineContext = ioContext,
-) = module {
-    single<MediaStore> {
-        OkioCachedMediaStore(
-            basePath = basePath,
-            fileSystem = fileSystem,
-            coroutineContext = coroutineContext,
-            coroutineScope = get(),
-            configuration = get(),
-            clock = get()
-        )
+) = MediaStoreModule {
+    module {
+        single<MediaStore> {
+            OkioMediaStore(
+                basePath = basePath,
+                fileSystem = fileSystem,
+                coroutineContext = coroutineContext,
+                coroutineScope = get(),
+                configuration = get(),
+                clock = get()
+            )
+        }
     }
 }
 

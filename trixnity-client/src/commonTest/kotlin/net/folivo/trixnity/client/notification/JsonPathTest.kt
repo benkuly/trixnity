@@ -32,6 +32,7 @@ class JsonPathTest : TrixnityBaseTest() {
 
     @Test
     fun `escape path`() {
+
         jsonPath(
             JsonObject(mapOf("a" to JsonObject(mapOf("b.c" to JsonPrimitive("value"))))),
             "a.b\\.c"

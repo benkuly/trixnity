@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.driver.libolm.pkencryption
 
 import net.folivo.trixnity.crypto.driver.pkencryption.PkDecryptionFactory
-import net.folivo.trixnity.olm.OlmPkDecryption
+import net.folivo.trixnity.libolm.OlmPkDecryption
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
 
 object LibOlmPkDecryptionFactory : PkDecryptionFactory {

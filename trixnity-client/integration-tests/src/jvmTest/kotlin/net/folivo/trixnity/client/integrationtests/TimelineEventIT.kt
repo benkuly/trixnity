@@ -12,7 +12,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
+import net.folivo.trixnity.client.cryptodriver.vodozemac.vodozemac
+import net.folivo.trixnity.client.media.inMemory
 import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.getTimeline
 import net.folivo.trixnity.client.room.getTimelineEventsAround
@@ -21,10 +22,13 @@ import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.eventId
-import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
+import net.folivo.trixnity.client.store.repository.inMemory
 import net.folivo.trixnity.client.store.roomId
+import net.folivo.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.classicLogin
+import net.folivo.trixnity.clientserverapi.client.classicLoginWith
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
@@ -81,25 +85,31 @@ class TimelineEventIT {
         database1 = newDatabase()
         database2 = newDatabase()
 
-        val repositoriesModule1 = createExposedRepositoriesModule(database1)
-        val repositoriesModule2 = createExposedRepositoriesModule(database2)
+        val repositoriesModule1 = RepositoriesModule.exposed(database1)
+        val repositoriesModule2 = RepositoriesModule.exposed(database2)
 
-        client1 = MatrixClient.loginWith(
-            baseUrl = baseUrl,
+        client1 = MatrixClient.create(
             repositoriesModule = repositoriesModule1,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user1", password) }
-        ) {
-            name = "client1"
-        }.getOrThrow()
-        client2 = MatrixClient.loginWith(
-            baseUrl = baseUrl,
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user1", password)
+            }.getOrThrow(),
+            configuration = {
+                name = "client1"
+            },
+        ).getOrThrow()
+        client2 = MatrixClient.create(
             repositoriesModule = repositoriesModule2,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user2", password) }
-        ) {
-            name = "client2"
-        }.getOrThrow()
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user2", password)
+            }.getOrThrow(),
+            configuration = {
+                name = "client2"
+            },
+        ).getOrThrow()
         client1.startSync()
         client2.startSync()
         client1.syncState.firstWithTimeout { it == SyncState.RUNNING }
@@ -235,14 +245,17 @@ class TimelineEventIT {
     fun shouldSaveUnencryptedTimelineEvent(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(180_000) {
             val database = newDatabase()
-            val client = MatrixClient.loginWith(
-                baseUrl = baseUrl,
-                repositoriesModule = createExposedRepositoriesModule(database),
-                mediaStoreModule = createInMemoryMediaStoreModule(),
-                getLoginInfo = { it.register("user", password) }
-            ) {
-                storeTimelineEventContentUnencrypted = true
-            }.getOrThrow()
+            val client = MatrixClient.create(
+                repositoriesModule = RepositoriesModule.exposed(database),
+                mediaStoreModule = MediaStoreModule.inMemory(),
+                cryptoDriverModule = CryptoDriverModule.vodozemac(),
+                authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                    it.register("user", password)
+                }.getOrThrow(),
+                configuration = {
+                    storeTimelineEventContentUnencrypted = true
+                },
+            ).getOrThrow()
             client.startSync()
             val room = client.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
@@ -278,14 +291,17 @@ class TimelineEventIT {
     fun shouldNotSaveUnencryptedTimelineEvent(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(180_000) {
             val database = newDatabase()
-            val client = MatrixClient.loginWith(
-                baseUrl = baseUrl,
-                repositoriesModule = createExposedRepositoriesModule(database),
-                mediaStoreModule = createInMemoryMediaStoreModule(),
-                getLoginInfo = { it.register("user", password) }
-            ) {
-                storeTimelineEventContentUnencrypted = false
-            }.getOrThrow()
+            val client = MatrixClient.create(
+                repositoriesModule = RepositoriesModule.exposed(database),
+                mediaStoreModule = MediaStoreModule.inMemory(),
+                cryptoDriverModule = CryptoDriverModule.vodozemac(),
+                authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                    it.register("user", password)
+                }.getOrThrow(),
+                configuration = {
+                    storeTimelineEventContentUnencrypted = false
+                },
+            ).getOrThrow()
             client.startSync()
             val room = client.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
@@ -336,17 +352,20 @@ class TimelineEventIT {
 
             client2.cancelSync()
 
-            val client3 = MatrixClient.login(
-                baseUrl = URLBuilder(
-                    protocol = URLProtocol.HTTP,
-                    host = synapseDocker.host,
-                    port = synapseDocker.firstMappedPort
-                ).build(),
-                identifier = IdentifierType.User("user1"),
-                password = "user$1passw0rd",
-                repositoriesModule = createInMemoryRepositoriesModule(),
-                mediaStoreModule = createInMemoryMediaStoreModule(),
-                deviceId = "client3"
+            val baseUrl = URLBuilder(
+                protocol = URLProtocol.HTTP,
+                host = synapseDocker.host,
+                port = synapseDocker.firstMappedPort
+            ).build()
+            val client3 = MatrixClient.create(
+                repositoriesModule = RepositoriesModule.inMemory(),
+                mediaStoreModule = MediaStoreModule.inMemory(),
+                cryptoDriverModule = CryptoDriverModule.vodozemac(),
+                authProviderData = MatrixClientAuthProviderData.classicLogin(
+                    baseUrl = baseUrl,
+                    identifier = IdentifierType.User("user1"),
+                    password = "user$1passw0rd",
+                ).getOrThrow(),
             ) {
                 name = "client3"
                 modulesFactories += {

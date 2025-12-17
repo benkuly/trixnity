@@ -22,7 +22,6 @@ internal object ExposedAccount : LongIdTable("account") {
     val backgroundFilterId = text("background_filter_id").nullable()
     val displayName = text("display_name").nullable()
     val avatarUrl = text("avatar_url").nullable()
-    val isLocked = bool("is_locked").nullable()
 }
 
 internal class ExposedAccountRepository : AccountRepository {
@@ -30,7 +29,7 @@ internal class ExposedAccountRepository : AccountRepository {
         ExposedAccount.selectAll().where { ExposedAccount.id eq key }.firstOrNull()?.let {
             Account(
                 olmPickleKey = it[ExposedAccount.olmPickleKey],
-                baseUrl = it[ExposedAccount.baseUrl] ?: throw IllegalStateException("baseUrl not found"),
+                baseUrl = it[ExposedAccount.baseUrl],
                 userId = it[ExposedAccount.userId]?.let { it1 -> UserId(it1) }
                     ?: throw IllegalStateException("userId not found"),
                 deviceId = it[ExposedAccount.deviceId] ?: throw IllegalStateException("deviceId not found"),
@@ -41,12 +40,12 @@ internal class ExposedAccountRepository : AccountRepository {
                 backgroundFilterId = it[ExposedAccount.backgroundFilterId],
                 displayName = it[ExposedAccount.displayName],
                 avatarUrl = it[ExposedAccount.avatarUrl],
-                isLocked = it[ExposedAccount.isLocked] ?: false,
             )
         }
     }
 
     override suspend fun save(key: Long, value: Account): Unit = withExposedWrite {
+        @Suppress("DEPRECATION")
         ExposedAccount.upsert {
             it[id] = key
             it[olmPickleKey] = value.olmPickleKey
@@ -60,7 +59,6 @@ internal class ExposedAccountRepository : AccountRepository {
             it[backgroundFilterId] = value.backgroundFilterId
             it[displayName] = value.displayName
             it[avatarUrl] = value.avatarUrl
-            it[isLocked] = value.isLocked
         }
     }
 

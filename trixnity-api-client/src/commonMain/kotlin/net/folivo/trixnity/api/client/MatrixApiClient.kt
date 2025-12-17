@@ -11,7 +11,6 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.util.AttributeKey
 import kotlinx.io.Source
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -24,7 +23,6 @@ import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializ
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.api.client.MatrixApiClient")
-val disableMatrixErrorHandling = AttributeKey<Boolean>("disableErrorHandling")
 
 open class MatrixApiClient(
     val contentMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
@@ -45,10 +43,6 @@ open class MatrixApiClient(
                 val status = response.status
                 if (status.isSuccess()) return@validateResponse
                 log.trace { "try decode error response" }
-
-                if (response.request.attributes.getOrNull(disableMatrixErrorHandling) == true) {
-                    return@validateResponse
-                }
 
                 val errorResponse = json.decodeErrorResponse(response.bodyAsText())
                 throw MatrixServerException(response.status, errorResponse, null)
@@ -122,6 +116,7 @@ open class MatrixApiClient(
                 when {
                     responseSerializer != null ->
                         json.decodeFromSource(responseSerializer, response.body<Source>())
+
                     endpoint.responseContentType == ContentType.Application.Json ->
                         json.decodeFromSource(serializer(), response.body<Source>())
 

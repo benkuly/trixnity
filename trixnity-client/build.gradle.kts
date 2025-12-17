@@ -23,13 +23,13 @@ kotlin {
                 api(libs.koin.core)
 
                 implementation(libs.oshai.logging)
-                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverLibolm)
             }
         }
         commonTest {
             dependencies {
                 implementation(projects.trixnityTestUtils)
                 implementation(projects.ktorTestUtils)
+                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverVodozemac)
 
                 implementation(libs.ktor.client.mock)
                 implementation(libs.kotest.common)

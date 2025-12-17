@@ -13,9 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add new module trixnity-crypto-driver to allow for multiple crypto implementations (libolm, vodozemac, ...)
 - Add new module trixnity-crypto-driver-libolm for a driver based on libolm
 - Add trixnity-vodozemac implementation
-- Support for the OAuth2-based authentication API since Matrix v1.15 
+- Support for the OAuth2-based authentication API since Matrix v1.15
 - Support for account management deep-linking (MSC4191)
 - Completely new NotificationService
+- Completely new authentication approach
+- Support of OAuth2 login
 
 ### Changed
 

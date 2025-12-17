@@ -12,15 +12,19 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
+import net.folivo.trixnity.client.cryptodriver.vodozemac.vodozemac
+import net.folivo.trixnity.client.media.inMemory
 import net.folivo.trixnity.client.room.firstWithContent
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.membership
-import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
+import net.folivo.trixnity.client.store.repository.inMemory
 import net.folivo.trixnity.client.store.roomId
+import net.folivo.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.classicLogin
+import net.folivo.trixnity.clientserverapi.client.classicLoginWith
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
@@ -28,7 +32,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
@@ -41,8 +44,6 @@ class EncryptionIT {
 
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient
-    private lateinit var database1: Database
-    private lateinit var database2: Database
     private lateinit var baseUrl: Url
     val password = "user$1passw0rd"
 
@@ -57,22 +58,28 @@ class EncryptionIT {
             port = synapseDocker.firstMappedPort
         ).build()
 
-        client1 = MatrixClient.loginWith(
-            baseUrl = baseUrl,
-            repositoriesModule = createInMemoryRepositoriesModule(),
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user1", password) }
-        ) {
-            name = "client1"
-        }.getOrThrow()
-        client2 = MatrixClient.loginWith(
-            baseUrl = baseUrl,
-            repositoriesModule = createInMemoryRepositoriesModule(),
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user2", password) }
-        ) {
-            name = "client2"
-        }.getOrThrow()
+        client1 = MatrixClient.create(
+            repositoriesModule = RepositoriesModule.inMemory(),
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user1", password)
+            }.getOrThrow(),
+            configuration = {
+                name = "client1"
+            },
+        ).getOrThrow()
+        client2 = MatrixClient.create(
+            repositoriesModule = RepositoriesModule.inMemory(),
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user2", password)
+            }.getOrThrow(),
+            configuration = {
+                name = "client2"
+            },
+        ).getOrThrow()
         client1.startSync()
         client2.startSync()
         client1.syncState.firstWithTimeout { it == SyncState.RUNNING }
@@ -155,26 +162,36 @@ class EncryptionIT {
 
 
             val clientFromStoreDatabase = newDatabase()
-            MatrixClient.login(
-                baseUrl = baseUrl,
-                identifier = IdentifierType.User("user1"),
-                password = password,
-                repositoriesModule = createExposedRepositoriesModule(clientFromStoreDatabase),
-                mediaStoreModule = createInMemoryMediaStoreModule(),
-                deviceId = "stored client",
+            MatrixClient.create(
+                repositoriesModule = RepositoriesModule.exposed(clientFromStoreDatabase),
+                mediaStoreModule = MediaStoreModule.inMemory(),
+                cryptoDriverModule = CryptoDriverModule.vodozemac(),
+                authProviderData = MatrixClientAuthProviderData.classicLogin(
+                    baseUrl = baseUrl,
+                    identifier = IdentifierType.User("user1"),
+                    password = password,
+                ).getOrThrow(),
+                configuration = {
+                    name = "stored client"
+                },
             ).getOrThrow().apply {
                 syncOnce().getOrThrow()
                 close()
             }
             val clientFromLogin = run {
                 val database = newDatabase()
-                MatrixClient.login(
-                    baseUrl = baseUrl,
-                    identifier = IdentifierType.User("user1"),
-                    password = password,
-                    repositoriesModule = createExposedRepositoriesModule(database),
-                    mediaStoreModule = createInMemoryMediaStoreModule(),
-                    deviceId = "loggedin client",
+                MatrixClient.create(
+                    repositoriesModule = RepositoriesModule.exposed(database),
+                    mediaStoreModule = MediaStoreModule.inMemory(),
+                    cryptoDriverModule = CryptoDriverModule.vodozemac(),
+                    authProviderData = MatrixClientAuthProviderData.classicLogin(
+                        baseUrl = baseUrl,
+                        identifier = IdentifierType.User("user1"),
+                        password = password,
+                    ).getOrThrow(),
+                    configuration = {
+                        name = "logged in client"
+                    },
                 ).getOrThrow().apply {
                     syncOnce().getOrThrow()
                 }
@@ -191,9 +208,10 @@ class EncryptionIT {
                 """.trimIndent()
                 )
                 val clientFromStore = run {
-                    MatrixClient.fromStore(
-                        repositoriesModule = createExposedRepositoriesModule(clientFromStoreDatabase),
-                        mediaStoreModule = createInMemoryMediaStoreModule(),
+                    MatrixClient.create(
+                        repositoriesModule = RepositoriesModule.exposed(clientFromStoreDatabase),
+                        mediaStoreModule = MediaStoreModule.inMemory(),
+                        cryptoDriverModule = CryptoDriverModule.vodozemac(),
                     ).getOrThrow()
                 }
                 checkNotNull(clientFromStore)
@@ -201,22 +219,26 @@ class EncryptionIT {
                     coroutineScope {
                         launch {
                             repeat(messageCount) { i ->
-                                val senderClient = MatrixClient.login(
-                                    baseUrl = baseUrl,
-                                    identifier = IdentifierType.User("user2"),
-                                    password = password,
-                                    repositoriesModule = createInMemoryRepositoriesModule(),
-                                    mediaStoreModule = createInMemoryMediaStoreModule(),
-                                    deviceId = "sender client ($iteration - $i)",
-                                ) {
-                                    name = "sender client ($iteration - $i)"
-                                }.getOrThrow()
-                                senderClient.syncOnce().getOrThrow() // initial sync
-                                senderClient.startSync()
-                                senderClient.room.sendMessage(roomId) { text("message ($iteration - $i)") }
-                                senderClient.room.waitForOutboxSent()
-                                senderClient.stopSync()
-                                senderClient.closeSuspending()
+                                MatrixClient.create(
+                                    repositoriesModule = RepositoriesModule.inMemory(),
+                                    mediaStoreModule = MediaStoreModule.inMemory(),
+                                    cryptoDriverModule = CryptoDriverModule.vodozemac(),
+                                    authProviderData = MatrixClientAuthProviderData.classicLogin(
+                                        baseUrl = baseUrl,
+                                        identifier = IdentifierType.User("user2"),
+                                        password = password,
+                                    ).getOrThrow(),
+                                    configuration = {
+                                        name = "sender client ($iteration - $i)"
+                                    },
+                                ).getOrThrow().apply {
+                                    syncOnce().getOrThrow() // initial sync
+                                    startSync()
+                                    room.sendMessage(roomId) { text("message ($iteration - $i)") }
+                                    room.waitForOutboxSent()
+                                    stopSync()
+                                    closeSuspending()
+                                }
                             }
                         }
                     }

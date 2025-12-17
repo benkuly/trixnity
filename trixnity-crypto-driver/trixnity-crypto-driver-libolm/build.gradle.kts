@@ -15,7 +15,7 @@ kotlin {
 
         commonMain.dependencies {
             implementation(projects.trixnityCryptoDriver)
-            implementation(projects.trixnityOlm)
+            implementation(projects.trixnityLibolm)
             implementation(projects.trixnityUtils)
         }
 

@@ -2,7 +2,7 @@ package net.folivo.trixnity.crypto.driver.libolm.keys
 
 import net.folivo.trixnity.crypto.driver.keys.Curve25519PublicKey
 import net.folivo.trixnity.crypto.driver.keys.Curve25519SecretKey
-import net.folivo.trixnity.olm.OlmPkDecryption
+import net.folivo.trixnity.libolm.OlmPkDecryption
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import kotlin.jvm.JvmInline
 

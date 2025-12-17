@@ -7,9 +7,9 @@ import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.MediaStoreModule
 import net.folivo.trixnity.client.media.CachedMediaStore
 import net.folivo.trixnity.client.media.MediaStore
-import net.folivo.trixnity.client.media.PlatformMedia
 import net.folivo.trixnity.utils.*
 import okio.ByteString.Companion.toByteString
 import org.koin.dsl.module
@@ -25,11 +25,12 @@ import kotlin.time.Clock
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.media.opfs.OpfsMediaStore")
 
-@Deprecated("switch to createOpfsMediaStoreModule", ReplaceWith("createOpfsMediaStoreModule(basePath)"))
-class OpfsMediaStore(
+internal class OpfsMediaStore(
     private val basePath: FileSystemDirectoryHandle,
-    private val toByteArray: (suspend (uri: String, media: ByteArrayFlow, coroutineScope: CoroutineScope?, expectedSize: Long?, maxSize: Long?) -> ByteArray?)? = null,
-) : MediaStore {
+    coroutineScope: CoroutineScope,
+    configuration: MatrixClientConfiguration,
+    clock: Clock,
+) : CachedMediaStore(coroutineScope, configuration, clock) {
 
     private val basePathLock = KeyedMutex<String>()
     private suspend fun tmpPath() = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
@@ -55,10 +56,8 @@ class OpfsMediaStore(
             GlobalScope.promise { delTmp() }
         }
     }
-
-    override suspend fun clearCache() = deleteAll()
-
-    override suspend fun deleteAll() {
+    
+    override suspend fun deleteAllFromStore() {
         for (entry in basePath.values()) {
             basePath.removeEntry(entry.name, FileSystemRemoveOptions(recursive = true))
         }
@@ -149,7 +148,7 @@ class OpfsMediaStore(
             expectedSize: Long?,
             maxSize: Long?
         ): ByteArray? =
-            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+            toByteArray(url, delegate, coroutineScope, expectedSize, maxSize)
                 ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 
@@ -184,7 +183,7 @@ class OpfsMediaStore(
             expectedSize: Long?,
             maxSize: Long?
         ): ByteArray? =
-            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+            toByteArray(url, delegate, coroutineScope, expectedSize, maxSize)
                 ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 
@@ -202,31 +201,15 @@ class OpfsMediaStore(
     }
 }
 
-internal class OpfsCachedMediaStore(
-    basePath: FileSystemDirectoryHandle,
-    coroutineScope: CoroutineScope,
-    configuration: MatrixClientConfiguration,
-    clock: Clock,
-) : CachedMediaStore(coroutineScope, configuration, clock) {
-    @Suppress("DEPRECATION")
-    private val delegate = OpfsMediaStore(basePath, ::toByteArray)
-
-    override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)
-    override suspend fun addMedia(url: String, content: ByteArrayFlow) = delegate.addMedia(url, content)
-    override suspend fun getMedia(url: String): PlatformMedia? = delegate.getMedia(url)
-    override suspend fun deleteMedia(url: String) = delegate.deleteMedia(url)
-    override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = delegate.changeMediaUrl(oldUrl, newUrl)
-    override suspend fun clearCache() = delegate.clearCache()
-    override suspend fun deleteAll() = delegate.deleteAll()
-}
-
-fun createOpfsMediaStoreModule(basePath: FileSystemDirectoryHandle) = module {
-    single<MediaStore> {
-        OpfsCachedMediaStore(
-            basePath = basePath,
-            coroutineScope = get(),
-            configuration = get(),
-            clock = get()
-        )
+fun MediaStoreModule.Companion.opfs(basePath: FileSystemDirectoryHandle) = MediaStoreModule {
+    module {
+        single<MediaStore> {
+            OpfsMediaStore(
+                basePath = basePath,
+                coroutineScope = get(),
+                configuration = get(),
+                clock = get()
+            )
+        }
     }
 }

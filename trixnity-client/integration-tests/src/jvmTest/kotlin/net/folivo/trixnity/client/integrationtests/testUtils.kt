@@ -14,18 +14,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
+import net.folivo.trixnity.client.cryptodriver.vodozemac.vodozemac
+import net.folivo.trixnity.client.media.inMemory
 import net.folivo.trixnity.client.room.RoomService
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.client.UIA
+import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.AccountType
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import net.folivo.trixnity.utils.nextString
 import org.jetbrains.exposed.sql.Database
-import org.koin.core.module.Module
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
@@ -62,7 +60,7 @@ suspend fun MatrixClientServerApiClient.register(
     username: String? = null,
     password: String = defaultPassword,
     deviceId: String? = null
-): Result<MatrixClient.LoginInfo> {
+): ClassicMatrixClientAuthProviderData {
     val registerStep = authentication.register(
         password = password,
         username = username,
@@ -72,11 +70,10 @@ suspend fun MatrixClientServerApiClient.register(
     ).getOrThrow()
     registerStep.shouldBeInstanceOf<UIA.Step<Register.Response>>()
     val registerResult = registerStep.authenticate(AuthenticationRequest.Dummy).getOrThrow()
-    registerResult.shouldBeInstanceOf<UIA.Success<Register.Response>>()
-    val (userId, createdDeviceId, accessToken, _, refreshToken) = registerResult.value
-    requireNotNull(createdDeviceId)
+        .shouldBeInstanceOf<UIA.Success<Register.Response>>()
+    val (_, _, accessToken, expiresIn, refreshToken) = registerResult.value
     requireNotNull(accessToken)
-    return Result.success(MatrixClient.LoginInfo(userId, createdDeviceId, accessToken, refreshToken))
+    return ClassicMatrixClientAuthProviderData(baseUrl, accessToken, expiresIn, refreshToken)
 }
 
 fun newDatabase() = Database.connect("jdbc:h2:mem:${Random.nextString(22)};DB_CLOSE_DELAY=-1;")
@@ -90,14 +87,16 @@ suspend fun registerAndStartClient(
     name: String,
     username: String = name,
     baseUrl: Url,
-    repositoriesModule: Module,
+    repositoriesModule: RepositoriesModule,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): StartedClient {
-    val client = MatrixClient.loginWith(
-        baseUrl = baseUrl,
+    val client = MatrixClient.create(
         repositoriesModule = repositoriesModule,
-        mediaStoreModule = createInMemoryMediaStoreModule(),
-        getLoginInfo = { it.register(username, defaultPassword, name) },
+        mediaStoreModule = MediaStoreModule.inMemory(),
+        cryptoDriverModule = CryptoDriverModule.vodozemac(),
+        authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+            it.register(username, defaultPassword, name)
+        }.getOrThrow(),
         configuration = {
             this.name = name
             httpClientEngine = javaHttpClientEngine
@@ -113,42 +112,25 @@ suspend fun startClient(
     name: String,
     username: String = name,
     baseUrl: Url,
-    repositoriesModule: Module,
+    repositoriesModule: RepositoriesModule,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): StartedClient {
-    val client = MatrixClient.login(
-        baseUrl = baseUrl,
-        identifier = IdentifierType.User(username),
-        password = defaultPassword,
-        deviceId = name,
+    val client = MatrixClient.create(
         repositoriesModule = repositoriesModule,
-        mediaStoreModule = createInMemoryMediaStoreModule(),
+        mediaStoreModule = MediaStoreModule.inMemory(),
+        cryptoDriverModule = CryptoDriverModule.vodozemac(),
+        authProviderData = MatrixClientAuthProviderData.classicLogin(
+            baseUrl = baseUrl,
+            identifier = IdentifierType.User(username),
+            password = defaultPassword,
+            deviceId = name,
+        ).getOrThrow(),
         configuration = {
             this.name = name
             httpClientEngine = javaHttpClientEngine
             configuration()
         },
     ).getOrThrow()
-    client.startSync()
-    client.syncState.firstWithTimeout { it == SyncState.RUNNING }
-    return StartedClient(client, defaultPassword)
-}
-
-suspend fun startClientFromStore(
-    name: String,
-    repositoriesModule: Module,
-    configuration: MatrixClientConfiguration.() -> Unit = {}
-): StartedClient {
-    val client = MatrixClient.fromStore(
-        repositoriesModule = repositoriesModule,
-        mediaStoreModule = createInMemoryMediaStoreModule(),
-        configuration = {
-            this.name = name
-            httpClientEngine = javaHttpClientEngine
-            configuration()
-        },
-    ).getOrThrow()
-    checkNotNull(client)
     client.startSync()
     client.syncState.firstWithTimeout { it == SyncState.RUNNING }
     return StartedClient(client, defaultPassword)

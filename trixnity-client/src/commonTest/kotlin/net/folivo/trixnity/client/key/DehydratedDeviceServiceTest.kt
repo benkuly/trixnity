@@ -9,7 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.crypto.ClientOlmStore
+import net.folivo.trixnity.client.cryptodriver.ClientOlmStore
 import net.folivo.trixnity.client.mocks.KeyServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
@@ -20,12 +20,7 @@ import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
 import net.folivo.trixnity.clientserverapi.model.devices.GetDehydratedDevice
 import net.folivo.trixnity.clientserverapi.model.devices.GetDehydratedDeviceEvents
 import net.folivo.trixnity.clientserverapi.model.devices.SetDehydratedDevice
-import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.MSC3814
-import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.OlmMessageValue
-import net.folivo.trixnity.core.SessionKeyValue
-import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
@@ -35,7 +30,8 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventC
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.model.keys.Key.*
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.AesHmacSha2EncryptedData
@@ -43,8 +39,8 @@ import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.core.decryptAesHmacSha2
 import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
 import net.folivo.trixnity.crypto.driver.CryptoDriver
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.driver.olm.Message
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
@@ -57,7 +53,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @OptIn(MSC3814::class)
 class DehydratedDeviceServiceTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     override val packageLogLevels: Map<String, Level>
         get() = super.packageLogLevels + mapOf("net.folivo.trixnity.client.store.cache" to Level.INFO)

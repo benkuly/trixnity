@@ -12,17 +12,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
-import net.folivo.trixnity.client.flatten
-import net.folivo.trixnity.client.notification
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.notification.Notification
 import net.folivo.trixnity.client.notification.NotificationService
-import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.mentions
 import net.folivo.trixnity.client.room.message.replace
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.eventId
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
-import net.folivo.trixnity.client.user
+import net.folivo.trixnity.client.store.repository.exposed.exposed
 import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.clientserverapi.model.push.SetPushRule
 import net.folivo.trixnity.core.model.EventId
@@ -64,10 +61,10 @@ class NotificationIT {
         ).build()
         startedClient1 = registerAndStartClient(
             "client1", "user1", baseUrl,
-            createExposedRepositoriesModule(newDatabase())
+            RepositoriesModule.exposed(newDatabase())
         )
         startedClient2 =
-            registerAndStartClient("client2", "user2", baseUrl, createExposedRepositoriesModule(newDatabase()))
+            registerAndStartClient("client2", "user2", baseUrl, RepositoriesModule.exposed(newDatabase()))
     }
 
     @AfterTest

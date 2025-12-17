@@ -22,12 +22,12 @@ class MatrixServerServerApiClientImpl(
     sign: (String) -> Key.Ed25519Key,
     roomVersionStore: RoomVersionStore,
     private val eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
-    private val json: Json = createMatrixEventAndDataUnitJson(roomVersionStore, eventContentSerializerMappings),
+    json: Json = createMatrixEventAndDataUnitJson(roomVersionStore, eventContentSerializerMappings),
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixServerServerApiClient {
     override val baseClient = MatrixApiClient(eventContentSerializerMappings, json, httpClientEngine) {
-        install(MatrixSignatureAuthPlugin(hostname, sign, json))
+        install(MatrixSignatureAuthPlugin(hostname, sign))
         install(MatrixDestinationPlugin(getDelegatedDestination))
         install(ConvertMediaPlugin)
 

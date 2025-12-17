@@ -6,7 +6,8 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import net.folivo.trixnity.client.MatrixClient.LoginState
 import net.folivo.trixnity.client.MatrixClient.LoginState.LOGGED_IN
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.RepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.User
@@ -32,10 +33,10 @@ class LogoutIT {
 
             val startedClient1 = registerAndStartClient(
                 "client1", "user1", getBaseUrl(),
-                createExposedRepositoriesModule(newDatabase())
+                RepositoriesModule.exposed(newDatabase())
             )
             val startedClient2 =
-                startClient("client2", "user1", getBaseUrl(), createExposedRepositoriesModule(newDatabase()))
+                startClient("client2", "user1", getBaseUrl(), RepositoriesModule.exposed(newDatabase()))
 
             withCluePrintln("check client2 is logged in and sync is running") {
                 withTimeout(30_000) {
@@ -75,7 +76,7 @@ class LogoutIT {
             ).build()
             val startedClient = registerAndStartClient(
                 "client1", "user1", baseUrl,
-                createExposedRepositoriesModule(newDatabase())
+                RepositoriesModule.exposed(newDatabase())
             )
             startedClient.client.syncState.firstWithTimeout { it == SyncState.RUNNING }
             startedClient.client.loginState.value shouldBe LOGGED_IN

@@ -6,11 +6,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
+import net.folivo.trixnity.client.cryptodriver.vodozemac.vodozemac
+import net.folivo.trixnity.client.media.inMemory
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
 import net.folivo.trixnity.client.user.canSendEvent
+import net.folivo.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.classicLoginWith
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
@@ -43,13 +46,15 @@ class OutboxIT {
             port = synapseDocker.firstMappedPort
         ).build()
         database = newDatabase()
-        val repositoriesModule = createExposedRepositoriesModule(database)
+        val repositoriesModule = RepositoriesModule.exposed(database)
 
-        client = MatrixClient.loginWith(
-            baseUrl = baseUrl,
+        client = MatrixClient.create(
             repositoriesModule = repositoriesModule,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user", password) }
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user", password)
+            }.getOrThrow()
         ).getOrThrow()
         client.startSync()
         client.syncState.firstWithTimeout { it == SyncState.RUNNING }
@@ -73,13 +78,18 @@ class OutboxIT {
             val room = client.api.room.createRoom().getOrThrow()
             client.user.canSendEvent<RoomMessageEventContent>(room).firstWithTimeout() shouldBe true
 
-            repeat(30) {
-                client.room.sendMessage(room) { text("message $it") }
+            withCluePrintln("send messages") {
+                repeat(30) {
+                    client.room.sendMessage(room) { text("message $it") }
+                }
             }
-
-            client.room.getOutbox().flatten()
-                .firstWithTimeout(60.seconds) { outbox -> outbox.none { it.sentAt != null } }
-            client.room.getOutbox().flatten().firstWithTimeout(90.seconds) { it.isEmpty() }
+            withCluePrintln("wait for sent") {
+                client.room.getOutbox().flatten()
+                    .firstWithTimeout(60.seconds) { outbox -> outbox.none { it.sentAt != null } }
+            }
+            withCluePrintln("wait for empty outbox") {
+                client.room.getOutbox().flatten().firstWithTimeout(90.seconds) { it.isEmpty() }
+            }
             client.closeSuspending()
 
             val exposedRoomOutbox = object : Table("room_outbox_2") {
@@ -87,8 +97,10 @@ class OutboxIT {
                 val roomId = varchar("roomId", length = 255)
                 override val primaryKey = PrimaryKey(roomId, transactionId)
             }
-            newSuspendedTransaction(Dispatchers.IO, database) {
-                exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()
+            withCluePrintln("check empty database") {
+                newSuspendedTransaction(Dispatchers.IO, database) {
+                    exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()
+                }
             }
         }
     }

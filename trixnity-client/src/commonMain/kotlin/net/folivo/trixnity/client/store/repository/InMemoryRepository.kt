@@ -61,6 +61,8 @@ abstract class InMemoryMapRepository<K1, K2, V> : MapRepository<K1, K2, V> {
 }
 
 class InMemoryAccountRepository : AccountRepository, InMemoryMinimalRepository<Long, Account>()
+class InMemoryAuthenticationRepository : AuthenticationRepository, InMemoryMinimalRepository<Long, Authentication>()
+
 class InMemoryServerDataRepository : ServerDataRepository, InMemoryMinimalRepository<Long, ServerData>()
 class InMemoryOutdatedKeysRepository : OutdatedKeysRepository, InMemoryMinimalRepository<Long, Set<UserId>>()
 class InMemoryDeviceKeysRepository : DeviceKeysRepository,

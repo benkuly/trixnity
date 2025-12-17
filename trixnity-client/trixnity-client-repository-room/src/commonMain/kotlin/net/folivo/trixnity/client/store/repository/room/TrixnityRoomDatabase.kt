@@ -5,6 +5,7 @@ import androidx.room.*
 @Database(
     entities = [
         RoomAccount::class,
+        RoomAuthentication::class,
         RoomServerData::class,
         RoomCrossSigningKeys::class,
         RoomDeviceKeys::class,
@@ -36,10 +37,11 @@ import androidx.room.*
         RoomNotificationUpdate::class,
         RoomMigration::class,
     ],
-    version = 5, // tick this value when any entity classes change
+    version = 6, // tick this value when any entity classes change
     autoMigrations = [
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
+        AutoMigration(from = 5, to = 6),
     ],
     exportSchema = true,
 )
@@ -55,6 +57,7 @@ import androidx.room.*
 @ConstructedBy(TrixnityRoomDatabaseConstructor::class)
 abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun account(): AccountDao
+    abstract fun authentication(): AuthenticationDao
     abstract fun serverData(): ServerDataDao
     abstract fun crossSigningKeys(): CrossSigningKeysDao
     abstract fun deviceKeys(): DeviceKeysDao

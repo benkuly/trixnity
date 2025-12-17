@@ -3,7 +3,7 @@ package net.folivo.trixnity.crypto.driver.libolm.sas
 import net.folivo.trixnity.crypto.driver.keys.Curve25519PublicKey
 import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519PublicKey
 import net.folivo.trixnity.crypto.driver.sas.Sas
-import net.folivo.trixnity.olm.OlmSAS
+import net.folivo.trixnity.libolm.OlmSAS
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 

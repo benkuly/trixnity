@@ -2,7 +2,7 @@ package net.folivo.trixnity.crypto.driver.libolm.pkencryption
 
 import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519PublicKey
 import net.folivo.trixnity.crypto.driver.pkencryption.PkMessage
-import net.folivo.trixnity.olm.OlmPkMessage
+import net.folivo.trixnity.libolm.OlmPkMessage
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import kotlin.jvm.JvmInline
 
