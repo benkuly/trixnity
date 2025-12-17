@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cache cancellation issues (full or mapping cache)
 - Fixed calculation of emojis for verification
 - Fixed gradle warnings
+- Fixed gradle warnings(even more fixes)
 - Fix joining upgraded room, when not invited to it
 
 ### Security
