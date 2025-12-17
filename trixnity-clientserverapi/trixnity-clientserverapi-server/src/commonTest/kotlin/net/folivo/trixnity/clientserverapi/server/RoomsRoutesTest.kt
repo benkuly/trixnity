@@ -1978,7 +1978,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                 GetHierarchy.Response(
                     nextBatch = "next_batch_token",
                     rooms = listOf(
-                        GetHierarchy.Response.PublicRoomsChunk(
+                        GetHierarchy.Response.SpaceHierarchyRoomsChunk(
                             avatarUrl = "mxc://example.org/abcdef",
                             canonicalAlias = RoomAliasId("#general:example.org"),
                             childrenState = setOf(
@@ -2082,6 +2082,54 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.timestamp shouldBe 24
                 it.endpoint.dir shouldBe TimestampToEvent.Direction.FORWARDS
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetSummary() = testApplication {
+        initCut()
+        everySuspend { handlerMock.getSummary(any()) }
+            .returns(
+                GetSummary.Response(
+                    avatarUrl = "mxc://example.org/abcdef",
+                    canonicalAlias = RoomAliasId("#general:example.org"),
+                    guestCanJoin = false,
+                    joinRule = JoinRulesEventContent.JoinRule.Public,
+                    name = "The First Space",
+                    joinedMembersCount = 42,
+                    roomId = RoomId("!space:example.org"),
+                    roomType = CreateEventContent.RoomType.Space,
+                    topic = "No other spaces were created first, ever",
+                    worldReadable = true
+                )
+            )
+        val response =
+            client.get("/_matrix/client/v1/room_summary/!room:server?via=server1.com&via=server2.com") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+               {
+                 "avatar_url": "mxc://example.org/abcdef",
+                 "canonical_alias": "#general:example.org",
+                 "guest_can_join": false,
+                 "join_rule": "public",
+                 "name": "The First Space",
+                 "num_joined_members": 42,
+                 "room_id": "!space:example.org",
+                 "room_type": "m.space",
+                 "topic": "No other spaces were created first, ever",
+                 "world_readable": true
+               }
+            """.trimToFlatJson()
+        }
+        verifySuspend {
+            handlerMock.getSummary(assert {
+                it.endpoint.roomIdOrRoomAliasId shouldBe "!room:server"
+                it.endpoint.via shouldBe setOf("server1.com", "server2.com")
             })
         }
     }
