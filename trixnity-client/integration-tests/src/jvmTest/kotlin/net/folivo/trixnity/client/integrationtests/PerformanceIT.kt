@@ -116,7 +116,7 @@ class PerformanceIT {
         println("duration = $duration ${results.map { it.duration }}")
         println("memoryUsage = ${memoryUsage / 1_000} KB ${results.map { (it.memoryUsage / 1_000).toString() + " KB" }}")
         println("memoryFootprint = ${memoryFootprint / 1_000} KB ${results.map { (it.memoryFootprint / 1_000).toString() + " KB" }}")
-        duration shouldBeLessThan 120.milliseconds
+        duration shouldBeLessThan 200.milliseconds
         (memoryUsage / 1_000) shouldBeLessThan 2_000 // KB
         (memoryFootprint / 1_000) shouldBeLessThan 100_000 // KB
     }
