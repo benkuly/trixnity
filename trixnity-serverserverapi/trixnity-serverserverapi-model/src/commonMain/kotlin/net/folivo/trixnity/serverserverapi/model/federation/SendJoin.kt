@@ -32,7 +32,7 @@ data class SendJoin(
         mappings: EventContentSerializerMappings,
         json: Json,
         value: Signed<PersistentStateDataUnit<MemberEventContent>, String>?
-    ): KSerializer<Signed<PersistentStateDataUnit<MemberEventContent>, String>>? {
+    ): KSerializer<Signed<PersistentStateDataUnit<MemberEventContent>, String>> {
         @Suppress("UNCHECKED_CAST")
         val serializer = requireNotNull(json.serializersModule.getContextual(PersistentStateDataUnit::class))
                 as KSerializer<PersistentStateDataUnit<MemberEventContent>>
@@ -45,8 +45,6 @@ data class SendJoin(
         val authChain: List<SignedPersistentDataUnit<*>>,
         @SerialName("event")
         val event: Signed<@Contextual PersistentStateDataUnit<MemberEventContent>, String>? = null,
-        @SerialName("origin")
-        val origin: String,
         @SerialName("state")
         val state: List<SignedPersistentStateDataUnit<*>>,
     )

@@ -499,7 +499,6 @@ class FederationApiClientTest : TrixnityBaseTest() {
                                   }
                                 }
                               },
-                              "origin": "matrix.org",
                               "state": []
                             }
                         """.trimIndent(),
@@ -570,7 +569,6 @@ class FederationApiClientTest : TrixnityBaseTest() {
                     )
                 )
             ),
-            origin = "matrix.org",
             state = listOf()
         )
     }
