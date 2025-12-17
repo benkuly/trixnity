@@ -960,7 +960,7 @@ class RoomsApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/join/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/join/!room:server?via=server1.com&via=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1013,7 +1013,7 @@ class RoomsApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/join/%23alias:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/join/%23alias:server?via=server1.com&via=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1066,7 +1066,7 @@ class RoomsApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/knock/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/knock/!room:server?via=server1.com&via=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1100,7 +1100,7 @@ class RoomsApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/knock/%23alias:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/knock/%23alias:server?via=server1.com&via=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
