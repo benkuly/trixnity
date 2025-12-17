@@ -37,12 +37,12 @@ private fun ByteArrayFlow.limitedSize(maxSize: Long): ByteArrayFlow = flow {
     var size = 0
     collect { nextBytes ->
         size += nextBytes.size
-        if (size > maxSize) throw MaxByteArrayFlowSizeException
+        if (size > maxSize) throw MaxByteArrayFlowSizeException()
         else emit(nextBytes)
     }
 }
 
-private object MaxByteArrayFlowSizeException : RuntimeException()
+private class MaxByteArrayFlowSizeException : RuntimeException()
 
 @Deprecated("use case missing, use toByteArray(maxSize: Long) instead")
 fun ByteArrayFlow.takeBytes(size: Int): ByteArrayFlow = flow {
