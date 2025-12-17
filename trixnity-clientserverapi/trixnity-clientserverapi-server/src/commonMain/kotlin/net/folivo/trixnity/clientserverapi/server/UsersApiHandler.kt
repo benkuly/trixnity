@@ -70,4 +70,9 @@ interface UsersApiHandler {
      *  @see [SearchUsers]
      */
     suspend fun searchUsers(context: MatrixEndpointContext<SearchUsers, SearchUsers.Request, SearchUsers.Response>): SearchUsers.Response
+
+    /**
+     * @see [ReportUser]
+     */
+    suspend fun reportUser(context: MatrixEndpointContext<ReportUser, ReportUser.Request, Unit>)
 }

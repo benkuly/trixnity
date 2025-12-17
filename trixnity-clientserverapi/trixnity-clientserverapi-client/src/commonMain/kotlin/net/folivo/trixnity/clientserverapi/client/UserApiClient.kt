@@ -153,6 +153,15 @@ interface UserApiClient {
         limit: Long? = 10,
         asUserId: UserId? = null,
     ): Result<SearchUsers.Response>
+
+    /**
+     * @see [ReportUser]
+     */
+    suspend fun reportUser(
+        userId: UserId,
+        reason: String,
+        asUserId: UserId? = null
+    ): Result<Unit>
 }
 
 class UserApiClientImpl(
@@ -304,6 +313,13 @@ class UserApiClientImpl(
         baseClient.request(SearchUsers(asUserId), SearchUsers.Request(searchTerm, limit)) {
             header(HttpHeaders.AcceptLanguage, acceptLanguage)
         }
+
+    override suspend fun reportUser(
+        userId: UserId,
+        reason: String,
+        asUserId: UserId?
+    ): Result<Unit> =
+        baseClient.request(ReportUser(userId, asUserId), ReportUser.Request(reason))
 }
 
 /**

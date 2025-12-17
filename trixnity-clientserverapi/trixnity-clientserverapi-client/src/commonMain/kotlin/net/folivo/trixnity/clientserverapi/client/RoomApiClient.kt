@@ -460,7 +460,7 @@ interface RoomApiClient {
      */
     suspend fun reportRoom(
         roomId: RoomId,
-        reason: String? = null,
+        reason: String,
         asUserId: UserId? = null
     ): Result<Unit>
 
@@ -933,7 +933,7 @@ class RoomApiClientImpl(
 
     override suspend fun reportRoom(
         roomId: RoomId,
-        reason: String?,
+        reason: String,
         asUserId: UserId?
     ): Result<Unit> =
         baseClient.request(ReportRoom(roomId, asUserId), ReportRoom.Request(reason))

@@ -505,7 +505,6 @@ class FederationRoutesTest : TrixnityBaseTest() {
                             )
                         )
                     ),
-                    origin = "matrix.org",
                     state = listOf()
                 )
             )
@@ -568,7 +567,6 @@ class FederationRoutesTest : TrixnityBaseTest() {
                           }
                         }
                       },
-                      "origin": "matrix.org",
                       "state": []
                     }
                 """.trimToFlatJson()

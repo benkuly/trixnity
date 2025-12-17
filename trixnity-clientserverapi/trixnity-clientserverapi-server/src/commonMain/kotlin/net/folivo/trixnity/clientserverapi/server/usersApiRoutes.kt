@@ -23,4 +23,5 @@ internal fun Route.usersApiRoutes(
     matrixEndpoint(json, contentMappings, handler::getAccountData)
     matrixEndpoint(json, contentMappings, handler::setAccountData)
     matrixEndpoint(json, contentMappings, handler::searchUsers)
+    matrixEndpoint(json, contentMappings, handler::reportUser)
 }
