@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.media.opfs
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import js.iterable.AsyncIterator
+import js.iterable.asFlow
 import js.iterable.iterator
 import js.typedarrays.Uint8Array
 import js.typedarrays.toByteArray
@@ -41,7 +42,7 @@ class OpfsMediaStoreTest {
             throwable.printStackTrace()
             throw throwable
         } finally {
-            for (entry in basePath.values()) {
+            basePath.values().asFlow().collect { entry ->
                 basePath.removeEntry(entry.name, FileSystemRemoveOptions(recursive = true))
             }
             coroutineScope.cancel()
@@ -205,7 +206,7 @@ class OpfsMediaStoreTest {
 
     private suspend fun <V> AsyncIterator<V>.toList(): List<V> {
         val list = mutableListOf<V>()
-        for (entry in this) {
+        asFlow().collect { entry ->
             list.add(entry)
         }
         return list.toList()

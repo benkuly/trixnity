@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make trixnity-olm API accept null pickle keys
 - Add StringWrapper's for more type safety
 - Switch to trixnity-crypto-driver interface instead trixnity-olm
+- Bump Dependencies (Kotlin 2.2.21)
 
 ### Deprecated
 
