@@ -47,6 +47,7 @@ include(
 include("trixnity-applicationservice")
 include("trixnity-test-utils")
 include("ktor-test-utils")
+include("idb-schemaexporter")
 
 buildCache {
     val buildCacheUrl = System.getenv("GRADLE_BUILD_CACHE_URL")

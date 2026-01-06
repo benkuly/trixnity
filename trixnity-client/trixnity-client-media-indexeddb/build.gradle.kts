@@ -25,6 +25,8 @@ kotlin {
         jsTest {
             dependencies {
                 implementation(projects.trixnityTestUtils)
+                implementation(projects.idbSchemaexporter)
+                implementation(libs.kotest.assertions.json)
             }
         }
     }
