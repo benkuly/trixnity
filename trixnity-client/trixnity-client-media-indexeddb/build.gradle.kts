@@ -17,9 +17,7 @@ kotlin {
         jsMain {
             dependencies {
                 implementation(projects.trixnityClient)
-
-                api(libs.juulLabs.indexeddb)
-                implementation(libs.oshai.logging)
+                implementation(projects.trixnityIdbUtils)
             }
         }
         jsTest {

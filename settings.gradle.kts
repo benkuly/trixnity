@@ -46,6 +46,7 @@ include(
 )
 include("trixnity-applicationservice")
 include("trixnity-test-utils")
+include("trixnity-idb-utils")
 include("ktor-test-utils")
 include("idb-schemaexporter")
 
