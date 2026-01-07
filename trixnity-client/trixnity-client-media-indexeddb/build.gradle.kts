@@ -17,14 +17,14 @@ kotlin {
         jsMain {
             dependencies {
                 implementation(projects.trixnityClient)
-
-                api(libs.juulLabs.indexeddb)
-                implementation(libs.oshai.logging)
+                implementation(projects.trixnityIdbUtils)
             }
         }
         jsTest {
             dependencies {
                 implementation(projects.trixnityTestUtils)
+                implementation(projects.idbSchemaexporter)
+                implementation(libs.kotest.assertions.json)
             }
         }
     }

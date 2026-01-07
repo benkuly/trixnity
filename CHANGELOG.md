@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Completely new authentication approach
 - Support of OAuth2 login
 - Support for Matrix 1.14
+- Check IDB Schema with Tests
 
 ### Changed
 
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add StringWrapper's for more type safety
 - Switch to trixnity-crypto-driver interface instead trixnity-olm
 - Bump Dependencies (Kotlin 2.2.21)
+- Implement IndexedDBMediaStore without juullabs indexeddb
 
 ### Deprecated
 
