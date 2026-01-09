@@ -45,10 +45,13 @@ class AccountStoreTest : TrixnityBaseTest() {
 
         cut.getAccount().shouldNotBeNull().run {
             olmPickleKey shouldBe null
+            @Suppress("DEPRECATION")
             baseUrl shouldBe "http://localhost"
             userId shouldBe UserId("user", "server")
             deviceId shouldBe "device"
+            @Suppress("DEPRECATION")
             accessToken shouldBe "access_token"
+            @Suppress("DEPRECATION")
             refreshToken shouldBe "refresh_token"
             syncBatchToken shouldBe "sync_token"
             filterId shouldBe "filter_id"

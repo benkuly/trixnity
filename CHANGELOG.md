@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed gradle warnings
 - Fixed gradle warnings(even more fixes)
 - Fix joining upgraded room, when not invited to it
+- Fix vodozemac library not found on silicon macs
 
 ### Security
 
