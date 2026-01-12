@@ -23,6 +23,8 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.block.EventContentBlock
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.RelationType
@@ -687,6 +689,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                 it.endpoint.type shouldBe "m.unknown"
                 it.requestBody shouldBe UnknownEventContent(
                     JsonObject(mapOf("dino" to JsonPrimitive("unicorn"))),
+                    EventContentBlocks(EventContentBlock.Unknown("dino", JsonPrimitive("unicorn"))),
                     "m.unknown"
                 )
             })
@@ -750,6 +753,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                 it.endpoint.type shouldBe "m.unknown"
                 it.requestBody shouldBe UnknownEventContent(
                     JsonObject(mapOf("dino" to JsonPrimitive("unicorn"))),
+                    EventContentBlocks(EventContentBlock.Unknown("dino", JsonPrimitive("unicorn"))),
                     "m.unknown"
                 )
             })

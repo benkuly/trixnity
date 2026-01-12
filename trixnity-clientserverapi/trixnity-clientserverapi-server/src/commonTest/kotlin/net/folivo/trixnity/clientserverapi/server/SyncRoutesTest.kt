@@ -28,6 +28,8 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.block.EventContentBlock
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.Presence.ONLINE
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
@@ -99,6 +101,12 @@ class SyncRoutesTest : TrixnityBaseTest() {
                             GlobalAccountDataEvent(
                                 content = UnknownEventContent(
                                     JsonObject(mapOf("custom_config_key" to JsonPrimitive("custom_config_value"))),
+                                    EventContentBlocks(
+                                        EventContentBlock.Unknown(
+                                            "custom_config_key",
+                                            JsonPrimitive("custom_config_value")
+                                        )
+                                    ),
                                     eventType = "org.example.custom.config"
                                 ),
                             ),
@@ -191,6 +199,12 @@ class SyncRoutesTest : TrixnityBaseTest() {
                                         RoomAccountDataEvent(
                                             content = UnknownEventContent(
                                                 JsonObject(mapOf("custom_config_key" to JsonPrimitive("custom_config_value"))),
+                                                EventContentBlocks(
+                                                    EventContentBlock.Unknown(
+                                                        "custom_config_key",
+                                                        JsonPrimitive("custom_config_value")
+                                                    )
+                                                ),
                                                 eventType = "org.example.custom.config"
                                             ),
                                             roomId = RoomId("!726s6s6q:example.com")

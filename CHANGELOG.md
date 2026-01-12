@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Completely new authentication approach
 - Support of OAuth2 login
 - Support for Matrix 1.14
+- Support extensible events
 
 ### Changed
 

@@ -20,6 +20,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -114,7 +115,7 @@ class RoomStateStoreTest : TrixnityBaseTest() {
             RoomStateRepositoryKey(roomId, "m.room.member"),
             "@bob:server",
             StateEvent(
-                UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
+                UnknownEventContent(JsonObject(mapOf()), EventContentBlocks(), "m.room.member"),
                 EventId("\$event"),
                 UserId("alice", "server"),
                 roomId,
@@ -140,7 +141,7 @@ class RoomStateStoreTest : TrixnityBaseTest() {
         )
         cut.save(
             StateEvent(
-                UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
+                UnknownEventContent(JsonObject(mapOf()), EventContentBlocks(), "m.room.member"),
                 EventId("\$event"),
                 UserId("alice", "server"),
                 roomId,
@@ -195,7 +196,7 @@ class RoomStateStoreTest : TrixnityBaseTest() {
     fun `getByStateKey » without scope » ignore unknown state event`() = runTest {
         cut.save(
             StateEvent(
-                UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
+                UnknownEventContent(JsonObject(mapOf()), EventContentBlocks(), "m.room.member"),
                 EventId("\$event"),
                 UserId("alice", "server"),
                 roomId,
@@ -215,7 +216,7 @@ class RoomStateStoreTest : TrixnityBaseTest() {
         result.first { it != null }
         cut.save(
             StateEvent(
-                UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
+                UnknownEventContent(JsonObject(mapOf()), EventContentBlocks(), "m.room.member"),
                 EventId("\$event"),
                 UserId("alice", "server"),
                 roomId,

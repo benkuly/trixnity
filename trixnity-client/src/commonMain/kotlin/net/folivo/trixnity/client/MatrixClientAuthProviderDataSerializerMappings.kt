@@ -33,8 +33,11 @@ inline fun <reified C : MatrixClientAuthProviderData> MatrixClientAuthProviderDa
     mappings.add(MatrixClientAuthProviderDataSerializerMapping(id, C::class, serializer<C>()))
 }
 
-fun MatrixClientAuthProviderDataSerializerMappings.Companion.default() =
+private val defaultMatrixClientAuthProviderDataSerializerMappings =
     createMatrixClientAuthProviderSerializerMappings {
         of<ClassicMatrixClientAuthProviderData>("classic")
         of<OAuth2MatrixClientAuthProviderData>("oAuth2")
     }
+
+val MatrixClientAuthProviderDataSerializerMappings.Companion.default: MatrixClientAuthProviderDataSerializerMappings
+    get() = defaultMatrixClientAuthProviderDataSerializerMappings

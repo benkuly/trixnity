@@ -3,6 +3,7 @@ package net.folivo.trixnity.core.serialization.events
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.core.model.events.EventContent
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 
 fun createEventSerializersModule(
     mappings: EventContentSerializerMappings,
@@ -25,6 +26,7 @@ fun createEventSerializersModule(
     val decryptedMegolmEventSerializer = DecryptedMegolmEventSerializer(mappings.message)
     val globalAccountDataEventSerializer = GlobalAccountDataEventSerializer(mappings.globalAccountData)
     val roomAccountDataEventSerializer = RoomAccountDataEventSerializer(mappings.roomAccountData)
+    val eventContentBlocksSerializer = EventContentBlocks.Serializer(mappings.block)
     val eventTypeSerializer = EventTypeSerializer(mappings)
     return SerializersModule {
         contextual(contextualMessageEventContentSerializer)
@@ -41,6 +43,7 @@ fun createEventSerializersModule(
         contextual(decryptedMegolmEventSerializer)
         contextual(globalAccountDataEventSerializer)
         contextual(roomAccountDataEventSerializer)
+        contextual(eventContentBlocksSerializer)
         contextual(eventTypeSerializer)
     }
 }

@@ -16,6 +16,8 @@ import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUn
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
+import net.folivo.trixnity.core.model.events.block.EventContentBlock
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
 import net.folivo.trixnity.core.serialization.trimToFlatJson
@@ -408,7 +410,11 @@ class PersistentDataUnitSerializerTest : TrixnityBaseTest() {
         """.trimIndent()
         jsonV3.decodeFromString(serializer, input) shouldBe PersistentMessageDataUnitV3(
             authEvents = listOf(),
-            content = UnknownEventContent(buildJsonObject { put("dino", JsonPrimitive("unicorn")) }, "o"),
+            content = UnknownEventContent(
+                buildJsonObject { put("dino", JsonPrimitive("unicorn")) },
+                EventContentBlocks(EventContentBlock.Unknown("dino", JsonPrimitive("unicorn"))),
+                "o"
+            ),
             depth = 12u,
             hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
             originTimestamp = 1404838188000,

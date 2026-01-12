@@ -33,6 +33,8 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
+import net.folivo.trixnity.core.model.events.block.EventContentBlock
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -379,6 +381,7 @@ abstract class RepositoryTestSuite(
         val accountDataEvent2 = GlobalAccountDataEvent(
             UnknownEventContent(
                 JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                EventContentBlocks(EventContentBlock.Unknown("value", JsonPrimitive("unicorn"))),
                 "org.example.mynamespace"
             ),
             ""
@@ -386,6 +389,7 @@ abstract class RepositoryTestSuite(
         val accountDataEvent3 = GlobalAccountDataEvent(
             UnknownEventContent(
                 JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                EventContentBlocks(EventContentBlock.Unknown("value", JsonPrimitive("unicorn"))),
                 "org.example.mynamespace.2"
             ),
             ""
@@ -705,6 +709,7 @@ abstract class RepositoryTestSuite(
         val accountDataEvent2 = RoomAccountDataEvent(
             UnknownEventContent(
                 JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                EventContentBlocks(EventContentBlock.Unknown("value", JsonPrimitive("unicorn"))),
                 "org.example.mynamespace"
             ),
             roomId2,

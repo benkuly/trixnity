@@ -14,7 +14,7 @@ You can encrypt and decrypt events by using `MatrixClient.roomEventEncryptionSer
 Override the `modules` in `MatrixClientConfiguration`. For example:
 
 ```kotlin
-matrixClient.login(...){
+matrixClient.create(...){
     modules = createTrixnityBotModules()
 }
 ```
