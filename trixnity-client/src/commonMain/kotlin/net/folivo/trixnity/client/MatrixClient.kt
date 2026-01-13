@@ -71,11 +71,6 @@ interface MatrixClient : AutoCloseable {
         LOCKED,
     }
 
-    data class LoginInfo(
-        val userId: UserId,
-        val deviceId: String,
-    )
-
     suspend fun logout(): Result<Unit>
 
     suspend fun clearCache(): Result<Unit>

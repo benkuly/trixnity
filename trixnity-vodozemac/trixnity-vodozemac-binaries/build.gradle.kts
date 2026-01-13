@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.Copy
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.properties.hasProperty
@@ -84,6 +85,7 @@ fun registerLibvodozemacLocal(binaries: VodozemacBinaries.Local): Directories<*>
     tasks.registering(CopyTar::class) {
         file = file("${binaries.directory}/libvodozemac-jvm-jni.tar.gz")
         outputDir = layout.buildDirectory.dir("binaries/local/jvm")
+        subdirectory = "natives"
     }
 
     val downloadLibvodozemacAndroidJniArchive by
@@ -126,6 +128,7 @@ fun registerLibvodozemacRemote(binaries: VodozemacBinaries.Remote): Directories<
         outputDir = layout.buildDirectory
             .dir("binaries/remote/jvm")
             .flatMap { it.dir(binaries.hashes.jvmJni) }
+        subdirectory = "natives"
     }
 
     val downloadLibvodozemacAndroidJniArchive by
@@ -285,6 +288,10 @@ abstract class DownloadAndUnpack @Inject constructor(
     @get:Input
     val sha256: Property<String> = objects.property<String>()
 
+    @get:Input
+    @get:Optional
+    val subdirectory: Property<String> = objects.property<String>()
+
 
     @TaskAction
     fun run() {
@@ -321,7 +328,9 @@ abstract class DownloadAndUnpack @Inject constructor(
         }
 
         fileSystemOperations.copy {
-            from(project.tarTree(tmpFile))
+            from(project.tarTree(tmpFile)) {
+                subdirectory.orNull?.also { into(it) }
+            }
             into(outputDirectory)
         }
     }
@@ -335,10 +344,16 @@ abstract class CopyTar @Inject constructor(
     @get:InputFile
     val file: RegularFileProperty = objects.fileProperty()
 
+    @get:Input
+    @get:Optional
+    val subdirectory: Property<String> = objects.property<String>()
+
     @TaskAction
     fun run() {
         fileSystemOperations.copy {
-            from(project.tarTree(file))
+            from(project.tarTree(file)) {
+                subdirectory.orNull?.also { into(it) }
+            }
             into(outputDir)
         }
     }
