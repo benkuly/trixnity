@@ -131,7 +131,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
                 else -> {
                     RelatesTo.Unknown(
                         jsonObject,
-                        EventId((jsonObject["event_id"] as? JsonPrimitive)?.content ?: ""),
+                        EventId((jsonObject["event_id"] as? JsonPrimitive)?.contentOrNull ?: ""),
                         relationType?.name.let { RelationType.Unknown(it ?: "") },
                         replyTo,
                     )
@@ -140,7 +140,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         } catch (_: Exception) {
             RelatesTo.Unknown(
                 jsonObject,
-                EventId((jsonObject["event_id"] as? JsonPrimitive)?.content ?: ""),
+                EventId((jsonObject["event_id"] as? JsonPrimitive)?.contentOrNull ?: ""),
                 relationType?.name.let { RelationType.Unknown(it ?: "") },
                 replyTo,
             )

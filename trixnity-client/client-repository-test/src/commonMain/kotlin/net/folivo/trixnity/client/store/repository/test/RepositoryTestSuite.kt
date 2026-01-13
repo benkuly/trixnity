@@ -24,6 +24,8 @@ import net.folivo.trixnity.client.store.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.clientserverapi.client.LogoutInfo
+import net.folivo.trixnity.clientserverapi.model.users.Profile
+import net.folivo.trixnity.clientserverapi.model.users.ProfileField
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -110,8 +112,7 @@ abstract class RepositoryTestSuite(
                 syncBatchToken = null,
                 filterId = null,
                 backgroundFilterId = null,
-                displayName = null,
-                avatarUrl = null,
+                profile = null,
             )
         )
     }
@@ -330,8 +331,10 @@ abstract class RepositoryTestSuite(
             syncBatchToken = "syncToken",
             filterId = "filterId",
             backgroundFilterId = "backgroundFilterId",
-            displayName = "displayName",
-            avatarUrl = "mxc://localhost/123456",
+            profile = Profile(
+                ProfileField.DisplayName("displayName"),
+                ProfileField.AvatarUrl("mxc://localhost/123456")
+            ),
         )
         rtm.writeTransaction {
             cut.save(1, account)

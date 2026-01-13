@@ -10,6 +10,8 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.users.*
 import net.folivo.trixnity.core.SessionKeyValue
@@ -59,9 +61,9 @@ class UsersRoutesTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun shouldSetDisplayName() = testApplication {
+    fun shouldSetProfileField() = testApplication {
         initCut()
-        everySuspend { handlerMock.setDisplayName(any()) }
+        everySuspend { handlerMock.setProfileField(any()) }
             .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/profile/@user:server/displayname") {
@@ -75,41 +77,23 @@ class UsersRoutesTest : TrixnityBaseTest() {
             this.body<String>() shouldBe "{}"
         }
         verifySuspend {
-            handlerMock.setDisplayName(assert {
+            handlerMock.setProfileField(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
-                it.requestBody shouldBe SetDisplayName.Request("someDisplayName")
+                it.requestBody shouldBe ProfileField.DisplayName("someDisplayName")
             })
         }
     }
 
     @Test
-    fun shouldGetDisplayName() = testApplication {
+    fun shouldSetUnknownProfileField() = testApplication {
         initCut()
-        everySuspend { handlerMock.getDisplayName(any()) }
-            .returns(GetDisplayName.Response("someDisplayName"))
-        val response = client.get("/_matrix/client/v3/profile/@user:server/displayname")
-        assertSoftly(response) {
-            this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
-            this.body<String>() shouldBe """{"displayname":"someDisplayName"}"""
-        }
-        verifySuspend {
-            handlerMock.getDisplayName(assert {
-                it.endpoint.userId shouldBe UserId("user", "server")
-            })
-        }
-    }
-
-    @Test
-    fun shouldSetAvatarUrl() = testApplication {
-        initCut()
-        everySuspend { handlerMock.setAvatarUrl(any()) }
+        everySuspend { handlerMock.setProfileField(any()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/profile/@user:server/avatar_url") {
+            client.put("/_matrix/client/v3/profile/@user:server/unknown") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
-                setBody("""{"avatar_url":"mxc://localhost/123456"}""")
+                setBody("""{"unknown":{"dino":true}}""")
             }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -117,27 +101,68 @@ class UsersRoutesTest : TrixnityBaseTest() {
             this.body<String>() shouldBe "{}"
         }
         verifySuspend {
-            handlerMock.setAvatarUrl(assert {
+            handlerMock.setProfileField(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
-                it.requestBody shouldBe SetAvatarUrl.Request("mxc://localhost/123456")
+                it.requestBody shouldBe ProfileField.Unknown(
+                    "unknown",
+                    JsonObject(mapOf("dino" to JsonPrimitive(true)))
+                )
             })
         }
     }
 
     @Test
-    fun shouldGetAvatarUrl() = testApplication {
+    fun shouldGetProfileField() = testApplication {
         initCut()
-        everySuspend { handlerMock.getAvatarUrl(any()) }
-            .returns(GetAvatarUrl.Response("mxc://localhost/123456"))
-        val response = client.get("/_matrix/client/v3/profile/@user:server/avatar_url")
+        everySuspend { handlerMock.getProfileField(any()) }
+            .returns(ProfileField.DisplayName("someDisplayName"))
+        val response = client.get("/_matrix/client/v3/profile/@user:server/displayname")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
-            this.body<String>() shouldBe """{"avatar_url":"mxc://localhost/123456"}"""
+            this.body<String>() shouldBe """{"displayname":"someDisplayName"}"""
         }
         verifySuspend {
-            handlerMock.getAvatarUrl(assert {
+            handlerMock.getProfileField(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
+                it.endpoint.key shouldBe ProfileField.DisplayName.Key
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetUnknownProfileField() = testApplication {
+        initCut()
+        everySuspend { handlerMock.getProfileField(any()) }
+            .returns(ProfileField.Unknown("unknown", JsonObject(mapOf("dino" to JsonPrimitive(true)))))
+        val response = client.get("/_matrix/client/v3/profile/@user:server/unknown")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """{"unknown":{"dino":true}}"""
+        }
+        verifySuspend {
+            handlerMock.getProfileField(assert {
+                it.endpoint.userId shouldBe UserId("user", "server")
+                it.endpoint.key shouldBe ProfileField.Unknown.Key("unknown")
+            })
+        }
+    }
+
+    @Test
+    fun shouldDeleteProfileField() = testApplication {
+        initCut()
+        everySuspend { handlerMock.deleteProfileField(any()) }
+            .returns(Unit)
+        val response = client.delete("/_matrix/client/v3/profile/@user:server/displayname")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+        }
+        verifySuspend {
+            handlerMock.deleteProfileField(assert {
+                it.endpoint.userId shouldBe UserId("user", "server")
+                it.endpoint.key shouldBe ProfileField.DisplayName.Key
             })
         }
     }
@@ -146,12 +171,21 @@ class UsersRoutesTest : TrixnityBaseTest() {
     fun shouldGetProfile() = testApplication {
         initCut()
         everySuspend { handlerMock.getProfile(any()) }
-            .returns(GetProfile.Response("someDisplayName", "mxc://localhost/123456"))
+            .returns(
+                Profile(
+                    ProfileField.DisplayName("someDisplayName"),
+                    ProfileField.AvatarUrl("mxc://localhost/123456"),
+                    ProfileField.Unknown(
+                        "unknown",
+                        JsonObject(mapOf("dino" to JsonPrimitive(true)))
+                    )
+                )
+            )
         val response = client.get("/_matrix/client/v3/profile/@user:server")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
-            this.body<String>() shouldBe """{"displayname":"someDisplayName","avatar_url":"mxc://localhost/123456"}"""
+            this.body<String>() shouldBe """{"displayname":"someDisplayName","avatar_url":"mxc://localhost/123456","unknown":{"dino":true}}"""
         }
         verifySuspend {
             handlerMock.getProfile(assert {

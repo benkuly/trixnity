@@ -87,8 +87,7 @@ fun TrixnityBaseTest.getInMemoryAccountStore(setup: suspend AccountStore.() -> U
                 syncBatchToken = null,
                 filterId = null,
                 backgroundFilterId = null,
-                displayName = null,
-                avatarUrl = null,
+                profile = null,
             )
         }
         setup()

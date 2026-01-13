@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.serialization.Serializable
+import net.folivo.trixnity.clientserverapi.model.users.Profile
 import net.folivo.trixnity.core.model.UserId
 
 @Serializable
@@ -17,6 +18,5 @@ data class Account(
     val syncBatchToken: String?,
     val filterId: String?,
     val backgroundFilterId: String?,
-    val displayName: String?,
-    val avatarUrl: String?,
+    val profile: Profile? = null,
 )

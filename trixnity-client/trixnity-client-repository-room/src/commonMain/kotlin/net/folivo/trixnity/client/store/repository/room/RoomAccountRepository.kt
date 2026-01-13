@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import androidx.room.*
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.core.model.UserId
@@ -17,8 +18,7 @@ data class RoomAccount(
     val syncBatchToken: String? = null,
     val filterId: String? = null,
     val backgroundFilterId: String? = null,
-    val displayName: String? = null,
-    val avatarUrl: String? = null,
+    val profile: String? = null,
     val isLocked: Boolean = false,
 )
 
@@ -39,6 +39,7 @@ interface AccountDao {
 
 internal class RoomAccountRepository(
     db: TrixnityRoomDatabase,
+    private val json: Json,
 ) : AccountRepository {
 
     private val dao = db.account()
@@ -55,8 +56,7 @@ internal class RoomAccountRepository(
                 syncBatchToken = entity.syncBatchToken,
                 filterId = entity.filterId,
                 backgroundFilterId = entity.backgroundFilterId,
-                displayName = entity.displayName,
-                avatarUrl = entity.avatarUrl,
+                profile = entity.profile?.let { json.decodeFromString(it) },
             )
         }
     }
@@ -75,8 +75,7 @@ internal class RoomAccountRepository(
                 syncBatchToken = value.syncBatchToken,
                 filterId = value.filterId,
                 backgroundFilterId = value.backgroundFilterId,
-                displayName = value.displayName,
-                avatarUrl = value.avatarUrl,
+                profile = value.profile?.let { json.encodeToString(it) },
             )
         )
     }

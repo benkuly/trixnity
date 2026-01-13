@@ -276,7 +276,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
     override fun deserialize(decoder: Decoder): RoomMessageEventContent {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        return when (val type = (jsonObj["msgtype"] as? JsonPrimitive)?.content) {
+        return when (val type = (jsonObj["msgtype"] as? JsonPrimitive)?.contentOrNull) {
             TextBased.Text.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Text>(jsonObj)
             TextBased.Notice.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Notice>(jsonObj)
             TextBased.Emote.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Emote>(jsonObj)
@@ -290,15 +290,15 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
 
             else -> {
                 if (type == null) throw SerializationException("msgtype must not be null")
-                val body = (jsonObj["body"] as? JsonPrimitive)?.content
+                val body = (jsonObj["body"] as? JsonPrimitive)?.contentOrNull
                     ?: throw SerializationException("body must not be null")
-                val format = (jsonObj["format"] as? JsonPrimitive)?.content
-                val formattedBody = (jsonObj["formatted_body"] as? JsonPrimitive)?.content
+                val format = (jsonObj["format"] as? JsonPrimitive)?.contentOrNull
+                val formattedBody = (jsonObj["formatted_body"] as? JsonPrimitive)?.contentOrNull
                 val relatesTo: RelatesTo? =
                     (jsonObj["m.relates_to"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
                 val mentions: Mentions? =
                     (jsonObj["m.mentions"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
-                val externalUrl: String? = (jsonObj["external_url"] as? JsonPrimitive)?.content
+                val externalUrl: String? = (jsonObj["external_url"] as? JsonPrimitive)?.contentOrNull
                 Unknown(type, body, jsonObj, format, formattedBody, relatesTo, mentions, externalUrl)
             }
         }

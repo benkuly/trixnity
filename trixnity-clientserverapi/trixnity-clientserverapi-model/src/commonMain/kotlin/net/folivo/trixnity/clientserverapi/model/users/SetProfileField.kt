@@ -9,17 +9,13 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#put_matrixclientv3profileuseridavatar_url">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.16/client-server-api/#put_matrixclientv3profileuseridkeyname">matrix spec</a>
  */
 @Serializable
-@Resource("/_matrix/client/v3/profile/{userId}/avatar_url")
+@Resource("/_matrix/client/v3/profile/{userId}/{keyName}")
 @HttpMethod(PUT)
-data class SetAvatarUrl(
+data class SetProfileField(
     @SerialName("userId") val userId: UserId,
+    @SerialName("keyName") val key: ProfileField.Key<*>,
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<SetAvatarUrl.Request, Unit> {
-    @Serializable
-    data class Request(
-        @SerialName("avatar_url") val avatarUrl: String? = null
-    )
-}
+) : MatrixEndpoint<ProfileField, Unit>

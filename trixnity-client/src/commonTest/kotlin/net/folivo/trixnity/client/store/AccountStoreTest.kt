@@ -6,6 +6,8 @@ import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.client.store.repository.InMemoryAccountRepository
+import net.folivo.trixnity.clientserverapi.model.users.Profile
+import net.folivo.trixnity.clientserverapi.model.users.ProfileField
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
@@ -36,8 +38,10 @@ class AccountStoreTest : TrixnityBaseTest() {
                 syncBatchToken = "sync_token",
                 filterId = "filter_id",
                 backgroundFilterId = "background_filter_id",
-                displayName = "display_name",
-                avatarUrl = "mxc://localhost/123456",
+                profile = Profile(
+                    ProfileField.DisplayName("display name"),
+                    ProfileField.AvatarUrl("mxc://localhost/123456")
+                ),
             )
         )
 
@@ -55,8 +59,10 @@ class AccountStoreTest : TrixnityBaseTest() {
             refreshToken shouldBe "refresh_token"
             syncBatchToken shouldBe "sync_token"
             filterId shouldBe "filter_id"
-            displayName shouldBe "display_name"
-            avatarUrl shouldBe "mxc://localhost/123456"
+            profile shouldBe Profile(
+                ProfileField.DisplayName("display name"),
+                ProfileField.AvatarUrl("mxc://localhost/123456")
+            )
         }
     }
 }

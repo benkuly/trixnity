@@ -45,8 +45,8 @@ object PushActionSerializer : KSerializer<PushAction> {
                 else -> PushAction.Unknown(name, json)
             }
 
-            is JsonObject -> when (val name = (json["set_tweak"] as? JsonPrimitive)?.content) {
-                "sound" -> PushAction.SetSoundTweak((json["value"] as? JsonPrimitive)?.content)
+            is JsonObject -> when (val name = (json["set_tweak"] as? JsonPrimitive)?.contentOrNull) {
+                "sound" -> PushAction.SetSoundTweak((json["value"] as? JsonPrimitive)?.contentOrNull)
                 "highlight" -> PushAction.SetHighlightTweak(
                     json["value"]?.let { decoder.json.decodeFromJsonElement(it) } ?: true
                 )

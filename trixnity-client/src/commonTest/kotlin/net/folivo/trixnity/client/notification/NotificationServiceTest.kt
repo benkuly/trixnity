@@ -15,6 +15,8 @@ import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.users.Profile
+import net.folivo.trixnity.clientserverapi.model.users.ProfileField
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -79,8 +81,10 @@ class NotificationServiceTest : TrixnityBaseTest() {
                 syncBatchToken = "sync_token",
                 filterId = "filter_id",
                 backgroundFilterId = "background_filter_id",
-                displayName = "display_name",
-                avatarUrl = "mxc://localhost/123456",
+                profile = Profile(
+                    ProfileField.DisplayName("display_name"),
+                    ProfileField.AvatarUrl("mxc://localhost/123456")
+                )
             )
         }
     }

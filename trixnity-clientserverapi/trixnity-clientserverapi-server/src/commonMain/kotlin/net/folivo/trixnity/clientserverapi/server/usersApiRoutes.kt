@@ -10,10 +10,9 @@ internal fun Route.usersApiRoutes(
     json: Json,
     contentMappings: EventContentSerializerMappings
 ) {
-    matrixEndpoint(json, contentMappings, handler::getDisplayName)
-    matrixEndpoint(json, contentMappings, handler::setDisplayName)
-    matrixEndpoint(json, contentMappings, handler::getAvatarUrl)
-    matrixEndpoint(json, contentMappings, handler::setAvatarUrl)
+    matrixEndpoint(json, contentMappings, handler::getProfileField)
+    matrixEndpoint(json, contentMappings, handler::setProfileField)
+    matrixEndpoint(json, contentMappings, handler::deleteProfileField)
     matrixEndpoint(json, contentMappings, handler::getProfile)
     matrixEndpoint(json, contentMappings, handler::getPresence)
     matrixEndpoint(json, contentMappings, handler::setPresence)

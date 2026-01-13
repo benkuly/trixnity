@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.Json
@@ -24,6 +25,8 @@ import net.folivo.trixnity.clientserverapi.model.authentication.Logout
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import net.folivo.trixnity.clientserverapi.model.sync.SyncResponseSerializer
+import net.folivo.trixnity.clientserverapi.model.users.Profile
+import net.folivo.trixnity.clientserverapi.model.users.ProfileField
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -180,8 +183,10 @@ class MatrixClientTest : TrixnityBaseTest() {
             },
         ).onSuccess { matrixClient ->
             delay(100.milliseconds)
-            matrixClient.displayName.value shouldBe "bob"
-            matrixClient.avatarUrl.value shouldBe "mxc://localhost/123456"
+            matrixClient.profile.value shouldBe Profile(
+                ProfileField.DisplayName("bob"),
+                ProfileField.AvatarUrl("mxc://localhost/123456")
+            )
         }.onFailure {
             fail(it.message, it)
         }
@@ -203,8 +208,10 @@ class MatrixClientTest : TrixnityBaseTest() {
                         baseUrl = "http://localhost",
                         filterId = "someFilter",
                         backgroundFilterId = "someFilter",
-                        displayName = "bob",
-                        avatarUrl = "mxc://localhost/123456",
+                        profile = Profile(
+                            ProfileField.DisplayName("bob"),
+                            ProfileField.AvatarUrl("mxc://localhost/123456")
+                        ),
                         syncBatchToken = null,
                     )
                 )
@@ -364,13 +371,16 @@ class MatrixClientTest : TrixnityBaseTest() {
                 },
             ).getOrThrow().shouldNotBeNull()
 
-            cut.displayName.first { it != null } shouldBe "bob"
-            cut.avatarUrl.first { it != null } shouldBe "mxc://localhost/123456"
+            cut.profile.filterNotNull().first() shouldBe Profile(
+                ProfileField.DisplayName("bob"),
+                ProfileField.AvatarUrl("mxc://localhost/123456")
+            )
 
             cut.syncOnce().getOrThrow()
 
-            cut.displayName.first { it == "bobby" } shouldBe "bobby"
-            cut.avatarUrl.first { it == "mxc://localhost/abcdef" } shouldBe "mxc://localhost/abcdef"
+            cut.profile.first {
+                it == Profile(ProfileField.DisplayName("bobby"), ProfileField.AvatarUrl("mxc://localhost/abcdef"))
+            }
             cut.close()
         }
 
@@ -497,8 +507,10 @@ class MatrixClientTest : TrixnityBaseTest() {
                     baseUrl = "http://localhost",
                     filterId = "someFilter",
                     backgroundFilterId = "backgroundFilter",
-                    displayName = "bob",
-                    avatarUrl = "mxc://localhost/123456",
+                    profile = Profile(
+                        ProfileField.DisplayName("bob"),
+                        ProfileField.AvatarUrl("mxc://localhost/123456")
+                    ),
                     syncBatchToken = "sync",
                 )
             )
@@ -634,8 +646,10 @@ class MatrixClientTest : TrixnityBaseTest() {
                     baseUrl = "http://localhost",
                     filterId = "someFilter",
                     backgroundFilterId = "backgroundFilter",
-                    displayName = "bob",
-                    avatarUrl = "mxc://localhost/123456",
+                    profile = Profile(
+                        ProfileField.DisplayName("bob"),
+                        ProfileField.AvatarUrl("mxc://localhost/123456")
+                    ),
                     syncBatchToken = null,
                 )
             )

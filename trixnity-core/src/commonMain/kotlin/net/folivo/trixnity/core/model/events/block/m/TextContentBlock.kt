@@ -18,6 +18,8 @@ value class TextContentBlock(
 
     companion object Type : EventContentBlock.Type<TextContentBlock> {
         override val value: String = "m.text"
+
+        override fun toString(): String = value
     }
 
     @Serializable

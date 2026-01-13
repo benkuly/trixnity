@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.core.model.UserId
@@ -20,11 +21,10 @@ internal object ExposedAccount : LongIdTable("account") {
     val syncBatchToken = text("sync_batch_token").nullable()
     val filterId = text("filter_id").nullable()
     val backgroundFilterId = text("background_filter_id").nullable()
-    val displayName = text("display_name").nullable()
-    val avatarUrl = text("avatar_url").nullable()
+    val profile = text("profile").nullable()
 }
 
-internal class ExposedAccountRepository : AccountRepository {
+internal class ExposedAccountRepository(private val json: Json) : AccountRepository {
     override suspend fun get(key: Long): Account? = withExposedRead {
         ExposedAccount.selectAll().where { ExposedAccount.id eq key }.firstOrNull()?.let {
             Account(
@@ -38,8 +38,7 @@ internal class ExposedAccountRepository : AccountRepository {
                 syncBatchToken = it[ExposedAccount.syncBatchToken],
                 filterId = it[ExposedAccount.filterId],
                 backgroundFilterId = it[ExposedAccount.backgroundFilterId],
-                displayName = it[ExposedAccount.displayName],
-                avatarUrl = it[ExposedAccount.avatarUrl],
+                profile = it[ExposedAccount.profile]?.let { json.decodeFromString(it) },
             )
         }
     }
@@ -57,8 +56,7 @@ internal class ExposedAccountRepository : AccountRepository {
             it[syncBatchToken] = value.syncBatchToken
             it[filterId] = value.filterId
             it[backgroundFilterId] = value.backgroundFilterId
-            it[displayName] = value.displayName
-            it[avatarUrl] = value.avatarUrl
+            it[profile] = value.profile?.let { json.encodeToString(it) }
         }
     }
 

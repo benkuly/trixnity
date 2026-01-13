@@ -10,16 +10,11 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.UserIdSerializer
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm.Unknown
 import net.folivo.trixnity.core.model.keys.KeyValue.*
-import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
-import net.folivo.trixnity.utils.encodeUnpaddedBase64
 
 
 sealed interface Key {
@@ -150,7 +145,7 @@ abstract class UnwrapKeyValueSerializer<T : KeyValue>(
         override fun deserialize(decoder: Decoder): UnknownKeyValue {
             require(decoder is JsonDecoder)
             val raw = decoder.decodeJsonElement()
-            return UnknownKeyValue((raw as? JsonPrimitive)?.content ?: "unknown", raw)
+            return UnknownKeyValue((raw as? JsonPrimitive)?.contentOrNull ?: "unknown", raw)
         }
 
         override fun serialize(encoder: Encoder, value: UnknownKeyValue) {
