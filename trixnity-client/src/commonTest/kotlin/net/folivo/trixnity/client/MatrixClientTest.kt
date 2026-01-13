@@ -259,7 +259,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                             val path = request.url.fullPath
                             log.debug { "path: $path" }
                             when {
-                                path.startsWith("/_matrix/client/v3/sync?filter=someFilter") -> {
+                                path.startsWith("/_matrix/client/v3/sync?filter=someFilter&use_state_after=true") -> {
                                     assertEquals(HttpMethod.Get, request.method)
                                     val roomId = RoomId("!room1:localhost")
                                     respond(
@@ -555,7 +555,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                     addHandler { request ->
                         val path = request.url.fullPath
                         when {
-                            path.startsWith("/_matrix/client/v3/sync?filter=backgroundFilter&set_presence=offline") -> {
+                            path.startsWith("/_matrix/client/v3/sync?filter=backgroundFilter&use_state_after=true&set_presence=offline") -> {
                                 assertEquals(HttpMethod.Get, request.method)
                                 respond(
                                     json.encodeToString(syncResponseSerializer, serverResponse),

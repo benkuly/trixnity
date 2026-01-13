@@ -4,6 +4,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.m.Relations
 import net.folivo.trixnity.core.model.events.m.room.Membership
 
@@ -30,6 +31,8 @@ sealed interface UnsignedRoomEventData {
         @SerialName("transaction_id") override val transactionId: String? = null,
         @SerialName("prev_content") val previousContent: @Contextual StateEventContent? = null,
         @SerialName("m.relations") override val relations: Relations? = null,
-        @SerialName("membership") override val membership: Membership? = null
+        @SerialName("membership") override val membership: Membership? = null,
+        @SerialName("invite_room_state") val inviteRoomState: List<@Contextual StrippedStateEvent<*>>? = null,
+        @SerialName("knock_room_state") val knockRoomState: List<@Contextual StrippedStateEvent<*>>? = null,
     ) : UnsignedRoomEventData
 }

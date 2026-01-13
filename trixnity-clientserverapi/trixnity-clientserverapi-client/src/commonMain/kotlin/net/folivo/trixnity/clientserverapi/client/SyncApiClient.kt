@@ -94,6 +94,7 @@ interface SyncApiClient : ClientEventEmitter<SyncEvents> {
         fullState: Boolean = false,
         setPresence: Presence? = null,
         timeout: Duration = ZERO,
+        useStateAfter: Boolean? = null,
         asUserId: UserId? = null
     ): Result<Sync.Response>
 
@@ -142,10 +143,19 @@ class SyncApiClientImpl(
         fullState: Boolean,
         setPresence: Presence?,
         timeout: Duration,
+        useStateAfter: Boolean?,
         asUserId: UserId?
     ): Result<Sync.Response> =
         baseClient.request(
-            Sync(filter, if (fullState) fullState else null, setPresence, since, timeout.inWholeMilliseconds, asUserId),
+            Sync(
+                filter = filter,
+                fullState = if (fullState) fullState else null,
+                setPresence = setPresence,
+                since = since,
+                timeout = timeout.inWholeMilliseconds,
+                useStateAfter = useStateAfter,
+                asUserId = asUserId
+            ),
         ) {
             timeout {
                 requestTimeoutMillis = (if (timeout == ZERO) 5.minutes else timeout + 10.seconds).inWholeMilliseconds
@@ -290,6 +300,7 @@ class SyncApiClientImpl(
                                 filter = queueItem.filter,
                                 setPresence = queueItem.setPresence,
                                 fullState = false,
+                                useStateAfter = true,
                                 since = batchToken,
                                 timeout = if (batchToken == null || _currentSyncState.value == STARTED) ZERO else queueItem.timeout,
                             ).getOrThrow()

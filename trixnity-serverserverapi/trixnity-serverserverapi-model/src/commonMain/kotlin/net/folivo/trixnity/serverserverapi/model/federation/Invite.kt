@@ -29,7 +29,7 @@ data class Invite(
         @SerialName("event")
         val event: Signed<@Contextual PersistentStateDataUnit<MemberEventContent>, String>,
         @SerialName("invite_room_state")
-        val inviteRoomState: List<@Contextual StrippedStateEvent<*>>? = null,
+        val inviteRoomState: List<@Contextual StrippedStateEvent<*>>,
         @SerialName("room_version")
         val roomVersion: String,
     )

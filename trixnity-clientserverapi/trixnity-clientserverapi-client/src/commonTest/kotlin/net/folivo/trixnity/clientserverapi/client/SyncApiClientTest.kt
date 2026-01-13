@@ -80,7 +80,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=1234",
+                        "/_matrix/client/v3/sync?filter=someFilter&full_state=true&use_state_after=true&set_presence=online&since=someSince&timeout=1234",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -133,7 +133,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                                   "m.joined_member_count": 2,
                                   "m.invited_member_count": 0
                                 },
-                                "state": {
+                                "state_after": {
                                   "events": [
                                     {
                                       "content": {
@@ -279,6 +279,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
         val result = matrixRestClient.sync.sync(
             filter = "someFilter",
             fullState = true,
+            useStateAfter = true,
             setPresence = Presence.ONLINE,
             since = "someSince",
             timeout = 1234.milliseconds
@@ -306,7 +307,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=200",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&full_state=true&set_presence=online&since=someSince&timeout=200",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -346,7 +347,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     when (requestCount.value) {
                         0 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=0",
+                                "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -408,7 +409,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     when (requestCount.value) {
                         0 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0",
+                                "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=some&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -425,7 +426,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
                         1 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=nextBatch1&timeout=30000",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -486,7 +487,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0", // started state
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=some&timeout=0", // started state
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -621,7 +622,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     when (val count = requestCount.getAndUpdate { it + 1 }) {
                         0 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0",
+                                "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=some&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -635,7 +636,8 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
                         1 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?filter=secondFilter&since=some&timeout=0", request.url.fullPath
+                                "/_matrix/client/v3/sync?filter=secondFilter&use_state_after=true&since=some&timeout=0",
+                                request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
                             respond(
@@ -647,7 +649,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
                         2 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=nextBatch1&timeout=30000",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -664,7 +666,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                         }
 
                         else -> {
-                            fail("there should be no more requests: $count")
+                            fail("there should be no more requests on ${request.url.fullPath}: $count")
                         }
                     }
                 }
@@ -710,7 +712,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=0",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&timeout=0",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -770,7 +772,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=ananas&timeout=0",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=ananas&timeout=0",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -782,7 +784,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 }
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=100",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=nextBatch1&timeout=100",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -835,7 +837,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?timeout=0",
+                        "/_matrix/client/v3/sync?use_state_after=true&timeout=0",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -883,7 +885,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     when (requestCount.value) {
                         0 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?timeout=0",
+                                "/_matrix/client/v3/sync?use_state_after=true&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -894,7 +896,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
                         else -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?timeout=0",
+                                "/_matrix/client/v3/sync?use_state_after=true&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -930,7 +932,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=0",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&timeout=0",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -943,7 +945,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=nextBatch1&timeout=30000",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -956,7 +958,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=0",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=nextBatch1&timeout=0",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1006,7 +1008,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     when (requestCount.value) {
                         0, 1 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=0",
+                                "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -1385,7 +1387,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     requestCount.value++
 
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=some&timeout=0",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1421,7 +1423,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=some&timeout=0",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1434,7 +1436,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 }
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                        "/_matrix/client/v3/sync?filter=someFilter&use_state_after=true&set_presence=online&since=nextBatch1&timeout=30000",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1505,12 +1507,12 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
-                        "/_matrix/client/v3/sync?set_presence=online&since=some&timeout=0" -> {
+                        "/_matrix/client/v3/sync?use_state_after=true&set_presence=online&since=some&timeout=0" -> {
                             firstEndpoint.complete(Unit)
                             delay(Duration.INFINITE)
                         }
 
-                        "/_matrix/client/v3/sync?set_presence=offline&since=some&timeout=0" -> {
+                        "/_matrix/client/v3/sync?use_state_after=true&set_presence=offline&since=some&timeout=0" -> {
                             secondEndpoint.complete(Unit)
                             return@addHandler respond(
                                 json.encodeToString(syncResponseSerializer, serverResponse1),
