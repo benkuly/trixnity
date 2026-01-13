@@ -285,7 +285,7 @@ class RoomServiceTest : TrixnityBaseTest() {
     @Test
     fun `getTimelineEvent » event can be decrypted » handle error`() = runTest {
         roomEventDecryptionServiceMock.returnDecrypt =
-            Result.failure(OlmEncryptionService.DecryptMegolmError.MegolmKeyUnknownMessageIndex)
+            Result.failure(OlmEncryptionService.DecryptMegolmError.MegolmKeyUnknownMessageIndex())
         roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
         val result = cut.getTimelineEvent(room, eventId)
             .first { it?.content?.isFailure == true }
@@ -293,7 +293,7 @@ class RoomServiceTest : TrixnityBaseTest() {
             assertNotNull(this)
             event shouldBe encryptedTimelineEvent.event
             content?.exceptionOrNull() shouldBe
-                    TimelineEventContentError.DecryptionError(OlmEncryptionService.DecryptMegolmError.MegolmKeyUnknownMessageIndex)
+                    TimelineEventContentError.DecryptionError(OlmEncryptionService.DecryptMegolmError.MegolmKeyUnknownMessageIndex())
         }
     }
 

@@ -20,8 +20,6 @@ data class RoomAccount(
     val displayName: String? = null,
     val avatarUrl: String? = null,
     val isLocked: Boolean = false,
-    @ColumnInfo(defaultValue = "false") val oauth2Login: Boolean = false,
-    @ColumnInfo(defaultValue = "NULL") val oauth2ClientId: String? = null
 )
 
 @Dao

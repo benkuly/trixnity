@@ -205,7 +205,7 @@ class MegolmRoomEventDecryptionServiceTest : TrixnityBaseTest() {
     @Test
     fun `decrypt » wait for olm session and ask key backup for it when existing session does not known the index`() =
         runTest {
-            olmEncyptionServiceMock.returnDecryptMegolm.add(Result.failure(DecryptMegolmError.MegolmKeyUnknownMessageIndex))
+            olmEncyptionServiceMock.returnDecryptMegolm.add(Result.failure(DecryptMegolmError.MegolmKeyUnknownMessageIndex()))
             olmEncyptionServiceMock.returnDecryptMegolm.add(Result.success(expectedDecryptedEvent))
 
             olmCryptoStore.updateInboundMegolmSession(session, room) {

@@ -505,6 +505,24 @@ interface RoomApiClient {
         timestamp: Long,
         dir: TimestampToEvent.Direction = TimestampToEvent.Direction.FORWARDS,
     ): Result<TimestampToEvent.Response>
+
+    /**
+     * @see [GetSummary]
+     */
+    suspend fun getSummary(
+        roomAliasId: RoomAliasId,
+        via: Set<String>? = null,
+        asUserId: UserId? = null
+    ): Result<GetSummary.Response>
+
+    /**
+     * @see [GetSummary]
+     */
+    suspend fun getSummary(
+        roomId: RoomId,
+        via: Set<String>? = null,
+        asUserId: UserId? = null
+    ): Result<GetSummary.Response>
 }
 
 class RoomApiClientImpl(
@@ -972,6 +990,20 @@ class RoomApiClientImpl(
         dir: TimestampToEvent.Direction
     ): Result<TimestampToEvent.Response> =
         baseClient.request(TimestampToEvent(roomId, timestamp, dir))
+
+    override suspend fun getSummary(
+        roomAliasId: RoomAliasId,
+        via: Set<String>?,
+        asUserId: UserId?
+    ): Result<GetSummary.Response> =
+        baseClient.request(GetSummary(roomAliasId.full, via, asUserId))
+
+    override suspend fun getSummary(
+        roomId: RoomId,
+        via: Set<String>?,
+        asUserId: UserId?
+    ): Result<GetSummary.Response> =
+        baseClient.request(GetSummary(roomId.full, via, asUserId))
 }
 
 /**

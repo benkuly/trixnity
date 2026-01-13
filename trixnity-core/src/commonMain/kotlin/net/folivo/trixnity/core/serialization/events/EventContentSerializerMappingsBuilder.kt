@@ -3,6 +3,7 @@ package net.folivo.trixnity.core.serialization.events
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.block.EventContentBlock
 
 class EventContentSerializerMappingsBuilder {
     val message = mutableSetOf<MessageEventContentSerializerMapping>()
@@ -13,6 +14,8 @@ class EventContentSerializerMappingsBuilder {
     val globalAccountData = mutableSetOf<EventContentSerializerMapping<GlobalAccountDataEventContent>>()
     val roomAccountData = mutableSetOf<EventContentSerializerMapping<RoomAccountDataEventContent>>()
 
+    val block = mutableSetOf<EventContentBlockSerializerMapping<*>>()
+
     fun build(): EventContentSerializerMappings =
         object : EventContentSerializerMappings {
             override val message = this@EventContentSerializerMappingsBuilder.message.toSet()
@@ -22,6 +25,7 @@ class EventContentSerializerMappingsBuilder {
             override val toDevice = this@EventContentSerializerMappingsBuilder.toDevice.toSet()
             override val globalAccountData = this@EventContentSerializerMappingsBuilder.globalAccountData.toSet()
             override val roomAccountData = this@EventContentSerializerMappingsBuilder.roomAccountData.toSet()
+            override val block = this@EventContentSerializerMappingsBuilder.block.toSet()
         }
 }
 
@@ -117,4 +121,17 @@ inline fun <reified C : RoomAccountDataEventContent> EventContentSerializerMappi
     type: String
 ) {
     roomAccountData.add(EventContentSerializerMappingImpl(type, C::class, serializer<C>()))
+}
+
+inline fun <reified C : EventContentBlock> EventContentSerializerMappingsBuilder.blockOf(
+    type: EventContentBlock.Type<C>,
+    serializer: KSerializer<C>
+) {
+    block.add(EventContentBlockSerializerMappingImpl(type, C::class, serializer))
+}
+
+inline fun <reified C : EventContentBlock> EventContentSerializerMappingsBuilder.blockOf(
+    type: EventContentBlock.Type<C>,
+) {
+    block.add(EventContentBlockSerializerMappingImpl(type, C::class, serializer<C>()))
 }

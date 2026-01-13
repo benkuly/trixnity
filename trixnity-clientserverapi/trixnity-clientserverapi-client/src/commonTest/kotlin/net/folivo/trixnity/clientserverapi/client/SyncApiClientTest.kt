@@ -29,6 +29,8 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
+import net.folivo.trixnity.core.model.events.block.EventContentBlock
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -1115,6 +1117,12 @@ class SyncApiClientTest : TrixnityBaseTest() {
                                 ClientEvent.RoomAccountDataEvent(
                                     UnknownEventContent(
                                         JsonObject(mapOf("cool" to JsonPrimitive("trixnity"))),
+                                        EventContentBlocks(
+                                            EventContentBlock.Unknown(
+                                                "cool",
+                                                JsonPrimitive("trixnity")
+                                            )
+                                        ),
                                         "org.example.mynamespace"
                                     ),
                                     RoomId("!room1:server")
@@ -1169,7 +1177,12 @@ class SyncApiClientTest : TrixnityBaseTest() {
             toDevice = Response.ToDevice(
                 listOf(
                     ClientEvent.ToDeviceEvent(
-                        RoomKeyEventContent(RoomId("!room:server"), "se", SessionKeyValue("sk"), EncryptionAlgorithm.Megolm),
+                        RoomKeyEventContent(
+                            RoomId("!room:server"),
+                            "se",
+                            SessionKeyValue("sk"),
+                            EncryptionAlgorithm.Megolm
+                        ),
                         UserId("dino", "server")
                     )
                 )

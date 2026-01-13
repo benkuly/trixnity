@@ -2012,7 +2012,7 @@ class RoomsApiClientTest : TrixnityBaseTest() {
         ).getOrThrow() shouldBe GetHierarchy.Response(
             nextBatch = "next_batch_token",
             rooms = listOf(
-                GetHierarchy.Response.PublicRoomsChunk(
+                GetHierarchy.Response.SpaceHierarchyRoomsChunk(
                     avatarUrl = "mxc://example.org/abcdef",
                     canonicalAlias = RoomAliasId("#general:example.org"),
                     childrenState = setOf(
@@ -2066,6 +2066,54 @@ class RoomsApiClientTest : TrixnityBaseTest() {
         ).getOrThrow() shouldBe TimestampToEvent.Response(
             eventId = EventId("$143273582443PhrSn:example.org"),
             originTimestamp = 1432735824653,
+        )
+    }
+
+    @Test
+    fun shouldGetSummary() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v1/room_summary/!room:server?via=server1.com&via=server2.com",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                           {
+                             "avatar_url": "mxc://example.org/abcdef",
+                             "canonical_alias": "#general:example.org",
+                             "guest_can_join": false,
+                             "join_rule": "public",
+                             "name": "The First Space",
+                             "num_joined_members": 42,
+                             "room_id": "!space:example.org",
+                             "room_type": "m.space",
+                             "topic": "No other spaces were created first, ever",
+                             "world_readable": true
+                           }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.room.getSummary(
+            roomId = RoomId("!room:server"),
+            via = setOf("server1.com", "server2.com")
+        ).getOrThrow() shouldBe GetSummary.Response(
+            avatarUrl = "mxc://example.org/abcdef",
+            canonicalAlias = RoomAliasId("#general:example.org"),
+            guestCanJoin = false,
+            joinRule = JoinRulesEventContent.JoinRule.Public,
+            name = "The First Space",
+            joinedMembersCount = 42,
+            roomId = RoomId("!space:example.org"),
+            roomType = CreateEventContent.RoomType.Space,
+            topic = "No other spaces were created first, ever",
+            worldReadable = true
         )
     }
 }

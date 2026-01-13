@@ -147,7 +147,7 @@ class ActiveDeviceVerificationTest() : TrixnityBaseTest() {
                         Curve25519KeyValue("")
                     ), bob
                 ),
-                DecryptedOlmEvent(cancelEvent, bob, keysOf(), alice, keysOf())
+                DecryptedOlmEvent(cancelEvent, bob, keysOf(), null, alice, keysOf())
             )
         )
         val result = cut.state.first { it is ActiveVerificationState.Cancel }

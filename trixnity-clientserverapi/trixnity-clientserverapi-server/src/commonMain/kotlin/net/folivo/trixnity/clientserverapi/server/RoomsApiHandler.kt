@@ -234,4 +234,9 @@ interface RoomsApiHandler {
      * @see [TimestampToEvent]
      */
     suspend fun timestampToEvent(context: MatrixEndpointContext<TimestampToEvent, Unit, TimestampToEvent.Response>): TimestampToEvent.Response
+
+    /**
+     * @see [GetSummary]
+     */
+    suspend fun getSummary(context: MatrixEndpointContext<GetSummary, Unit, GetSummary.Response>): GetSummary.Response
 }

@@ -92,7 +92,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                             EncryptionAlgorithm.Megolm,
                         )
                     ),
-                    bob, keysOf(), alice, keysOf()
+                    bob, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -116,7 +116,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                             EncryptionAlgorithm.Megolm,
                         )
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -140,7 +140,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                             EncryptionAlgorithm.Megolm,
                         )
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -153,7 +153,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                         "requestId",
                         null
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -289,7 +289,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                             EncryptionAlgorithm.Megolm,
                         )
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -322,7 +322,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                             EncryptionAlgorithm.Megolm,
                         )
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )

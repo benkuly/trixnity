@@ -16,6 +16,10 @@ import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.block.EventContentBlock
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
+import net.folivo.trixnity.core.model.events.block.m.TextContentBlock
+import net.folivo.trixnity.core.model.events.block.m.TopicContentBlock
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -160,6 +164,89 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             content
         )
         assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun shouldSerializeExtensibleEvent() {
+        val content = StateEvent(
+            TopicEventContent(
+                blocks = EventContentBlocks(TopicContentBlock(TextContentBlock("topic"))),
+                legacy = TopicEventContent.Legacy("topic")
+            ),
+            EventId("$143273582443PhrSn"),
+            UserId("example", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
+            1432735824653,
+            UnsignedStateEventData(1234),
+            ""
+        )
+        val expectedResult = """
+        {
+            "content":{
+                "m.topic":{
+                  "m.text":[
+                    {"body":"topic"}
+                  ]
+                },
+                "topic":"topic"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "state_key":"",
+            "type":"m.room.topic",
+            "unsigned":{"age":1234}
+        }
+    """.trimToFlatJson()
+        val result = json.encodeToString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+            ), content
+        )
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun shouldDeserializeExtensibleEvent() {
+        val input = """
+        {
+            "content":{
+                "m.topic":{
+                  "m.text":[
+                    {"body":"topic"}
+                  ]
+                },
+                "topic":"topic"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "state_key":"",
+            "type":"m.room.topic",
+            "unsigned":{"age":1234}
+        }
+    """.trimToFlatJson()
+        val result = json.decodeFromString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+            ), input
+        )
+        assertEquals(
+            StateEvent(
+                TopicEventContent(
+                    blocks = EventContentBlocks(TopicContentBlock(TextContentBlock("topic"))),
+                    legacy = TopicEventContent.Legacy("topic")
+                ),
+                EventId("$143273582443PhrSn"),
+                UserId("example", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
+                1432735824653,
+                UnsignedStateEventData(1234),
+                ""
+            ), result
+        )
     }
 
     @Test
@@ -571,6 +658,19 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                             "body" to JsonPrimitive("hello"),
                             "something" to JsonPrimitive("unicorn"),
                             "m.relates_to" to JsonObject(
+                                mapOf(
+                                    "event_id" to JsonPrimitive("$1234"),
+                                    "rel_type" to JsonPrimitive("m.reference")
+                                )
+                            )
+                        )
+                    ),
+                    EventContentBlocks(
+                        EventContentBlock.Unknown("msgtype", JsonPrimitive("m.dino")),
+                        EventContentBlock.Unknown("body", JsonPrimitive("hello")),
+                        EventContentBlock.Unknown("something", JsonPrimitive("unicorn")),
+                        EventContentBlock.Unknown(
+                            "m.relates_to", JsonObject(
                                 mapOf(
                                     "event_id" to JsonPrimitive("$1234"),
                                     "rel_type" to JsonPrimitive("m.reference")
@@ -999,6 +1099,9 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                             "ancestor_of_chicken" to JsonPrimitive("dinos")
                         )
                     ),
+                    EventContentBlocks(
+                        EventContentBlock.Unknown("ancestor_of_chicken", JsonPrimitive("dinos"))
+                    ),
                     "org.example.mynamespace.custom"
                 ),
                 RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
@@ -1016,6 +1119,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                         "ancestor_of_chicken" to JsonPrimitive("dinos")
                     )
                 ),
+                EventContentBlocks(),
                 "org.example.mynamespace.custom"
             ),
             RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
@@ -1065,7 +1169,11 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                             "membership" to JsonPrimitive("dino"),
                             "unicorns" to JsonArray(listOf())
                         )
-                    ), "m.room.member"
+                    ), EventContentBlocks(
+                        EventContentBlock.Unknown("membership", JsonPrimitive("dino")),
+                        EventContentBlock.Unknown("unicorns", JsonArray(listOf()))
+                    ),
+                    "m.room.member"
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
@@ -1087,7 +1195,9 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                         "alias" to JsonPrimitive("dino"),
                         "unicorns" to JsonArray(listOf())
                     )
-                ), "m.room.canonical_alias"
+                ),
+                EventContentBlocks(),
+                "m.room.canonical_alias"
             ),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),

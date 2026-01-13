@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import androidx.room.*
+import androidx.room.migration.AutoMigrationSpec
 
 @Database(
     entities = [
@@ -37,14 +38,16 @@ import androidx.room.*
         RoomNotificationUpdate::class,
         RoomMigration::class,
     ],
-    version = 6, // tick this value when any entity classes change
+    version = 7, // tick this value when any entity classes change
     autoMigrations = [
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6),
+        AutoMigration(from = 6, to = 7, spec = TrixnityRoomDatabase.Delete6to7MigrationSpec::class),
     ],
     exportSchema = true,
 )
+
 @TypeConverters(
     EventIdConverter::class,
     InstantConverter::class,
@@ -53,7 +56,6 @@ import androidx.room.*
     RoomIdConverter::class,
     UserIdConverter::class,
 )
-
 @ConstructedBy(TrixnityRoomDatabaseConstructor::class)
 abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun account(): AccountDao
@@ -88,6 +90,16 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun notificationState(): NotificationStateDao
     abstract fun notificationUpdate(): NotificationUpdateDao
     abstract fun migration(): MigrationDao
+
+    @DeleteColumn(
+        tableName = "Account",
+        columnName = "oauth2Login"
+    )
+    @DeleteColumn(
+        tableName = "Account",
+        columnName = "oauth2ClientId"
+    )
+    class Delete6to7MigrationSpec : AutoMigrationSpec
 }
 
 // The Room compiler generates the `actual` implementations.

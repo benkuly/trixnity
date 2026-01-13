@@ -10,6 +10,7 @@ interface EventContentSerializerMappings {
     val toDevice: Set<EventContentSerializerMapping<ToDeviceEventContent>>
     val globalAccountData: Set<EventContentSerializerMapping<GlobalAccountDataEventContent>>
     val roomAccountData: Set<EventContentSerializerMapping<RoomAccountDataEventContent>>
+    val block: Set<EventContentBlockSerializerMapping<*>>
 
     operator fun plus(plus: EventContentSerializerMappings?): EventContentSerializerMappings {
         if (plus == null) return this
@@ -20,6 +21,7 @@ interface EventContentSerializerMappings {
         val toDeviceEventContentSerializerMappings = this.toDevice + plus.toDevice
         val globalAccountDataEventContentSerializerMappings = this.globalAccountData + plus.globalAccountData
         val roomAccountDataEventContentSerializerMappings = this.roomAccountData + plus.roomAccountData
+        val blockMappings = this.block + plus.block
         return object : EventContentSerializerMappings {
             override val message = roomEventContentSerializerMappings
             override val state = stateEventContentSerializerMappings
@@ -28,6 +30,7 @@ interface EventContentSerializerMappings {
             override val toDevice = toDeviceEventContentSerializerMappings
             override val globalAccountData = globalAccountDataEventContentSerializerMappings
             override val roomAccountData = roomAccountDataEventContentSerializerMappings
+            override val block = blockMappings
         }
     }
 
@@ -40,6 +43,7 @@ interface EventContentSerializerMappings {
         val toDeviceEventContentSerializerMappings = this.toDevice - minus.toDevice
         val globalAccountDataEventContentSerializerMappings = this.globalAccountData - minus.globalAccountData
         val roomAccountDataEventContentSerializerMappings = this.roomAccountData - minus.roomAccountData
+        val blockMappings = this.block - minus.block
         return object : EventContentSerializerMappings {
             override val message = roomEventContentSerializerMappings
             override val state = stateEventContentSerializerMappings
@@ -48,6 +52,7 @@ interface EventContentSerializerMappings {
             override val toDevice = toDeviceEventContentSerializerMappings
             override val globalAccountData = globalAccountDataEventContentSerializerMappings
             override val roomAccountData = roomAccountDataEventContentSerializerMappings
+            override val block = blockMappings
         }
     }
 }

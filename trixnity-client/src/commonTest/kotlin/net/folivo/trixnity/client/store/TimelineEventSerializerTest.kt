@@ -14,6 +14,8 @@ import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
+import net.folivo.trixnity.core.model.events.block.EventContentBlock
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -99,7 +101,11 @@ class TimelineEventSerializerTest : TrixnityBaseTest() {
 
     private val unknownResult = timelineEvent(
         Result.success(
-            UnknownEventContent(JsonObject(mapOf("dino" to JsonPrimitive("yeah"))), "m.dino")
+            UnknownEventContent(
+                JsonObject(mapOf("dino" to JsonPrimitive("yeah"))),
+                EventContentBlocks(EventContentBlock.Unknown("dino", JsonPrimitive("yeah"))),
+                "m.dino"
+            )
         )
     )
     private val unknownResultJson = timelineEventJson("""{"type":"m.dino","value":{"dino":"yeah"}}""")
@@ -129,7 +135,11 @@ class TimelineEventSerializerTest : TrixnityBaseTest() {
 
     private val malformedResult = timelineEvent(
         Result.success(
-            UnknownEventContent(JsonObject(mapOf("wrong" to JsonPrimitive("name"))), "m.room.name")
+            UnknownEventContent(
+                JsonObject(mapOf("wrong" to JsonPrimitive("name"))),
+                EventContentBlocks(EventContentBlock.Unknown("wrong", JsonPrimitive("name"))),
+                "m.room.name"
+            )
         )
     )
     private val malformedResultJson = timelineEventJson("""{"type":"m.room.name","value":{"wrong":"name"}}""")

@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 
 fun createDataUnitSerializersModule(
     mappings: EventContentSerializerMappings,
@@ -14,12 +15,14 @@ fun createDataUnitSerializersModule(
         PersistentStateDataUnitSerializer(mappings.state, roomVersionStore)
     val persistentDataUnitSerializer =
         PersistentDataUnitSerializer(persistentMessageDataUnitSerializer, persistentStateDataUnitSerializer)
+    val eventContentBlocksSerializer = EventContentBlocks.Serializer(mappings.block)
     val eventTypeSerializer = EventTypeSerializer(mappings)
     return SerializersModule {
         contextual(ephemeralDataUnitSerializer)
         contextual(persistentMessageDataUnitSerializer)
         contextual(persistentStateDataUnitSerializer)
         contextual(persistentDataUnitSerializer)
+        contextual(eventContentBlocksSerializer)
         contextual(eventTypeSerializer)
     }
 }

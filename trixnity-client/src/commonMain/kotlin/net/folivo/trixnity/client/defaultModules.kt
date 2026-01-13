@@ -73,7 +73,7 @@ fun createDefaultMatrixJsonModule() = module {
 }
 
 fun createDefaultMatrixClientAuthProviderSerializerMappings() = module {
-    single<MatrixClientAuthProviderDataSerializerMappings> { MatrixClientAuthProviderDataSerializerMappings.default() }
+    single<MatrixClientAuthProviderDataSerializerMappings> { MatrixClientAuthProviderDataSerializerMappings.default }
 }
 
 fun createCurrentSyncStateModule() = module {

@@ -58,6 +58,7 @@ import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
@@ -80,13 +81,20 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
     private val bob = UserId("bob", "server")
     private val aliceDeviceId = "ALICEDEVICE"
     private val bobDeviceId = "BOBDEVICE"
+
     private val aliceAccount = account()
     private val bobAccount = account()
 
     private val aliceCurveKey = Curve25519Key(aliceDeviceId, aliceAccount.curve25519Key.base64)
     private val aliceEdKey = Ed25519Key(aliceDeviceId, aliceAccount.ed25519Key.base64)
+    private val aliceDeviceKeys = SignedDeviceKeys(
+        DeviceKeys(alice, aliceDeviceId, setOf(EncryptionAlgorithm.Megolm), Keys(keysOf(aliceCurveKey, aliceEdKey))),
+    )
     private val bobCurveKey = Curve25519Key(bobDeviceId, bobAccount.curve25519Key.base64)
     private val bobEdKey = Ed25519Key(bobDeviceId, bobAccount.ed25519Key.base64)
+    private val bobDeviceKeys = SignedDeviceKeys(
+        DeviceKeys(bob, bobDeviceId, setOf(EncryptionAlgorithm.Megolm), Keys(keysOf(bobCurveKey, bobEdKey))),
+    )
 
     private val mockSignService = SignServiceMock()
     private val olmEncryptionServiceRequestHandlerMock = OlmEncryptionServiceRequestHandlerMock()
@@ -112,36 +120,35 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
     private val room = RoomId("!room:server")
     private val decryptedMegolmEvent = DecryptedMegolmEvent(decryptedMegolmEventContent, room)
 
-    init {
-        olmStoreMock.devices.put(
-            bob, mapOf(
-                bobDeviceId to DeviceKeys(
-                    userId = bob,
-                    deviceId = bobDeviceId,
-                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                    keys = Keys(keysOf(bobCurveKey, bobEdKey))
-                )
+    @BeforeTest
+    fun beforeTest() {
+        olmStoreMock.devices[bob] = mapOf(
+            bobDeviceId to DeviceKeys(
+                userId = bob,
+                deviceId = bobDeviceId,
+                algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                keys = Keys(keysOf(bobCurveKey, bobEdKey))
             )
         )
-        olmStoreMock.devices.put(
-            alice, mapOf(
-                aliceDeviceId to DeviceKeys(
-                    userId = alice,
-                    deviceId = aliceDeviceId,
-                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                    keys = Keys(keysOf(aliceCurveKey, aliceEdKey))
-                )
+        olmStoreMock.devices[alice] = mapOf(
+            aliceDeviceId to DeviceKeys(
+                userId = alice,
+                deviceId = aliceDeviceId,
+                algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                keys = Keys(keysOf(aliceCurveKey, aliceEdKey))
             )
         )
         olmStoreMock.roomMembers[room] = setOf(alice, bob)
         olmStoreMock.olmAccount.value = aliceAccount.pickle()
         mockSignService.returnVerify = VerifyResult.Valid
+        mockSignService.selfSignedDeviceKeys = aliceDeviceKeys
     }
 
     private val sendDecryptedOlmEvent = DecryptedOlmEvent(
         content = decryptedOlmEventContent,
         sender = alice,
         senderKeys = keysOf(aliceEdKey.copy(id = null)),
+        senderDeviceKeys = aliceDeviceKeys,
         recipient = bob,
         recipientKeys = keysOf(bobEdKey.copy(id = null))
     )
@@ -149,6 +156,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
         content = decryptedOlmEventContent,
         sender = bob,
         senderKeys = keysOf(bobEdKey.copy(id = null)),
+        senderDeviceKeys = bobDeviceKeys,
         recipient = alice,
         recipientKeys = keysOf(aliceEdKey.copy(id = null))
     )
@@ -217,15 +225,13 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
     @Test
     fun `encryptOlm - encrypt for verified dehydrated device`() = runTest {
         mockClaimKeys()
-        olmStoreMock.devices.put(
-            bob, mapOf(
-                bobDeviceId to DeviceKeys(
-                    userId = bob,
-                    deviceId = bobDeviceId,
-                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                    keys = Keys(keysOf(bobCurveKey, bobEdKey)),
-                    dehydrated = true
-                )
+        olmStoreMock.devices[bob] = mapOf(
+            bobDeviceId to DeviceKeys(
+                userId = bob,
+                deviceId = bobDeviceId,
+                algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                keys = Keys(keysOf(bobCurveKey, bobEdKey)),
+                dehydrated = true
             )
         )
         olmStoreMock.deviceTrustLevels[bob] = mapOf(bobDeviceId to DeviceTrustLevel.CrossSigned(false))
@@ -234,20 +240,18 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `encryptOlm - is Failure when try to encrypt with unverified dehydrated device`() = runTest {
-        olmStoreMock.devices.put(
-            bob, mapOf(
-                bobDeviceId to DeviceKeys(
-                    userId = bob,
-                    deviceId = bobDeviceId,
-                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                    keys = Keys(keysOf(bobCurveKey, bobEdKey)),
-                    dehydrated = true
-                )
+        olmStoreMock.devices[bob] = mapOf(
+            bobDeviceId to DeviceKeys(
+                userId = bob,
+                deviceId = bobDeviceId,
+                algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                keys = Keys(keysOf(bobCurveKey, bobEdKey)),
+                dehydrated = true
             )
         )
         olmStoreMock.deviceTrustLevels[bob] = mapOf(bobDeviceId to DeviceTrustLevel.NotCrossSigned)
         val result = cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId)
-        result.exceptionOrNull() shouldBe EncryptOlmError.DehydratedDeviceNotCrossSigned
+        result.exceptionOrNull().shouldBeInstanceOf<EncryptOlmError.DehydratedDeviceNotCrossSigned>()
     }
 
     @Test
@@ -332,15 +336,13 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `decryptOlm - ignore dehydrated device`() = runTest {
-        olmStoreMock.devices.put(
-            bob, mapOf(
-                bobDeviceId to DeviceKeys(
-                    userId = bob,
-                    deviceId = bobDeviceId,
-                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                    keys = Keys(keysOf(bobCurveKey, bobEdKey)),
-                    dehydrated = true
-                )
+        olmStoreMock.devices[bob] = mapOf(
+            bobDeviceId to DeviceKeys(
+                userId = bob,
+                deviceId = bobDeviceId,
+                algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                keys = Keys(keysOf(bobCurveKey, bobEdKey)),
+                dehydrated = true
             )
         )
 
@@ -361,7 +363,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     senderKey = bobCurveKey.value
                 ), bob
             )
-        ).exceptionOrNull() shouldBe DecryptOlmError.DehydratedDeviceNotAllowed
+        ).exceptionOrNull() shouldBe DecryptOlmError.DehydratedDeviceNotAllowed()
 
         olmStoreMock.olmSessions[bobCurveKey.value].shouldBeNull()
     }
@@ -402,7 +404,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                         senderKey = bobCurveKey.value
                     ), bob
                 )
-            ).exceptionOrNull() shouldBe DecryptOlmError.TooManySessions
+            ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.TooManySessions>()
         }
 
     @Test
@@ -424,7 +426,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     senderKey = bobCurveKey.value
                 ), bob
             )
-        ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
+        ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.NoMatchingOlmSessionFound>()
 
         val sendToDeviceEvents = olmEncryptionServiceRequestHandlerMock.sendToDeviceParams
         val encryptedEventContent =
@@ -550,7 +552,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     ), senderKey = bobCurveKey.value
                 ), bob
             )
-        ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
+        ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.NoMatchingOlmSessionFound>()
 
         // second recovery trigger
         cut.decryptOlm(
@@ -561,7 +563,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     ), senderKey = bobCurveKey.value
                 ), bob
             )
-        ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
+        ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.NoMatchingOlmSessionFound>()
 
         olmEncryptionServiceRequestHandlerMock.sendToDeviceParams shouldHaveSize 1
     }
@@ -588,7 +590,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     ), senderKey = bobCurveKey.value
                 ), bob
             )
-        ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
+        ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.NoMatchingOlmSessionFound>()
 
         delay(11.seconds)
 
@@ -601,7 +603,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     ), senderKey = bobCurveKey.value
                 ), bob
             )
-        ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
+        ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.NoMatchingOlmSessionFound>()
 
         olmEncryptionServiceRequestHandlerMock.sendToDeviceParams shouldHaveSize 2
     }
@@ -656,6 +658,135 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
         handleManipulation(
             receiveDecryptedOlmEvent.copy(recipientKeys = keysOf(Ed25519Key("CEDRICKEY", "cedrics key")))
         )
+    }
+
+    @Test
+    fun `decryptOlm - decrypt message with sender device keys in decrypted event`() = runTest {
+        olmStoreMock.devices.clear()
+        val bobSession = bobAccount.createOutboundSession(
+            identityKey = aliceAccount.curve25519Key, oneTimeKey = aliceAccount.getOneTimeKey(true)
+        )
+        val encryptedMessage = bobSession.encrypt(
+            json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent)
+        )
+
+        cut.decryptOlm(
+            ClientEvent.ToDeviceEvent(
+                OlmEncryptedToDeviceEventContent(
+                    ciphertext = mapOf(
+                        aliceCurveKey.value.value to CiphertextInfo.of(encryptedMessage)
+                    ),
+                    senderKey = bobCurveKey.value
+                ), bob
+            )
+        ).getOrThrow() shouldBe receiveDecryptedOlmEvent
+    }
+
+    @Test
+    fun `decryptOlm - fail decryption when sender device keys userId did not match`() = runTest {
+        olmStoreMock.devices.clear()
+        val bobSession = bobAccount.createOutboundSession(
+            identityKey = aliceAccount.curve25519Key, oneTimeKey = aliceAccount.getOneTimeKey(true)
+        )
+        val encryptedMessage = bobSession.encrypt(
+            json.encodeToString(
+                decryptedOlmEventSerializer, receiveDecryptedOlmEvent.copy(
+                    senderDeviceKeys = Signed(
+                        checkNotNull(receiveDecryptedOlmEvent.senderDeviceKeys?.signed?.copy(userId = alice)),
+                        null
+                    )
+                )
+            )
+        )
+
+        cut.decryptOlm(
+            ClientEvent.ToDeviceEvent(
+                OlmEncryptedToDeviceEventContent(
+                    ciphertext = mapOf(
+                        aliceCurveKey.value.value to CiphertextInfo.of(encryptedMessage)
+                    ),
+                    senderKey = bobCurveKey.value
+                ), bob
+            )
+        ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.ValidationFailed>()
+    }
+
+    @Test
+    fun `decryptOlm - fail decryption when sender device keys in decrypted event has invalid signature`() = runTest {
+        olmStoreMock.devices.clear()
+        mockSignService.returnVerify = VerifyResult.Invalid("invalid signature")
+        val bobSession = bobAccount.createOutboundSession(
+            identityKey = aliceAccount.curve25519Key, oneTimeKey = aliceAccount.getOneTimeKey(true)
+        )
+        val encryptedMessage = bobSession.encrypt(
+            json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent)
+        )
+
+        val result = cut.decryptOlm(
+            ClientEvent.ToDeviceEvent(
+                OlmEncryptedToDeviceEventContent(
+                    ciphertext = mapOf(
+                        aliceCurveKey.value.value to CiphertextInfo.of(encryptedMessage)
+                    ),
+                    senderKey = bobCurveKey.value
+                ), bob
+            )
+        )
+        result.exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.ValidationFailed>()
+    }
+
+    @Test
+    fun `decryptOlm - fail decryption when sender device keys are missing from store and event`() = runTest {
+        olmStoreMock.devices.clear()
+        val bobSession = bobAccount.createOutboundSession(
+            identityKey = aliceAccount.curve25519Key, oneTimeKey = aliceAccount.getOneTimeKey(true)
+        )
+        val encryptedMessage = bobSession.encrypt(
+            json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent.copy(senderDeviceKeys = null))
+        )
+
+        val result = cut.decryptOlm(
+            ClientEvent.ToDeviceEvent(
+                OlmEncryptedToDeviceEventContent(
+                    ciphertext = mapOf(
+                        aliceCurveKey.value.value to CiphertextInfo.of(encryptedMessage)
+                    ),
+                    senderKey = bobCurveKey.value
+                ), bob
+            )
+        )
+        result.exceptionOrNull() shouldBe DecryptOlmError.KeyNotFound(KeyAlgorithm.Curve25519)
+    }
+
+    @Test
+    fun `decryptOlm - fail decryption when sender device keys are dehydrated`() = runTest {
+        olmStoreMock.devices.clear()
+        val bobSession = bobAccount.createOutboundSession(
+            identityKey = aliceAccount.curve25519Key, oneTimeKey = aliceAccount.getOneTimeKey(true)
+        )
+        val encryptedMessage = bobSession.encrypt(
+            json.encodeToString(
+                decryptedOlmEventSerializer,
+                receiveDecryptedOlmEvent.copy(
+                    senderDeviceKeys = Signed(
+                        checkNotNull(receiveDecryptedOlmEvent.senderDeviceKeys?.signed?.copy(dehydrated = true)),
+                        null
+                    )
+                )
+            )
+        )
+
+        val result = cut.decryptOlm(
+            ClientEvent.ToDeviceEvent(
+                OlmEncryptedToDeviceEventContent(
+                    ciphertext = mapOf(
+                        aliceCurveKey.value.value to CiphertextInfo.of(encryptedMessage)
+                    ),
+                    senderKey = bobCurveKey.value
+                ), bob
+            )
+        )
+        result.exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.DehydratedDeviceNotAllowed>()
     }
 
     suspend fun shouldEncryptMessage(
@@ -893,7 +1024,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     relatesTo = relatesTo
                 ), EventId("\$event"), bob, room, 1234
             )
-        ).exceptionOrNull() shouldBe DecryptMegolmError.MegolmKeyUnknownMessageIndex
+        ).exceptionOrNull().shouldBeInstanceOf<DecryptMegolmError.MegolmKeyUnknownMessageIndex>()
     }
 
     @Test
@@ -906,7 +1037,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     MegolmMessageValue.of(ciphertext), bobCurveKey.value, bobDeviceId, session.sessionId
                 ), EventId("\$event"), bob, room, 1234
             )
-        ).exceptionOrNull() shouldBe DecryptMegolmError.MegolmKeyNotFound
+        ).exceptionOrNull().shouldBeInstanceOf<DecryptMegolmError.MegolmKeyNotFound>()
     }
 
     @Test

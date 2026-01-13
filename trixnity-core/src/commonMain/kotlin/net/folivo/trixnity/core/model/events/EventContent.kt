@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.model.events
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
+import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 
@@ -67,7 +68,8 @@ data object EmptyEventContent :
 }
 
 data class UnknownEventContent(
-    val raw: JsonObject,
+    val raw: JsonObject, // TODO remove when ExtensibleEventContent is the default
+    override val blocks: EventContentBlocks,
     val eventType: String,
 ) : EventContent,
     RoomEventContent,
@@ -77,11 +79,13 @@ data class UnknownEventContent(
     EphemeralEventContent,
     EphemeralDataUnitContent,
     GlobalAccountDataEventContent,
-    RoomAccountDataEventContent {
+    RoomAccountDataEventContent,
+    ExtensibleEventContent<ExtensibleEventContent.Legacy.None> {
     // is always null, because this class is the last fallback, when nothing can be deserialized
     override val relatesTo: RelatesTo? = null
     override val mentions: Mentions? = null
     override val externalUrl: String? = null
+    override val legacy: ExtensibleEventContent.Legacy.None? = null
 
     override fun copyWith(relatesTo: RelatesTo?) = this
 }

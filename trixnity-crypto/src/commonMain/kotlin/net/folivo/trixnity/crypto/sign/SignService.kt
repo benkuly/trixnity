@@ -1,5 +1,6 @@
 package net.folivo.trixnity.crypto.sign
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -55,15 +56,20 @@ class SignServiceImpl(
     private val driver: CryptoDriver,
 ) : SignService {
 
-    override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> = sign(
-        DeviceKeys(
-            userId = userInfo.userId,
-            deviceId = userInfo.deviceId,
-            algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-            keys = keysOf(userInfo.signingPublicKey, userInfo.identityPublicKey),
-        ),
-        SignWith.DeviceKey
-    )
+    private val selfSignedDeviceKeysCache = MutableStateFlow<Signed<DeviceKeys, UserId>?>(null)
+    override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> {
+        val existing = selfSignedDeviceKeysCache.value
+        if (existing != null) return existing
+        return sign(
+            DeviceKeys(
+                userId = userInfo.userId,
+                deviceId = userInfo.deviceId,
+                algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                keys = keysOf(userInfo.signingPublicKey, userInfo.identityPublicKey),
+            ),
+            SignWith.DeviceKey
+        ).also { selfSignedDeviceKeysCache.value = it }
+    }
 
     override suspend fun signatures(jsonObject: JsonObject, signWith: SignWith): Signatures<UserId> {
         val stringToSign = canonicalFilteredJson(jsonObject)

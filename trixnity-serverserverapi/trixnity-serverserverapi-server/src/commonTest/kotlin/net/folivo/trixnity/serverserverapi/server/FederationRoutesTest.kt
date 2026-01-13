@@ -1345,7 +1345,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
             .returns(
                 GetHierarchy.Response(
                     rooms = listOf(
-                        GetHierarchy.Response.PublicRoomsChunk(
+                        GetHierarchy.Response.SpaceHierarchyRoomsChunk(
                             allowedRoomIds = setOf(RoomId("!upstream:example.org")),
                             avatarUrl = "mxc://example.org/abcdef2",
                             canonicalAlias = RoomAliasId("#general:example.org"),
@@ -1368,7 +1368,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
                         )
                     ),
                     inaccessible_children = setOf(RoomId("!secret:example.org")),
-                    room = GetHierarchy.Response.PublicRoomsChunk(
+                    room = GetHierarchy.Response.SpaceHierarchyRoomsChunk(
                         allowedRoomIds = setOf(),
                         avatarUrl = "mxc://example.org/abcdef",
                         canonicalAlias = RoomAliasId("#general:example.org"),

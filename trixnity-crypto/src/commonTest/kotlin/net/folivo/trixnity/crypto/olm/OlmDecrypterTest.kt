@@ -46,6 +46,7 @@ class OlmDecrypterTest : TrixnityBaseTest() {
         val decryptedEvent = DecryptedOlmEvent(
             RoomMessageEventContent.TextBased.Text("hi"),
             UserId("sender", "server"), keysOf(),
+            null,
             UserId("receiver", "server"), keysOf()
         )
         olmEncryptionServiceMock.decryptOlm = Result.success(decryptedEvent)

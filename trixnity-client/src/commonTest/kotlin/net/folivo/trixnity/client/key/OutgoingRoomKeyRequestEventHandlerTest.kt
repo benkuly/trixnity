@@ -105,7 +105,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 encryptedEvent,
                 DecryptedOlmEvent(
                     forwardedRoomKeyEvent,
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 ),
             )
         )
@@ -143,7 +143,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 encryptedEvent,
                 DecryptedOlmEvent(
                     forwardedRoomKeyEvent,
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 ),
             )
         )
@@ -193,7 +193,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 encryptedEvent,
                 DecryptedOlmEvent(
                     forwardedRoomKeyEvent,
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 ),
             )
         )
@@ -210,7 +210,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 encryptedEvent,
                 DecryptedOlmEvent(
                     forwardedRoomKeyEvent().copy(sessionKey = ExportedSessionKeyValue("dino")),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 ),
             )
         )
@@ -225,7 +225,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 encryptedEvent,
                 DecryptedOlmEvent(
                     forwardedRoomKeyEvent(),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 ),
             )
         )
@@ -241,7 +241,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 encryptedEvent,
                 DecryptedOlmEvent(
                     forwardedRoomKeyEvent(),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 ),
             )
         )

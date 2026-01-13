@@ -283,6 +283,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
                     eventContent,
                     bob,
                     keysOf(Key.Ed25519Key(null, "BOB_SIGN")),
+                    null,
                     alice,
                     keysOf()
                 )
@@ -337,6 +338,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
                     eventContent,
                     bob,
                     keysOf(Key.Ed25519Key(null, "BOB_SIGN")),
+                    null,
                     alice,
                     keysOf()
                 )
@@ -370,19 +372,16 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
             ), bob
         )
 
-        olmStoreMock.inboundMegolmSession.put(
-            outboundSession.sessionId to roomId,
-            StoredInboundMegolmSession(
-                senderKey = Curve25519KeyValue("BOB_IDEN"),
-                senderSigningKey = Ed25519KeyValue("BOB_SIGN"),
-                sessionId = outboundSession.sessionId,
-                roomId = roomId,
-                firstKnownIndex = 0,
-                hasBeenBackedUp = false,
-                isTrusted = true,
-                forwardingCurve25519KeyChain = listOf(),
-                pickled = "existing_pickled"
-            )
+        olmStoreMock.inboundMegolmSession[outboundSession.sessionId to roomId] = StoredInboundMegolmSession(
+            senderKey = Curve25519KeyValue("BOB_IDEN"),
+            senderSigningKey = Ed25519KeyValue("BOB_SIGN"),
+            sessionId = outboundSession.sessionId,
+            roomId = roomId,
+            firstKnownIndex = 0,
+            hasBeenBackedUp = false,
+            isTrusted = true,
+            forwardingCurve25519KeyChain = listOf(),
+            pickled = "existing_pickled"
         )
 
         cut.handleOlmEncryptedRoomKeyEventContent(
@@ -392,6 +391,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
                     eventContent,
                     bob,
                     keysOf(Key.Ed25519Key(null, "BOB_SIGN")),
+                    null,
                     alice,
                     keysOf()
                 )

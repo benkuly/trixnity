@@ -1,6 +1,8 @@
 package net.folivo.trixnity.core.serialization.events
 
 import net.folivo.trixnity.core.MSC3814
+import net.folivo.trixnity.core.model.events.block.m.TextContentBlock
+import net.folivo.trixnity.core.model.events.block.m.TopicContentBlock
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.call.CallEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
@@ -96,4 +98,7 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     roomAccountDataOf<FullyReadEventContent>("m.fully_read")
     roomAccountDataOf<MarkedUnreadEventContent>("m.marked_unread")
     roomAccountDataOf<TagEventContent>("m.tag")
+
+    blockOf(TextContentBlock)
+    blockOf(TopicContentBlock)
 }
