@@ -12,9 +12,9 @@ import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.VerifyResult
 
 class SignServiceMock : SignService {
-    override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> {
-        throw NotImplementedError()
-    }
+    lateinit var selfSignedDeviceKeys: Signed<DeviceKeys, UserId>
+    override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> =
+        selfSignedDeviceKeys
 
     override suspend fun signatures(
         jsonObject: JsonObject,
@@ -55,6 +55,6 @@ class SignServiceMock : SignService {
         serializer: KSerializer<T>,
         checkSignaturesOf: Map<UserId, Set<Key.Ed25519Key>>
     ): VerifyResult {
-        return returnVerify ?: VerifyResult.Invalid("")
+        return returnVerify ?: VerifyResult.Invalid("no returnVerify set in mock")
     }
 }

@@ -214,7 +214,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
         olmDecrypterMock.eventSubscribers.first().first()(
             DecryptedOlmEventContainer(
                 ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")), bobUserId),
-                DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
+                DecryptedOlmEvent(request, bobUserId, keysOf(), null, aliceUserId, keysOf())
             )
         )
         cut.activeDeviceVerification.value shouldBe null
@@ -231,7 +231,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
         olmDecrypterMock.eventSubscribers.first().first()(
             DecryptedOlmEventContainer(
                 ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")), bobUserId),
-                DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
+                DecryptedOlmEvent(request, bobUserId, keysOf(), null, aliceUserId, keysOf())
             )
         )
         val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
@@ -261,13 +261,13 @@ class VerificationServiceTest : TrixnityBaseTest() {
         olmDecrypterMock.eventSubscribers.first().first()(
             DecryptedOlmEventContainer(
                 ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")), bobUserId),
-                DecryptedOlmEvent(request1, bobUserId, keysOf(), aliceUserId, keysOf())
+                DecryptedOlmEvent(request1, bobUserId, keysOf(), null, aliceUserId, keysOf())
             )
         )
         olmDecrypterMock.eventSubscribers.first().first()(
             DecryptedOlmEventContainer(
                 ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")), bobUserId),
-                DecryptedOlmEvent(request2, aliceUserId, keysOf(), aliceUserId, keysOf())
+                DecryptedOlmEvent(request2, aliceUserId, keysOf(), null, aliceUserId, keysOf())
             )
         )
         val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }

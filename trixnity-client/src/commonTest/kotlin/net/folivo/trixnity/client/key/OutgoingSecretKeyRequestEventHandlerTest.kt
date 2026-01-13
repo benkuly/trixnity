@@ -136,7 +136,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent, DecryptedOlmEvent(
                     SecretKeySendEventContent("requestId", crossSigningPrivateKey),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 )
             )
         )
@@ -151,7 +151,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent, DecryptedOlmEvent(
                     SecretKeySendEventContent("requestId", crossSigningPrivateKey),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 )
             )
         )
@@ -168,7 +168,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent, DecryptedOlmEvent(
                     SecretKeySendEventContent("requestId", crossSigningPrivateKey),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 )
             )
         )
@@ -184,7 +184,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent, DecryptedOlmEvent(
                     SecretKeySendEventContent("requestId", crossSigningPrivateKey),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 )
             )
         )
@@ -203,7 +203,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", "dino"),
-                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                        alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                     )
                 )
             )
@@ -224,7 +224,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", keyBackupPrivateKey),
-                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                        alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                     )
                 )
             )
@@ -249,7 +249,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", crossSigningPrivateKey),
-                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                        alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                     )
                 )
             )
@@ -275,7 +275,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", keyBackupPrivateKey),
-                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                        alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                     )
                 )
             )
@@ -295,7 +295,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", "wrong key"),
-                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                        alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                     )
                 )
             )
@@ -317,7 +317,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", key),
-                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                        alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                     )
                 )
             )
@@ -339,7 +339,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", key),
-                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                        alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                     )
                 )
             )
@@ -357,7 +357,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent, DecryptedOlmEvent(
                     SecretKeySendEventContent("requestId", crossSigningPrivateKey),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 )
             )
         )
@@ -377,7 +377,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent, DecryptedOlmEvent(
                     SecretKeySendEventContent("requestId", crossSigningPrivateKey),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 )
             )
         )
@@ -398,7 +398,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent, DecryptedOlmEvent(
                     SecretKeySendEventContent("requestId", keyBackupPrivateKey),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 )
             )
         )
@@ -420,7 +420,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", key),
-                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                        alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                     )
                 )
             )
@@ -448,7 +448,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent, DecryptedOlmEvent(
                     SecretKeySendEventContent("requestId", crossSigningPrivateKey),
-                    alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    alice, keysOf(aliceDevice2Key), null, alice, keysOf()
                 )
             )
         )

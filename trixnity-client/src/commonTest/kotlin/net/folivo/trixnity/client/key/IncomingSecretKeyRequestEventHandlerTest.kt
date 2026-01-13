@@ -75,7 +75,7 @@ class IncomingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                         bobDevice,
                         "requestId"
                     ),
-                    bob, keysOf(), alice, keysOf()
+                    bob, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -95,7 +95,7 @@ class IncomingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                         aliceDevice,
                         "requestId"
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -115,7 +115,7 @@ class IncomingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                         aliceDevice,
                         "requestId"
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -128,7 +128,7 @@ class IncomingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                         aliceDevice,
                         "requestId"
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -239,7 +239,7 @@ class IncomingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                         aliceDevice,
                         "requestId"
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )
@@ -267,7 +267,7 @@ class IncomingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                         aliceDevice,
                         "requestId"
                     ),
-                    alice, keysOf(), alice, keysOf()
+                    alice, keysOf(), null, alice, keysOf()
                 )
             )
         )
