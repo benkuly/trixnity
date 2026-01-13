@@ -116,9 +116,55 @@ class RoomsRoutesTest : TrixnityBaseTest() {
     fun shouldGetStateEvent() = testApplication {
         initCut()
         everySuspend { handlerMock.getStateEvent(any()) }
-            .returns(NameEventContent("name"))
+            .returns(
+                GetStateEvent.Response.Event(
+                    StateEvent(
+                        id = EventId("event1"),
+                        roomId = RoomId("!room:server"),
+                        unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
+                        originTimestamp = 12341,
+                        sender = UserId("sender", "server"),
+                        content = NameEventContent("a"),
+                        stateKey = ""
+                    )
+                )
+            )
         val response =
-            client.get("/_matrix/client/v3/rooms/!room:server/state/m.room.name/") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/rooms/!room:server/state/m.room.name/?format=event") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                    "content":{
+                      "name":"a"
+                    },
+                    "event_id":"event1",
+                    "origin_server_ts":12341,
+                    "room_id":"!room:server",
+                    "sender":"@sender:server",
+                    "state_key":"",
+                    "type":"m.room.name",
+                    "unsigned":{}
+                }
+            """.trimToFlatJson()
+        }
+        verifySuspend {
+            handlerMock.getStateEvent(assert {
+                it.endpoint.type shouldBe "m.room.name"
+                it.endpoint.stateKey shouldBe ""
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetStateEventContent() = testApplication {
+        initCut()
+        everySuspend { handlerMock.getStateEvent(any()) }
+            .returns(GetStateEvent.Response.Content(NameEventContent("name")))
+        val response =
+            client.get("/_matrix/client/v3/rooms/!room:server/state/m.room.name/?format=content") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)

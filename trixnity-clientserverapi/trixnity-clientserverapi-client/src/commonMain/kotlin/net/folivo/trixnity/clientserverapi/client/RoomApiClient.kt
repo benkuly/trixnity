@@ -5,12 +5,9 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.InitialStateEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TagEventContent
@@ -41,6 +38,16 @@ interface RoomApiClient {
      * @see [GetStateEvent]
      */
     suspend fun getStateEvent(
+        type: String,
+        roomId: RoomId,
+        stateKey: String = "",
+        asUserId: UserId? = null
+    ): Result<ClientEvent.StateBaseEvent<*>>
+
+    /**
+     * @see [GetStateEventContent]
+     */
+    suspend fun getStateEventContent(
         type: String,
         roomId: RoomId,
         stateKey: String = "",
@@ -542,8 +549,24 @@ class RoomApiClientImpl(
         roomId: RoomId,
         stateKey: String,
         asUserId: UserId?
+    ): Result<ClientEvent.StateBaseEvent<*>> =
+        baseClient.request(GetStateEvent(roomId, type, stateKey, GetStateEvent.Format.EVENT, asUserId))
+            .mapCatching {
+                check(it is GetStateEvent.Response.Event)
+                it.value
+            }
+
+    override suspend fun getStateEventContent(
+        type: String,
+        roomId: RoomId,
+        stateKey: String,
+        asUserId: UserId?
     ): Result<StateEventContent> =
-        baseClient.request(GetStateEvent(roomId, type, stateKey, asUserId))
+        baseClient.request(GetStateEvent(roomId, type, stateKey, GetStateEvent.Format.CONTENT, asUserId))
+            .mapCatching {
+                check(it is GetStateEvent.Response.Content)
+                it.value
+            }
 
     override suspend fun getState(roomId: RoomId, asUserId: UserId?): Result<List<StateEvent<*>>> =
         baseClient.request(GetState(roomId, asUserId))
@@ -1027,10 +1050,23 @@ suspend inline fun <reified C : StateEventContent> RoomApiClient.getStateEvent(
     roomId: RoomId,
     stateKey: String = "",
     asUserId: UserId? = null
+): Result<ClientEvent.StateBaseEvent<C>> {
+    val type = contentMappings.state.contentType(C::class)
+    @Suppress("UNCHECKED_CAST")
+    return getStateEvent(type, roomId, stateKey, asUserId) as Result<ClientEvent.StateBaseEvent<C>>
+}
+
+/**
+ * @see [GetStateEventContent]
+ */
+suspend inline fun <reified C : StateEventContent> RoomApiClient.getStateEventContent(
+    roomId: RoomId,
+    stateKey: String = "",
+    asUserId: UserId? = null
 ): Result<C> {
     val type = contentMappings.state.contentType(C::class)
     @Suppress("UNCHECKED_CAST")
-    return getStateEvent(type, roomId, stateKey, asUserId) as Result<C>
+    return getStateEventContent(type, roomId, stateKey, asUserId) as Result<C>
 }
 
 /**
