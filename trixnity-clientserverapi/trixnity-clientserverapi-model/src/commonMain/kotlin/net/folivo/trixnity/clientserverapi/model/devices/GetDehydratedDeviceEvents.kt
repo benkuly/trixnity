@@ -20,7 +20,6 @@ import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 @MSC3814
 data class GetDehydratedDeviceEvents(
     @SerialName("device_id") val deviceId: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<GetDehydratedDeviceEvents.Request, GetDehydratedDeviceEvents.Response> {
     @Serializable
     data class Request(

@@ -449,7 +449,7 @@ class MatrixClientTest : TrixnityBaseTest() {
             coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
-                    matrixJsonEndpoint(Logout()) {
+                    matrixJsonEndpoint(Logout) {
                         logoutCalled = true
                     }
                 }
@@ -480,7 +480,7 @@ class MatrixClientTest : TrixnityBaseTest() {
             coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
-                    matrixJsonEndpoint(Logout()) {
+                    matrixJsonEndpoint(Logout) {
                         logoutCalled = true
                     }
                 }

@@ -20,7 +20,6 @@ data class TimestampToEvent(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("ts") val timestamp: Long,
     @SerialName("dir") val dir: Direction,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, TimestampToEvent.Response> {
 
     @Serializable

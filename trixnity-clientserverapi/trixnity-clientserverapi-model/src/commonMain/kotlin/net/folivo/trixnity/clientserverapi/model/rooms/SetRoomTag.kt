@@ -20,5 +20,4 @@ data class SetRoomTag(
     @SerialName("userId") val userId: UserId,
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("tag") val tag: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<TagEventContent.Tag, Unit>

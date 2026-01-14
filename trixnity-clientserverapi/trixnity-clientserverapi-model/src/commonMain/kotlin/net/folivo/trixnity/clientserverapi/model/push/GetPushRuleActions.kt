@@ -20,7 +20,6 @@ data class GetPushRuleActions(
     @SerialName("scope") val scope: String,
     @SerialName("kind") val kind: PushRuleKind,
     @SerialName("ruleId") val ruleId: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetPushRuleActions.Response> {
     @Serializable
     data class Response(

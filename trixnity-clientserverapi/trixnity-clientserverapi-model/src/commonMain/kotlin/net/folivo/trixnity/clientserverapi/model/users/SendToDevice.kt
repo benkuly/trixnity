@@ -32,7 +32,6 @@ import net.folivo.trixnity.core.serialization.events.contentSerializer
 data class SendToDevice(
     @SerialName("type") val type: String,
     @SerialName("txnId") val txnId: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<SendToDevice.Request, Unit> {
     override fun requestSerializerBuilder(
         mappings: EventContentSerializerMappings,

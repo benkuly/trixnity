@@ -20,5 +20,4 @@ data class GetRoomKeyBackupData(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("sessionId") val sessionId: String,
     @SerialName("version") val version: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, RoomKeyBackupData>

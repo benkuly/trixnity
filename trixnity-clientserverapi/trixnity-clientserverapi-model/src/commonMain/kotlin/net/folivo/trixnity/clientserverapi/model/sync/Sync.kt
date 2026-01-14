@@ -42,7 +42,6 @@ data class Sync(
     @SerialName("set_presence") val setPresence: Presence? = null,
     @SerialName("since") val since: String? = null,
     @SerialName("timeout") val timeout: Long? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, Sync.Response> {
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,

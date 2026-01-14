@@ -758,7 +758,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
 
     private fun returnRoomKeysVersion(publicKey: String? = null) {
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
+            matrixJsonEndpoint(GetRoomKeyBackupVersion) {
                 if (publicKey == null) throw MatrixServerException(
                     HttpStatusCode.InternalServerError,
                     ErrorResponse.Unknown("")
@@ -774,7 +774,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
 
     private fun returnDehydratedDevice(key: String? = null, pickle: String? = null) {
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetDehydratedDevice()) {
+            matrixJsonEndpoint(GetDehydratedDevice) {
                 if (key == null) throw MatrixServerException(
                     HttpStatusCode.NotFound,
                     ErrorResponse.NotFound("no dehydrated device present")

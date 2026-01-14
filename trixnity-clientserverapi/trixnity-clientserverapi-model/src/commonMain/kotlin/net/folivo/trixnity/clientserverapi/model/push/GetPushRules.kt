@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.push.PushRuleSet
 
 /**
@@ -15,9 +14,7 @@ import net.folivo.trixnity.core.model.push.PushRuleSet
 @Serializable
 @Resource("/_matrix/client/v3/pushrules/")
 @HttpMethod(GET)
-data class GetPushRules(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<Unit, GetPushRules.Response> {
+data object GetPushRules : MatrixEndpoint<Unit, GetPushRules.Response> {
     @Serializable
     data class Response(
         @SerialName("global") val global: PushRuleSet,

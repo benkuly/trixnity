@@ -106,7 +106,6 @@ dependencies {
     dokka(projects.trixnityClient.trixnityClientRepositoryRoom)
     dokka(projects.trixnityClient.trixnityClientCryptodriverLibolm)
     dokka(projects.trixnityClient.trixnityClientCryptodriverVodozemac)
-    dokka(projects.trixnityApplicationservice)
 }
 
 

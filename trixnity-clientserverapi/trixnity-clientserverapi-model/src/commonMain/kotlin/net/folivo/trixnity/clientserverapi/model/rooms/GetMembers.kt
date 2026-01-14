@@ -23,7 +23,6 @@ data class GetMembers(
     @SerialName("at") val at: String? = null,
     @SerialName("membership") val membership: Membership? = null,
     @SerialName("not_membership") val notMembership: Membership? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetMembers.Response> {
     @Serializable
     data class Response(

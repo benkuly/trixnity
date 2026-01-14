@@ -19,5 +19,4 @@ import net.folivo.trixnity.core.model.events.m.TagEventContent
 data class GetRoomTags(
     @SerialName("userId") val userId: UserId,
     @SerialName("roomId") val roomId: RoomId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, TagEventContent>

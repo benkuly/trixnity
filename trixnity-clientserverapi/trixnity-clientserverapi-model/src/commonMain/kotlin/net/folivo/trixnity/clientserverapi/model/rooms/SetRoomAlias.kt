@@ -18,7 +18,6 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(PUT)
 data class SetRoomAlias(
     @SerialName("roomAliasId") val roomAliasId: RoomAliasId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<SetRoomAlias.Request, Unit> {
     @Serializable
     data class Request(

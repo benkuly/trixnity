@@ -17,5 +17,4 @@ import net.folivo.trixnity.core.model.UserId
 data class GetFilter(
     @SerialName("userId") val userId: UserId,
     @SerialName("filterId") val filterId: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, Filters>

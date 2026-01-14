@@ -19,9 +19,7 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 @Serializable
 @Resource("/_matrix/client/v3/createRoom")
 @HttpMethod(POST)
-data class CreateRoom(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<CreateRoom.Request, CreateRoom.Response> {
+data object CreateRoom : MatrixEndpoint<CreateRoom.Request, CreateRoom.Response> {
 
     @Serializable
     data class Request(

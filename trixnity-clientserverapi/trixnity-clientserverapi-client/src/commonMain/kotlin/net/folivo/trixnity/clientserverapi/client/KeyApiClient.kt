@@ -15,7 +15,6 @@ interface KeyApiClient {
         deviceKeys: SignedDeviceKeys? = null,
         oneTimeKeys: Keys? = null,
         fallbackKeys: Keys? = null,
-        asUserId: UserId? = null
     ): Result<Map<KeyAlgorithm, Int>>
 
     /**
@@ -24,7 +23,6 @@ interface KeyApiClient {
     suspend fun getKeys(
         deviceKeys: Map<UserId, Set<String>>,
         timeout: Long? = 10000,
-        asUserId: UserId? = null
     ): Result<GetKeys.Response>
 
     /**
@@ -33,7 +31,6 @@ interface KeyApiClient {
     suspend fun claimKeys(
         oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>,
         timeout: Long? = 10000,
-        asUserId: UserId? = null
     ): Result<ClaimKeys.Response>
 
     /**
@@ -42,7 +39,6 @@ interface KeyApiClient {
     suspend fun getKeyChanges(
         from: String,
         to: String,
-        asUserId: UserId? = null
     ): Result<GetKeyChanges.Response>
 
     /**
@@ -52,7 +48,6 @@ interface KeyApiClient {
         masterKey: SignedCrossSigningKeys?,
         selfSigningKey: SignedCrossSigningKeys?,
         userSigningKey: SignedCrossSigningKeys?,
-        asUserId: UserId? = null
     ): Result<UIA<Unit>>
 
     /**
@@ -61,7 +56,6 @@ interface KeyApiClient {
     suspend fun addSignatures(
         signedDeviceKeys: Set<SignedDeviceKeys>,
         signedCrossSigningKeys: Set<SignedCrossSigningKeys>,
-        asUserId: UserId? = null
     ): Result<AddSignatures.Response>
 
     /**
@@ -69,7 +63,6 @@ interface KeyApiClient {
      */
     suspend fun getRoomKeys(
         version: String,
-        asUserId: UserId? = null
     ): Result<RoomsKeyBackup>
 
     /**
@@ -78,7 +71,6 @@ interface KeyApiClient {
     suspend fun getRoomKeys(
         version: String,
         roomId: RoomId,
-        asUserId: UserId? = null
     ): Result<RoomKeyBackup>
 
     /**
@@ -88,7 +80,6 @@ interface KeyApiClient {
         version: String,
         roomId: RoomId,
         sessionId: String,
-        asUserId: UserId? = null
     ): Result<RoomKeyBackupData>
 
     /**
@@ -97,7 +88,6 @@ interface KeyApiClient {
     suspend fun setRoomKeys(
         version: String,
         backup: RoomsKeyBackup,
-        asUserId: UserId? = null
     ): Result<SetRoomKeysResponse>
 
     /**
@@ -107,7 +97,6 @@ interface KeyApiClient {
         version: String,
         roomId: RoomId,
         backup: RoomKeyBackup,
-        asUserId: UserId? = null
     ): Result<SetRoomKeysResponse>
 
     /**
@@ -118,7 +107,6 @@ interface KeyApiClient {
         roomId: RoomId,
         sessionId: String,
         backup: RoomKeyBackupData,
-        asUserId: UserId? = null
     ): Result<SetRoomKeysResponse>
 
     /**
@@ -126,7 +114,6 @@ interface KeyApiClient {
      */
     suspend fun deleteRoomKeys(
         version: String,
-        asUserId: UserId? = null
     ): Result<DeleteRoomKeysResponse>
 
     /**
@@ -135,7 +122,6 @@ interface KeyApiClient {
     suspend fun deleteRoomKeys(
         version: String,
         roomId: RoomId,
-        asUserId: UserId? = null
     ): Result<DeleteRoomKeysResponse>
 
     /**
@@ -145,14 +131,12 @@ interface KeyApiClient {
         version: String,
         roomId: RoomId,
         sessionId: String,
-        asUserId: UserId? = null
     ): Result<DeleteRoomKeysResponse>
 
     /**
      * @see [GetRoomKeyBackupVersion]
      */
     suspend fun getRoomKeysVersion(
-        asUserId: UserId? = null
     ): Result<GetRoomKeysBackupVersionResponse>
 
     /**
@@ -160,7 +144,6 @@ interface KeyApiClient {
      */
     suspend fun getRoomKeysVersion(
         version: String,
-        asUserId: UserId? = null
     ): Result<GetRoomKeysBackupVersionResponse>
 
     /**
@@ -169,7 +152,6 @@ interface KeyApiClient {
      */
     suspend fun setRoomKeysVersion(
         request: SetRoomKeyBackupVersionRequest,
-        asUserId: UserId? = null
     ): Result<String>
 
     /**
@@ -177,7 +159,6 @@ interface KeyApiClient {
      */
     suspend fun deleteRoomKeysVersion(
         version: String,
-        asUserId: UserId? = null
     ): Result<Unit>
 }
 
@@ -189,40 +170,35 @@ class KeyApiClientImpl(
         deviceKeys: SignedDeviceKeys?,
         oneTimeKeys: Keys?,
         fallbackKeys: Keys?,
-        asUserId: UserId?
     ): Result<Map<KeyAlgorithm, Int>> =
-        baseClient.request(SetKeys(asUserId), SetKeys.Request(deviceKeys, oneTimeKeys, fallbackKeys))
+        baseClient.request(SetKeys, SetKeys.Request(deviceKeys, oneTimeKeys, fallbackKeys))
             .mapCatching { it.oneTimeKeyCounts }
 
     override suspend fun getKeys(
         deviceKeys: Map<UserId, Set<String>>,
         timeout: Long?,
-        asUserId: UserId?
     ): Result<GetKeys.Response> =
-        baseClient.request(GetKeys(asUserId), GetKeys.Request(deviceKeys, timeout))
+        baseClient.request(GetKeys, GetKeys.Request(deviceKeys, timeout))
 
     override suspend fun claimKeys(
         oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>,
         timeout: Long?,
-        asUserId: UserId?
     ): Result<ClaimKeys.Response> =
-        baseClient.request(ClaimKeys(asUserId), ClaimKeys.Request(oneTimeKeys, timeout))
+        baseClient.request(ClaimKeys, ClaimKeys.Request(oneTimeKeys, timeout))
 
     override suspend fun getKeyChanges(
         from: String,
         to: String,
-        asUserId: UserId?
     ): Result<GetKeyChanges.Response> =
-        baseClient.request(GetKeyChanges(from, to, asUserId))
+        baseClient.request(GetKeyChanges(from, to))
 
     override suspend fun setCrossSigningKeys(
         masterKey: SignedCrossSigningKeys?,
         selfSigningKey: SignedCrossSigningKeys?,
         userSigningKey: SignedCrossSigningKeys?,
-        asUserId: UserId?
     ): Result<UIA<Unit>> =
         baseClient.uiaRequest(
-            SetCrossSigningKeys(asUserId),
+            SetCrossSigningKeys,
             SetCrossSigningKeys.Request(
                 masterKey = masterKey,
                 selfSigningKey = selfSigningKey,
@@ -233,10 +209,9 @@ class KeyApiClientImpl(
     override suspend fun addSignatures(
         signedDeviceKeys: Set<SignedDeviceKeys>,
         signedCrossSigningKeys: Set<SignedCrossSigningKeys>,
-        asUserId: UserId?
     ): Result<AddSignatures.Response> =
         baseClient.request(
-            AddSignatures(asUserId),
+            AddSignatures,
             (signedDeviceKeys.associate {
                 Pair(it.signed.userId, it.signed.deviceId) to json.encodeToJsonElement(it)
             } + signedCrossSigningKeys.associate {
@@ -249,96 +224,82 @@ class KeyApiClientImpl(
 
     override suspend fun getRoomKeys(
         version: String,
-        asUserId: UserId?
     ): Result<RoomsKeyBackup> =
-        baseClient.request(GetRoomsKeyBackup(version, asUserId))
+        baseClient.request(GetRoomsKeyBackup(version))
 
     override suspend fun getRoomKeys(
         version: String,
         roomId: RoomId,
-        asUserId: UserId?
     ): Result<RoomKeyBackup> =
-        baseClient.request(GetRoomKeyBackup(roomId, version, asUserId))
+        baseClient.request(GetRoomKeyBackup(roomId, version))
 
     override suspend fun getRoomKeys(
         version: String,
         roomId: RoomId,
         sessionId: String,
-        asUserId: UserId?
     ): Result<RoomKeyBackupData> =
-        baseClient.request(GetRoomKeyBackupData(roomId, sessionId, version, asUserId))
+        baseClient.request(GetRoomKeyBackupData(roomId, sessionId, version))
 
     override suspend fun setRoomKeys(
         version: String,
         backup: RoomsKeyBackup,
-        asUserId: UserId?
     ): Result<SetRoomKeysResponse> =
-        baseClient.request(SetRoomsKeyBackup(version, asUserId), backup)
+        baseClient.request(SetRoomsKeyBackup(version), backup)
 
     override suspend fun setRoomKeys(
         version: String,
         roomId: RoomId,
         backup: RoomKeyBackup,
-        asUserId: UserId?
     ): Result<SetRoomKeysResponse> =
-        baseClient.request(SetRoomKeyBackup(roomId, version, asUserId), backup)
+        baseClient.request(SetRoomKeyBackup(roomId, version), backup)
 
     override suspend fun setRoomKeys(
         version: String,
         roomId: RoomId,
         sessionId: String,
         backup: RoomKeyBackupData,
-        asUserId: UserId?
     ): Result<SetRoomKeysResponse> =
-        baseClient.request(SetRoomKeyBackupData(roomId, sessionId, version, asUserId), backup)
+        baseClient.request(SetRoomKeyBackupData(roomId, sessionId, version), backup)
 
     override suspend fun deleteRoomKeys(
         version: String,
-        asUserId: UserId?
     ): Result<DeleteRoomKeysResponse> =
-        baseClient.request(DeleteRoomsKeyBackup(version, asUserId))
+        baseClient.request(DeleteRoomsKeyBackup(version))
 
     override suspend fun deleteRoomKeys(
         version: String,
         roomId: RoomId,
-        asUserId: UserId?
     ): Result<DeleteRoomKeysResponse> =
-        baseClient.request(DeleteRoomKeyBackup(roomId, version, asUserId))
+        baseClient.request(DeleteRoomKeyBackup(roomId, version))
 
     override suspend fun deleteRoomKeys(
         version: String,
         roomId: RoomId,
         sessionId: String,
-        asUserId: UserId?
     ): Result<DeleteRoomKeysResponse> =
-        baseClient.request(DeleteRoomKeyBackupData(roomId, sessionId, version, asUserId))
+        baseClient.request(DeleteRoomKeyBackupData(roomId, sessionId, version))
 
-    override suspend fun getRoomKeysVersion(
-        asUserId: UserId?
-    ): Result<GetRoomKeysBackupVersionResponse> =
-        baseClient.request(GetRoomKeyBackupVersion(asUserId))
+    override suspend fun getRoomKeysVersion(): Result<GetRoomKeysBackupVersionResponse> =
+        baseClient.request(GetRoomKeyBackupVersion)
 
     override suspend fun getRoomKeysVersion(
         version: String,
-        asUserId: UserId?
     ): Result<GetRoomKeysBackupVersionResponse> =
-        baseClient.request(GetRoomKeyBackupVersionByVersion(version, asUserId))
+        baseClient.request(GetRoomKeyBackupVersionByVersion(version))
 
     override suspend fun setRoomKeysVersion(
         request: SetRoomKeyBackupVersionRequest,
-        asUserId: UserId?
     ): Result<String> {
         val version = request.version
         return if (version == null) {
-            baseClient.request(SetRoomKeyBackupVersion(asUserId), request).map { it.version }
+            baseClient.request(SetRoomKeyBackupVersion, request).map { it.version }
         } else {
-            baseClient.request(SetRoomKeyBackupVersionByVersion(version, asUserId), request).map { version }
+            baseClient.request(SetRoomKeyBackupVersionByVersion(version), request).map { version }
         }
     }
 
     override suspend fun deleteRoomKeysVersion(
         version: String,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(DeleteRoomKeyBackupVersion(version, asUserId))
+        baseClient.request(DeleteRoomKeyBackupVersion(version))
 }

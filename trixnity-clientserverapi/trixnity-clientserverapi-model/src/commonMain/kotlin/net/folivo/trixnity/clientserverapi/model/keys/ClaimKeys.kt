@@ -17,9 +17,7 @@ import net.folivo.trixnity.core.model.keys.Keys
 @Serializable
 @Resource("/_matrix/client/v3/keys/claim")
 @HttpMethod(POST)
-data class ClaimKeys(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<ClaimKeys.Request, ClaimKeys.Response> {
+data object ClaimKeys : MatrixEndpoint<ClaimKeys.Request, ClaimKeys.Response> {
     @Serializable
     data class Request(
         @SerialName("one_time_keys")

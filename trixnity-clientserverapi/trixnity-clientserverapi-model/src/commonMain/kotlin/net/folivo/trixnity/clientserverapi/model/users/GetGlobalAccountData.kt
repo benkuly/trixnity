@@ -22,7 +22,6 @@ import net.folivo.trixnity.core.serialization.events.contentSerializer
 data class GetGlobalAccountData(
     @SerialName("userId") val userId: UserId,
     @SerialName("type") val type: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GlobalAccountDataEventContent> {
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,

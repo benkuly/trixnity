@@ -42,26 +42,15 @@ class RoomsApiClientTest : TrixnityBaseTest() {
 
     @Test
     fun shouldEncodeUrlParameter() = runTest {
-        val response = StateEvent(
-            id = EventId("event"),
-            roomId = RoomId("!room:server"),
-            unsigned = UnsignedStateEventData(),
-            originTimestamp = 1234,
-            sender = UserId("sender", "server"),
-            content = NameEventContent("name"),
-            stateKey = ""
-        )
-        val serializer = json.serializersModule.getContextual(StateEvent::class)
-        requireNotNull(serializer)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/!room:server/event/${'$'}event?user_id=%40user%3Aserver",
+                        "/_matrix/client/v3/rooms/!room:server/members?at=%24%40%3Abla",
                         request.url.fullPath
                     )
                     respond(
-                        json.encodeToString(serializer, response),
+                        """{"chunk":[]}""",
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -69,10 +58,9 @@ class RoomsApiClientTest : TrixnityBaseTest() {
             },
             baseUrl = Url("https://matrix.host"),
         )
-        matrixRestClient.room.getEvent(
+        matrixRestClient.room.getMembers(
             RoomId("!room:server"),
-            EventId("\$event"),
-            asUserId = UserId("user", "server")
+            at = "\$@:bla", // just for test, not possible in spec
         ).getOrThrow()
     }
 

@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.model.UserId
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3account3pidbind">matrix spec</a>
@@ -14,9 +13,7 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 @Resource("/_matrix/client/v3/account/3pid/bind")
 @HttpMethod(POST)
-data class BindThirdPartyIdentifiers(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<BindThirdPartyIdentifiers.Request, Unit> {
+data object BindThirdPartyIdentifiers : MatrixEndpoint<BindThirdPartyIdentifiers.Request, Unit> {
     @Serializable
     data class Request(
         @SerialName("client_secret") val clientSecret: String,

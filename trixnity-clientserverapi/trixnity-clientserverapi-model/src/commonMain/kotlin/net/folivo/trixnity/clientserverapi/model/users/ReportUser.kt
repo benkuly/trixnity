@@ -16,7 +16,6 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(POST)
 data class ReportUser(
     @SerialName("userId") val userId: UserId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<ReportUser.Request, Unit> {
     @Serializable
     data class Request(

@@ -23,7 +23,6 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 data class GetSummary(
     @SerialName("roomIdOrRoomAliasId") val roomIdOrRoomAliasId: String,
     @SerialName("via") val via: Set<String>? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetSummary.Response> {
     @Serializable
     data class Response(

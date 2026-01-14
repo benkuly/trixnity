@@ -14,9 +14,7 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 @Resource("/_matrix/client/v3/account/whoami")
 @HttpMethod(GET)
-data class WhoAmI(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<Unit, WhoAmI.Response> {
+data object WhoAmI : MatrixEndpoint<Unit, WhoAmI.Response> {
     @Serializable
     data class Response(
         @SerialName("user_id") val userId: UserId,

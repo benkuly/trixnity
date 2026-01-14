@@ -23,7 +23,6 @@ data class SetPushRule(
     @SerialName("ruleId") val ruleId: String,
     @SerialName("before") val beforeRuleId: String? = null,
     @SerialName("after") val afterRuleId: String? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<SetPushRule.Request, Unit> {
     @Serializable
     data class Request(

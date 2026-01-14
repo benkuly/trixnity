@@ -20,5 +20,4 @@ import net.folivo.trixnity.core.model.UserId
 data class GetProfileField(
     @SerialName("userId") val userId: UserId,
     @SerialName("keyName") val key: ProfileField.Key<*>,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, ProfileField>

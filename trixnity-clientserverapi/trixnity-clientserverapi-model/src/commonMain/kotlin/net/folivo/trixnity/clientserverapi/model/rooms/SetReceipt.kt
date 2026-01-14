@@ -21,7 +21,6 @@ data class SetReceipt(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("receiptType") val receiptType: ReceiptType,
     @SerialName("eventId") val eventId: EventId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<SetReceipt.Request, Unit> {
     @Serializable
     data class Request(

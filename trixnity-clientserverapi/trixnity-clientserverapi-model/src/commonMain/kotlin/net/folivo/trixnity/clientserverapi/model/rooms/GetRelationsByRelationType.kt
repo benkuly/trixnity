@@ -25,5 +25,4 @@ data class GetRelationsByRelationType(
     @SerialName("to") val to: String? = null,
     @SerialName("limit") val limit: Long? = null,
     @SerialName("recurse") val recurse: Boolean? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetRelationsResponse>

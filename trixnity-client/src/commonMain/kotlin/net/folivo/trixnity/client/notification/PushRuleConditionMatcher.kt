@@ -39,6 +39,7 @@ class PushRuleConditionMatcherImpl(
 ) : PushRuleConditionMatcher {
     companion object {
         // TODO should use display name at position of the event
+        @Suppress("DEPRECATION")
         suspend fun match(
             condition: PushCondition.ContainsDisplayName,
             event: ClientEvent<*>,
@@ -132,6 +133,7 @@ class PushRuleConditionMatcherImpl(
     }
 
 
+    @Suppress("DEPRECATION")
     override suspend fun match(
         condition: PushCondition,
         event: ClientEvent<*>,

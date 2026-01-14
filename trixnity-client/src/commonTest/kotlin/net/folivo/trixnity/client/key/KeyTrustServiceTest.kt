@@ -128,7 +128,7 @@ class KeyTrustServiceTest : TrixnityBaseTest() {
         var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
 
         apiConfig.endpoints {
-            matrixJsonEndpoint(AddSignatures()) {
+            matrixJsonEndpoint(AddSignatures) {
                 addSignaturesRequest = it
                 AddSignatures.Response(mapOf())
             }
@@ -584,7 +584,7 @@ class KeyTrustServiceTest : TrixnityBaseTest() {
     fun `trustAndSignKeys » handle own account keys`() = runTest {
         var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
         apiConfig.endpoints {
-            matrixJsonEndpoint(AddSignatures()) {
+            matrixJsonEndpoint(AddSignatures) {
                 addSignaturesRequest = it
                 AddSignatures.Response(mapOf())
             }
@@ -660,7 +660,7 @@ class KeyTrustServiceTest : TrixnityBaseTest() {
     fun `trustAndSignKeys » handle others account keys`() = runTest {
         var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
         apiConfig.endpoints {
-            matrixJsonEndpoint(AddSignatures()) {
+            matrixJsonEndpoint(AddSignatures) {
                 addSignaturesRequest = it
                 AddSignatures.Response(mapOf())
             }
@@ -728,7 +728,7 @@ class KeyTrustServiceTest : TrixnityBaseTest() {
     @Test
     fun `trustAndSignKeys » throw exception when signature upload fails`() = runTest {
         apiConfig.endpoints {
-            matrixJsonEndpoint(AddSignatures()) {
+            matrixJsonEndpoint(AddSignatures) {
                 AddSignatures.Response(mapOf(alice to mapOf("AAAAAA" to JsonPrimitive("oh"))))
             }
         }

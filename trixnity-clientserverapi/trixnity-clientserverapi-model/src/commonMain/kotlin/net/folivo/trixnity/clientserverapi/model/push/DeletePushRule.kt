@@ -19,5 +19,4 @@ data class DeletePushRule(
     @SerialName("scope") val scope: String,
     @SerialName("kind") val kind: PushRuleKind,
     @SerialName("ruleId") val ruleId: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, Unit>

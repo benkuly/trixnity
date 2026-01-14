@@ -14,7 +14,6 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.allEvents
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.ClientEventEmitterImpl
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.utils.RetryFlowDelayConfig
@@ -95,7 +94,6 @@ interface SyncApiClient : ClientEventEmitter<SyncEvents> {
         setPresence: Presence? = null,
         timeout: Duration = ZERO,
         useStateAfter: Boolean? = null,
-        asUserId: UserId? = null
     ): Result<Sync.Response>
 
     val currentSyncState: StateFlow<SyncState>
@@ -144,7 +142,6 @@ class SyncApiClientImpl(
         setPresence: Presence?,
         timeout: Duration,
         useStateAfter: Boolean?,
-        asUserId: UserId?
     ): Result<Sync.Response> =
         baseClient.request(
             Sync(
@@ -154,7 +151,6 @@ class SyncApiClientImpl(
                 since = since,
                 timeout = timeout.inWholeMilliseconds,
                 useStateAfter = useStateAfter,
-                asUserId = asUserId
             ),
         ) {
             timeout {

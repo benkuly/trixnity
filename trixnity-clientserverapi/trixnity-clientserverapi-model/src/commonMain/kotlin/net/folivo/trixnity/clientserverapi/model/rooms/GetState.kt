@@ -23,7 +23,6 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 @HttpMethod(GET)
 data class GetState(
     @SerialName("roomId") val roomId: RoomId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, List<StateEvent<*>>> {
     @OptIn(ExperimentalSerializationApi::class)
     override fun responseSerializerBuilder(

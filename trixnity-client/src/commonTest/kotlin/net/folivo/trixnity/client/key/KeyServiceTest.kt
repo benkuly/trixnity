@@ -149,7 +149,7 @@ class KeyServiceTest : TrixnityBaseTest() {
                 encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
                 dehydratedDeviceEventContentCalled = true
             }
-            matrixJsonEndpoint(SetCrossSigningKeys()) {
+            matrixJsonEndpoint(SetCrossSigningKeys) {
                 it.request.masterKey shouldNotBe null
                 it.request.selfSigningKey shouldNotBe null
                 it.request.userSigningKey shouldNotBe null

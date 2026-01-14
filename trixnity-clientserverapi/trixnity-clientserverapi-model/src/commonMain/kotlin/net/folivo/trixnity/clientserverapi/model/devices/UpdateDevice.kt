@@ -16,7 +16,6 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(PUT)
 data class UpdateDevice(
     @SerialName("deviceId") val deviceId: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<UpdateDevice.Request, Unit> {
     @Serializable
     data class Request(

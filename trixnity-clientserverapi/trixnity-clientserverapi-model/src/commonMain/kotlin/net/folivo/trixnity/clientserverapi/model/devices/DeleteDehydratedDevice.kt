@@ -7,7 +7,6 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.DELETE
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.model.UserId
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#put_matrixclientv3devicesdeviceid">matrix spec</a>
@@ -16,9 +15,7 @@ import net.folivo.trixnity.core.model.UserId
 @Resource("/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device")
 @HttpMethod(DELETE)
 @MSC3814
-data class DeleteDehydratedDevice(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<Unit, DeleteDehydratedDevice.Response> {
+data object DeleteDehydratedDevice : MatrixEndpoint<Unit, DeleteDehydratedDevice.Response> {
     @Serializable
     data class Response(
         @SerialName("device_id")

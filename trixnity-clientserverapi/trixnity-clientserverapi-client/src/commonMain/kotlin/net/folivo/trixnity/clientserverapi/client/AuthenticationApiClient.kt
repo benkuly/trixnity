@@ -12,7 +12,7 @@ interface AuthenticationApiClient {
     /**
      * @see [WhoAmI]
      */
-    suspend fun whoAmI(asUserId: UserId? = null): Result<WhoAmI.Response>
+    suspend fun whoAmI(): Result<WhoAmI.Response>
 
     /**
      * @see [IsRegistrationTokenValid]
@@ -113,12 +113,12 @@ interface AuthenticationApiClient {
     /**
      * @see [Logout]
      */
-    suspend fun logout(asUserId: UserId? = null): Result<Unit>
+    suspend fun logout(): Result<Unit>
 
     /**
      * @see [LogoutAll]
      */
-    suspend fun logoutAll(asUserId: UserId? = null): Result<Unit>
+    suspend fun logoutAll(): Result<Unit>
 
     /**
      * @see [DeactivateAccount]
@@ -126,7 +126,6 @@ interface AuthenticationApiClient {
     suspend fun deactivateAccount(
         identityServer: String? = null,
         erase: Boolean? = null,
-        asUserId: UserId? = null
     ): Result<UIA<DeactivateAccount.Response>>
 
     /**
@@ -140,9 +139,7 @@ interface AuthenticationApiClient {
     /**
      * @see [GetThirdPartyIdentifiers]
      */
-    suspend fun getThirdPartyIdentifiers(
-        asUserId: UserId? = null,
-    ): Result<Set<ThirdPartyIdentifier>>
+    suspend fun getThirdPartyIdentifiers(): Result<Set<ThirdPartyIdentifier>>
 
     /**
      * @see [AddThirdPartyIdentifiers]
@@ -150,7 +147,6 @@ interface AuthenticationApiClient {
     suspend fun addThirdPartyIdentifiers(
         clientSecret: String,
         sessionId: String,
-        asUserId: UserId? = null,
     ): Result<UIA<Unit>>
 
     /**
@@ -161,7 +157,6 @@ interface AuthenticationApiClient {
         sessionId: String,
         idAccessToken: String,
         idServer: String,
-        asUserId: UserId? = null,
     ): Result<Unit>
 
     /**
@@ -171,7 +166,6 @@ interface AuthenticationApiClient {
         address: String,
         idServer: String? = null,
         medium: ThirdPartyIdentifier.Medium,
-        asUserId: UserId? = null,
     ): Result<DeleteThirdPartyIdentifiers.Response>
 
     /**
@@ -181,13 +175,12 @@ interface AuthenticationApiClient {
         address: String,
         idServer: String? = null,
         medium: ThirdPartyIdentifier.Medium,
-        asUserId: UserId? = null,
     ): Result<UnbindThirdPartyIdentifiers.Response>
 
     /**
      * @see [GetOIDCRequestToken]
      */
-    suspend fun getOIDCRequestToken(userId: UserId, asUserId: UserId? = null): Result<GetOIDCRequestToken.Response>
+    suspend fun getOIDCRequestToken(userId: UserId): Result<GetOIDCRequestToken.Response>
 
     /**
      * @see [Refresh]
@@ -200,7 +193,6 @@ interface AuthenticationApiClient {
      * @see [GetToken]
      */
     suspend fun getToken(
-        asUserId: UserId? = null
     ): Result<UIA<GetToken.Response>>
 }
 
@@ -208,8 +200,8 @@ class AuthenticationApiClientImpl(
     private val baseClient: MatrixClientServerApiBaseClient,
     private val authProvider: MatrixClientAuthProvider,
 ) : AuthenticationApiClient {
-    override suspend fun whoAmI(asUserId: UserId?): Result<WhoAmI.Response> =
-        baseClient.request(WhoAmI(asUserId))
+    override suspend fun whoAmI(): Result<WhoAmI.Response> =
+        baseClient.request(WhoAmI)
 
     override suspend fun isRegistrationTokenValid(
         token: String
@@ -317,20 +309,19 @@ class AuthenticationApiClientImpl(
             )
         )
 
-    override suspend fun logout(asUserId: UserId?): Result<Unit> = runCatching {
+    override suspend fun logout(): Result<Unit> = runCatching {
         authProvider.logout()?.getOrThrow()
-        baseClient.request(Logout(asUserId)).getOrThrow()
+        baseClient.request(Logout).getOrThrow()
     }
 
-    override suspend fun logoutAll(asUserId: UserId?): Result<Unit> =
-        baseClient.request(LogoutAll(asUserId))
+    override suspend fun logoutAll(): Result<Unit> =
+        baseClient.request(LogoutAll)
 
     override suspend fun deactivateAccount(
         identityServer: String?,
         erase: Boolean?,
-        asUserId: UserId?
     ): Result<UIA<DeactivateAccount.Response>> =
-        baseClient.uiaRequest(DeactivateAccount(asUserId), DeactivateAccount.Request(identityServer, erase))
+        baseClient.uiaRequest(DeactivateAccount, DeactivateAccount.Request(identityServer, erase))
 
     override suspend fun changePassword(
         newPassword: String,
@@ -339,17 +330,15 @@ class AuthenticationApiClientImpl(
         baseClient.uiaRequest(ChangePassword, ChangePassword.Request(newPassword, logoutDevices))
 
     override suspend fun getThirdPartyIdentifiers(
-        asUserId: UserId?,
     ): Result<Set<ThirdPartyIdentifier>> =
-        baseClient.request(GetThirdPartyIdentifiers(asUserId)).map { it.thirdPartyIdentifiers }
+        baseClient.request(GetThirdPartyIdentifiers).map { it.thirdPartyIdentifiers }
 
     override suspend fun addThirdPartyIdentifiers(
         clientSecret: String,
         sessionId: String,
-        asUserId: UserId?,
     ): Result<UIA<Unit>> =
         baseClient.uiaRequest(
-            AddThirdPartyIdentifiers(asUserId),
+            AddThirdPartyIdentifiers,
             AddThirdPartyIdentifiers.Request(clientSecret = clientSecret, sessionId = sessionId)
         )
 
@@ -358,10 +347,9 @@ class AuthenticationApiClientImpl(
         sessionId: String,
         idAccessToken: String,
         idServer: String,
-        asUserId: UserId?,
     ): Result<Unit> =
         baseClient.request(
-            BindThirdPartyIdentifiers(asUserId),
+            BindThirdPartyIdentifiers,
             BindThirdPartyIdentifiers.Request(
                 clientSecret = clientSecret,
                 sessionId = sessionId,
@@ -374,10 +362,9 @@ class AuthenticationApiClientImpl(
         address: String,
         idServer: String?,
         medium: ThirdPartyIdentifier.Medium,
-        asUserId: UserId?,
     ): Result<DeleteThirdPartyIdentifiers.Response> =
         baseClient.request(
-            DeleteThirdPartyIdentifiers(asUserId),
+            DeleteThirdPartyIdentifiers,
             DeleteThirdPartyIdentifiers.Request(
                 address = address,
                 idServer = idServer,
@@ -389,10 +376,9 @@ class AuthenticationApiClientImpl(
         address: String,
         idServer: String?,
         medium: ThirdPartyIdentifier.Medium,
-        asUserId: UserId?,
     ): Result<UnbindThirdPartyIdentifiers.Response> =
         baseClient.request(
-            UnbindThirdPartyIdentifiers(asUserId),
+            UnbindThirdPartyIdentifiers,
             UnbindThirdPartyIdentifiers.Request(
                 address = address,
                 idServer = idServer,
@@ -400,12 +386,12 @@ class AuthenticationApiClientImpl(
             )
         )
 
-    override suspend fun getOIDCRequestToken(userId: UserId, asUserId: UserId?): Result<GetOIDCRequestToken.Response> =
-        baseClient.request(GetOIDCRequestToken(userId, asUserId))
+    override suspend fun getOIDCRequestToken(userId: UserId): Result<GetOIDCRequestToken.Response> =
+        baseClient.request(GetOIDCRequestToken(userId))
 
     override suspend fun refresh(refreshToken: String): Result<Refresh.Response> =
         baseClient.request(Refresh, Refresh.Request(refreshToken))
 
-    override suspend fun getToken(asUserId: UserId?): Result<UIA<GetToken.Response>> =
-        baseClient.uiaRequest(GetToken(asUserId))
+    override suspend fun getToken(): Result<UIA<GetToken.Response>> =
+        baseClient.uiaRequest(GetToken)
 }

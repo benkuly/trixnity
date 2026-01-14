@@ -24,7 +24,6 @@ data class GetEventContext(
     @SerialName("eventId") val eventId: EventId,
     @SerialName("filter") val filter: String? = null,
     @SerialName("limit") val limit: Long? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetEventContext.Response> {
     @Serializable
     data class Response(

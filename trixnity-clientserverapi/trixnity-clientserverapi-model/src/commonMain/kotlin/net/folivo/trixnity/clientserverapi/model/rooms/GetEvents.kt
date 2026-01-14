@@ -25,7 +25,6 @@ data class GetEvents(
     @SerialName("dir") val dir: Direction,
     @SerialName("limit") val limit: Long? = null,
     @SerialName("filter") val filter: String? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetEvents.Response> {
     @Serializable
     enum class Direction {

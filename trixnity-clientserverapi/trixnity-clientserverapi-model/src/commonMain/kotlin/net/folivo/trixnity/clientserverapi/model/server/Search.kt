@@ -21,7 +21,6 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 @HttpMethod(POST)
 data class Search(
     @SerialName("next_batch") val nextBatch: String? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Search.Request, Search.Response> {
     @Serializable
     data class Request(
