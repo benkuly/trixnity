@@ -18,7 +18,7 @@ interface RoomsApiHandler {
     /**
      * @see [GetStateEvent]
      */
-    suspend fun getStateEvent(context: MatrixEndpointContext<GetStateEvent, Unit, StateEventContent>): StateEventContent
+    suspend fun getStateEvent(context: MatrixEndpointContext<GetStateEvent, Unit, GetStateEvent.Response>): GetStateEvent.Response
 
     /**
      * @see [GetState]

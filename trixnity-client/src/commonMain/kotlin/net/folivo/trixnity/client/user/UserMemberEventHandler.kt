@@ -182,12 +182,9 @@ class UserMemberEventHandler(
         if (events.any { it.stateKey == userInfo.userId.full }) {
             log.debug { "reload own profile as there has been member events of us" }
             api.user.getProfile(userInfo.userId)
-                .onSuccess {
+                .onSuccess { profile ->
                     accountStore.updateAccount { account ->
-                        account?.copy(
-                            displayName = it.displayName,
-                            avatarUrl = it.avatarUrl
-                        )
+                        account?.copy(profile = profile)
                     }
                 }.getOrThrow()
         }

@@ -17,6 +17,8 @@ value class TopicContentBlock(
 
     companion object Type : EventContentBlock.Type<TopicContentBlock> {
         override val value: String = "m.topic"
+
+        override fun toString(): String = value
     }
 
     val text: TextContentBlock? get() = blocks[TextContentBlock]

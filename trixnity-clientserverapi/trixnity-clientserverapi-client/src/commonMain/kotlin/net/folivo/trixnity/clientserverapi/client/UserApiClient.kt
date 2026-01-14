@@ -20,34 +20,29 @@ interface UserApiClient {
     val contentMappings: EventContentSerializerMappings
 
     /**
-     * @see [GetDisplayName]
+     * @see [GetProfileField]
      */
-    suspend fun getDisplayName(
+    suspend fun getProfileField(
         userId: UserId,
-    ): Result<String?>
+        key: ProfileField.Key<*>,
+        asUserId: UserId? = null,
+    ): Result<ProfileField>
 
     /**
-     * @see [SetDisplayName]
+     * @see [SetProfileField]
      */
-    suspend fun setDisplayName(
+    suspend fun setProfileField(
         userId: UserId,
-        displayName: String? = null,
-        asUserId: UserId? = null
+        field: ProfileField,
+        asUserId: UserId? = null,
     ): Result<Unit>
 
     /**
-     * @see [GetAvatarUrl]
+     * @see [DeleteProfileField]
      */
-    suspend fun getAvatarUrl(
+    suspend fun deleteProfileField(
         userId: UserId,
-    ): Result<String?>
-
-    /**
-     * @see [SetAvatarUrl]
-     */
-    suspend fun setAvatarUrl(
-        userId: UserId,
-        avatarUrl: String?,
+        key: ProfileField.Key<*>,
         asUserId: UserId? = null,
     ): Result<Unit>
 
@@ -56,7 +51,8 @@ interface UserApiClient {
      */
     suspend fun getProfile(
         userId: UserId,
-    ): Result<GetProfile.Response>
+        asUserId: UserId? = null
+    ): Result<Profile>
 
     /**
      * @see [GetPresence]
@@ -169,33 +165,31 @@ class UserApiClientImpl(
     override val contentMappings: EventContentSerializerMappings
 ) : UserApiClient {
 
-    override suspend fun getDisplayName(
+    override suspend fun getProfileField(
         userId: UserId,
-    ): Result<String?> =
-        baseClient.request(GetDisplayName(userId)).mapCatching { it.displayName }
+        key: ProfileField.Key<*>,
+        asUserId: UserId?
+    ): Result<ProfileField> =
+        baseClient.request(GetProfileField(userId, key, asUserId))
 
-    override suspend fun setDisplayName(
+    override suspend fun setProfileField(
         userId: UserId,
-        displayName: String?,
+        field: ProfileField,
         asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(SetDisplayName(userId, asUserId), SetDisplayName.Request(displayName))
+        baseClient.request(SetProfileField(userId, field.key, asUserId), field)
 
-    override suspend fun getAvatarUrl(
+    override suspend fun deleteProfileField(
         userId: UserId,
-    ): Result<String?> =
-        baseClient.request(GetAvatarUrl(userId)).mapCatching { it.avatarUrl }
-
-    override suspend fun setAvatarUrl(
-        userId: UserId,
-        avatarUrl: String?,
-        asUserId: UserId?,
+        key: ProfileField.Key<*>,
+        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(SetAvatarUrl(userId, asUserId), SetAvatarUrl.Request(avatarUrl))
+        baseClient.request(DeleteProfileField(userId, key, asUserId))
 
     override suspend fun getProfile(
         userId: UserId,
-    ): Result<GetProfile.Response> =
+        asUserId: UserId?,
+    ): Result<Profile> =
         baseClient.request(GetProfile(userId))
 
     override suspend fun getPresence(
@@ -334,3 +328,13 @@ suspend inline fun <reified C : GlobalAccountDataEventContent> UserApiClient.get
     @Suppress("UNCHECKED_CAST")
     return getAccountData(type, userId, key, asUserId) as Result<C>
 }
+
+/**
+ * @see [GetProfileField]
+ */
+suspend inline fun <reified T : ProfileField> UserApiClient.getProfileField(
+    userId: UserId,
+    key: ProfileField.Key<T>,
+    asUserId: UserId? = null,
+): Result<T> =
+    getProfileField(userId, key, asUserId).map { it as? T ?: error("unexpected type") }

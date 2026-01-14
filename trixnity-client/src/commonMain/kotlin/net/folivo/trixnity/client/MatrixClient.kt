@@ -15,14 +15,13 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryMigration
 import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.users.Filters
-import net.folivo.trixnity.core.ClientEventEmitter
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.clientserverapi.model.users.Profile
+import net.folivo.trixnity.clientserverapi.model.users.ProfileField
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.subscribeAsFlow
 import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.crypto.driver.useAll
 import net.folivo.trixnity.crypto.of
@@ -53,8 +52,7 @@ interface MatrixClient : AutoCloseable {
      * Use this for further access to matrix client-server-API.
      */
     val api: MatrixClientServerApiClient
-    val displayName: StateFlow<String?>
-    val avatarUrl: StateFlow<String?>
+    val profile: StateFlow<Profile?>
 
     val serverData: StateFlow<ServerData?>
 
@@ -97,9 +95,7 @@ interface MatrixClient : AutoCloseable {
 
     suspend fun cancelSync()
 
-    suspend fun setDisplayName(displayName: String?): Result<Unit>
-
-    suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit>
+    suspend fun setProfileField(profileField: ProfileField): Result<Unit>
 
     suspend fun closeSuspending()
 }
@@ -241,18 +237,24 @@ suspend fun MatrixClient.Companion.create(
             httpClientConfig = config.httpClientConfig,
         )
         try {
-            if (isFirstInit) {
-                val (displayName, avatarUrl) = api.user.getProfile(userId).getOrThrow()
+            if (isFirstInit || initialAccount.profile == null) {
+                val profile = api.user.getProfile(userId)
+                    .fold(
+                        onSuccess = { it },
+                        onFailure = {
+                            if (it is MatrixServerException && it.statusCode == HttpStatusCode.NotFound) Profile()
+                            else throw it
+                        }
+                    )
                 accountStore.updateAccount {
                     Account(
                         olmPickleKey = null,
                         userId = userId,
                         deviceId = deviceId,
-                        displayName = displayName,
-                        avatarUrl = avatarUrl,
                         backgroundFilterId = null,
                         filterId = null,
                         syncBatchToken = null,
+                        profile = profile
                     )
                 }
             }
@@ -401,9 +403,7 @@ class MatrixClientImpl internal constructor(
 
     override val started: MatrixClientStarted = di.get()
 
-    override val displayName: StateFlow<String?> = accountStore.getAccountAsFlow().map { it?.displayName }
-        .stateIn(coroutineScope, Eagerly, null)
-    override val avatarUrl: StateFlow<String?> = accountStore.getAccountAsFlow().map { it?.avatarUrl }
+    override val profile: StateFlow<Profile?> = accountStore.getAccountAsFlow().map { it?.profile ?: Profile() }
         .stateIn(coroutineScope, Eagerly, null)
     override val serverData: StateFlow<ServerData?> = di.get<ServerDataStore>().getServerDataFlow()
         .stateIn(coroutineScope, Eagerly, null)
@@ -594,15 +594,9 @@ class MatrixClientImpl internal constructor(
         job.join()
     }
 
-    override suspend fun setDisplayName(displayName: String?): Result<Unit> {
-        return api.user.setDisplayName(userId, displayName).map {
-            accountStore.updateAccount { it?.copy(displayName = displayName) }
-        }
-    }
-
-    override suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit> {
-        return api.user.setAvatarUrl(userId, avatarUrl).map {
-            accountStore.updateAccount { it?.copy(avatarUrl = avatarUrl) }
+    override suspend fun setProfileField(profileField: ProfileField): Result<Unit> {
+        return api.user.setProfileField(userId, profileField).map {
+            accountStore.updateAccount { it?.copy(profile = (it.profile ?: Profile()) + profileField) }
         }
     }
 }

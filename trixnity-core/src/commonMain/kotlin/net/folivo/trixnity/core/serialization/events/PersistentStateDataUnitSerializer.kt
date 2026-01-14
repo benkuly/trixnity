@@ -66,13 +66,14 @@ class PersistentStateDataUnitSerializer(
     override fun deserialize(decoder: Decoder): PersistentDataUnit.PersistentStateDataUnit<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = (jsonObj["type"] as? JsonPrimitive)?.content ?: throw SerializationException("type must not be null")
-        val roomId = (jsonObj["room_id"] as? JsonPrimitive)?.content
+        val type =
+            (jsonObj["type"] as? JsonPrimitive)?.contentOrNull ?: throw SerializationException("type must not be null")
+        val roomId = (jsonObj["room_id"] as? JsonPrimitive)?.contentOrNull
         val isCreateEvent = type == "m.room.create"
         val roomVersion =
             when {
                 isCreateEvent -> {
-                    ((jsonObj["content"] as JsonObject?)?.get("room_version") as? JsonPrimitive)?.content ?: "1"
+                    ((jsonObj["content"] as JsonObject?)?.get("room_version") as? JsonPrimitive)?.contentOrNull ?: "1"
                 }
 
                 roomId == null -> throw SerializationException("roomId must not be null")

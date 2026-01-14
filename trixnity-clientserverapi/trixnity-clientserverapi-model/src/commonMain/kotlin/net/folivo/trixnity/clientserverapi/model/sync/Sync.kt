@@ -38,6 +38,7 @@ import kotlin.jvm.JvmInline
 data class Sync(
     @SerialName("filter") val filter: String? = null,
     @SerialName("full_state") val fullState: Boolean? = null,
+    @SerialName("use_state_after") val useStateAfter: Boolean? = null,
     @SerialName("set_presence") val setPresence: Presence? = null,
     @SerialName("since") val since: String? = null,
     @SerialName("timeout") val timeout: Long? = null,
@@ -85,6 +86,7 @@ data class Sync(
                 @SerialName("summary") val summary: RoomSummary? = null,
                 @SerialName("state") val state: State? = null,
                 @SerialName("timeline") val timeline: Timeline? = null,
+                @SerialName("state_after") val stateAfter: State? = null,
                 @SerialName("ephemeral") val ephemeral: Ephemeral? = null,
                 @SerialName("account_data") val accountData: RoomAccountData? = null,
                 @SerialName("unread_notifications") val unreadNotifications: UnreadNotificationCounts? = null,
@@ -124,6 +126,7 @@ data class Sync(
             data class LeftRoom(
                 @SerialName("state") val state: State? = null,
                 @SerialName("timeline") val timeline: Timeline? = null,
+                @SerialName("state_after") val stateAfter: State? = null,
                 @SerialName("account_data") val accountData: RoomAccountData? = null
             )
 
@@ -183,6 +186,7 @@ fun Sync.Response.allEvents(): List<ClientEvent<*>> = buildList {
     room?.join?.forEach { (_, joinedRoom) ->
         joinedRoom.state?.events?.forEach { add(it) }
         joinedRoom.timeline?.events?.forEach { add(it) }
+        joinedRoom.stateAfter?.events?.forEach { add(it) }
         joinedRoom.ephemeral?.events?.forEach { add(it) }
         joinedRoom.accountData?.events?.forEach { add(it) }
     }
@@ -195,6 +199,7 @@ fun Sync.Response.allEvents(): List<ClientEvent<*>> = buildList {
     room?.leave?.forEach { (_, leftRoom) ->
         leftRoom.state?.events?.forEach { add(it) }
         leftRoom.timeline?.events?.forEach { add(it) }
+        leftRoom.stateAfter?.events?.forEach { add(it) }
         leftRoom.accountData?.events?.forEach { add(it) }
     }
 }

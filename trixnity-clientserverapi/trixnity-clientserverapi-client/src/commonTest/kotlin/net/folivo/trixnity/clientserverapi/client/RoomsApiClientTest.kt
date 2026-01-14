@@ -1,6 +1,7 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
@@ -114,13 +115,48 @@ class RoomsApiClientTest : TrixnityBaseTest() {
 
     @Test
     fun shouldGetStateEvent() = runTest {
+        val response = StateEvent(
+            NameEventContent("name"),
+            sender = UserId("user", "server"),
+            id = EventId("event1"),
+            roomId = RoomId("!room"),
+            originTimestamp = 1L,
+            stateKey = "",
+        )
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/rooms/!room:server/state/m.room.name/?format=event",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(
+                            checkNotNull(json.serializersModule.getContextual(StateEvent::class)),
+                            response
+                        ),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        val result = matrixRestClient.room.getStateEvent<NameEventContent>(
+            roomId = RoomId("!room:server"),
+        ).getOrThrow()
+        result.shouldBeInstanceOf<StateEvent<*>>()
+    }
+
+    @Test
+    fun shouldGetStateEventContent() = runTest {
         val response = NameEventContent("name")
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/!room:server/state/m.room.name/",
+                        "/_matrix/client/v3/rooms/!room:server/state/m.room.name/?format=content",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -131,7 +167,7 @@ class RoomsApiClientTest : TrixnityBaseTest() {
                     )
                 }
             })
-        val result = matrixRestClient.room.getStateEvent<NameEventContent>(
+        val result = matrixRestClient.room.getStateEventContent<NameEventContent>(
             roomId = RoomId("!room:server"),
         ).getOrThrow()
         assertEquals(NameEventContent::class, result::class)

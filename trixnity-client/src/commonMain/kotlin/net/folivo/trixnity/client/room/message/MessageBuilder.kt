@@ -18,7 +18,6 @@ data class ContentBuilderInfo(
 
 typealias ContentBuilder = suspend ContentBuilderInfo.() -> MessageEventContent?
 
-// TODO this has MSC1767 in mind.
 @TrixnityDsl
 class MessageBuilder(
     val roomId: RoomId,
@@ -49,7 +48,7 @@ class MessageBuilder(
         when (relatesTo) {
             is RelatesTo.Replace -> {
                 val oldMentions = roomService.getTimelineEventWithContentAndTimeout(roomId, relatesTo.eventId)
-                    ?.content?.getOrNull()?.let {
+                    .content?.getOrNull()?.let {
                         if (it is MessageEventContent) it.mentions else null
                     }
                 if (mentions != null) {

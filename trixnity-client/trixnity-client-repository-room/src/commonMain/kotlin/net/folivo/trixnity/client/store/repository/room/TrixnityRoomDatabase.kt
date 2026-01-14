@@ -99,6 +99,14 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
         tableName = "Account",
         columnName = "oauth2ClientId"
     )
+    @DeleteColumn(
+        tableName = "Account",
+        columnName = "displayName"
+    )
+    @DeleteColumn(
+        tableName = "Account",
+        columnName = "avatarUrl"
+    )
     class Delete6to7MigrationSpec : AutoMigrationSpec
 }
 

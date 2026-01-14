@@ -1,7 +1,9 @@
 package net.folivo.trixnity.appservice
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExistingState
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.users.ProfileField
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
@@ -33,9 +35,9 @@ interface ApplicationServiceUserService {
         }
         val displayName = getRegisterUserParameter(userId).displayName
         if (displayName != null) {
-            matrixClientServerApiClient.user.setDisplayName(
+            matrixClientServerApiClient.user.setProfileField(
                 userId,
-                displayName,
+                ProfileField.DisplayName(displayName),
                 asUserId = userId
             ).onFailure {
                 log.error(it) { "could not set displayname of $userId to $displayName" }

@@ -10,7 +10,8 @@ import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
-import net.folivo.trixnity.clientserverapi.model.users.SetDisplayName
+import net.folivo.trixnity.clientserverapi.model.users.ProfileField
+import net.folivo.trixnity.clientserverapi.model.users.SetProfileField
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId
@@ -127,7 +128,7 @@ class DefaultApplicationServiceApiServerHandlerTest : TrixnityBaseTest() {
                 matrixJsonEndpoint(Register()) {
                     ResponseWithUIA.Success(Register.Response(userId))
                 }
-                matrixJsonEndpoint(SetDisplayName(userId, userId)) { }
+                matrixJsonEndpoint(SetProfileField(userId, ProfileField.DisplayName, userId)) { }
             })
         initCut(api)
         applicationServiceUserService.userExistingState =

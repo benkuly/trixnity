@@ -17,7 +17,7 @@ import kotlin.reflect.KClass
 private val log = KotlinLogging.logger("net.folivo.trixnity.core.model.events.block.EventContentBlocks")
 
 @JvmInline
-value class EventContentBlocks internal constructor(
+value class EventContentBlocks private constructor(
     private val blocks: Map<EventContentBlock.Type<*>, EventContentBlock>
 ) {
     constructor(blocks: Set<EventContentBlock>) : this(blocks.associateBy { it.type })

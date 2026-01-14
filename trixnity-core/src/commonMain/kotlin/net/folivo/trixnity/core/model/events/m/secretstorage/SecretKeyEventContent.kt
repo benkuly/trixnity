@@ -89,7 +89,7 @@ object SecretStorageKeyPassphraseSerializer : KSerializer<AesHmacSha2Key.SecretS
         require(decoder is JsonDecoder)
         val jsonElement = decoder.decodeJsonElement().jsonObject
         return try {
-            when ((jsonElement["algorithm"] as? JsonPrimitive)?.content) {
+            when ((jsonElement["algorithm"] as? JsonPrimitive)?.contentOrNull) {
                 "m.pbkdf2" -> decoder.json.decodeFromJsonElement<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>(
                     jsonElement
                 )

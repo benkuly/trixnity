@@ -3,13 +3,15 @@ package net.folivo.trixnity.appservice
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExistingState.CAN_BE_CREATED
 import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
-import net.folivo.trixnity.clientserverapi.model.users.SetDisplayName
+import net.folivo.trixnity.clientserverapi.model.users.ProfileField
+import net.folivo.trixnity.clientserverapi.model.users.SetProfileField
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
@@ -53,9 +55,9 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
                     }
                     ResponseWithUIA.Success(Register.Response(userId))
                 }
-                matrixJsonEndpoint(SetDisplayName(userId, userId)) { requestBody ->
+                matrixJsonEndpoint(SetProfileField(userId, ProfileField.DisplayName, userId)) { requestBody ->
                     assertSoftly(requestBody) {
-                        it.displayName shouldBe "someDisplayName"
+                        it.shouldBeInstanceOf<ProfileField.DisplayName>().value shouldBe "someDisplayName"
                     }
                     setDisplayNameCalled = true
                 }
@@ -109,9 +111,9 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
                         ErrorResponse.UserInUse("Desired user ID is already taken.")
                     )
                 }
-                matrixJsonEndpoint(SetDisplayName(userId, userId)) { requestBody ->
+                matrixJsonEndpoint(SetProfileField(userId, ProfileField.DisplayName, userId)) { requestBody ->
                     assertSoftly(requestBody) {
-                        it.displayName shouldBe "someDisplayName"
+                        it.shouldBeInstanceOf<ProfileField.DisplayName>().value shouldBe "someDisplayName"
                     }
                     setDisplayNameCalled = true
                 }
@@ -135,7 +137,7 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
                 matrixJsonEndpoint(Register()) {
                     ResponseWithUIA.Success(Register.Response(userId))
                 }
-                matrixJsonEndpoint(SetDisplayName(userId, userId)) { }
+                matrixJsonEndpoint(SetProfileField(userId, ProfileField.DisplayName, userId)) { }
             })
         val cut = TestApplicationServiceUserService(api)
 
@@ -157,7 +159,7 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
                 matrixJsonEndpoint(Register()) {
                     ResponseWithUIA.Success(Register.Response(userId))
                 }
-                matrixJsonEndpoint(SetDisplayName(userId, userId)) {
+                matrixJsonEndpoint(SetProfileField(userId, ProfileField.DisplayName, userId)) {
                     setDisplayNameCalled = true
                 }
             })
@@ -180,7 +182,7 @@ class ApplicationServiceUserServiceTest : TrixnityBaseTest() {
                 matrixJsonEndpoint(Register()) {
                     ResponseWithUIA.Success(Register.Response(userId))
                 }
-                matrixJsonEndpoint(SetDisplayName(userId, userId)) {
+                matrixJsonEndpoint(SetProfileField(userId, ProfileField.DisplayName, userId)) {
                     setDisplayNameCalled = true
                     throw MatrixServerException(
                         HttpStatusCode.BadRequest,

@@ -177,8 +177,9 @@ class PersistentMessageDataUnitSerializer(
     override fun deserialize(decoder: Decoder): PersistentMessageDataUnit<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = (jsonObj["type"] as? JsonPrimitive)?.content ?: throw SerializationException("type must not be null")
-        val roomId = (jsonObj["room_id"] as? JsonPrimitive)?.content
+        val type =
+            (jsonObj["type"] as? JsonPrimitive)?.contentOrNull ?: throw SerializationException("type must not be null")
+        val roomId = (jsonObj["room_id"] as? JsonPrimitive)?.contentOrNull
         requireNotNull(roomId)
         return when (val roomVersion = roomVersionStore.getRoomVersion(RoomId(roomId))) {
             "1", "2" -> decoder.json.decodeFromJsonElement(mappingV1[type], jsonObj)

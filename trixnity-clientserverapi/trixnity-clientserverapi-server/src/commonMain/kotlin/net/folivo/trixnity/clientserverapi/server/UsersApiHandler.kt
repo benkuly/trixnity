@@ -7,29 +7,24 @@ import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 
 interface UsersApiHandler {
     /**
-     * @see [GetDisplayName]
+     * @see [GetProfileField]
      */
-    suspend fun getDisplayName(context: MatrixEndpointContext<GetDisplayName, Unit, GetDisplayName.Response>): GetDisplayName.Response
+    suspend fun getProfileField(context: MatrixEndpointContext<GetProfileField, Unit, ProfileField>): ProfileField
 
     /**
-     * @see [SetDisplayName]
+     * @see [SetProfileField]
      */
-    suspend fun setDisplayName(context: MatrixEndpointContext<SetDisplayName, SetDisplayName.Request, Unit>)
+    suspend fun setProfileField(context: MatrixEndpointContext<SetProfileField, ProfileField, Unit>)
 
     /**
-     * @see [GetAvatarUrl]
+     * @see [DeleteProfileField]
      */
-    suspend fun getAvatarUrl(context: MatrixEndpointContext<GetAvatarUrl, Unit, GetAvatarUrl.Response>): GetAvatarUrl.Response
-
-    /**
-     * @see [SetAvatarUrl]
-     */
-    suspend fun setAvatarUrl(context: MatrixEndpointContext<SetAvatarUrl, SetAvatarUrl.Request, Unit>)
+    suspend fun deleteProfileField(context: MatrixEndpointContext<DeleteProfileField, Unit, Unit>)
 
     /**
      * @see [GetProfile]
      */
-    suspend fun getProfile(context: MatrixEndpointContext<GetProfile, Unit, GetProfile.Response>): GetProfile.Response
+    suspend fun getProfile(context: MatrixEndpointContext<GetProfile, Unit, Profile>): Profile
 
     /**
      * @see [GetPresence]

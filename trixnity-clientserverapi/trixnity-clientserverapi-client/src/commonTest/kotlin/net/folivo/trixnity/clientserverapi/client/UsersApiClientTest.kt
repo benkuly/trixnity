@@ -9,8 +9,11 @@ import io.ktor.http.ContentType.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.users.Filters
-import net.folivo.trixnity.clientserverapi.model.users.GetProfile
+import net.folivo.trixnity.clientserverapi.model.users.Profile
+import net.folivo.trixnity.clientserverapi.model.users.ProfileField
 import net.folivo.trixnity.clientserverapi.model.users.SearchUsers
 import net.folivo.trixnity.core.OlmMessageValue
 import net.folivo.trixnity.core.SessionKeyValue
@@ -34,7 +37,7 @@ import kotlin.test.fail
 class UsersApiClientTest : TrixnityBaseTest() {
 
     @Test
-    fun shouldSetDisplayName() = runTest {
+    fun shouldSetProfileField() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientEngine = scopedMockEngine {
@@ -52,37 +55,19 @@ class UsersApiClientTest : TrixnityBaseTest() {
                     )
                 }
             })
-        matrixRestClient.user.setDisplayName(UserId("user", "server"), "someDisplayName")
+        matrixRestClient.user.setProfileField(UserId("user", "server"), ProfileField.DisplayName("someDisplayName"))
     }
 
     @Test
-    fun shouldGetDisplayName() = runTest {
+    fun shouldSetUnknownProfileField() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
-                    assertEquals(HttpMethod.Get, request.method)
-                    respond(
-                        """{"displayname":"someDisplayName"}""",
-                        HttpStatusCode.OK,
-                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                    )
-                }
-            })
-        assertEquals("someDisplayName", matrixRestClient.user.getDisplayName(UserId("user", "server")).getOrThrow())
-    }
-
-    @Test
-    fun shouldSetAvatarUrl() = runTest {
-        val matrixRestClient = MatrixClientServerApiClientImpl(
-            baseUrl = Url("https://matrix.host"),
-            httpClientEngine = scopedMockEngine {
-                addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/@user:server/avatar_url", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/profile/@user:server/unknown", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
                     assertEquals(
-                        """{"avatar_url":"mxc://localhost/123456"}""",
+                        """{"unknown":{"dino":true}}""",
                         request.body.toByteArray().decodeToString()
                     )
                     respond(
@@ -92,28 +77,79 @@ class UsersApiClientTest : TrixnityBaseTest() {
                     )
                 }
             })
-        matrixRestClient.user.setAvatarUrl(UserId("user", "server"), "mxc://localhost/123456")
+        matrixRestClient.user.setProfileField(
+            UserId("user", "server"),
+            ProfileField.Unknown("other", JsonObject(mapOf("dino" to JsonPrimitive(true))))
+        )
     }
 
     @Test
-    fun shouldGetAvatarUrl() = runTest {
+    fun shouldGetProfileField() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/@user:server/avatar_url", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        """{"avatar_url":"mxc://localhost/123456"}""",
+                        """{"displayname":"someDisplayName"}""",
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
                 }
             })
         assertEquals(
-            "mxc://localhost/123456",
-            matrixRestClient.user.getAvatarUrl(UserId("user", "server")).getOrThrow()
+            "someDisplayName",
+            matrixRestClient.user.getProfileField<ProfileField.DisplayName>(
+                UserId("user", "server"),
+                ProfileField.DisplayName
+            ).getOrThrow().value
         )
+    }
+
+    @Test
+    fun shouldGetUnknownProfileField() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/profile/@user:server/unknown", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """{"unknown":{"dino":true}}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        assertEquals(
+            JsonObject(mapOf("dino" to JsonPrimitive(true))),
+            matrixRestClient.user.getProfileField<ProfileField.Unknown>(
+                UserId("user", "server"),
+                ProfileField.Unknown.Key("unknown")
+            ).getOrThrow().raw
+        )
+    }
+
+    @Test
+    fun shouldDeleteProfileField() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
+                    assertEquals(HttpMethod.Delete, request.method)
+                    respond(
+                        """{}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.deleteProfileField(
+            UserId("user", "server"),
+            ProfileField.DisplayName
+        ).getOrThrow()
     }
 
     @Test
@@ -125,35 +161,21 @@ class UsersApiClientTest : TrixnityBaseTest() {
                     assertEquals("/_matrix/client/v3/profile/@user:server", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        """{"avatar_url":"mxc://localhost/123456","displayname":"someDisplayName"}""",
+                        """{"avatar_url":"mxc://localhost/123456","displayname":"someDisplayName","unknown":{"dino":true}}""",
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
                 }
             })
         assertEquals(
-            GetProfile.Response("someDisplayName", "mxc://localhost/123456"),
-            matrixRestClient.user.getProfile(UserId("user", "server")).getOrThrow()
-        )
-    }
-
-    @Test
-    fun shouldSetNullForMissingProfileValues() = runTest {
-        val matrixRestClient = MatrixClientServerApiClientImpl(
-            baseUrl = Url("https://matrix.host"),
-            httpClientEngine = scopedMockEngine {
-                addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/@user:server", request.url.fullPath)
-                    assertEquals(HttpMethod.Get, request.method)
-                    respond(
-                        """{}""",
-                        HttpStatusCode.OK,
-                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                    )
-                }
-            })
-        assertEquals(
-            GetProfile.Response(null, null),
+            Profile(
+                ProfileField.DisplayName("someDisplayName"),
+                ProfileField.AvatarUrl("mxc://localhost/123456"),
+                ProfileField.Unknown(
+                    "unknown",
+                    JsonObject(mapOf("dino" to JsonPrimitive(true)))
+                )
+            ),
             matrixRestClient.user.getProfile(UserId("user", "server")).getOrThrow()
         )
     }
