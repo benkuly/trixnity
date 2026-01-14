@@ -23,6 +23,7 @@ import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.uia.*
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -56,6 +57,8 @@ class MatrixClientServerApiBaseClient(
     private val authProvider: MatrixClientAuthProvider,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
+    asUserId: UserId? = null,
+    asDeviceId: String? = null,
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixApiClient(
@@ -64,7 +67,10 @@ class MatrixClientServerApiBaseClient(
     httpClientEngine,
     {
         install(DefaultRequest) {
-            url.takeFrom(authProvider.baseUrl)
+            url.takeFrom(authProvider.baseUrl).apply {
+                asUserId?.let { parameters.append("user_id", it.full) }
+                asDeviceId?.let { parameters.append("device_id", it) }
+            }
         }
 
         install(SkipAuthenticationIfDisabled)

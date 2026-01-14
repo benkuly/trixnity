@@ -6,6 +6,7 @@ import io.ktor.client.engine.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -45,6 +46,8 @@ interface MatrixClientServerApiClientFactory {
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
         syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
         coroutineContext: CoroutineContext = Dispatchers.Default,
+        asUserId: UserId? = null,
+        asDeviceId: String? = null,
         httpClientEngine: HttpClientEngine? = null,
         httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
     ): MatrixClientServerApiClient =
@@ -55,6 +58,8 @@ interface MatrixClientServerApiClientFactory {
             syncBatchTokenStore = syncBatchTokenStore,
             syncErrorDelayConfig = syncErrorDelayConfig,
             coroutineContext = coroutineContext,
+            asUserId = asUserId,
+            asDeviceId = asDeviceId,
             httpClientEngine = httpClientEngine,
             httpClientConfig = httpClientConfig,
         )
@@ -66,6 +71,8 @@ interface MatrixClientServerApiClientFactory {
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
         syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
         coroutineContext: CoroutineContext = Dispatchers.Default,
+        asUserId: UserId? = null,
+        asDeviceId: String? = null,
         httpClientEngine: HttpClientEngine? = null,
         httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
     ): MatrixClientServerApiClient =
@@ -76,6 +83,8 @@ interface MatrixClientServerApiClientFactory {
             syncBatchTokenStore = syncBatchTokenStore,
             syncErrorDelayConfig = syncErrorDelayConfig,
             coroutineContext = coroutineContext,
+            asUserId = asUserId,
+            asDeviceId = asDeviceId,
             httpClientEngine = httpClientEngine,
             httpClientConfig = httpClientConfig,
         )
@@ -90,6 +99,8 @@ class MatrixClientServerApiClientImpl(
     syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
     syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
     coroutineContext: CoroutineContext = Dispatchers.Default,
+    asUserId: UserId? = null,
+    asDeviceId: String? = null,
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixClientServerApiClient {
@@ -100,6 +111,8 @@ class MatrixClientServerApiClientImpl(
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
         syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
         coroutineContext: CoroutineContext = Dispatchers.Default,
+        asUserId: UserId? = null,
+        asDeviceId: String? = null,
         httpClientEngine: HttpClientEngine? = null,
         httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
     ) : this(
@@ -109,6 +122,8 @@ class MatrixClientServerApiClientImpl(
         syncBatchTokenStore = syncBatchTokenStore,
         syncErrorDelayConfig = syncErrorDelayConfig,
         coroutineContext = coroutineContext,
+        asUserId = asUserId,
+        asDeviceId = asDeviceId,
         httpClientEngine = httpClientEngine,
         httpClientConfig = httpClientConfig
     )
@@ -119,6 +134,8 @@ class MatrixClientServerApiClientImpl(
         authProvider = authProvider,
         eventContentSerializerMappings = eventContentSerializerMappings,
         json = json,
+        asUserId = asUserId,
+        asDeviceId = asDeviceId,
         httpClientEngine = httpClientEngine,
         httpClientConfig = httpClientConfig
     )

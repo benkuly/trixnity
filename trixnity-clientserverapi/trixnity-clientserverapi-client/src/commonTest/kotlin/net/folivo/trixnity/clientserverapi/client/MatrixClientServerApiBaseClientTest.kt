@@ -30,6 +30,7 @@ import net.folivo.trixnity.clientserverapi.model.uia.UIAState
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -2162,5 +2163,30 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         result2.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
             .getOrThrow()
         requestCount shouldBe 3
+    }
+
+    @Test
+    fun shouldAddAppserviceUserIdDeviceId() = runTest {
+        val cut = MatrixClientServerApiBaseClient(
+            authProvider = classicAuthProvider,
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    request.url.parameters["user_id"] shouldBe "@user:server"
+                    request.url.parameters["device_id"] shouldBe "device"
+                    request.url.fullPath shouldBe "/path/path?requestParam=param&user_id=%40user%3Aserver&device_id=device"
+                    respond(
+                        """{"status":"ok"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            json = json,
+            asUserId = UserId("@user:server"),
+            asDeviceId = "device",
+            eventContentSerializerMappings = mappings,
+        )
+        cut.request(PostPath("path", "param"), PostPath.Request(true))
+            .getOrThrow()
     }
 }
