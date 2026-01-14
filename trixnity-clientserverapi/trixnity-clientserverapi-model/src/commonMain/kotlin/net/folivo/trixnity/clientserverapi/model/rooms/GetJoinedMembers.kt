@@ -17,7 +17,6 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(GET)
 data class GetJoinedMembers(
     @SerialName("roomId") val roomId: RoomId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetJoinedMembers.Response> {
     @Serializable
     data class Response(

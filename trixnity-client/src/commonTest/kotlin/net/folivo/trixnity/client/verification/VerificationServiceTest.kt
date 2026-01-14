@@ -407,7 +407,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
         runTest {
             var createRoomCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(CreateRoom()) {
+                matrixJsonEndpoint(CreateRoom) {
                     createRoomCalled = true
                     it.invite shouldBe setOf(bobUserId)
                     it.isDirect shouldBe true

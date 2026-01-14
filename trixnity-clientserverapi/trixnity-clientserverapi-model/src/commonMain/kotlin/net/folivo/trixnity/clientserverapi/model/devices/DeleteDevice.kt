@@ -16,5 +16,4 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(DELETE)
 data class DeleteDevice(
     @SerialName("deviceId") val deviceId: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixUIAEndpoint<Unit, Unit>

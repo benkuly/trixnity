@@ -25,5 +25,4 @@ data class GetRelationsByRelationTypeAndEventType(
     @SerialName("from") val from: String? = null,
     @SerialName("to") val to: String? = null,
     @SerialName("limit") val limit: Long? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetRelationsResponse>

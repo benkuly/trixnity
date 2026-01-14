@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Remove trixnity-applicationservice due to lack of usage and support
+
 ### Fixed
 
 - Fixed cache timing issues (full or mapping cache)

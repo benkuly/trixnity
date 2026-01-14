@@ -17,5 +17,4 @@ import net.folivo.trixnity.core.model.keys.RoomsKeyBackup
 @HttpMethod(PUT)
 data class SetRoomsKeyBackup(
     @SerialName("version") val version: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<RoomsKeyBackup, SetRoomKeysResponse>

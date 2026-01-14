@@ -23,7 +23,6 @@ interface ServerApiClient {
     suspend fun search(
         request: Search.Request,
         nextBatch: String? = null,
-        asUserId: UserId? = null
     ): Result<Search.Response>
 
     /**
@@ -31,7 +30,6 @@ interface ServerApiClient {
      */
     suspend fun whoIs(
         userId: UserId,
-        asUserId: UserId? = null
     ): Result<WhoIs.Response>
 }
 
@@ -48,13 +46,11 @@ class ServerApiClientImpl(
     override suspend fun search(
         request: Search.Request,
         nextBatch: String?,
-        asUserId: UserId?
     ): Result<Search.Response> =
-        baseClient.request(Search(nextBatch, asUserId), request)
+        baseClient.request(Search(nextBatch), request)
 
     override suspend fun whoIs(
         userId: UserId,
-        asUserId: UserId?
     ): Result<WhoIs.Response> =
-        baseClient.request(WhoIs(userId, asUserId))
+        baseClient.request(WhoIs(userId))
 }

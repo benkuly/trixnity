@@ -24,7 +24,6 @@ data class GetRoomAccountData(
     @SerialName("userId") val userId: UserId,
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("type") val type: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, RoomAccountDataEventContent> {
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,

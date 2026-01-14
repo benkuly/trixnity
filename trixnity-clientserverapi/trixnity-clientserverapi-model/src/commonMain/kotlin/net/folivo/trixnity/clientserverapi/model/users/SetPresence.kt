@@ -17,7 +17,6 @@ import net.folivo.trixnity.core.model.events.m.Presence
 @HttpMethod(PUT)
 data class SetPresence(
     @SerialName("userId") val userId: UserId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<SetPresence.Request, Unit> {
     @Serializable
     data class Request(

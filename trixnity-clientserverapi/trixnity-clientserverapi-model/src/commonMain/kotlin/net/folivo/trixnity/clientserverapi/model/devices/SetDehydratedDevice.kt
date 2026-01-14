@@ -7,7 +7,6 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.PUT
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 
@@ -18,9 +17,7 @@ import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 @Resource("/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device")
 @HttpMethod(PUT)
 @MSC3814
-data class SetDehydratedDevice(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<SetDehydratedDevice.Request, SetDehydratedDevice.Response> {
+data object SetDehydratedDevice : MatrixEndpoint<SetDehydratedDevice.Request, SetDehydratedDevice.Response> {
     @Serializable
     data class Request(
         @SerialName("device_id")

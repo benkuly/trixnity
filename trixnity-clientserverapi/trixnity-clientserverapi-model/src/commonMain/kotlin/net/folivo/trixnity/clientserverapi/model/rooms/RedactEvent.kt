@@ -20,7 +20,6 @@ data class RedactEvent(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("eventId") val eventId: EventId,
     @SerialName("txnId") val txnId: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<RedactEvent.Request, SendEventResponse> {
     @Serializable
     data class Request(

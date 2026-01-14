@@ -64,8 +64,3 @@ This project contains among others the following modules, which can be used inde
   provides a high level client
   implementation. It allows you to easily implement
   clients by just rendering data from and passing user interactions to Trixnity.
-- [trixnity-applicationservice](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-applicationservice)
-  provides a basic
-  high level application service
-  implementation. It does not support advanced features like E2E or persistence
-  at the moment.

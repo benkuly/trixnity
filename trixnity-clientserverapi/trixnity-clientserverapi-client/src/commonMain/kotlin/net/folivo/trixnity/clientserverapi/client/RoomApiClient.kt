@@ -31,7 +31,6 @@ interface RoomApiClient {
     suspend fun getEvent(
         roomId: RoomId,
         eventId: EventId,
-        asUserId: UserId? = null
     ): Result<RoomEvent<*>>
 
     /**
@@ -41,7 +40,6 @@ interface RoomApiClient {
         type: String,
         roomId: RoomId,
         stateKey: String = "",
-        asUserId: UserId? = null
     ): Result<ClientEvent.StateBaseEvent<*>>
 
     /**
@@ -51,13 +49,12 @@ interface RoomApiClient {
         type: String,
         roomId: RoomId,
         stateKey: String = "",
-        asUserId: UserId? = null
     ): Result<StateEventContent>
 
     /**
      * @see [GetState]
      */
-    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): Result<List<StateEvent<*>>>
+    suspend fun getState(roomId: RoomId): Result<List<StateEvent<*>>>
 
     /**
      * @see [GetMembers]
@@ -67,7 +64,6 @@ interface RoomApiClient {
         at: String? = null,
         membership: Membership? = null,
         notMembership: Membership? = null,
-        asUserId: UserId? = null
     ): Result<Set<StateEvent<MemberEventContent>>>
 
     /**
@@ -75,7 +71,6 @@ interface RoomApiClient {
      */
     suspend fun getJoinedMembers(
         roomId: RoomId,
-        asUserId: UserId? = null
     ): Result<GetJoinedMembers.Response>
 
     /**
@@ -88,7 +83,6 @@ interface RoomApiClient {
         to: String? = null,
         limit: Long? = null,
         filter: String? = null,
-        asUserId: UserId? = null
     ): Result<GetEvents.Response>
 
     /**
@@ -101,7 +95,6 @@ interface RoomApiClient {
         to: String? = null,
         limit: Long? = null,
         recurse: Boolean? = null,
-        asUserId: UserId? = null
     ): Result<GetRelationsResponse>
 
     /**
@@ -115,7 +108,6 @@ interface RoomApiClient {
         to: String? = null,
         limit: Long? = null,
         recurse: Boolean? = null,
-        asUserId: UserId? = null
     ): Result<GetRelationsResponse>
 
     /**
@@ -129,7 +121,6 @@ interface RoomApiClient {
         from: String? = null,
         to: String? = null,
         limit: Long? = null,
-        asUserId: UserId? = null
     ): Result<GetRelationsResponse>
 
     /**
@@ -140,7 +131,6 @@ interface RoomApiClient {
         from: String? = null,
         include: GetThreads.Include? = null,
         limit: Long? = null,
-        asUserId: UserId? = null
     ): Result<GetThreads.Response>
 
     /**
@@ -150,7 +140,6 @@ interface RoomApiClient {
         roomId: RoomId,
         eventContent: StateEventContent,
         stateKey: String = "",
-        asUserId: UserId? = null
     ): Result<EventId>
 
     /**
@@ -160,7 +149,6 @@ interface RoomApiClient {
         roomId: RoomId,
         eventContent: MessageEventContent,
         txnId: String = Random.nextString(22),
-        asUserId: UserId? = null
     ): Result<EventId>
 
     /**
@@ -171,7 +159,6 @@ interface RoomApiClient {
         eventId: EventId,
         reason: String? = null,
         txnId: String = Random.nextString(22),
-        asUserId: UserId? = null
     ): Result<EventId>
 
     /**
@@ -190,7 +177,6 @@ interface RoomApiClient {
         preset: CreateRoom.Request.Preset? = null,
         isDirect: Boolean? = null,
         powerLevelContentOverride: PowerLevelsEventContent? = null,
-        asUserId: UserId? = null
     ): Result<RoomId>
 
     /**
@@ -199,7 +185,6 @@ interface RoomApiClient {
     suspend fun setRoomAlias(
         roomId: RoomId,
         roomAliasId: RoomAliasId,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -221,13 +206,12 @@ interface RoomApiClient {
      */
     suspend fun deleteRoomAlias(
         roomAliasId: RoomAliasId,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
      * @see [GetJoinedRooms]
      */
-    suspend fun getJoinedRooms(asUserId: UserId? = null): Result<Set<RoomId>>
+    suspend fun getJoinedRooms(): Result<Set<RoomId>>
 
     /**
      * @see [InviteUser]
@@ -236,7 +220,6 @@ interface RoomApiClient {
         roomId: RoomId,
         userId: UserId,
         reason: String? = null,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -246,7 +229,6 @@ interface RoomApiClient {
         roomId: RoomId,
         userId: UserId,
         reason: String? = null,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -256,7 +238,6 @@ interface RoomApiClient {
         roomId: RoomId,
         userId: UserId,
         reason: String? = null,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -266,7 +247,6 @@ interface RoomApiClient {
         roomId: RoomId,
         userId: UserId,
         reason: String? = null,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -277,7 +257,6 @@ interface RoomApiClient {
         via: Set<String>? = null,
         reason: String? = null,
         thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>? = null,
-        asUserId: UserId? = null
     ): Result<RoomId>
 
     /**
@@ -288,7 +267,6 @@ interface RoomApiClient {
         via: Set<String>? = null,
         reason: String? = null,
         thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>? = null,
-        asUserId: UserId? = null
     ): Result<RoomId>
 
     /**
@@ -298,7 +276,6 @@ interface RoomApiClient {
         roomId: RoomId,
         via: Set<String>? = null,
         reason: String? = null,
-        asUserId: UserId? = null
     ): Result<RoomId>
 
     /**
@@ -308,7 +285,6 @@ interface RoomApiClient {
         roomAliasId: RoomAliasId,
         via: Set<String>? = null,
         reason: String? = null,
-        asUserId: UserId? = null
     ): Result<RoomId>
 
     /**
@@ -316,7 +292,6 @@ interface RoomApiClient {
      */
     suspend fun forgetRoom(
         roomId: RoomId,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -325,7 +300,6 @@ interface RoomApiClient {
     suspend fun leaveRoom(
         roomId: RoomId,
         reason: String? = null,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -336,7 +310,6 @@ interface RoomApiClient {
         eventId: EventId,
         receiptType: ReceiptType = ReceiptType.Read,
         threadId: EventId? = null,
-        asUserId: UserId? = null,
     ): Result<Unit>
 
     /**
@@ -347,7 +320,6 @@ interface RoomApiClient {
         fullyRead: EventId? = null,
         read: EventId? = null,
         privateRead: EventId? = null,
-        asUserId: UserId? = null,
     ): Result<Unit>
 
     /**
@@ -358,7 +330,6 @@ interface RoomApiClient {
         userId: UserId,
         typing: Boolean,
         timeout: Long? = null,
-        asUserId: UserId? = null,
     ): Result<Unit>
 
     /**
@@ -369,7 +340,6 @@ interface RoomApiClient {
         roomId: RoomId,
         userId: UserId,
         key: String = "",
-        asUserId: UserId? = null
     ): Result<RoomAccountDataEventContent>
 
     /**
@@ -380,7 +350,6 @@ interface RoomApiClient {
         roomId: RoomId,
         userId: UserId,
         key: String = "",
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -396,7 +365,6 @@ interface RoomApiClient {
     suspend fun setDirectoryVisibility(
         roomId: RoomId,
         visibility: DirectoryVisibility,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -418,7 +386,6 @@ interface RoomApiClient {
         filter: GetPublicRoomsWithFilter.Request.Filter? = null,
         includeAllNetworks: Boolean? = null,
         thirdPartyInstanceId: String? = null,
-        asUserId: UserId? = null
     ): Result<GetPublicRoomsResponse>
 
     /**
@@ -427,7 +394,6 @@ interface RoomApiClient {
     suspend fun getTags(
         userId: UserId,
         roomId: RoomId,
-        asUserId: UserId? = null
     ): Result<TagEventContent>
 
     /**
@@ -438,7 +404,6 @@ interface RoomApiClient {
         roomId: RoomId,
         tag: String,
         tagValue: TagEventContent.Tag,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -448,7 +413,6 @@ interface RoomApiClient {
         userId: UserId,
         roomId: RoomId,
         tag: String,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -459,7 +423,6 @@ interface RoomApiClient {
         eventId: EventId,
         filter: String? = null,
         limit: Long? = null,
-        asUserId: UserId? = null
     ): Result<GetEventContext.Response>
 
     /**
@@ -468,7 +431,6 @@ interface RoomApiClient {
     suspend fun reportRoom(
         roomId: RoomId,
         reason: String,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -479,7 +441,6 @@ interface RoomApiClient {
         eventId: EventId,
         reason: String? = null,
         score: Long? = null,
-        asUserId: UserId? = null
     ): Result<Unit>
 
     /**
@@ -489,7 +450,6 @@ interface RoomApiClient {
         roomId: RoomId,
         version: String,
         additionalCreators: Set<UserId>? = null,
-        asUserId: UserId? = null
     ): Result<RoomId>
 
     /**
@@ -501,7 +461,6 @@ interface RoomApiClient {
         limit: Long? = null,
         maxDepth: Long? = null,
         suggestedOnly: Boolean = false,
-        asUserId: UserId? = null
     ): Result<GetHierarchy.Response>
 
     /**
@@ -519,7 +478,6 @@ interface RoomApiClient {
     suspend fun getSummary(
         roomAliasId: RoomAliasId,
         via: Set<String>? = null,
-        asUserId: UserId? = null
     ): Result<GetSummary.Response>
 
     /**
@@ -528,7 +486,6 @@ interface RoomApiClient {
     suspend fun getSummary(
         roomId: RoomId,
         via: Set<String>? = null,
-        asUserId: UserId? = null
     ): Result<GetSummary.Response>
 }
 
@@ -540,17 +497,15 @@ class RoomApiClientImpl(
     override suspend fun getEvent(
         roomId: RoomId,
         eventId: EventId,
-        asUserId: UserId?
     ): Result<RoomEvent<*>> =
-        baseClient.request(GetEvent(roomId, eventId, asUserId))
+        baseClient.request(GetEvent(roomId, eventId))
 
     override suspend fun getStateEvent(
         type: String,
         roomId: RoomId,
         stateKey: String,
-        asUserId: UserId?
     ): Result<ClientEvent.StateBaseEvent<*>> =
-        baseClient.request(GetStateEvent(roomId, type, stateKey, GetStateEvent.Format.EVENT, asUserId))
+        baseClient.request(GetStateEvent(roomId, type, stateKey, GetStateEvent.Format.EVENT))
             .mapCatching {
                 check(it is GetStateEvent.Response.Event)
                 it.value
@@ -560,25 +515,23 @@ class RoomApiClientImpl(
         type: String,
         roomId: RoomId,
         stateKey: String,
-        asUserId: UserId?
     ): Result<StateEventContent> =
-        baseClient.request(GetStateEvent(roomId, type, stateKey, GetStateEvent.Format.CONTENT, asUserId))
+        baseClient.request(GetStateEvent(roomId, type, stateKey, GetStateEvent.Format.CONTENT))
             .mapCatching {
                 check(it is GetStateEvent.Response.Content)
                 it.value
             }
 
-    override suspend fun getState(roomId: RoomId, asUserId: UserId?): Result<List<StateEvent<*>>> =
-        baseClient.request(GetState(roomId, asUserId))
+    override suspend fun getState(roomId: RoomId): Result<List<StateEvent<*>>> =
+        baseClient.request(GetState(roomId))
 
     override suspend fun getMembers(
         roomId: RoomId,
         at: String?,
         membership: Membership?,
         notMembership: Membership?,
-        asUserId: UserId?
     ): Result<Set<StateEvent<MemberEventContent>>> =
-        baseClient.request(GetMembers(roomId, at, membership, notMembership, asUserId))
+        baseClient.request(GetMembers(roomId, at, membership, notMembership))
             .mapCatching { response ->
                 response.chunk.asSequence()
                     .filter { it.content is MemberEventContent }
@@ -591,9 +544,8 @@ class RoomApiClientImpl(
 
     override suspend fun getJoinedMembers(
         roomId: RoomId,
-        asUserId: UserId?
     ): Result<GetJoinedMembers.Response> =
-        baseClient.request(GetJoinedMembers(roomId, asUserId))
+        baseClient.request(GetJoinedMembers(roomId))
 
     override suspend fun getEvents(
         roomId: RoomId,
@@ -602,9 +554,8 @@ class RoomApiClientImpl(
         to: String?,
         limit: Long?,
         filter: String?,
-        asUserId: UserId?
     ): Result<GetEvents.Response> =
-        baseClient.request(GetEvents(roomId, from, to, dir, limit, filter, asUserId))
+        baseClient.request(GetEvents(roomId, from, to, dir, limit, filter))
 
     override suspend fun getRelations(
         roomId: RoomId,
@@ -613,9 +564,8 @@ class RoomApiClientImpl(
         to: String?,
         limit: Long?,
         recurse: Boolean?,
-        asUserId: UserId?
     ): Result<GetRelationsResponse> =
-        baseClient.request(GetRelations(roomId, eventId, from, to, limit, recurse, asUserId))
+        baseClient.request(GetRelations(roomId, eventId, from, to, limit, recurse))
 
     override suspend fun getRelations(
         roomId: RoomId,
@@ -625,7 +575,6 @@ class RoomApiClientImpl(
         to: String?,
         limit: Long?,
         recurse: Boolean?,
-        asUserId: UserId?
     ): Result<GetRelationsResponse> =
         baseClient.request(
             GetRelationsByRelationType(
@@ -636,7 +585,6 @@ class RoomApiClientImpl(
                 to,
                 limit,
                 recurse,
-                asUserId
             )
         )
 
@@ -648,7 +596,6 @@ class RoomApiClientImpl(
         from: String?,
         to: String?,
         limit: Long?,
-        asUserId: UserId?
     ): Result<GetRelationsResponse> =
         baseClient.request(
             GetRelationsByRelationTypeAndEventType(
@@ -659,7 +606,6 @@ class RoomApiClientImpl(
                 from,
                 to,
                 limit,
-                asUserId
             )
         )
 
@@ -668,18 +614,16 @@ class RoomApiClientImpl(
         from: String?,
         include: GetThreads.Include?,
         limit: Long?,
-        asUserId: UserId?
     ): Result<GetThreads.Response> =
-        baseClient.request(GetThreads(roomId, from, include, limit, asUserId))
+        baseClient.request(GetThreads(roomId, from, include, limit))
 
     override suspend fun sendStateEvent(
         roomId: RoomId,
         eventContent: StateEventContent,
         stateKey: String,
-        asUserId: UserId?
     ): Result<EventId> {
         val eventType = contentMappings.state.contentType(eventContent)
-        return baseClient.request(SendStateEvent(roomId, eventType, stateKey, asUserId), eventContent)
+        return baseClient.request(SendStateEvent(roomId, eventType, stateKey), eventContent)
             .mapCatching { it.eventId }
     }
 
@@ -687,10 +631,9 @@ class RoomApiClientImpl(
         roomId: RoomId,
         eventContent: MessageEventContent,
         txnId: String,
-        asUserId: UserId?
     ): Result<EventId> {
         val eventType = contentMappings.message.contentType(eventContent)
-        return baseClient.request(SendMessageEvent(roomId, eventType, txnId, asUserId), eventContent)
+        return baseClient.request(SendMessageEvent(roomId, eventType, txnId), eventContent)
             .mapCatching { it.eventId }
     }
 
@@ -699,9 +642,8 @@ class RoomApiClientImpl(
         eventId: EventId,
         reason: String?,
         txnId: String,
-        asUserId: UserId?
     ): Result<EventId> =
-        baseClient.request(RedactEvent(roomId, eventId, txnId, asUserId), RedactEvent.Request(reason))
+        baseClient.request(RedactEvent(roomId, eventId, txnId), RedactEvent.Request(reason))
             .mapCatching { it.eventId }
 
     override suspend fun createRoom(
@@ -717,10 +659,9 @@ class RoomApiClientImpl(
         preset: CreateRoom.Request.Preset?,
         isDirect: Boolean?,
         powerLevelContentOverride: PowerLevelsEventContent?,
-        asUserId: UserId?
     ): Result<RoomId> =
         baseClient.request(
-            CreateRoom(asUserId),
+            CreateRoom,
             CreateRoom.Request(
                 visibility = visibility,
                 roomAliasLocalPart = roomAliasId?.localpart,
@@ -740,9 +681,8 @@ class RoomApiClientImpl(
     override suspend fun setRoomAlias(
         roomId: RoomId,
         roomAliasId: RoomAliasId,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(SetRoomAlias(roomAliasId, asUserId), SetRoomAlias.Request(roomId))
+        baseClient.request(SetRoomAlias(roomAliasId), SetRoomAlias.Request(roomId))
 
     override suspend fun getRoomAlias(
         roomAliasId: RoomAliasId,
@@ -756,45 +696,40 @@ class RoomApiClientImpl(
 
     override suspend fun deleteRoomAlias(
         roomAliasId: RoomAliasId,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(DeleteRoomAlias(roomAliasId, asUserId))
+        baseClient.request(DeleteRoomAlias(roomAliasId))
 
-    override suspend fun getJoinedRooms(asUserId: UserId?): Result<Set<RoomId>> =
-        baseClient.request(GetJoinedRooms(asUserId)).mapCatching { it.joinedRooms }
+    override suspend fun getJoinedRooms(): Result<Set<RoomId>> =
+        baseClient.request(GetJoinedRooms).mapCatching { it.joinedRooms }
 
     override suspend fun inviteUser(
         roomId: RoomId,
         userId: UserId,
         reason: String?,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(InviteUser(roomId, asUserId), InviteUser.Request(userId, reason))
+        baseClient.request(InviteUser(roomId), InviteUser.Request(userId, reason))
 
     override suspend fun kickUser(
         roomId: RoomId,
         userId: UserId,
         reason: String?,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(KickUser(roomId, asUserId), KickUser.Request(userId, reason))
+        baseClient.request(KickUser(roomId), KickUser.Request(userId, reason))
 
     override suspend fun banUser(
         roomId: RoomId,
         userId: UserId,
         reason: String?,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(BanUser(roomId, asUserId), BanUser.Request(userId, reason))
+        baseClient.request(BanUser(roomId), BanUser.Request(userId, reason))
 
 
     override suspend fun unbanUser(
         roomId: RoomId,
         userId: UserId,
         reason: String?,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(UnbanUser(roomId, asUserId), UnbanUser.Request(userId, reason))
+        baseClient.request(UnbanUser(roomId), UnbanUser.Request(userId, reason))
 
 
     override suspend fun joinRoom(
@@ -802,9 +737,8 @@ class RoomApiClientImpl(
         via: Set<String>?,
         reason: String?,
         thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>?,
-        asUserId: UserId?
     ): Result<RoomId> =
-        baseClient.request(JoinRoom(roomId.full, via, asUserId = asUserId), JoinRoom.Request(reason, thirdPartySigned))
+        baseClient.request(JoinRoom(roomId.full, via), JoinRoom.Request(reason, thirdPartySigned))
             .mapCatching { it.roomId }
 
     override suspend fun joinRoom(
@@ -812,10 +746,9 @@ class RoomApiClientImpl(
         via: Set<String>?,
         reason: String?,
         thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>?,
-        asUserId: UserId?
     ): Result<RoomId> =
         baseClient.request(
-            JoinRoom(roomAliasId.full, via, asUserId = asUserId),
+            JoinRoom(roomAliasId.full, via),
             JoinRoom.Request(reason, thirdPartySigned)
         ).mapCatching { it.roomId }
 
@@ -823,69 +756,61 @@ class RoomApiClientImpl(
         roomId: RoomId,
         via: Set<String>?,
         reason: String?,
-        asUserId: UserId?
     ): Result<RoomId> =
-        baseClient.request(KnockRoom(roomId.full, via, asUserId = asUserId), KnockRoom.Request(reason))
+        baseClient.request(KnockRoom(roomId.full, via), KnockRoom.Request(reason))
             .mapCatching { it.roomId }
 
     override suspend fun knockRoom(
         roomAliasId: RoomAliasId,
         via: Set<String>?,
         reason: String?,
-        asUserId: UserId?
     ): Result<RoomId> =
-        baseClient.request(KnockRoom(roomAliasId.full, via, asUserId = asUserId), KnockRoom.Request(reason))
+        baseClient.request(KnockRoom(roomAliasId.full, via), KnockRoom.Request(reason))
             .mapCatching { it.roomId }
 
     override suspend fun forgetRoom(
         roomId: RoomId,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(ForgetRoom(roomId, asUserId))
+        baseClient.request(ForgetRoom(roomId))
 
     override suspend fun leaveRoom(
         roomId: RoomId,
         reason: String?,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(LeaveRoom(roomId, asUserId), LeaveRoom.Request(reason))
+        baseClient.request(LeaveRoom(roomId), LeaveRoom.Request(reason))
 
     override suspend fun setReceipt(
         roomId: RoomId,
         eventId: EventId,
         receiptType: ReceiptType,
         threadId: EventId?,
-        asUserId: UserId?,
     ): Result<Unit> =
-        baseClient.request(SetReceipt(roomId, receiptType, eventId, asUserId), SetReceipt.Request(threadId))
+        baseClient.request(SetReceipt(roomId, receiptType, eventId), SetReceipt.Request(threadId))
 
     override suspend fun setReadMarkers(
         roomId: RoomId,
         fullyRead: EventId?,
         read: EventId?,
         privateRead: EventId?,
-        asUserId: UserId?,
     ): Result<Unit> =
-        baseClient.request(SetReadMarkers(roomId, asUserId), SetReadMarkers.Request(fullyRead, read, privateRead))
+        baseClient.request(SetReadMarkers(roomId), SetReadMarkers.Request(fullyRead, read, privateRead))
 
     override suspend fun setTyping(
         roomId: RoomId,
         userId: UserId,
         typing: Boolean,
         timeout: Long?,
-        asUserId: UserId?,
     ): Result<Unit> =
-        baseClient.request(SetTyping(roomId, userId, asUserId), SetTyping.Request(typing, timeout))
+        baseClient.request(SetTyping(roomId, userId), SetTyping.Request(typing, timeout))
 
     override suspend fun getAccountData(
         type: String,
         roomId: RoomId,
         userId: UserId,
         key: String,
-        asUserId: UserId?
     ): Result<RoomAccountDataEventContent> {
         val actualType = if (key.isEmpty()) type else type + key
-        return baseClient.request(GetRoomAccountData(userId, roomId, actualType, asUserId))
+        return baseClient.request(GetRoomAccountData(userId, roomId, actualType))
     }
 
     override suspend fun setAccountData(
@@ -893,12 +818,11 @@ class RoomApiClientImpl(
         roomId: RoomId,
         userId: UserId,
         key: String,
-        asUserId: UserId?
     ): Result<Unit> {
         val eventType = contentMappings.roomAccountData.contentType(content)
             .let { type -> if (key.isEmpty()) type else type + key }
 
-        return baseClient.request(SetRoomAccountData(userId, roomId, eventType, asUserId), content)
+        return baseClient.request(SetRoomAccountData(userId, roomId, eventType), content)
     }
 
     override suspend fun getDirectoryVisibility(
@@ -909,9 +833,8 @@ class RoomApiClientImpl(
     override suspend fun setDirectoryVisibility(
         roomId: RoomId,
         visibility: DirectoryVisibility,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(SetDirectoryVisibility(roomId, asUserId), SetDirectoryVisibility.Request(visibility))
+        baseClient.request(SetDirectoryVisibility(roomId), SetDirectoryVisibility.Request(visibility))
 
     override suspend fun getPublicRooms(
         limit: Long?,
@@ -927,10 +850,9 @@ class RoomApiClientImpl(
         filter: GetPublicRoomsWithFilter.Request.Filter?,
         includeAllNetworks: Boolean?,
         thirdPartyInstanceId: String?,
-        asUserId: UserId?
     ): Result<GetPublicRoomsResponse> =
         baseClient.request(
-            GetPublicRoomsWithFilter(server, asUserId), GetPublicRoomsWithFilter.Request(
+            GetPublicRoomsWithFilter(server), GetPublicRoomsWithFilter.Request(
                 limit = limit,
                 since = since,
                 filter = filter,
@@ -942,59 +864,52 @@ class RoomApiClientImpl(
     override suspend fun getTags(
         userId: UserId,
         roomId: RoomId,
-        asUserId: UserId?
     ): Result<TagEventContent> =
-        baseClient.request(GetRoomTags(userId, roomId, asUserId))
+        baseClient.request(GetRoomTags(userId, roomId))
 
     override suspend fun setTag(
         userId: UserId,
         roomId: RoomId,
         tag: String,
         tagValue: TagEventContent.Tag,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(SetRoomTag(userId, roomId, tag, asUserId), tagValue)
+        baseClient.request(SetRoomTag(userId, roomId, tag), tagValue)
 
     override suspend fun deleteTag(
         userId: UserId,
         roomId: RoomId,
         tag: String,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(DeleteRoomTag(userId, roomId, tag, asUserId))
+        baseClient.request(DeleteRoomTag(userId, roomId, tag))
 
     override suspend fun getEventContext(
         roomId: RoomId,
         eventId: EventId,
         filter: String?,
         limit: Long?,
-        asUserId: UserId?
     ): Result<GetEventContext.Response> =
-        baseClient.request(GetEventContext(roomId, eventId, filter, limit, asUserId))
+        baseClient.request(GetEventContext(roomId, eventId, filter, limit))
 
     override suspend fun reportRoom(
         roomId: RoomId,
         reason: String,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(ReportRoom(roomId, asUserId), ReportRoom.Request(reason))
+        baseClient.request(ReportRoom(roomId), ReportRoom.Request(reason))
 
     override suspend fun reportEvent(
         roomId: RoomId,
         eventId: EventId,
         reason: String?,
         score: Long?,
-        asUserId: UserId?
     ): Result<Unit> =
-        baseClient.request(ReportEvent(roomId, eventId, asUserId), ReportEvent.Request(reason, score))
+        baseClient.request(ReportEvent(roomId, eventId), ReportEvent.Request(reason, score))
 
     override suspend fun upgradeRoom(
         roomId: RoomId,
         version: String,
         additionalCreators: Set<UserId>?,
-        asUserId: UserId?
     ): Result<RoomId> =
-        baseClient.request(UpgradeRoom(roomId, additionalCreators, asUserId), UpgradeRoom.Request(version))
+        baseClient.request(UpgradeRoom(roomId, additionalCreators), UpgradeRoom.Request(version))
             .map { it.replacementRoom }
 
     override suspend fun getHierarchy(
@@ -1003,9 +918,8 @@ class RoomApiClientImpl(
         limit: Long?,
         maxDepth: Long?,
         suggestedOnly: Boolean,
-        asUserId: UserId?
     ): Result<GetHierarchy.Response> =
-        baseClient.request(GetHierarchy(roomId, from, limit, maxDepth, suggestedOnly, asUserId))
+        baseClient.request(GetHierarchy(roomId, from, limit, maxDepth, suggestedOnly))
 
     override suspend fun timestampToEvent(
         roomId: RoomId,
@@ -1017,16 +931,14 @@ class RoomApiClientImpl(
     override suspend fun getSummary(
         roomAliasId: RoomAliasId,
         via: Set<String>?,
-        asUserId: UserId?
     ): Result<GetSummary.Response> =
-        baseClient.request(GetSummary(roomAliasId.full, via, asUserId))
+        baseClient.request(GetSummary(roomAliasId.full, via))
 
     override suspend fun getSummary(
         roomId: RoomId,
         via: Set<String>?,
-        asUserId: UserId?
     ): Result<GetSummary.Response> =
-        baseClient.request(GetSummary(roomId.full, via, asUserId))
+        baseClient.request(GetSummary(roomId.full, via))
 }
 
 /**
@@ -1036,11 +948,10 @@ suspend inline fun <reified C : RoomAccountDataEventContent> RoomApiClient.getAc
     roomId: RoomId,
     userId: UserId,
     key: String = "",
-    asUserId: UserId? = null
 ): Result<C> {
     val type = contentMappings.roomAccountData.contentType(C::class)
     @Suppress("UNCHECKED_CAST")
-    return getAccountData(type, roomId, userId, key, asUserId) as Result<C>
+    return getAccountData(type, roomId, userId, key) as Result<C>
 }
 
 /**
@@ -1049,11 +960,10 @@ suspend inline fun <reified C : RoomAccountDataEventContent> RoomApiClient.getAc
 suspend inline fun <reified C : StateEventContent> RoomApiClient.getStateEvent(
     roomId: RoomId,
     stateKey: String = "",
-    asUserId: UserId? = null
 ): Result<ClientEvent.StateBaseEvent<C>> {
     val type = contentMappings.state.contentType(C::class)
     @Suppress("UNCHECKED_CAST")
-    return getStateEvent(type, roomId, stateKey, asUserId) as Result<ClientEvent.StateBaseEvent<C>>
+    return getStateEvent(type, roomId, stateKey) as Result<ClientEvent.StateBaseEvent<C>>
 }
 
 /**
@@ -1062,11 +972,10 @@ suspend inline fun <reified C : StateEventContent> RoomApiClient.getStateEvent(
 suspend inline fun <reified C : StateEventContent> RoomApiClient.getStateEventContent(
     roomId: RoomId,
     stateKey: String = "",
-    asUserId: UserId? = null
 ): Result<C> {
     val type = contentMappings.state.contentType(C::class)
     @Suppress("UNCHECKED_CAST")
-    return getStateEventContent(type, roomId, stateKey, asUserId) as Result<C>
+    return getStateEventContent(type, roomId, stateKey) as Result<C>
 }
 
 /**
@@ -1079,8 +988,7 @@ suspend inline fun <reified C : MessageEventContent> RoomApiClient.getRelationsB
     from: String? = null,
     to: String? = null,
     limit: Long? = null,
-    asUserId: UserId? = null
 ): Result<GetRelationsResponse> {
     val eventType = contentMappings.message.contentType(C::class)
-    return getRelations(roomId, eventId, relationType, eventType, from, to, limit, asUserId)
+    return getRelations(roomId, eventId, relationType, eventType, from, to, limit)
 }

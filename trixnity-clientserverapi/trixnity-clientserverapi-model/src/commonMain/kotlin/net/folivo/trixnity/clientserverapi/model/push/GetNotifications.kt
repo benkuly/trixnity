@@ -22,7 +22,6 @@ data class GetNotifications(
     @SerialName("from") val from: String? = null,
     @SerialName("limit") val limit: Long? = null,
     @SerialName("only") val only: String? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetNotifications.Response> {
     @Serializable
     data class Response(

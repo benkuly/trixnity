@@ -29,7 +29,6 @@ data class GetStateEvent(
     @SerialName("type") val type: String,
     @SerialName("stateKey") val stateKey: String = "",
     @SerialName("format") val format: Format? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetStateEvent.Response> {
     @OptIn(ExperimentalSerializationApi::class)
     override fun responseSerializerBuilder(

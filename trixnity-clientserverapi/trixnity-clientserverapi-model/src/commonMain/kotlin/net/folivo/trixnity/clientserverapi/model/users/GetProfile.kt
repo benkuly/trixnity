@@ -19,5 +19,4 @@ import net.folivo.trixnity.core.model.UserId
 @Auth(AuthRequired.NO)
 data class GetProfile(
     @SerialName("userId") val userId: UserId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, Profile>

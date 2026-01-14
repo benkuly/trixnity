@@ -17,5 +17,4 @@ import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 @HttpMethod(GET)
 data class GetPresence(
     @SerialName("userId") val userId: UserId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, PresenceEventContent>

@@ -20,9 +20,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 @Serializable
 @Resource("/_matrix/client/v3/keys/query")
 @HttpMethod(POST)
-data class GetKeys(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<GetKeys.Request, GetKeys.Response> {
+data object GetKeys : MatrixEndpoint<GetKeys.Request, GetKeys.Response> {
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
         json: Json,

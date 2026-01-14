@@ -115,7 +115,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         var call = 0
         apiConfig.endpoints {
             matrixJsonEndpoint(SetRoomKeyBackupVersionByVersion(version = "1")) {}
-            matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
+            matrixJsonEndpoint(GetRoomKeyBackupVersion) {
                 call++
                 when (call) {
                     1 -> keyVersion
@@ -157,7 +157,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         runTest {
             currentSyncState.value = RUNNING
             apiConfig.endpoints {
-                matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(GetRoomKeyBackupVersion) {
                     keyVersion
                 }
             }
@@ -184,7 +184,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
             var setRoomKeyBackupVersionCalled = false
 
             apiConfig.endpoints {
-                matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(GetRoomKeyBackupVersion) {
                     keyVersion
                 }
                 matrixJsonEndpoint(SetRoomKeyBackupVersionByVersion("1")) {
@@ -224,7 +224,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
             currentSyncState.value = RUNNING
             var setRoomKeyBackupVersionCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(GetRoomKeyBackupVersion) {
                     keyVersion
                 }
                 matrixJsonEndpoint(SetRoomKeyBackupVersionByVersion("1")) {
@@ -463,7 +463,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         var setRoomKeyBackupVersionCalled = false
         var setGlobalAccountDataCalled = false
         apiConfig.endpoints {
-            matrixJsonEndpoint(SetRoomKeyBackupVersion()) {
+            matrixJsonEndpoint(SetRoomKeyBackupVersion) {
                 setRoomKeyBackupVersionCalled = true
                 it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                 it.authData.publicKey.value shouldNot beEmpty()
@@ -560,7 +560,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         uploadRoomKeyBackupSetup()
         var setRoomKeyBackupVersionCalled = false
         apiConfig.endpoints {
-            matrixJsonEndpoint(SetRoomKeyBackupVersion()) {
+            matrixJsonEndpoint(SetRoomKeyBackupVersion) {
                 setRoomKeyBackupVersionCalled = true
                 SetRoomKeyBackupVersion.Response("1")
             }
@@ -588,7 +588,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         }
         var setRoomKeyBackupVersionCalled = false
         apiConfig.endpoints {
-            matrixJsonEndpoint(SetRoomKeyBackupVersion()) {
+            matrixJsonEndpoint(SetRoomKeyBackupVersion) {
                 setRoomKeyBackupVersionCalled = true
                 SetRoomKeyBackupVersion.Response("2")
             }
@@ -801,7 +801,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
             version = version
         )
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
+            matrixJsonEndpoint(GetRoomKeyBackupVersion) {
                 modifyVersion(defaultVersion)
             }
         }

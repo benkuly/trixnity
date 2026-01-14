@@ -313,6 +313,14 @@ sealed interface ErrorResponse {
     data class DuplicateAnnotation(override val error: String) : ErrorResponse
 
     /**
+     * An application service used the `m.login.application_service` type without setting `inhibit_login` to `true`,
+     *  but the server doesn't support logging in via the Legacy authentication API.
+     */
+    @Serializable
+    @SerialName("M_APPSERVICE_LOGIN_UNSUPPORTED")
+    data class AppserviceLoginUnsupported(override val error: String) : ErrorResponse
+
+    /**
      * All ErrorResponses, that we cannot map to a subtype of ErrorResponse.
      */
     @Serializable

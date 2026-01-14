@@ -18,7 +18,6 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(POST)
 data class SetReadMarkers(
     @SerialName("roomId") val roomId: RoomId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<SetReadMarkers.Request, Unit> {
     @Serializable
     data class Request(

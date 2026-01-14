@@ -40,6 +40,7 @@ sealed interface PushCondition {
         val value: JsonPrimitive
     ) : PushCondition
 
+    @Deprecated("since Matrix 1.17")
     data object ContainsDisplayName : PushCondition
 
     @Serializable
@@ -66,6 +67,7 @@ object PushConditionSerializer : KSerializer<PushCondition> {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
         return try {
+            @Suppress("DEPRECATION")
             when ((jsonObject["kind"] as? JsonPrimitive)?.contentOrNull) {
                 "event_match" -> decoder.json.decodeFromJsonElement<PushCondition.EventMatch>(jsonObject)
                 "event_property_is" -> decoder.json.decodeFromJsonElement<PushCondition.EventPropertyIs>(jsonObject)
@@ -86,6 +88,7 @@ object PushConditionSerializer : KSerializer<PushCondition> {
 
     override fun serialize(encoder: Encoder, value: PushCondition) {
         require(encoder is JsonEncoder)
+        @Suppress("DEPRECATION")
         val jsonObject = when (value) {
             is PushCondition.EventMatch -> encoder.json.encodeToJsonElement(
                 AddFieldsSerializer(PushCondition.EventMatch.serializer(), "kind" to "event_match"),

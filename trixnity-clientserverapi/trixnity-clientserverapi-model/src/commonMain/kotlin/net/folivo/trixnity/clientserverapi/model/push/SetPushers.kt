@@ -12,7 +12,6 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.model.UserId
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3pushersset">matrix spec</a>
@@ -20,9 +19,7 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 @Resource("/_matrix/client/v3/pushers/set")
 @HttpMethod(POST)
-data class SetPushers(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<SetPushers.Request, Unit> {
+data object SetPushers : MatrixEndpoint<SetPushers.Request, Unit> {
     @Serializable(with = SetPushersRequestSerializer::class)
     sealed interface Request {
         val appId: String

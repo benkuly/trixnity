@@ -17,7 +17,6 @@ import net.folivo.trixnity.core.model.UserId
 data class GetKeyChanges(
     @SerialName("from") val from: String,
     @SerialName("to") val to: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetKeyChanges.Response> {
     @Serializable
     data class Response(

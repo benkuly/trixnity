@@ -9,7 +9,6 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.PUT
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.contentSerializer
@@ -24,7 +23,6 @@ data class SendMessageEvent(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("type") val type: String,
     @SerialName("txnId") val txnId: String,
-    @SerialName("user_id") val asUserId: UserId? = null,
     @SerialName("ts") val ts: Long? = null,
 ) : MatrixEndpoint<MessageEventContent, SendEventResponse> {
     override fun requestSerializerBuilder(

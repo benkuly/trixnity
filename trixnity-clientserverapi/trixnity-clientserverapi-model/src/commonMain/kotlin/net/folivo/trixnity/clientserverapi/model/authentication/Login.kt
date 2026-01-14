@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 @Resource("/_matrix/client/v3/login")
 @HttpMethod(POST)
-@Auth(AuthRequired.NO)
+@Auth(AuthRequired.OPTIONAL)
 object Login : MatrixEndpoint<Login.Request, Login.Response> {
     @Serializable
     data class Request(

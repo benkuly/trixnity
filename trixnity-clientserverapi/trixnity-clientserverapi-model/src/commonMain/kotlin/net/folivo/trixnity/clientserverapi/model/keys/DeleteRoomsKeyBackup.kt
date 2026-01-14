@@ -16,5 +16,4 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(DELETE)
 data class DeleteRoomsKeyBackup(
     @SerialName("version") val version: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, DeleteRoomKeysResponse>

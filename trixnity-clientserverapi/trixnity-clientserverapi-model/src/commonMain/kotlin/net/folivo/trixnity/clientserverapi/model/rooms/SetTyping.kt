@@ -18,7 +18,6 @@ import net.folivo.trixnity.core.model.UserId
 data class SetTyping(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("userId") val userId: UserId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<SetTyping.Request, Unit> {
     @Serializable
     data class Request(

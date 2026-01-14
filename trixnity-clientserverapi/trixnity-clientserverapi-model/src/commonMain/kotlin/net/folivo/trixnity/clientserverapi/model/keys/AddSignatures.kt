@@ -15,9 +15,7 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 @Resource("/_matrix/client/v3/keys/signatures/upload")
 @HttpMethod(POST)
-data class AddSignatures(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<Map<UserId, Map<String, JsonElement>>, AddSignatures.Response> {
+data object AddSignatures : MatrixEndpoint<Map<UserId, Map<String, JsonElement>>, AddSignatures.Response> {
     @Serializable
     data class Response(
         @SerialName("failures")

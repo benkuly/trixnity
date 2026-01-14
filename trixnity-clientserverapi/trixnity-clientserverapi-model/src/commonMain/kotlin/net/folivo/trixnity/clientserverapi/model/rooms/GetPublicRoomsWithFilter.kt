@@ -17,7 +17,6 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 @HttpMethod(POST)
 data class GetPublicRoomsWithFilter(
     @SerialName("server") val server: String? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<GetPublicRoomsWithFilter.Request, GetPublicRoomsResponse> {
     @Serializable
     data class Request(

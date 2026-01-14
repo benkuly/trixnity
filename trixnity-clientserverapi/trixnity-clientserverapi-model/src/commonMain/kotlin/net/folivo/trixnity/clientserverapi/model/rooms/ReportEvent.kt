@@ -19,7 +19,6 @@ import net.folivo.trixnity.core.model.UserId
 data class ReportEvent(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("eventId") val eventId: EventId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<ReportEvent.Request, Unit> {
     @Serializable
     data class Request(

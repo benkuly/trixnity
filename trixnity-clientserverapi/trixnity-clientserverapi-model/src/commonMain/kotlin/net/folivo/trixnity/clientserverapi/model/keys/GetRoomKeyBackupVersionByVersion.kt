@@ -16,5 +16,4 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(GET)
 data class GetRoomKeyBackupVersionByVersion(
     @SerialName("version") val version: String,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetRoomKeysBackupVersionResponse>

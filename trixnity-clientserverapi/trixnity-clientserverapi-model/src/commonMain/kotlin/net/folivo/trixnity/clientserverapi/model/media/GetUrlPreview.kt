@@ -1,8 +1,14 @@
 package net.folivo.trixnity.clientserverapi.model.media
 
 import io.ktor.resources.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KeepGeneratedSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonTransformingSerializer
+import kotlinx.serialization.json.jsonObject
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
@@ -17,9 +23,31 @@ data class GetUrlPreview(
     @SerialName("url") val url: String,
     @SerialName("ts") val timestamp: Long? = null,
 ) : MatrixEndpoint<Unit, GetUrlPreview.Response> {
-    @Serializable
+    @OptIn(ExperimentalSerializationApi::class)
+    @Serializable(with = Response.Serializer::class)
+    @KeepGeneratedSerializer
     data class Response(
         @SerialName("matrix:image:size") val size: Long? = null,
-        @SerialName("og:image") val imageUrl: String? = null
-    )
+        @SerialName("og:image") val imageUrl: String? = null,
+        @SerialName("others") val others: Map<String, JsonElement>? = null,
+    ) {
+        object Serializer : JsonTransformingSerializer<Response>(Response.generatedSerializer()) {
+            override fun transformDeserialize(element: JsonElement): JsonElement {
+                return JsonObject(buildMap {
+                    element.jsonObject["matrix:image:size"]?.let { put("matrix:image:size", it) }
+                    element.jsonObject["og:image"]?.let { put("og:image", it) }
+                    JsonObject(element.jsonObject - "matrix:image:size" - "og:image")
+                        .takeIf { it.isNotEmpty() }
+                        ?.let { put("others", it) }
+                })
+            }
+
+            override fun transformSerialize(element: JsonElement): JsonElement {
+                return JsonObject(buildMap {
+                    putAll(element.jsonObject - "others")
+                    putAll(element.jsonObject["others"]?.jsonObject ?: emptyMap())
+                })
+            }
+        }
+    }
 }

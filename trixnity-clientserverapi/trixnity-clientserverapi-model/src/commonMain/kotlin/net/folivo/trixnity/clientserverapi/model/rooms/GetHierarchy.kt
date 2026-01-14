@@ -27,7 +27,6 @@ data class GetHierarchy(
     @SerialName("limit") val limit: Long? = null,
     @SerialName("max_depth") val maxDepth: Long? = null,
     @SerialName("suggested_only") val suggestedOnly: Boolean = false,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetHierarchy.Response> {
     @Serializable
     data class Response(

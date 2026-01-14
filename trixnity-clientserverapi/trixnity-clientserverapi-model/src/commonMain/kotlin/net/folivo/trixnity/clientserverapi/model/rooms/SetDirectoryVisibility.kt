@@ -17,7 +17,6 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(PUT)
 data class SetDirectoryVisibility(
     @SerialName("roomId") val roomId: RoomId,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<SetDirectoryVisibility.Request, Unit> {
     @Serializable
     data class Request(

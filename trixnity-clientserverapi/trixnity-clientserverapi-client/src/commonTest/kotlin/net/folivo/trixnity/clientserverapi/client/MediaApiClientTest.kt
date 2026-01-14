@@ -6,6 +6,7 @@ import io.ktor.http.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.media.*
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
@@ -287,8 +288,8 @@ class MediaApiClientTest : TrixnityBaseTest() {
                         """
                                 {
                                   "matrix:image:size": 102400,
-                                  "og:description": "This is a really cool blog post from matrix.org",
                                   "og:image": "mxc://example.com/ascERGshawAWawugaAcauga",
+                                  "og:description": "This is a really cool blog post from matrix.org",
                                   "og:image:height": 48,
                                   "og:image:type": "image/png",
                                   "og:image:width": 48,
@@ -302,7 +303,14 @@ class MediaApiClientTest : TrixnityBaseTest() {
             })
         matrixRestClient.media.getUrlPreview("someUrl").getOrThrow() shouldBe GetUrlPreview.Response(
             size = 102400,
-            imageUrl = "mxc://example.com/ascERGshawAWawugaAcauga"
+            imageUrl = "mxc://example.com/ascERGshawAWawugaAcauga",
+            others = mapOf(
+                "og:description" to JsonPrimitive("This is a really cool blog post from matrix.org"),
+                "og:image:height" to JsonPrimitive(48),
+                "og:image:type" to JsonPrimitive("image/png"),
+                "og:image:width" to JsonPrimitive(48),
+                "og:title" to JsonPrimitive("Matrix Blog Post")
+            )
         )
     }
 }

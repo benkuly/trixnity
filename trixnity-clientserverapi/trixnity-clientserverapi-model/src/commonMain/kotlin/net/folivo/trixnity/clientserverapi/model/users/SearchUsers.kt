@@ -14,9 +14,7 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 @Resource("/_matrix/client/v3/user_directory/search")
 @HttpMethod(POST)
-data class SearchUsers(
-    @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<SearchUsers.Request, SearchUsers.Response> {
+data object SearchUsers : MatrixEndpoint<SearchUsers.Request, SearchUsers.Response> {
     @Serializable
     data class Request(
         @SerialName("search_term") val searchTerm: String,

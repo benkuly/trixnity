@@ -22,7 +22,6 @@ data class GetThreads(
     @SerialName("from") val from: String? = null,
     @SerialName("include") val include: Include? = null,
     @SerialName("limit") val limit: Long? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetThreads.Response> {
 
     @Serializable

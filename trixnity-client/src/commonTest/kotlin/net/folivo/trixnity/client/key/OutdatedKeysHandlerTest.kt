@@ -405,7 +405,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         currentSyncState.value = SyncState.RUNNING
         var getKeysCalled = false
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 getKeysCalled = true
                 GetKeys.Response(
                     mapOf(), mapOf(),
@@ -424,7 +424,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
     fun `updateOutdatedKeys » set to empty if there are no keys`() = runTest {
         currentSyncState.value = SyncState.RUNNING
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(),
                     mapOf(),
@@ -449,7 +449,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         )
         signServiceMock.returnVerify = VerifyResult.MissingSignature("")
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(),
                     mapOf(alice to key),
@@ -480,7 +480,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         )
         signServiceMock.returnVerify = VerifyResult.Invalid("")
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(),
                     mapOf(alice to invalidKey),
@@ -505,7 +505,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
             ), mapOf()
         )
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(),
                     mapOf(alice to key),
@@ -536,7 +536,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         )
         signServiceMock.returnVerify = VerifyResult.Invalid("")
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(), mapOf(),
                     mapOf(alice to invalidKey),
@@ -561,7 +561,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
             ), mapOf()
         )
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(), mapOf(),
                     mapOf(alice to key),
@@ -598,7 +598,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
             )
         }
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(), mapOf(),
                     mapOf(alice to key),
@@ -629,7 +629,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         )
         signServiceMock.returnVerify = VerifyResult.Invalid("")
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(), mapOf(), mapOf(),
                     mapOf(alice to invalidKey)
@@ -653,7 +653,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
             ), mapOf()
         )
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(), mapOf(), mapOf(),
                     mapOf(alice to key)
@@ -689,7 +689,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
             )
         }
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(), mapOf(), mapOf(),
                     mapOf(alice to key)
@@ -711,7 +711,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         currentSyncState.value = SyncState.RUNNING
         var call = 0
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 when (call) {
                     0 -> GetKeys.Response(
                         mapOf(),
@@ -762,7 +762,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         runTest {
             currentSyncState.value = SyncState.RUNNING
             apiConfig.endpoints {
-                matrixJsonEndpoint(GetKeys()) {
+                matrixJsonEndpoint(GetKeys) {
                     GetKeys.Response(
                         mapOf(),
                         mapOf(
@@ -868,7 +868,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
                 )
             }
             apiConfig.endpoints {
-                matrixJsonEndpoint(GetKeys()) {
+                matrixJsonEndpoint(GetKeys) {
                     GetKeys.Response(
                         mapOf(),
                         mapOf(
@@ -899,7 +899,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         keyTrustServiceMock.returnCalculateDeviceKeysTrustLevel =
             KeySignatureTrustLevel.NotCrossSigned
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(),
                     mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
@@ -940,7 +940,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
     private fun keepTrustLevel(levelBefore: KeySignatureTrustLevel) = runTest {
         currentSyncState.value = SyncState.RUNNING
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(),
                     mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
@@ -1020,7 +1020,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         runTest {
             currentSyncState.value = SyncState.RUNNING
             apiConfig.endpoints {
-                matrixJsonEndpoint(GetKeys()) {
+                matrixJsonEndpoint(GetKeys) {
                     GetKeys.Response(
                         mapOf(),
                         mapOf(
@@ -1049,7 +1049,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
         currentSyncState.value = SyncState.RUNNING
         signServiceMock.returnVerify = VerifyResult.Invalid("")
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(cedric to mapOf(cedricDevice to cedricKey1)), mapOf(), mapOf(), mapOf()
                 )
@@ -1066,7 +1066,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
     fun `updateOutdatedkey » device keys » manipulation of » userId`() = runTest {
         currentSyncState.value = SyncState.RUNNING
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(alice to mapOf(cedricDevice to cedricKey1)), mapOf(), mapOf(), mapOf()
                 )
@@ -1083,7 +1083,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
     fun `updateOutdatedkey » device keys » manipulation of » deviceId`() = runTest {
         currentSyncState.value = SyncState.RUNNING
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
+            matrixJsonEndpoint(GetKeys) {
                 GetKeys.Response(
                     mapOf(), mapOf(alice to mapOf(cedricDevice to aliceKey2)), mapOf(), mapOf(), mapOf()
                 )

@@ -44,7 +44,6 @@ include(
     "trixnity-client:trixnity-client-cryptodriver-libolm",
     "trixnity-client:trixnity-client-cryptodriver-vodozemac",
 )
-include("trixnity-applicationservice")
 include("trixnity-test-utils")
 include("trixnity-idb-utils")
 include("ktor-test-utils")

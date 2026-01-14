@@ -19,7 +19,6 @@ import net.folivo.trixnity.core.model.keys.Signed
 data class JoinRoom(
     @SerialName("roomIdOrRoomAliasId") val roomIdOrRoomAliasId: String,
     @SerialName("via") val via: Set<String>? = null,
-    @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<JoinRoom.Request, JoinRoom.Response> {
     @Serializable
     data class Request(

@@ -113,7 +113,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         }
 
         apiConfig.endpoints {
-            matrixJsonEndpoint(SetDehydratedDevice()) {
+            matrixJsonEndpoint(SetDehydratedDevice) {
                 setDehydratedDevice = it
                 val deviceId = it.deviceId
                 keyStore.updateDeviceKeys(alice) {
@@ -246,7 +246,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         }
 
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetDehydratedDevice()) {
+            matrixJsonEndpoint(GetDehydratedDevice) {
                 getDehydratedDeviceCalled = true
                 GetDehydratedDevice.Response(
                     deviceId = deviceId,
@@ -290,7 +290,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         var getDehydratedDeviceCalled = false
 
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetDehydratedDevice()) {
+            matrixJsonEndpoint(GetDehydratedDevice) {
                 getDehydratedDeviceCalled = true
                 throw MatrixServerException(
                     HttpStatusCode.NotFound,
@@ -381,7 +381,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         }
 
         apiConfig.endpoints {
-            matrixJsonEndpoint(GetDehydratedDevice()) {
+            matrixJsonEndpoint(GetDehydratedDevice) {
                 getDehydratedDeviceCalled = true
                 GetDehydratedDevice.Response(
                     deviceId = deviceId,
