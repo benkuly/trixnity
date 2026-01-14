@@ -85,7 +85,7 @@ class OlmEventHandler(
 
                     newOneTimeKeys = olmAccount.oneTimeKeys.toCurve25519Keys()
                     if (newOneTimeKeys != null) log.debug { "found one time keys marked as unpublished" }
-                    if (oneTimeKeysCount != null // violates the spec, but Synapse is doing it
+                    if (oneTimeKeysCount != null
                         && newOneTimeKeys.isNullOrEmpty()
                     ) {
                         val generateOneTimeKeysCount =
@@ -103,7 +103,7 @@ class OlmEventHandler(
                     newFallbackKeys = olmAccount.fallbackKey?.let(::mapOf)?.toCurve25519Keys(fallback = true)
                     if (newFallbackKeys != null) log.debug { "found fallback key marked as unpublished" }
                     if (newFallbackKeys.isNullOrEmpty()
-                        && fallbackKeyTypes != null // violates the spec, but Synapse is doing it
+                        && fallbackKeyTypes != null
                         && fallbackKeyTypes.contains(KeyAlgorithm.SignedCurve25519).not()
                     ) {
                         log.debug { "generate new fallback key" }
