@@ -31,14 +31,6 @@ interface Timeline<T> {
      */
     val state: Flow<TimelineState<T>>
 
-    @Deprecated("use init with explicit roomId instead")
-    suspend fun init(
-        startFrom: EventId,
-        configStart: GetTimelineEventConfig.() -> Unit = {},
-        configBefore: GetTimelineEventsConfig.() -> Unit = {},
-        configAfter: GetTimelineEventsConfig.() -> Unit = {},
-    ): TimelineStateChange<T>
-
     /**
      * Initialize the timeline with the start event.
      *
@@ -498,14 +490,6 @@ open class TimelineImpl<T>(
     onStateChange: suspend (TimelineStateChange<T>) -> Unit = {},
     transformer: suspend (Flow<TimelineEvent>) -> T,
 ) : TimelineBase<T>(onStateChange, transformer) {
-    @Deprecated("use init with explicit roomId instead")
-    override suspend fun init(
-        startFrom: EventId,
-        configStart: GetTimelineEventConfig.() -> Unit,
-        configBefore: GetTimelineEventsConfig.() -> Unit,
-        configAfter: GetTimelineEventsConfig.() -> Unit
-    ): TimelineStateChange<T> = throw NotImplementedError("calling this only works with legacy TimelineImpl")
-
     override suspend fun internalInit(
         roomId: RoomId,
         startFrom: EventId,
@@ -588,21 +572,4 @@ open class TimelineImpl<T>(
             timelineEvent.isLast.not() || tombstone != null
         }
     }
-}
-
-@Deprecated("use TimelineImpl instead")
-class LegacyTimelineImpl<T>(
-    private val roomId: RoomId,
-    roomService: RoomService,
-    onStateChange: suspend (TimelineStateChange<T>) -> Unit = {},
-    transformer: suspend (Flow<TimelineEvent>) -> T,
-) : TimelineImpl<T>(roomService, onStateChange, transformer) {
-    @Deprecated("use init with explicit roomId instead")
-    override suspend fun init(
-        startFrom: EventId,
-        configStart: GetTimelineEventConfig.() -> Unit,
-        configBefore: GetTimelineEventsConfig.() -> Unit,
-        configAfter: GetTimelineEventsConfig.() -> Unit
-    ): TimelineStateChange<T> =
-        init(roomId, startFrom, configStart, configBefore, configAfter)
 }

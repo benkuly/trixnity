@@ -13,13 +13,6 @@ import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.jvm.JvmName
 
-@Deprecated("use getTimeline without roomId instead")
-@Suppress("DEPRECATION")
-fun RoomService.getTimeline(
-    roomId: RoomId,
-    onStateChange: suspend (TimelineStateChange<Flow<TimelineEvent>>) -> Unit = {},
-): SimpleTimeline = getTimeline(roomId = roomId, onStateChange = onStateChange) { it }
-
 /**
  * @see RoomService.getTimeline
  */

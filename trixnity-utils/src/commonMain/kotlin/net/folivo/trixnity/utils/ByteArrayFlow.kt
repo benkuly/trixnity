@@ -1,6 +1,9 @@
 package net.folivo.trixnity.utils
 
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.toList
 
 typealias ByteArrayFlow = Flow<ByteArray>
 
@@ -43,12 +46,3 @@ private fun ByteArrayFlow.limitedSize(maxSize: Long): ByteArrayFlow = flow {
 }
 
 private class MaxByteArrayFlowSizeException : RuntimeException()
-
-@Deprecated("use case missing, use toByteArray(maxSize: Long) instead")
-fun ByteArrayFlow.takeBytes(size: Int): ByteArrayFlow = flow {
-    var currentSize = 0
-    takeWhile { next ->
-        currentSize += next.size
-        currentSize <= size
-    }.collect(this)
-}

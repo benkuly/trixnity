@@ -87,15 +87,6 @@ class RoomServiceMock : RoomService {
         return returnGetTimelineEventsFromNowOn
     }
 
-    @Deprecated("use getTimeline without roomId instead")
-    override fun <T> getTimeline(
-        roomId: RoomId,
-        onStateChange: suspend (TimelineStateChange<T>) -> Unit,
-        transformer: suspend (Flow<TimelineEvent>) -> T
-    ): Timeline<T> {
-        throw NotImplementedError()
-    }
-
     override fun <T> getTimeline(
         onStateChange: suspend (TimelineStateChange<T>) -> Unit,
         transformer: suspend (Flow<TimelineEvent>) -> T

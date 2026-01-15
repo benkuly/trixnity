@@ -25,11 +25,6 @@ class NativeSize(value: ULong = 0u) : IntegerType(Native.SIZE_T_SIZE, value.toLo
     constructor() : this(0)
 
     override fun toByte(): Byte = toLong().toByte()
-    @Deprecated(
-        "Direct conversion to Char is deprecated. Use toInt().toChar() or Char constructor instead.\nIf you override toChar() function in your Number inheritor, it's recommended to gradually deprecate the overriding function and then remove it.\nSee https://youtrack.jetbrains.com/issue/KT-46465 for details about the migration",
-        replaceWith = ReplaceWith("this.toInt().toChar()")
-    )
-    override fun toChar(): Char = toInt().toChar()
     override fun toShort(): Short = toLong().toShort()
     fun toULong(): ULong = toLong().toULong()
 

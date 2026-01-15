@@ -128,13 +128,6 @@ interface RoomService {
         decryptionTimeout: Duration = 30.seconds,
     ): Flow<TimelineEvent>
 
-    @Deprecated("use getTimeline without roomId instead")
-    fun <T> getTimeline(
-        roomId: RoomId,
-        onStateChange: suspend (TimelineStateChange<T>) -> Unit = {},
-        transformer: suspend (Flow<TimelineEvent>) -> T,
-    ): Timeline<T>
-
     /**
      * Returns a [Timeline] for a room.
      */
@@ -603,20 +596,6 @@ class RoomServiceImpl(
             }
         }
     }
-
-    @Deprecated("use getTimeline without roomId instead")
-    @Suppress("DEPRECATION")
-    override fun <T> getTimeline(
-        roomId: RoomId,
-        onStateChange: suspend (TimelineStateChange<T>) -> Unit,
-        transformer: suspend (Flow<TimelineEvent>) -> T,
-    ): Timeline<T> =
-        LegacyTimelineImpl(
-            roomId = roomId,
-            roomService = this,
-            onStateChange = onStateChange,
-            transformer = transformer,
-        )
 
     override fun <T> getTimeline(
         onStateChange: suspend (TimelineStateChange<T>) -> Unit,

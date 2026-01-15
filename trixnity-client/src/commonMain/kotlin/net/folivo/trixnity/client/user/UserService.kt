@@ -13,7 +13,6 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.BAN_DEFAULT
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.EVENTS_DEFAULT
@@ -30,8 +29,6 @@ private val log = KotlinLogging.logger("net.folivo.trixnity.client.user.UserServ
 
 
 interface UserService {
-    @Deprecated("without function, use getPresence() instead", level = DeprecationLevel.ERROR)
-    val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
     suspend fun loadMembers(roomId: RoomId, wait: Boolean = true)
 
     fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>>
@@ -85,10 +82,6 @@ class UserServiceImpl(
     private val mappings: EventContentSerializerMappings,
     private val config: MatrixClientConfiguration,
 ) : UserService {
-
-
-    @Deprecated("without function, use getPresence() instead", level = DeprecationLevel.ERROR)
-    override val userPresence: StateFlow<Map<UserId, PresenceEventContent>> = MutableStateFlow(mapOf())
 
     private val ownUserId = userInfo.userId
 
