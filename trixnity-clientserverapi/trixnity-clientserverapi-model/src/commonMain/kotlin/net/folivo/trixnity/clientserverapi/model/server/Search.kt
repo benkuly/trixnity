@@ -4,7 +4,7 @@ import io.ktor.resources.*
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.clientserverapi.model.users.Filters
+import net.folivo.trixnity.clientserverapi.model.user.Filters
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint

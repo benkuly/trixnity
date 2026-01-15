@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEventRelation
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId

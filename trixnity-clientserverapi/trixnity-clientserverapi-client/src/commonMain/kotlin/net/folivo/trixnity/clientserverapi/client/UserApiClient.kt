@@ -5,7 +5,7 @@ import io.ktor.http.*
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.clientserverapi.model.users.*
+import net.folivo.trixnity.clientserverapi.model.user.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent

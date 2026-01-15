@@ -15,7 +15,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.ExperimentalSerializationApi
-import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
+import net.folivo.trixnity.clientserverapi.model.key.ClaimKeys
 import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.core.model.keys.OlmMessageValue
 import net.folivo.trixnity.core.model.keys.SessionKeyValue

@@ -13,7 +13,7 @@ import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.server.matrixApiServer
-import net.folivo.trixnity.clientserverapi.model.rooms.*
+import net.folivo.trixnity.clientserverapi.model.room.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -45,7 +45,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
     private val mapping = EventContentSerializerMappings.default
 
-    val handlerMock = mock<RoomsApiHandler>()
+    val handlerMock = mock<RoomApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -60,7 +60,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                 }
             }
             matrixApiServer(json) {
-                roomsApiRoutes(handlerMock, json, mapping)
+                roomApiRoutes(handlerMock, json, mapping)
             }
         }
     }

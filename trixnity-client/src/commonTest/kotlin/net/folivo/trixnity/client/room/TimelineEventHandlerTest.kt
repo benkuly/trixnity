@@ -15,7 +15,7 @@ import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import net.folivo.trixnity.core.model.EventId

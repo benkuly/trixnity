@@ -24,11 +24,11 @@ import net.folivo.trixnity.client.verification.VerificationService.SelfVerificat
 import net.folivo.trixnity.clientserverapi.client.SyncBatchTokenStore
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.startOnce
-import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
-import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
-import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
+import net.folivo.trixnity.clientserverapi.model.room.CreateRoom
+import net.folivo.trixnity.clientserverapi.model.room.SendEventResponse
+import net.folivo.trixnity.clientserverapi.model.room.SendMessageEvent
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
-import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
+import net.folivo.trixnity.clientserverapi.model.user.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId

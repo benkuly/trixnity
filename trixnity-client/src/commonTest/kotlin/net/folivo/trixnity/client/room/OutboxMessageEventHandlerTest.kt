@@ -24,8 +24,8 @@ import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
-import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
-import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
+import net.folivo.trixnity.clientserverapi.model.room.SendEventResponse
+import net.folivo.trixnity.clientserverapi.model.room.SendMessageEvent
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo

@@ -24,9 +24,9 @@ import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.clientserverapi.client.UIA
-import net.folivo.trixnity.clientserverapi.model.keys.SetCrossSigningKeys
+import net.folivo.trixnity.clientserverapi.model.key.SetCrossSigningKeys
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
-import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
+import net.folivo.trixnity.clientserverapi.model.user.SetGlobalAccountData
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId

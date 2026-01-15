@@ -11,9 +11,9 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import net.folivo.trixnity.client.utils.retry
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents.Direction
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents.Direction.BACKWARDS
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo

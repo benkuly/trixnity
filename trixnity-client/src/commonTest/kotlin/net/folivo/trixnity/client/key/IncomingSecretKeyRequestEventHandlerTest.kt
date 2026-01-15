@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.mocks.OlmEncryptionServiceMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredSecret
-import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
+import net.folivo.trixnity.clientserverapi.model.user.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent

@@ -11,7 +11,7 @@ import io.ktor.http.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import net.folivo.trixnity.api.server.matrixApiServer
-import net.folivo.trixnity.clientserverapi.model.devices.*
+import net.folivo.trixnity.clientserverapi.model.device.*
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.core.MSC3814
@@ -37,7 +37,7 @@ class DevicesRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
     private val mapping = EventContentSerializerMappings.default
 
-    val handlerMock = mock<DevicesApiHandler>()
+    val handlerMock = mock<DeviceApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -52,7 +52,7 @@ class DevicesRoutesTest : TrixnityBaseTest() {
                 }
             }
             matrixApiServer(json) {
-                devicesApiRoutes(handlerMock, json, mapping)
+                deviceApiRoutes(handlerMock, json, mapping)
             }
         }
     }

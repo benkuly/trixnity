@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.clientserverapi.model.rooms.JoinRoom
+import net.folivo.trixnity.clientserverapi.model.room.JoinRoom
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId

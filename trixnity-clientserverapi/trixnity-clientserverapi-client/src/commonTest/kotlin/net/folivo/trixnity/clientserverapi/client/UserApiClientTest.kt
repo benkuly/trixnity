@@ -1,0 +1,647 @@
+package net.folivo.trixnity.clientserverapi.client
+
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.ktor.client.engine.mock.*
+import io.ktor.http.*
+import io.ktor.http.ContentType.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.clientserverapi.model.user.Filters
+import net.folivo.trixnity.clientserverapi.model.user.Profile
+import net.folivo.trixnity.clientserverapi.model.user.ProfileField
+import net.folivo.trixnity.clientserverapi.model.user.SearchUsers
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.Presence
+import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.OlmMessageValue
+import net.folivo.trixnity.core.model.keys.SessionKeyValue
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.testutils.scopedMockEngine
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.fail
+
+class UserApiClientTest : TrixnityBaseTest() {
+
+    @Test
+    fun shouldSetProfileField() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
+                    assertEquals(HttpMethod.Put, request.method)
+                    assertEquals(
+                        """{"displayname":"someDisplayName"}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.setProfileField(UserId("user", "server"), ProfileField.DisplayName("someDisplayName"))
+    }
+
+    @Test
+    fun shouldSetUnknownProfileField() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/profile/@user:server/unknown", request.url.fullPath)
+                    assertEquals(HttpMethod.Put, request.method)
+                    assertEquals(
+                        """{"unknown":{"dino":true}}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.setProfileField(
+            UserId("user", "server"),
+            ProfileField.Unknown("other", JsonObject(mapOf("dino" to JsonPrimitive(true))))
+        )
+    }
+
+    @Test
+    fun shouldGetProfileField() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """{"displayname":"someDisplayName"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        assertEquals(
+            "someDisplayName",
+            matrixRestClient.user.getProfileField<ProfileField.DisplayName>(
+                UserId("user", "server"),
+                ProfileField.DisplayName
+            ).getOrThrow().value
+        )
+    }
+
+    @Test
+    fun shouldGetUnknownProfileField() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/profile/@user:server/unknown", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """{"unknown":{"dino":true}}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        assertEquals(
+            JsonObject(mapOf("dino" to JsonPrimitive(true))),
+            matrixRestClient.user.getProfileField<ProfileField.Unknown>(
+                UserId("user", "server"),
+                ProfileField.Unknown.Key("unknown")
+            ).getOrThrow().raw
+        )
+    }
+
+    @Test
+    fun shouldDeleteProfileField() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
+                    assertEquals(HttpMethod.Delete, request.method)
+                    respond(
+                        """{}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.deleteProfileField(
+            UserId("user", "server"),
+            ProfileField.DisplayName
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldGetProfile() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/profile/@user:server", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """{"avatar_url":"mxc://localhost/123456","displayname":"someDisplayName","unknown":{"dino":true}}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        assertEquals(
+            Profile(
+                ProfileField.DisplayName("someDisplayName"),
+                ProfileField.AvatarUrl("mxc://localhost/123456"),
+                ProfileField.Unknown(
+                    "unknown",
+                    JsonObject(mapOf("dino" to JsonPrimitive(true)))
+                )
+            ),
+            matrixRestClient.user.getProfile(UserId("user", "server")).getOrThrow()
+        )
+    }
+
+    @Test
+    fun shouldSetPresence() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/presence/@user:server/status", request.url.fullPath)
+                    assertEquals(HttpMethod.Put, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """
+                                {
+                                  "presence":"online",
+                                  "status_msg":"I am here."
+                                }
+                            """.trimToFlatJson()
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.setPresence(
+            UserId("@user:server"), Presence.ONLINE, "I am here."
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldGetPresence() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/presence/@user:server/status", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                                {
+                                  "presence": "unavailable",
+                                  "last_active_ago": 420845
+                                }
+                            """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        val result = matrixRestClient.user.getPresence(UserId("@user:server")).getOrThrow()
+        assertEquals(PresenceEventContent(Presence.UNAVAILABLE, lastActiveAgo = 420845), result)
+    }
+
+    @Test
+    fun shouldSendToDeviceUnsafe() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/sendToDevice/m.room_key/txnId", request.url.fullPath)
+                    assertEquals(HttpMethod.Put, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """
+                                {
+                                  "messages":{
+                                    "@alice:example.com":{
+                                      "TLLBEANAAG":{
+                                        "algorithm":"m.megolm.v1.aes-sha2",
+                                        "room_id":"!Cuyf34gef24t:localhost",
+                                        "session_id":"X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                                        "session_key":"AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."
+                                      }
+                                    }
+                                  }
+                                }
+                            """.trimToFlatJson()
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.sendToDeviceUnsafe(
+            mapOf(
+                UserId("@alice:example.com") to mapOf(
+                    "TLLBEANAAG" to RoomKeyEventContent(
+                        roomId = RoomId("!Cuyf34gef24t:localhost"),
+                        sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                        sessionKey = SessionKeyValue("AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."),
+                        algorithm = Megolm
+                    )
+                )
+            ),
+            transactionId = "txnId"
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldPreventSendToDeviceUnsafeWhenNoEvent() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine { })
+        shouldThrow<IllegalArgumentException> {
+            matrixRestClient.user.sendToDeviceUnsafe(
+                mapOf(UserId("@alice:example.com") to mapOf()),
+                transactionId = "txnId"
+            )
+        }
+    }
+
+    @Test
+    fun shouldPreventSendToDeviceUnsafeWhenDifferentEvents() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine { })
+        shouldThrow<IllegalArgumentException> {
+            matrixRestClient.user.sendToDeviceUnsafe(
+                mapOf(
+                    UserId("@alice:example.com") to mapOf(
+                        "TLLBEANAAG" to RoomKeyEventContent(
+                            roomId = RoomId("!Cuyf34gef24t:localhost"),
+                            sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                            sessionKey = SessionKeyValue("AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."),
+                            algorithm = Megolm
+                        ),
+                        "ABLBEANAAG" to OlmEncryptedToDeviceEventContent(
+                            ciphertext = mapOf(
+                                "abc" to CiphertextInfo(
+                                    OlmMessageValue("body"),
+                                    CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
+                                )
+                            ),
+                            senderKey = Curve25519KeyValue("keyValue")
+                        )
+                    )
+                ),
+                transactionId = "txnId"
+            )
+        }
+    }
+
+    @Test
+    fun shouldSendToDeviceWhenNoEvent() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine { })
+        matrixRestClient.user.sendToDevice(
+            mapOf(UserId("@alice:example.com") to mapOf()),
+        )
+    }
+
+    @Test
+    fun shouldSendToDeviceWhenDifferentEvents() = runTest {
+        val endpointsCalled = MutableStateFlow(setOf<String>())
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    request.method shouldBe HttpMethod.Put
+                    when {
+                        request.url.fullPath.startsWith("/_matrix/client/v3/sendToDevice/m.room_key/") -> {
+                            endpointsCalled.update { it + "m.room_key" }
+                            request.body.toByteArray().decodeToString() shouldBe """
+                                {
+                                  "messages":{
+                                    "@alice:example.com":{
+                                      "TLLBEANAAG":{
+                                        "algorithm":"m.megolm.v1.aes-sha2",
+                                        "room_id":"!Cuyf34gef24t:localhost",
+                                        "session_id":"X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                                        "session_key":"AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."
+                                      }
+                                    }
+                                  }
+                                }
+                            """.trimToFlatJson()
+                        }
+
+                        request.url.fullPath.startsWith("/_matrix/client/v3/sendToDevice/m.room.encrypted/") -> {
+                            endpointsCalled.update { it + "m.room.encrypted" }
+                            request.body.toByteArray().decodeToString() shouldBe """
+                                {
+                                    "messages":{
+                                        "@alice:example.com":{
+                                            "ABLBEANAAG":{
+                                                "algorithm":"m.olm.v1.curve25519-aes-sha2",
+                                                "ciphertext":{"abc":{"body":"body","type":0}},
+                                                "sender_key":"keyValue"
+                                            }
+                                        }
+                                    }
+                                }
+                            """.trimToFlatJson()
+                        }
+
+                        else -> fail("no handler for ${request.url.fullPath}")
+                    }
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.sendToDevice(
+            mapOf(
+                UserId("@alice:example.com") to mapOf(
+                    "TLLBEANAAG" to RoomKeyEventContent(
+                        roomId = RoomId("!Cuyf34gef24t:localhost"),
+                        sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                        sessionKey = SessionKeyValue("AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."),
+                        algorithm = Megolm
+                    ),
+                    "ABLBEANAAG" to OlmEncryptedToDeviceEventContent(
+                        ciphertext = mapOf(
+                            "abc" to CiphertextInfo(
+                                OlmMessageValue("body"),
+                                CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
+                            )
+                        ),
+                        senderKey = Curve25519KeyValue("keyValue")
+                    )
+                )
+            ),
+        ).getOrThrow()
+        endpointsCalled.value shouldHaveSize 2
+    }
+
+    @Test
+    fun shouldSetFilter() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/user/@dino:server/filter", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """
+                                {
+                                    "room":{
+                                        "state":{
+                                            "lazy_load_members":true
+                                        }
+                                    }
+                                }
+                            """.trimToFlatJson()
+                    respond(
+                        """{"filter_id":"0"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        val response = matrixRestClient.user.setFilter(
+            UserId("dino", "server"),
+            Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true)))
+        ).getOrThrow()
+        assertEquals("0", response)
+    }
+
+    @Test
+    fun shouldGetFilter() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/user/@dino:server/filter/0", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                                {
+                                    "room":{
+                                        "state":{
+                                            "lazy_load_members":true
+                                        }
+                                    }
+                                }
+                            """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        val response = matrixRestClient.user.getFilter(UserId("dino", "server"), "0").getOrThrow()
+        assertEquals(
+            Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true))),
+            response
+        )
+    }
+
+    @Test
+    fun shouldGetAccountData() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/user/@alice:example.com/account_data/m.direct",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """{"@bob:server":["!someRoom:server"]}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.getAccountData<DirectEventContent>(UserId("alice", "example.com")).getOrThrow()
+            .shouldBe(
+                DirectEventContent(
+                    mapOf(
+                        UserId("bob", "server") to setOf(RoomId("!someRoom:server"))
+                    )
+                )
+            )
+    }
+
+    @Test
+    fun shouldGetAccountDataWithKey() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """{"name":"name","algorithm":"m.secret_storage.v1.aes-hmac-sha2"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.getAccountData<SecretKeyEventContent>(
+            UserId("alice", "example.com"), key = "key1"
+        ).getOrThrow().shouldBe(SecretKeyEventContent.AesHmacSha2Key("name"))
+    }
+
+    @Test
+    fun shouldSetAccountData() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/user/@alice:example.com/account_data/m.direct",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Put, request.method)
+                    assertEquals(
+                        """{"@bob:server":["!someRoom:server"]}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.setAccountData(
+            DirectEventContent(
+                mapOf(
+                    UserId("bob", "server") to setOf(RoomId("!someRoom:server"))
+                )
+            ),
+            UserId("alice", "example.com")
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldSetAccountDataWithKey() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Put, request.method)
+                    assertEquals(
+                        """{"algorithm":"m.secret_storage.v1.aes-hmac-sha2","name":"name"}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.setAccountData(
+            SecretKeyEventContent.AesHmacSha2Key("name"),
+            UserId("alice", "example.com"),
+            key = "key1"
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldSearchUsers() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/user_directory/search",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """{"search_term":"bob","limit":20}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    assertEquals(
+                        "de",
+                        request.headers["Accept-Language"]
+                    )
+                    respond(
+                        """{"limited":true,"results":[{"display_name":"bob","avatar_url":"mxc://localhost/123456","user_id":"@bob:localhost"}]}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.searchUsers("bob", "de", 20).getOrThrow() shouldBe
+                SearchUsers.Response(
+                    limited = true,
+                    results = listOf(
+                        SearchUsers.Response.SearchUser(
+                            "mxc://localhost/123456",
+                            "bob",
+                            UserId("@bob:localhost")
+                        )
+                    )
+                )
+    }
+
+    @Test
+    fun shouldReportUser() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/users/@user:server/report",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """{"reason":"someReason"}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.reportUser(
+            userId = UserId("@user:server"),
+            reason = "someReason",
+        ).getOrThrow()
+    }
+}

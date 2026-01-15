@@ -15,8 +15,8 @@ import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
-import net.folivo.trixnity.clientserverapi.model.users.Profile
-import net.folivo.trixnity.clientserverapi.model.users.ProfileField
+import net.folivo.trixnity.clientserverapi.model.user.Profile
+import net.folivo.trixnity.clientserverapi.model.user.ProfileField
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

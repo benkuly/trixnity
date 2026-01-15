@@ -9,27 +9,27 @@ import net.folivo.trixnity.core.serialization.events.default
 fun Route.matrixClientServerApiServerRoutes(
     appserviceApiHandler: AppserviceApiHandler,
     authenticationApiHandler: AuthenticationApiHandler,
-    devicesApiHandler: DevicesApiHandler,
+    deviceApiHandler: DeviceApiHandler,
     discoveryApiHandler: DiscoveryApiHandler,
-    keysApiHandler: KeysApiHandler,
+    keyApiHandler: KeyApiHandler,
     mediaApiHandler: MediaApiHandler,
     pushApiHandler: PushApiHandler,
-    roomsApiHandler: RoomsApiHandler,
+    roomApiHandler: RoomApiHandler,
     serverApiHandler: ServerApiHandler,
     syncApiHandler: SyncApiHandler,
-    usersApiHandler: UsersApiHandler,
+    userApiHandler: UserApiHandler,
     eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
 ) {
     appserviceApiRoutes(appserviceApiHandler, json, eventContentSerializerMappings)
     authenticationApiRoutes(authenticationApiHandler, json, eventContentSerializerMappings)
-    devicesApiRoutes(devicesApiHandler, json, eventContentSerializerMappings)
+    deviceApiRoutes(deviceApiHandler, json, eventContentSerializerMappings)
     discoveryApiRoutes(discoveryApiHandler, json, eventContentSerializerMappings)
-    keysApiRoutes(keysApiHandler, json, eventContentSerializerMappings)
+    keyApiRoutes(keyApiHandler, json, eventContentSerializerMappings)
     mediaApiRoutes(mediaApiHandler, json, eventContentSerializerMappings)
     pushApiRoutes(pushApiHandler, json, eventContentSerializerMappings)
-    roomsApiRoutes(roomsApiHandler, json, eventContentSerializerMappings)
+    roomApiRoutes(roomApiHandler, json, eventContentSerializerMappings)
     serverApiRoutes(serverApiHandler, json, eventContentSerializerMappings)
     syncApiRoutes(syncApiHandler, json, eventContentSerializerMappings)
-    usersApiRoutes(usersApiHandler, json, eventContentSerializerMappings)
+    userApiRoutes(userApiHandler, json, eventContentSerializerMappings)
 }

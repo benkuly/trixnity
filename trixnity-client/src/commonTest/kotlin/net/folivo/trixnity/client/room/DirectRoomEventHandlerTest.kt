@@ -4,7 +4,7 @@ import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
-import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
+import net.folivo.trixnity.clientserverapi.model.user.SetGlobalAccountData
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId

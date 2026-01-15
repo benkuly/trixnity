@@ -11,8 +11,8 @@ import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
-import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
+import net.folivo.trixnity.clientserverapi.model.device.DehydratedDeviceData
+import net.folivo.trixnity.clientserverapi.model.key.ClaimKeys
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent

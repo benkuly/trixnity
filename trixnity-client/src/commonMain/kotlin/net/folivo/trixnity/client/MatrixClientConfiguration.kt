@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientFactory
 import net.folivo.trixnity.clientserverapi.client.sync
-import net.folivo.trixnity.clientserverapi.model.users.Filters
+import net.folivo.trixnity.clientserverapi.model.user.Filters
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.utils.RetryFlowDelayConfig

@@ -12,8 +12,8 @@ import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
-import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeyBackupVersionRequest
+import net.folivo.trixnity.clientserverapi.model.key.GetRoomKeysBackupVersionResponse
+import net.folivo.trixnity.clientserverapi.model.key.SetRoomKeyBackupVersionRequest
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.keys.ExportedSessionKeyValue
 import net.folivo.trixnity.core.model.RoomId

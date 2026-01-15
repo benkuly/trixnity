@@ -5,7 +5,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent

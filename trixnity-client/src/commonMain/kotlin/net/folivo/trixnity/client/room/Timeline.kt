@@ -8,7 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
