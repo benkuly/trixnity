@@ -39,6 +39,7 @@ interface Account : AutoCloseable {
     fun markKeysAsPublished()
 
     fun pickle(pickleKey: PickleKey? = null): String
+    fun dehydrate(pickleKey: PickleKey): DehydratedDevice
 
     interface OneTimeKeyGenerationResult {
         val created: List<Curve25519PublicKey>
