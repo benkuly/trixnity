@@ -2,16 +2,17 @@ package net.folivo.trixnity.crypto.driver.vodozemac.olm
 
 import net.folivo.trixnity.crypto.driver.keys.Curve25519PublicKey
 import net.folivo.trixnity.crypto.driver.keys.PickleKey
+import net.folivo.trixnity.crypto.driver.olm.Account
+import net.folivo.trixnity.crypto.driver.olm.DehydratedDevice
+import net.folivo.trixnity.crypto.driver.olm.Message
+import net.folivo.trixnity.crypto.driver.olm.Session
 import net.folivo.trixnity.crypto.driver.vodozemac.keys.VodozemacCurve25519PublicKey
 import net.folivo.trixnity.crypto.driver.vodozemac.keys.VodozemacEd25519PublicKey
 import net.folivo.trixnity.crypto.driver.vodozemac.keys.VodozemacEd25519Signature
 import net.folivo.trixnity.crypto.driver.vodozemac.keys.VodozemacPickleKey
 import net.folivo.trixnity.crypto.driver.vodozemac.rethrow
-import net.folivo.trixnity.crypto.driver.olm.Account
-import net.folivo.trixnity.crypto.driver.olm.Message
-import net.folivo.trixnity.crypto.driver.olm.Session
-import net.folivo.trixnity.vodozemac.olm.Account as Inner
 import kotlin.jvm.JvmInline
+import net.folivo.trixnity.vodozemac.olm.Account as Inner
 
 @JvmInline
 value class VodozemacAccount(val inner: Inner) : Account {
@@ -91,6 +92,13 @@ value class VodozemacAccount(val inner: Inner) : Account {
         require(pickleKey == null || pickleKey is VodozemacPickleKey)
 
         return inner.pickle(pickleKey?.inner)
+    }
+
+    override fun dehydrate(pickleKey: PickleKey): DehydratedDevice {
+        require(pickleKey is VodozemacPickleKey)
+        return inner.dehydratedDevice(pickleKey.inner).let {
+            DehydratedDevice(it.ciphertext, it.nonce)
+        }
     }
 
     override fun close() = inner.close()

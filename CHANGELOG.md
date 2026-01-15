@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for Matrix 1.14, 1.15
 - Support extensible events
 - Check IDB Schema with Tests
+- Support dehydrated devices as specified in MSC3814 additionally to the already existing compatibility mode for libolm
 
 ### Changed
 

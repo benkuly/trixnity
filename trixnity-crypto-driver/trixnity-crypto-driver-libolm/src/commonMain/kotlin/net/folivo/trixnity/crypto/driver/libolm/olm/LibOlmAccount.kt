@@ -8,6 +8,7 @@ import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmEd25519Signature
 import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmPickleKey
 import net.folivo.trixnity.crypto.driver.libolm.rethrow
 import net.folivo.trixnity.crypto.driver.olm.Account
+import net.folivo.trixnity.crypto.driver.olm.DehydratedDevice
 import net.folivo.trixnity.crypto.driver.olm.Message
 import net.folivo.trixnity.crypto.driver.olm.Session
 import net.folivo.trixnity.libolm.OlmAccount
@@ -131,6 +132,10 @@ value class LibOlmAccount(
         require(pickleKey == null || pickleKey is LibOlmPickleKey)
 
         return inner.pickle(pickleKey?.inner)
+    }
+
+    override fun dehydrate(pickleKey: PickleKey): DehydratedDevice {
+        throw UnsupportedOperationException("libolm does not support dehydrated devices")
     }
 
     override fun close() = inner.free()

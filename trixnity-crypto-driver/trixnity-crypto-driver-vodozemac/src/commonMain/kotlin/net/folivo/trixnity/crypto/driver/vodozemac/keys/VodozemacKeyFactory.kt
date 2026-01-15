@@ -16,7 +16,5 @@ object VodozemacKeyFactory : KeyFactories {
 
     override val ed25519Signature: VodozemacEd25519SignatureFactory = VodozemacEd25519SignatureFactory
 
-
-    override val pickleKey: VodozemacPickleKeyFactory
-        get() = VodozemacPickleKeyFactory
+    override val pickleKey: VodozemacPickleKeyFactory = VodozemacPickleKeyFactory
 }

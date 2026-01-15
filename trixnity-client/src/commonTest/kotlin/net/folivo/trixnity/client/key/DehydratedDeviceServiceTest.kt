@@ -20,9 +20,11 @@ import net.folivo.trixnity.clientserverapi.model.device.DehydratedDeviceData
 import net.folivo.trixnity.clientserverapi.model.device.GetDehydratedDevice
 import net.folivo.trixnity.clientserverapi.model.device.GetDehydratedDeviceEvents
 import net.folivo.trixnity.clientserverapi.model.device.SetDehydratedDevice
-import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MSC3814
+import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.keys.SessionKeyValue
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
@@ -40,6 +42,9 @@ import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.core.decryptAesHmacSha2
 import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
 import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.keys.PickleKeyFactory
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.olm.Account
 import net.folivo.trixnity.crypto.driver.olm.Message
 import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.of
@@ -52,22 +57,27 @@ import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(MSC3814::class)
-class DehydratedDeviceServiceTest : TrixnityBaseTest() {
+class DehydratedDeviceServiceTestVodozemac : DehydratedDeviceServiceTest(VodozemacCryptoDriver)
 
-    private val driver: CryptoDriver = VodozemacCryptoDriver
+@OptIn(MSC3814::class)
+class DehydratedDeviceServiceTestLibOlm : DehydratedDeviceServiceTest(LibOlmCryptoDriver)
 
+@OptIn(MSC3814::class)
+abstract class DehydratedDeviceServiceTest(
+    protected val driver: CryptoDriver,
+) : TrixnityBaseTest() {
     override val packageLogLevels: Map<String, Level>
         get() = super.packageLogLevels + mapOf("net.folivo.trixnity.client.store.cache" to Level.INFO)
 
-    private val roomId = RoomId("!room:server")
-    private val alice = UserId("alice", "server")
-    private val bob = UserId("bob", "server")
-    private val aliceDevice = "ALICEDEVICE"
+    protected val roomId = RoomId("!room:server")
+    protected val alice = UserId("alice", "server")
+    protected val bob = UserId("bob", "server")
+    protected val aliceDevice = "ALICEDEVICE"
 
-    private val signServiceMock = SignServiceMock()
-    private val keyStore = getInMemoryKeyStore()
-    private val olmCryptoStore = getInMemoryOlmStore()
-    private val olmStore = ClientOlmStore(
+    protected val signServiceMock = SignServiceMock()
+    protected val keyStore = getInMemoryKeyStore()
+    protected val olmCryptoStore = getInMemoryOlmStore()
+    protected val olmStore = ClientOlmStore(
         accountStore = getInMemoryAccountStore(),
         olmCryptoStore = olmCryptoStore,
         keyStore = keyStore,
@@ -75,23 +85,23 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         loadMembersService = { _, _ -> },
     )
 
-    private val apiConfig = PortableMockEngineConfig()
-    private val api = mockMatrixClientServerApiClient(apiConfig)
+    protected val apiConfig = PortableMockEngineConfig()
+    protected val api = mockMatrixClientServerApiClient(apiConfig)
 
-    private val userInfo = UserInfo(
+    protected val userInfo = UserInfo(
         alice,
         aliceDevice, Ed25519Key(aliceDevice, "ed25519Key"),
         Curve25519Key(aliceDevice, "curve25519Key")
     )
 
-    private val json = createMatrixEventJson()
+    protected val json = createMatrixEventJson()
 
     @OptIn(ExperimentalSerializationApi::class)
-    private val decryptedOlmEventSerializer =
+    protected val decryptedOlmEventSerializer =
         requireNotNull(json.serializersModule.getContextual(DecryptedOlmEvent::class))
-    private val matrixClientConfiguration = MatrixClientConfiguration()
+    protected val matrixClientConfiguration = MatrixClientConfiguration()
 
-    private val cut = DehydratedDeviceService(
+    protected val cut = DehydratedDeviceService(
         api = api,
         keyStore = keyStore,
         userInfo = userInfo,
@@ -105,75 +115,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
     )
 
     @Test
-    fun `dehydrateDevice should create a new dehydrated device`() = runTest {
-        val dehydratedDeviceKey = SecureRandom.nextBytes(32)
-        var setDehydratedDevice: SetDehydratedDevice.Request? = null
-
-        val (_, selfSigningPrivateKey) = driver.key.ed25519SecretKey().use {
-            it.publicKey to it.base64
-        }
-
-        apiConfig.endpoints {
-            matrixJsonEndpoint(SetDehydratedDevice) {
-                setDehydratedDevice = it
-                val deviceId = it.deviceId
-                keyStore.updateDeviceKeys(alice) {
-                    mapOf(
-                        deviceId to StoredDeviceKeys(
-                            SignedDeviceKeys(
-                                DeviceKeys(
-                                    alice, deviceId, setOf(),
-                                    keysOf()
-                                ), mapOf()
-                            ),
-                            KeySignatureTrustLevel.CrossSigned(true)
-                        )
-                    )
-                }
-                SetDehydratedDevice.Response(deviceId)
-            }
-        }
-
-        val dehydrateDeviceJob = launch {
-            cut.tryDehydrateDevice(dehydratedDeviceKey)
-        }
-        delay(100.milliseconds)
-        dehydrateDeviceJob.isActive shouldBe true
-        keyStore.updateSecrets {
-            mapOf(
-                SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                    ClientEvent.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
-                    selfSigningPrivateKey
-                )
-            )
-        }
-        delay(100.milliseconds)
-        dehydrateDeviceJob.join()
-
-        val deviceData =
-            setDehydratedDevice?.deviceData.shouldBeInstanceOf<DehydratedDeviceData.DehydrationV2Compatibility>()
-        val dehydratedDeviceAccount = driver.olm.account.fromPickle(
-            decryptAesHmacSha2(
-                content = with(deviceData) {
-                    AesHmacSha2EncryptedData(
-                        iv = iv,
-                        ciphertext = encryptedDevicePickle,
-                        mac = mac
-                    )
-                },
-                key = dehydratedDeviceKey,
-                name = DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
-            ).decodeToString(),
-        )
-
-        setDehydratedDevice.deviceId shouldBe dehydratedDeviceAccount.curve25519Key.base64
-        setDehydratedDevice.deviceKeys.shouldNotBeNull()
-        setDehydratedDevice.oneTimeKeys.shouldNotBeNull()
-        setDehydratedDevice.fallbackKeys.shouldNotBeNull()
-    }
-
-    @Test
-    fun `rehydrateDevice should process a dehydrated device`() = runTest {
+    fun `rehydrateDevice should process a compatibility dehydrated device`() = runTest {
         val dehydratedDeviceKey = SecureRandom.nextBytes(32)
         val deviceId = "DEHYDRATED_DEVICE_ID"
         var getDehydratedDeviceCalled = false
@@ -196,6 +138,53 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             mac = encryptedData.mac
         )
 
+        rehydrateDevice(
+            bobAccount,
+            dehydratedDeviceAccount,
+            deviceId,
+            deviceData,
+            dehydratedDeviceKey
+        )
+    }
+
+    @Test
+    fun `rehydrateDevice should process a dehydrated device`() = runTest {
+        if (!driver.olm.account.dehydratedDevicesSupported) return@runTest
+
+        val dehydratedDeviceKey = SecureRandom.nextBytes(32)
+        val deviceId = "DEHYDRATED_DEVICE_ID"
+
+        val dehydratedDeviceAccount = driver.olm.account()
+        dehydratedDeviceAccount.generateOneTimeKeys(dehydratedDeviceAccount.maxNumberOfOneTimeKeys)
+
+        val bobAccount = driver.olm.account()
+
+        val pickleKey = checkNotNull(driver.key.pickleKey(dehydratedDeviceKey))
+
+        val dehydratedDevice = dehydratedDeviceAccount.dehydrate(pickleKey)
+        val deviceData = DehydratedDeviceData.DehydrationV2(
+            devicePickle = dehydratedDevice.pickle,
+            nonce = dehydratedDevice.nonce,
+        )
+
+        rehydrateDevice(
+            bobAccount,
+            dehydratedDeviceAccount,
+            deviceId,
+            deviceData,
+            dehydratedDeviceKey
+        )
+    }
+
+    private suspend fun rehydrateDevice(
+        bobAccount: Account,
+        dehydratedDeviceAccount: Account,
+        deviceId: String,
+        deviceData: DehydratedDeviceData,
+        dehydratedDeviceKey: ByteArray
+    ) {
+        var getDehydratedDeviceCalled = false
+        var getDehydratedDeviceEventsCalled = false
         val outboundSession = driver.megolm.groupSession()
         val megolmSession = RoomKeyEventContent(
             roomId = roomId,
@@ -415,5 +404,96 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             megolmSession.sessionId,
             megolmSession.roomId
         ) shouldBe null
+    }
+
+    @Test
+    fun `dehydrateDevice should create a new dehydrated device`() = runTest {
+        val dehydratedDeviceKey = SecureRandom.nextBytes(32)
+        var setDehydratedDevice: SetDehydratedDevice.Request? = null
+
+        val (_, selfSigningPrivateKey) = driver.key.ed25519SecretKey().use {
+            it.publicKey to it.base64
+        }
+
+        apiConfig.endpoints {
+            matrixJsonEndpoint(SetDehydratedDevice) {
+                setDehydratedDevice = it
+                val deviceId = it.deviceId
+                keyStore.updateDeviceKeys(alice) {
+                    mapOf(
+                        deviceId to StoredDeviceKeys(
+                            SignedDeviceKeys(
+                                DeviceKeys(
+                                    alice, deviceId, setOf(),
+                                    keysOf()
+                                ), mapOf()
+                            ),
+                            KeySignatureTrustLevel.CrossSigned(true)
+                        )
+                    )
+                }
+                SetDehydratedDevice.Response(deviceId)
+            }
+        }
+
+        val dehydrateDeviceJob = launch {
+            cut.tryDehydrateDevice(dehydratedDeviceKey)
+        }
+        delay(100.milliseconds)
+        dehydrateDeviceJob.isActive shouldBe true
+        keyStore.updateSecrets {
+            mapOf(
+                SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
+                    ClientEvent.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
+                    selfSigningPrivateKey
+                )
+            )
+        }
+        delay(100.milliseconds)
+        dehydrateDeviceJob.join()
+        setDehydratedDevice.shouldNotBeNull()
+
+        when (driver) {
+            is LibOlmCryptoDriver -> {
+                val deviceData =
+                    setDehydratedDevice.deviceData.shouldBeInstanceOf<DehydratedDeviceData.DehydrationV2Compatibility>()
+                val dehydratedDeviceAccount = driver.olm.account.fromPickle(
+                    decryptAesHmacSha2(
+                        content = with(deviceData) {
+                            AesHmacSha2EncryptedData(
+                                iv = iv,
+                                ciphertext = encryptedDevicePickle,
+                                mac = mac
+                            )
+                        },
+                        key = dehydratedDeviceKey,
+                        name = DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
+                    ).decodeToString(),
+                )
+
+                setDehydratedDevice.deviceId shouldBe dehydratedDeviceAccount.curve25519Key.base64
+                setDehydratedDevice.deviceKeys.shouldNotBeNull()
+                setDehydratedDevice.oneTimeKeys.shouldNotBeNull()
+                setDehydratedDevice.fallbackKeys.shouldNotBeNull()
+            }
+
+            is VodozemacCryptoDriver -> {
+                val deviceData =
+                    setDehydratedDevice.deviceData.shouldBeInstanceOf<DehydratedDeviceData.DehydrationV2>()
+                // casting needed due to a compiler bug (covariance with value class)
+                val pickleKey =
+                    checkNotNull((driver.key.pickleKey as PickleKeyFactory)(dehydratedDeviceKey)) { "pickle key was null" }
+                val dehydratedDeviceAccount = driver.olm.account.fromDehydratedDevice(
+                    pickle = deviceData.devicePickle,
+                    nonce = deviceData.nonce,
+                    pickleKey = pickleKey
+                )
+
+                setDehydratedDevice.deviceId shouldBe dehydratedDeviceAccount.curve25519Key.base64
+                setDehydratedDevice.deviceKeys.shouldNotBeNull()
+                setDehydratedDevice.oneTimeKeys.shouldNotBeNull()
+                setDehydratedDevice.fallbackKeys.shouldNotBeNull()
+            }
+        }
     }
 }

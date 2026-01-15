@@ -30,6 +30,7 @@ kotlin {
                 implementation(projects.trixnityTestUtils)
                 implementation(projects.ktorTestUtils)
                 implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverVodozemac)
+                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverLibolm)
 
                 implementation(libs.ktor.client.mock)
                 implementation(libs.kotest.common)
