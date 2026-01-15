@@ -100,7 +100,7 @@ class UserApiClientTest : TrixnityBaseTest() {
             })
         assertEquals(
             "someDisplayName",
-            matrixRestClient.user.getProfileField<ProfileField.DisplayName>(
+            matrixRestClient.user.getProfileField(
                 UserId("user", "server"),
                 ProfileField.DisplayName
             ).getOrThrow().value
@@ -124,7 +124,7 @@ class UserApiClientTest : TrixnityBaseTest() {
             })
         assertEquals(
             JsonObject(mapOf("dino" to JsonPrimitive(true))),
-            matrixRestClient.user.getProfileField<ProfileField.Unknown>(
+            matrixRestClient.user.getProfileField(
                 UserId("user", "server"),
                 ProfileField.Unknown.Key("unknown")
             ).getOrThrow().raw
