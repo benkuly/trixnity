@@ -9,21 +9,19 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
-import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.Unknown
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroomencrypted">matrix spec</a>
  */
-@Serializable(with = EncryptedMessageEventContentSerializer::class)
+@Serializable(with = EncryptedMessageEventContent.Serializer::class)
 sealed interface EncryptedMessageEventContent : MessageEventContent {
     val algorithm: EncryptionAlgorithm
 
@@ -62,29 +60,29 @@ sealed interface EncryptedMessageEventContent : MessageEventContent {
 
         override fun copyWith(relatesTo: RelatesTo?) = this
     }
-}
 
-object EncryptedMessageEventContentSerializer : KSerializer<EncryptedMessageEventContent> {
+    object Serializer : KSerializer<EncryptedMessageEventContent> {
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EncryptedMessageEventContentSerializer")
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EncryptedMessageEventContent")
 
-    override fun deserialize(decoder: Decoder): EncryptedMessageEventContent {
-        require(decoder is JsonDecoder)
-        val jsonObj = decoder.decodeJsonElement().jsonObject
-        return when (val algorithm = decoder.json.decodeFromJsonElement<EncryptionAlgorithm>(
-            jsonObj["algorithm"] ?: throw SerializationException("algorithm must not be null")
-        )) {
-            Megolm -> decoder.json.decodeFromJsonElement<MegolmEncryptedMessageEventContent>(jsonObj)
-            Olm, is EncryptionAlgorithm.Unknown -> Unknown(algorithm, jsonObj)
+        override fun deserialize(decoder: Decoder): EncryptedMessageEventContent {
+            require(decoder is JsonDecoder)
+            val jsonObj = decoder.decodeJsonElement().jsonObject
+            return when (val algorithm = decoder.json.decodeFromJsonElement<EncryptionAlgorithm>(
+                jsonObj["algorithm"] ?: throw SerializationException("algorithm must not be null")
+            )) {
+                Megolm -> decoder.json.decodeFromJsonElement<MegolmEncryptedMessageEventContent>(jsonObj)
+                Olm, is EncryptionAlgorithm.Unknown -> Unknown(algorithm, jsonObj)
+            }
         }
-    }
 
-    override fun serialize(encoder: Encoder, value: EncryptedMessageEventContent) {
-        require(encoder is JsonEncoder)
-        val jsonElement = when (value) {
-            is MegolmEncryptedMessageEventContent -> encoder.json.encodeToJsonElement(value)
-            is Unknown -> value.raw
+        override fun serialize(encoder: Encoder, value: EncryptedMessageEventContent) {
+            require(encoder is JsonEncoder)
+            val jsonElement = when (value) {
+                is MegolmEncryptedMessageEventContent -> encoder.json.encodeToJsonElement(value)
+                is Unknown -> value.raw
+            }
+            encoder.encodeJsonElement(jsonElement)
         }
-        encoder.encodeJsonElement(jsonElement)
     }
 }

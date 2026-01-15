@@ -11,7 +11,6 @@ import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
@@ -152,7 +151,7 @@ class MatrixApplicationServiceApiServerTest : TrixnityBaseTest() {
         val response =
             client.get("/_matrix/app/v1/users/${"@user:server".encodeURLPath()}?access_token=validToken")
         response.status shouldBe HttpStatusCode.NotFound
-        Json.decodeFromString(ErrorResponseSerializer, response.body())
+        Json.decodeFromString(ErrorResponse.Serializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.NotFound>()
         handler.requestedUser shouldBe UserId("@user:server")
     }
@@ -178,7 +177,7 @@ class MatrixApplicationServiceApiServerTest : TrixnityBaseTest() {
         val response =
             client.get("/_matrix/app/v1/rooms/${"#alias:server".encodeURLPath()}?access_token=validToken")
         response.status shouldBe HttpStatusCode.NotFound
-        Json.decodeFromString(ErrorResponseSerializer, response.body())
+        Json.decodeFromString(ErrorResponse.Serializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.NotFound>()
         handler.requestedRoom shouldBe RoomAliasId("#alias:server")
     }

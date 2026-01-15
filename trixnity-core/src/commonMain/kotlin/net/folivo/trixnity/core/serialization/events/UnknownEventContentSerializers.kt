@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.serialization.canonicalJson
 
 class UnknownEventContentSerializer(val eventType: String) : KSerializer<UnknownEventContent> {
-    override val descriptor = buildClassSerialDescriptor("UnknownEventContentSerializer")
+    override val descriptor = buildClassSerialDescriptor("UnknownEventContent")
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun deserialize(decoder: Decoder): UnknownEventContent {

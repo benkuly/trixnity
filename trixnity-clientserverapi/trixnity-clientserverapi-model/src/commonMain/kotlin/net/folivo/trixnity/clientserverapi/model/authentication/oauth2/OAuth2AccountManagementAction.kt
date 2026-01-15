@@ -11,7 +11,7 @@ import kotlinx.serialization.encoding.Encoder
 import net.folivo.trixnity.core.MSC4191
 
 @MSC4191
-@Serializable(with = OAuth2AccountManagementActionSerializer::class)
+@Serializable(with = OAuth2AccountManagementAction.Serializer::class)
 sealed interface OAuth2AccountManagementAction {
     val value: String
 
@@ -40,25 +40,25 @@ sealed interface OAuth2AccountManagementAction {
     }
 
     data class Unknown(override val value: String) : OAuth2AccountManagementAction
-}
 
-@OptIn(MSC4191::class)
-object OAuth2AccountManagementActionSerializer : KSerializer<OAuth2AccountManagementAction> {
-    @OptIn(InternalSerializationApi::class)
-    override val descriptor: SerialDescriptor =
-        buildSerialDescriptor("OAuth2AccountManagementAction", PrimitiveKind.STRING)
+    @OptIn(MSC4191::class)
+    object Serializer : KSerializer<OAuth2AccountManagementAction> {
+        @OptIn(InternalSerializationApi::class)
+        override val descriptor: SerialDescriptor =
+            buildSerialDescriptor("OAuth2AccountManagementAction", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): OAuth2AccountManagementAction =
-        when (val value = decoder.decodeString().lowercase()) {
-            OAuth2AccountManagementAction.ViewProfile.value -> OAuth2AccountManagementAction.ViewProfile
-            OAuth2AccountManagementAction.ListSessions.value -> OAuth2AccountManagementAction.ListSessions
-            OAuth2AccountManagementAction.ViewSession.value -> OAuth2AccountManagementAction.ViewSession
-            OAuth2AccountManagementAction.EndSession.value -> OAuth2AccountManagementAction.EndSession
-            OAuth2AccountManagementAction.DeactivateAccount.value -> OAuth2AccountManagementAction.DeactivateAccount
-            OAuth2AccountManagementAction.ResetCrossSigning.value -> OAuth2AccountManagementAction.ResetCrossSigning
-            else -> OAuth2AccountManagementAction.Unknown(value)
-        }
+        override fun deserialize(decoder: Decoder): OAuth2AccountManagementAction =
+            when (val value = decoder.decodeString().lowercase()) {
+                ViewProfile.value -> ViewProfile
+                ListSessions.value -> ListSessions
+                ViewSession.value -> ViewSession
+                EndSession.value -> EndSession
+                DeactivateAccount.value -> DeactivateAccount
+                ResetCrossSigning.value -> ResetCrossSigning
+                else -> Unknown(value)
+            }
 
-    override fun serialize(encoder: Encoder, value: OAuth2AccountManagementAction) =
-        encoder.encodeString(value.value)
+        override fun serialize(encoder: Encoder, value: OAuth2AccountManagementAction) =
+            encoder.encodeString(value.value)
+    }
 }

@@ -19,7 +19,7 @@ import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredRoomKeyRequest
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
-import net.folivo.trixnity.core.ExportedSessionKeyValue
+import net.folivo.trixnity.core.model.keys.ExportedSessionKeyValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

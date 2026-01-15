@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = RelationTypeSerializer::class)
+@Serializable(with = RelationType.Serializer::class)
 sealed interface RelationType {
     val name: String
 
@@ -47,17 +47,17 @@ sealed interface RelationType {
             else -> Unknown(name)
         }
     }
-}
 
-object RelationTypeSerializer : KSerializer<RelationType> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("RelationTypeSerializer", PrimitiveKind.STRING)
+    object Serializer : KSerializer<RelationType> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("RelationType", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): RelationType {
-        return RelationType.of(decoder.decodeString())
-    }
+        override fun deserialize(decoder: Decoder): RelationType {
+            return RelationType.of(decoder.decodeString())
+        }
 
-    override fun serialize(encoder: Encoder, value: RelationType) {
-        encoder.encodeString(value.name)
+        override fun serialize(encoder: Encoder, value: RelationType) {
+            encoder.encodeString(value.name)
+        }
     }
 }

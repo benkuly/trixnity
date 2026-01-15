@@ -148,7 +148,7 @@ class OAuth2ApiClientTest {
             refreshToken = "refresh",
             tokenType = "Bearer",
             expiresIn = 3600,
-            scope = setOf("scope1", "scope2")
+            scope = setOf(Scope.Unknown("scope1"), Scope.Unknown("scope2"))
         )
     }
 
@@ -192,7 +192,7 @@ class OAuth2ApiClientTest {
             refreshToken = "refresh",
             tokenType = "Bearer",
             expiresIn = 3600,
-            scope = setOf("scope1", "scope2")
+            scope = setOf(Scope.Unknown("scope1"), Scope.Unknown("scope2"))
         )
     }
 

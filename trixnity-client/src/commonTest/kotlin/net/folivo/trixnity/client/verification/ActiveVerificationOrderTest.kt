@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.store.KeyStore
-import net.folivo.trixnity.core.MacValue
+import net.folivo.trixnity.core.model.keys.MacValue
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.key.verification.SasMacEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationDoneEventContent

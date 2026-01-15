@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = VerificationMethodSerializer::class)
+@Serializable(with = VerificationMethod.Serializer::class)
 sealed interface VerificationMethod {
     val value: String
 
@@ -17,20 +17,20 @@ sealed interface VerificationMethod {
     }
 
     data class Unknown(override val value: String) : VerificationMethod
-}
 
-object VerificationMethodSerializer : KSerializer<VerificationMethod> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("VerificationMethodSerializer", PrimitiveKind.STRING)
+    object Serializer : KSerializer<VerificationMethod> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("VerificationMethod", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): VerificationMethod {
-        return when (val value = decoder.decodeString()) {
-            VerificationMethod.Sas.value -> VerificationMethod.Sas
-            else -> VerificationMethod.Unknown(value)
+        override fun deserialize(decoder: Decoder): VerificationMethod {
+            return when (val value = decoder.decodeString()) {
+                Sas.value -> Sas
+                else -> Unknown(value)
+            }
         }
-    }
 
-    override fun serialize(encoder: Encoder, value: VerificationMethod) {
-        encoder.encodeString(value.value)
+        override fun serialize(encoder: Encoder, value: VerificationMethod) {
+            encoder.encodeString(value.value)
+        }
     }
 }

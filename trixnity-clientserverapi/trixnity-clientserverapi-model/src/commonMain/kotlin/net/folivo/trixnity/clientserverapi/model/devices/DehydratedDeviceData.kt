@@ -10,7 +10,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.MSC3814
 
-@Serializable(with = DehydratedDeviceDataSerializer::class)
+@Serializable(with = DehydratedDeviceData.Serializer::class)
 @OptIn(MSC3814::class)
 sealed interface DehydratedDeviceData {
     val algorithm: String
@@ -48,40 +48,34 @@ sealed interface DehydratedDeviceData {
     }
 
     data class Unknown(override val algorithm: String, val raw: JsonObject) : DehydratedDeviceData
-}
 
-@OptIn(MSC3814::class)
-class DehydratedDeviceDataSerializer : KSerializer<DehydratedDeviceData> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("DehydratedDeviceData")
-    override fun deserialize(decoder: Decoder): DehydratedDeviceData {
-        require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement().jsonObject
-        val algorithm = jsonObject["algorithm"]?.jsonPrimitive?.content
-        return when (algorithm) {
-            DehydratedDeviceData.DehydrationV2.ALGORITHM ->
-                decoder.json.decodeFromJsonElement<DehydratedDeviceData.DehydrationV2>(jsonObject)
-
-            DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM ->
-                decoder.json.decodeFromJsonElement<DehydratedDeviceData.DehydrationV2Compatibility>(jsonObject)
-
-            else -> DehydratedDeviceData.Unknown(algorithm ?: "unknown", jsonObject)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: DehydratedDeviceData) {
-        require(encoder is JsonEncoder)
-        when (value) {
-            is DehydratedDeviceData.DehydrationV2 -> encoder.encodeJsonElement(encoder.json.encodeToJsonElement(value))
-            is DehydratedDeviceData.DehydrationV2Compatibility -> encoder.encodeJsonElement(
-                encoder.json.encodeToJsonElement(
-                    value
+    class Serializer : KSerializer<DehydratedDeviceData> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("DehydratedDeviceData")
+        override fun deserialize(decoder: Decoder): DehydratedDeviceData {
+            require(decoder is JsonDecoder)
+            val jsonObject = decoder.decodeJsonElement().jsonObject
+            val algorithm = jsonObject["algorithm"]?.jsonPrimitive?.content
+            return when (algorithm) {
+                DehydrationV2.ALGORITHM -> decoder.json.decodeFromJsonElement<DehydrationV2>(jsonObject)
+                DehydrationV2Compatibility.ALGORITHM -> decoder.json.decodeFromJsonElement<DehydrationV2Compatibility>(
+                    jsonObject
                 )
-            )
 
-            is DehydratedDeviceData.Unknown -> encoder.encodeJsonElement(JsonObject(buildMap {
-                put("algorithm", JsonPrimitive(value.algorithm))
-                putAll(value.raw)
-            }))
+                else -> Unknown(algorithm ?: "unknown", jsonObject)
+            }
+        }
+
+        override fun serialize(encoder: Encoder, value: DehydratedDeviceData) {
+            require(encoder is JsonEncoder)
+            when (value) {
+                is DehydrationV2 -> encoder.encodeJsonElement(encoder.json.encodeToJsonElement(value))
+                is DehydrationV2Compatibility -> encoder.encodeJsonElement(encoder.json.encodeToJsonElement(value))
+
+                is Unknown -> encoder.encodeJsonElement(JsonObject(buildMap {
+                    put("algorithm", JsonPrimitive(value.algorithm))
+                    putAll(value.raw)
+                }))
+            }
         }
     }
 }

@@ -9,14 +9,12 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
-import net.folivo.trixnity.clientserverapi.model.uia.UIAState.Parameter
-import net.folivo.trixnity.clientserverapi.model.uia.UIAState.Parameter.TermsOfService.PolicyDefinition
 
 @Serializable
 data class UIAState(
     @SerialName("completed") val completed: List<AuthenticationType> = listOf(),
     @SerialName("flows") val flows: Set<FlowInformation> = setOf(),
-    @SerialName("params") val parameter: @Serializable(with = UIAStateParameterMapSerializer::class) Map<AuthenticationType, Parameter>? = null,
+    @SerialName("params") val parameter: @Serializable(with = ParameterMapSerializer::class) Map<AuthenticationType, Parameter>? = null,
     @SerialName("session") val session: String? = null
 ) {
     @Serializable
@@ -32,7 +30,7 @@ data class UIAState(
             val policies: Map<String, PolicyDefinition>
         ) : Parameter {
 
-            @Serializable(with = PolicyDefinitionSerializer::class)
+            @Serializable(with = PolicyDefinition.Serializer::class)
             data class PolicyDefinition(
                 val version: String,
                 val translations: Map<String, PolicyTranslation>,
@@ -42,6 +40,33 @@ data class UIAState(
                     @SerialName("name") val name: String,
                     @SerialName("url") val url: String,
                 )
+
+                object Serializer : KSerializer<PolicyDefinition> {
+                    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PolicyDefinition")
+                    override fun deserialize(decoder: Decoder): PolicyDefinition {
+                        require(decoder is JsonDecoder)
+                        val jsonObject = decoder.decodeJsonElement() as? JsonObject
+                            ?: throw SerializationException("expected JSON map")
+                        val version =
+                            jsonObject["version"] as? JsonPrimitive
+                                ?: throw SerializationException("version should be a string")
+                        return PolicyDefinition(
+                            version.content, (jsonObject - "version").mapValues {
+                                decoder.json.decodeFromJsonElement<PolicyTranslation>(it.value)
+                            }
+                        )
+                    }
+
+                    override fun serialize(encoder: Encoder, value: PolicyDefinition) {
+                        require(encoder is JsonEncoder)
+                        encoder.encodeJsonElement(buildJsonObject {
+                            put("version", value.version)
+                            value.translations.forEach { (key, value) ->
+                                put(key, encoder.json.encodeToJsonElement<PolicyTranslation>(value))
+                            }
+                        })
+                    }
+                }
             }
         }
 
@@ -53,66 +78,42 @@ data class UIAState(
         @Serializable
         data class Unknown(val raw: JsonElement) : Parameter
     }
-}
 
-class UIAStateParameterMapSerializer : KSerializer<Map<AuthenticationType, Parameter>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("UIAStateParameterMapSerializer")
-    override fun deserialize(decoder: Decoder): Map<AuthenticationType, Parameter> {
-        require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement() as? JsonObject ?: throw SerializationException("expected JSON map")
-        return jsonObject.mapKeys {
-            decoder.json.decodeFromJsonElement<AuthenticationType>(JsonPrimitive(it.key))
-        }.mapValues { (key, value) ->
-            when (key) {
-                AuthenticationType.TermsOfService ->
-                    decoder.json.decodeFromJsonElement<Parameter.TermsOfService>(value)
+    class ParameterMapSerializer : KSerializer<Map<AuthenticationType, Parameter>> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("UIAStateParameterMap")
+        override fun deserialize(decoder: Decoder): Map<AuthenticationType, Parameter> {
+            require(decoder is JsonDecoder)
+            val jsonObject =
+                decoder.decodeJsonElement() as? JsonObject ?: throw SerializationException("expected JSON map")
+            return jsonObject.mapKeys {
+                decoder.json.decodeFromJsonElement<AuthenticationType>(JsonPrimitive(it.key))
+            }.mapValues { (key, value) ->
+                when (key) {
+                    AuthenticationType.TermsOfService ->
+                        decoder.json.decodeFromJsonElement<Parameter.TermsOfService>(value)
 
-                AuthenticationType.OAuth2 -> decoder.json.decodeFromJsonElement<Parameter.OAuth2>(value)
+                    AuthenticationType.OAuth2 -> decoder.json.decodeFromJsonElement<Parameter.OAuth2>(value)
 
-                else -> Parameter.Unknown(value)
-            }
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: Map<AuthenticationType, Parameter>) {
-        require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(
-            buildJsonObject {
-                value.forEach { (key, value) ->
-                    put(
-                        key.name, when (value) {
-                            is Parameter.TermsOfService -> encoder.json.encodeToJsonElement(value)
-                            is Parameter.OAuth2 -> encoder.json.encodeToJsonElement(value)
-                            is Parameter.Unknown -> value.raw
-                        }
-                    )
+                    else -> Parameter.Unknown(value)
                 }
             }
-        )
-    }
-}
+        }
 
-class PolicyDefinitionSerializer : KSerializer<PolicyDefinition> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PolicyDefinitionSerializer")
-    override fun deserialize(decoder: Decoder): PolicyDefinition {
-        require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement() as? JsonObject ?: throw SerializationException("expected JSON map")
-        val version =
-            jsonObject["version"] as? JsonPrimitive ?: throw SerializationException("version should be a string")
-        return PolicyDefinition(
-            version.content, (jsonObject - "version").mapValues {
-                decoder.json.decodeFromJsonElement<PolicyDefinition.PolicyTranslation>(it.value)
-            }
-        )
-    }
-
-    override fun serialize(encoder: Encoder, value: PolicyDefinition) {
-        require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(buildJsonObject {
-            put("version", value.version)
-            value.translations.forEach { (key, value) ->
-                put(key, encoder.json.encodeToJsonElement<PolicyDefinition.PolicyTranslation>(value))
-            }
-        })
+        override fun serialize(encoder: Encoder, value: Map<AuthenticationType, Parameter>) {
+            require(encoder is JsonEncoder)
+            encoder.encodeJsonElement(
+                buildJsonObject {
+                    value.forEach { (key, value) ->
+                        put(
+                            key.name, when (value) {
+                                is Parameter.TermsOfService -> encoder.json.encodeToJsonElement(value)
+                                is Parameter.OAuth2 -> encoder.json.encodeToJsonElement(value)
+                                is Parameter.Unknown -> value.raw
+                            }
+                        )
+                    }
+                }
+            )
+        }
     }
 }

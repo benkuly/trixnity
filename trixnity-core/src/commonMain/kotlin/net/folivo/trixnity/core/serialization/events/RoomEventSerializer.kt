@@ -18,7 +18,7 @@ class RoomEventSerializer(
     private val stateEventSerializer: KSerializer<StateEvent<*>>,
 ) : KSerializer<RoomEvent<*>> {
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("RoomEventSerializer")
+        buildClassSerialDescriptor("RoomEvent")
 
     override fun deserialize(decoder: Decoder): RoomEvent<*> {
         require(decoder is JsonDecoder)

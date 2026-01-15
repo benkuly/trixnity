@@ -138,7 +138,7 @@ class MatrixEndpointRouteTest : TrixnityBaseTest() {
             value: Request?
         ): KSerializer<Request> {
             return object : KSerializer<Request> {
-                override val descriptor = buildClassSerialDescriptor("customRequestSerializer")
+                override val descriptor = buildClassSerialDescriptor("customRequest")
 
                 override fun deserialize(decoder: Decoder): Request {
                     require(decoder is JsonDecoder)
@@ -159,7 +159,7 @@ class MatrixEndpointRouteTest : TrixnityBaseTest() {
             value: Response?
         ): KSerializer<Response> {
             return object : KSerializer<Response> {
-                override val descriptor = buildClassSerialDescriptor("customResponseSerializer")
+                override val descriptor = buildClassSerialDescriptor("customResponse")
 
                 override fun deserialize(decoder: Decoder): Response {
                     throw NotImplementedError()

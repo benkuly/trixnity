@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.PersistentDataUnit.UnknownPersisten
 import net.folivo.trixnity.core.serialization.canonicalJson
 
 object UnknownPersistentDataUnitSerializer : KSerializer<UnknownPersistentDataUnit> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("UnknownPersistentDataUnitSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("UnknownPersistentDataUnit")
 
     override fun deserialize(decoder: Decoder): UnknownPersistentDataUnit {
         require(decoder is JsonDecoder)

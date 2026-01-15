@@ -15,8 +15,8 @@ import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.clientserverapi.model.users.Profile
 import net.folivo.trixnity.clientserverapi.model.users.ProfileField
 import net.folivo.trixnity.clientserverapi.model.users.SearchUsers
-import net.folivo.trixnity.core.OlmMessageValue
-import net.folivo.trixnity.core.SessionKeyValue
+import net.folivo.trixnity.core.model.keys.OlmMessageValue
+import net.folivo.trixnity.core.model.keys.SessionKeyValue
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.DirectEventContent

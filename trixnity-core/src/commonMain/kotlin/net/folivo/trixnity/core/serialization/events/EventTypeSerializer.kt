@@ -12,7 +12,7 @@ class EventTypeSerializer(
     val mappings: EventContentSerializerMappings,
 ) : KSerializer<EventType> {
     override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("EventTypeSerializer", PrimitiveKind.STRING)
+        PrimitiveSerialDescriptor("EventType", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): EventType {
         val type = decoder.decodeString()

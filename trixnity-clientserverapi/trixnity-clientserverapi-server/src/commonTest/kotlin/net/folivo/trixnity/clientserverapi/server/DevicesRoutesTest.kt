@@ -15,7 +15,7 @@ import net.folivo.trixnity.clientserverapi.model.devices.*
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.core.MSC3814
-import net.folivo.trixnity.core.SessionKeyValue
+import net.folivo.trixnity.core.model.keys.SessionKeyValue
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent

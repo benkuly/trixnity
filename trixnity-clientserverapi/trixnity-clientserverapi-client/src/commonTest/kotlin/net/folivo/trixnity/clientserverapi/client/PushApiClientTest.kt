@@ -497,7 +497,7 @@ class PushApiClientTest : TrixnityBaseTest() {
                                 SetSoundTweak("default"),
                                 SetHighlightTweak()
                             ),
-                            conditions = setOf(ContainsDisplayName),
+                            conditions = @Suppress("DEPRECATION") setOf(ContainsDisplayName),
                             default = true,
                             enabled = true,
                             ruleId = ".m.rule.contains_display_name"

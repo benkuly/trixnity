@@ -26,7 +26,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.keys.*
 import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
 import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.ExportedSessionKeyValue
+import net.folivo.trixnity.core.model.keys.ExportedSessionKeyValue
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId

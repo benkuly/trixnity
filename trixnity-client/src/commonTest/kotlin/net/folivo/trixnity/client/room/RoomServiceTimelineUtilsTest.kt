@@ -21,7 +21,7 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKW
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
-import net.folivo.trixnity.core.MegolmMessageValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

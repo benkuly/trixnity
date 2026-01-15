@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = MessageAuthenticationCodeSerializer::class)
+@Serializable(with = SasMessageAuthenticationCode.Serializer::class)
 sealed interface SasMessageAuthenticationCode {
     val name: String
 
@@ -21,19 +21,19 @@ sealed interface SasMessageAuthenticationCode {
     }
 
     data class Unknown(override val name: String) : SasMessageAuthenticationCode
-}
 
-class MessageAuthenticationCodeSerializer : KSerializer<SasMessageAuthenticationCode> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("SasMessageAuthenticationCode", PrimitiveKind.STRING)
+    class Serializer : KSerializer<SasMessageAuthenticationCode> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("SasMessageAuthenticationCode", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): SasMessageAuthenticationCode =
-        when (val name = decoder.decodeString()) {
-            SasMessageAuthenticationCode.HkdfHmacSha256.name -> SasMessageAuthenticationCode.HkdfHmacSha256
-            SasMessageAuthenticationCode.HkdfHmacSha256V2.name -> SasMessageAuthenticationCode.HkdfHmacSha256V2
-            else -> SasMessageAuthenticationCode.Unknown(name)
-        }
+        override fun deserialize(decoder: Decoder): SasMessageAuthenticationCode =
+            when (val name = decoder.decodeString()) {
+                HkdfHmacSha256.name -> HkdfHmacSha256
+                HkdfHmacSha256V2.name -> HkdfHmacSha256V2
+                else -> Unknown(name)
+            }
 
-    override fun serialize(encoder: Encoder, value: SasMessageAuthenticationCode) =
-        encoder.encodeString(value.name)
+        override fun serialize(encoder: Encoder, value: SasMessageAuthenticationCode) =
+            encoder.encodeString(value.name)
+    }
 }

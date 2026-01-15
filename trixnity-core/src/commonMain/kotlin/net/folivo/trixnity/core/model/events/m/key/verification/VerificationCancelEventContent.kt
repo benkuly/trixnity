@@ -28,7 +28,7 @@ data class VerificationCancelEventContent(
     override val mentions: Mentions? = null
     override val externalUrl: String? = null
 
-    @Serializable(with = CodeSerializer::class)
+    @Serializable(with = Code.Serializer::class)
     sealed interface Code {
         val value: String
 
@@ -122,32 +122,32 @@ data class VerificationCancelEventContent(
         }
 
         data class Unknown(override val value: String) : Code
-    }
 
-    override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo as? RelatesTo.Reference)
-}
+        object Serializer : KSerializer<Code> {
+            override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Code", PrimitiveKind.STRING)
 
-object CodeSerializer : KSerializer<VerificationCancelEventContent.Code> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CodeSerializer", PrimitiveKind.STRING)
+            override fun deserialize(decoder: Decoder): Code {
+                return when (val value = decoder.decodeString()) {
+                    User.value -> User
+                    Timeout.value -> Timeout
+                    UnknownTransaction.value -> UnknownTransaction
+                    UnknownMethod.value -> UnknownMethod
+                    UnexpectedMessage.value -> UnexpectedMessage
+                    KeyMismatch.value -> KeyMismatch
+                    UserMismatch.value -> UserMismatch
+                    InvalidMessage.value -> InvalidMessage
+                    Accepted.value -> Accepted
+                    MismatchedCommitment.value -> MismatchedCommitment
+                    MismatchedSas.value -> MismatchedSas
+                    else -> Unknown(value)
+                }
+            }
 
-    override fun deserialize(decoder: Decoder): VerificationCancelEventContent.Code {
-        return when (val value = decoder.decodeString()) {
-            VerificationCancelEventContent.Code.User.value -> VerificationCancelEventContent.Code.User
-            VerificationCancelEventContent.Code.Timeout.value -> VerificationCancelEventContent.Code.Timeout
-            VerificationCancelEventContent.Code.UnknownTransaction.value -> VerificationCancelEventContent.Code.UnknownTransaction
-            VerificationCancelEventContent.Code.UnknownMethod.value -> VerificationCancelEventContent.Code.UnknownMethod
-            VerificationCancelEventContent.Code.UnexpectedMessage.value -> VerificationCancelEventContent.Code.UnexpectedMessage
-            VerificationCancelEventContent.Code.KeyMismatch.value -> VerificationCancelEventContent.Code.KeyMismatch
-            VerificationCancelEventContent.Code.UserMismatch.value -> VerificationCancelEventContent.Code.UserMismatch
-            VerificationCancelEventContent.Code.InvalidMessage.value -> VerificationCancelEventContent.Code.InvalidMessage
-            VerificationCancelEventContent.Code.Accepted.value -> VerificationCancelEventContent.Code.Accepted
-            VerificationCancelEventContent.Code.MismatchedCommitment.value -> VerificationCancelEventContent.Code.MismatchedCommitment
-            VerificationCancelEventContent.Code.MismatchedSas.value -> VerificationCancelEventContent.Code.MismatchedSas
-            else -> VerificationCancelEventContent.Code.Unknown(value)
+            override fun serialize(encoder: Encoder, value: Code) {
+                encoder.encodeString(value.value)
+            }
         }
     }
 
-    override fun serialize(encoder: Encoder, value: VerificationCancelEventContent.Code) {
-        encoder.encodeString(value.value)
-    }
+    override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo as? RelatesTo.Reference)
 }

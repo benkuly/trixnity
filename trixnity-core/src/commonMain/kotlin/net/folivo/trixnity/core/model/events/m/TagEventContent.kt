@@ -18,7 +18,7 @@ data class TagEventContent(
     @SerialName("tags") val tags: Map<TagName, Tag>,
 ) : RoomAccountDataEventContent {
 
-    @Serializable(with = TagNameSerializer::class)
+    @Serializable(with = TagName.Serializer::class)
     interface TagName {
         val name: String
 
@@ -35,28 +35,28 @@ data class TagEventContent(
         }
 
         data class Unknown(override val name: String) : TagName
+
+        object Serializer : KSerializer<TagName> {
+            override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TagName", PrimitiveKind.STRING)
+
+            override fun deserialize(decoder: Decoder): TagName {
+                return when (val name = decoder.decodeString()) {
+                    Favourite.name -> Favourite
+                    LowPriority.name -> LowPriority
+                    ServerNotice.name -> ServerNotice
+                    else -> Unknown(name)
+                }
+            }
+
+            override fun serialize(encoder: Encoder, value: TagName) {
+                encoder.encodeString(value.name)
+            }
+
+        }
     }
 
     @Serializable
     data class Tag(
         @SerialName("order") val order: Double? = null
     )
-}
-
-object TagNameSerializer : KSerializer<TagEventContent.TagName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TagNameSerializer", PrimitiveKind.STRING)
-
-    override fun deserialize(decoder: Decoder): TagEventContent.TagName {
-        return when (val name = decoder.decodeString()) {
-            TagEventContent.TagName.Favourite.name -> TagEventContent.TagName.Favourite
-            TagEventContent.TagName.LowPriority.name -> TagEventContent.TagName.LowPriority
-            TagEventContent.TagName.ServerNotice.name -> TagEventContent.TagName.ServerNotice
-            else -> TagEventContent.TagName.Unknown(name)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: TagEventContent.TagName) {
-        encoder.encodeString(value.name)
-    }
-
 }

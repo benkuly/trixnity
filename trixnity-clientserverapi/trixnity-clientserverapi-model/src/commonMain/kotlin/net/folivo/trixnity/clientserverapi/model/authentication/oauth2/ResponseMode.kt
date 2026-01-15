@@ -9,7 +9,7 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = ResponseModeSerializer::class)
+@Serializable(with = ResponseMode.Serializer::class)
 sealed interface ResponseMode {
     val value: String
 
@@ -22,19 +22,19 @@ sealed interface ResponseMode {
     }
 
     data class Unknown(override val value: String) : ResponseMode
-}
 
-object ResponseModeSerializer : KSerializer<ResponseMode> {
-    @OptIn(InternalSerializationApi::class)
-    override val descriptor: SerialDescriptor = buildSerialDescriptor("ResponseMode", PrimitiveKind.STRING)
+    object Serializer : KSerializer<ResponseMode> {
+        @OptIn(InternalSerializationApi::class)
+        override val descriptor: SerialDescriptor = buildSerialDescriptor("ResponseMode", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): ResponseMode =
-        when (val value = decoder.decodeString().lowercase()) {
-            ResponseMode.Fragment.value -> ResponseMode.Fragment
-            ResponseMode.Query.value -> ResponseMode.Query
-            else -> ResponseMode.Unknown(value)
-        }
+        override fun deserialize(decoder: Decoder): ResponseMode =
+            when (val value = decoder.decodeString().lowercase()) {
+                Fragment.value -> Fragment
+                Query.value -> Query
+                else -> Unknown(value)
+            }
 
-    override fun serialize(encoder: Encoder, value: ResponseMode) =
-        encoder.encodeString(value.value)
+        override fun serialize(encoder: Encoder, value: ResponseMode) =
+            encoder.encodeString(value.value)
+    }
 }

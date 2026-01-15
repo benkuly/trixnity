@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.events.RedactedEventContent
 
 
 class RedactedEventContentSerializer(val eventType: String) : KSerializer<RedactedEventContent> {
-    override val descriptor = buildClassSerialDescriptor("RedactedEventContentSerializer")
+    override val descriptor = buildClassSerialDescriptor("RedactedEventContent")
 
     override fun deserialize(decoder: Decoder): RedactedEventContent {
         require(decoder is JsonDecoder)

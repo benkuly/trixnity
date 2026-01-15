@@ -2,7 +2,7 @@ package net.folivo.trixnity.core.model.events.m.key.verification
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.MacValue
+import net.folivo.trixnity.core.model.keys.MacValue
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.keys.Keys
 

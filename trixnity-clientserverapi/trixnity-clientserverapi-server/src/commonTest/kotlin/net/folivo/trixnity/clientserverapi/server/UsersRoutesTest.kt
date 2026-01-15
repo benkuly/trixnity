@@ -14,7 +14,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.users.*
-import net.folivo.trixnity.core.SessionKeyValue
+import net.folivo.trixnity.core.model.keys.SessionKeyValue
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.DirectEventContent

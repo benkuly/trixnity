@@ -16,7 +16,7 @@ abstract class BaseEventSerializer<C : EventContent, E : Event<out C>>(
     private val mappings: EventContentToEventSerializerMappings<C, out E, *>,
     private val typeField: String = "type",
 ) : KSerializer<E> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("${name}Serializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("${name}")
     override fun deserialize(decoder: Decoder): E {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject

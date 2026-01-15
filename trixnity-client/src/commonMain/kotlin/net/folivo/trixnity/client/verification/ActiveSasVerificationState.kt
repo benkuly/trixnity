@@ -4,7 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.KeyStore
-import net.folivo.trixnity.core.MacValue
+import net.folivo.trixnity.core.model.keys.MacValue
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.*

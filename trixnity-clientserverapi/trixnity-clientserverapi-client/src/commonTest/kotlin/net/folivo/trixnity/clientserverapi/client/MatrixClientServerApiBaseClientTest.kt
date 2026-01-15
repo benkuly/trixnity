@@ -3,6 +3,7 @@ package net.folivo.trixnity.clientserverapi.client
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.*
@@ -197,12 +198,11 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             eventContentSerializerMappings = mappings,
         )
 
-        cut.request(PostPathWithDisabledAuth("1", "2"), PostPath.Request(true))
-            .exceptionOrNull() shouldBe
-                MatrixServerException(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse.BadJson(error = """response could not be parsed to ErrorResponse (body={"status":"ok"})"""),
-                )
+        val result = cut.request(PostPathWithDisabledAuth("1", "2"), PostPath.Request(true))
+            .exceptionOrNull()
+            .shouldBeInstanceOf<MatrixServerException>()
+        result.statusCode shouldBe HttpStatusCode.Unauthorized
+        result.errorResponse.shouldBeInstanceOf<ErrorResponse.BadJson>().error shouldStartWith "response could not be parsed to ErrorResponse"
     }
 
     @Test

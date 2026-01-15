@@ -2,7 +2,6 @@ package net.folivo.trixnity.clientserverapi.client
 
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
@@ -15,7 +14,7 @@ class ErrorResponseTest : TrixnityBaseTest() {
     @Test
     fun shouldSerializeErrorResponse() = runTest {
         val result = json.encodeToString(
-            ErrorResponseSerializer,
+            ErrorResponse.Serializer,
             ErrorResponse.LimitExceeded("liiiimit", 1234)
         )
         assertEquals("""{"errcode":"M_LIMIT_EXCEEDED","error":"liiiimit","retry_after_ms":1234}""", result)
@@ -24,7 +23,7 @@ class ErrorResponseTest : TrixnityBaseTest() {
     @Test
     fun shouldDeserializeErrorResponse() = runTest {
         val result = json.decodeFromString(
-            ErrorResponseSerializer,
+            ErrorResponse.Serializer,
             """{"errcode":"M_LIMIT_EXCEEDED","error":"liiiimit","retry_after_ms":1234}"""
         )
         assertEquals(ErrorResponse.LimitExceeded("liiiimit", 1234), result)
@@ -33,7 +32,7 @@ class ErrorResponseTest : TrixnityBaseTest() {
     @Test
     fun shouldSerializeUnknownErrorResponse() = runTest {
         val result = json.encodeToString(
-            ErrorResponseSerializer,
+            ErrorResponse.Serializer,
             ErrorResponse.CustomErrorResponse("ANANAS", "oh")
         )
         assertEquals("""{"errcode":"ANANAS","error":"oh"}""", result)
@@ -42,7 +41,7 @@ class ErrorResponseTest : TrixnityBaseTest() {
     @Test
     fun shouldDeserializeUnknownErrorResponse() = runTest {
         val result = json.decodeFromString(
-            ErrorResponseSerializer,
+            ErrorResponse.Serializer,
             """{"errcode":"ANANAS","error":"oh"}"""
         )
         assertEquals(

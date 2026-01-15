@@ -14,12 +14,12 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.GlobalAccountDataEventSerializer")
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.GlobalAccountDataEvent")
 
 class GlobalAccountDataEventSerializer(
     globalAccountDataEventContentSerializers: Set<EventContentSerializerMapping<GlobalAccountDataEventContent>>,
 ) : KSerializer<GlobalAccountDataEvent<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("GlobalAccountDataEventSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("GlobalAccountDataEvent")
     private val mappings = EventContentToEventSerializerMappings(
         baseMapping = globalAccountDataEventContentSerializers,
         eventDeserializer = { GlobalAccountDataEvent.serializer(it.serializer) },

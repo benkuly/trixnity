@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.core.model.events.m.RelatesTo")
 
-@Serializable(with = RelatesToSerializer::class)
+@Serializable(with = RelatesTo.Serializer::class)
 sealed interface RelatesTo {
     val relationType: RelationType
     val eventId: EventId
@@ -98,70 +98,70 @@ sealed interface RelatesTo {
     data class ReplyTo(
         @SerialName("event_id") val eventId: EventId
     )
-}
 
-object RelatesToSerializer : KSerializer<RelatesTo> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RelatesToSerializer")
+    object Serializer : KSerializer<RelatesTo> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RelatesTo")
 
-    override fun deserialize(decoder: Decoder): RelatesTo {
-        require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement().jsonObject
-        val replyTo: RelatesTo.ReplyTo? =
-            try {
-                jsonObject[RelationType.Reply.name]?.let { decoder.json.decodeFromJsonElement(it) }
-            } catch (e: Exception) {
-                log.warn(e) { "malformed reply" }
-                null
-            }
-        val relationType: RelationType? =
-            try {
-                (jsonObject["rel_type"] as? JsonPrimitive)?.let { decoder.json.decodeFromJsonElement(it) }
-                    ?: replyTo?.let { RelationType.Reply }
-            } catch (e: Exception) {
-                log.warn(e) { "malformed rel_type" }
-                null
-            }
-        return try {
-            when (relationType) {
-                is RelationType.Reference -> decoder.json.decodeFromJsonElement<RelatesTo.Reference>(jsonObject)
-                is RelationType.Replace -> decoder.json.decodeFromJsonElement<RelatesTo.Replace>(jsonObject)
-                is RelationType.Reply -> decoder.json.decodeFromJsonElement<RelatesTo.Reply>(jsonObject)
-                is RelationType.Thread -> decoder.json.decodeFromJsonElement<RelatesTo.Thread>(jsonObject)
-                is RelationType.Annotation -> decoder.json.decodeFromJsonElement<RelatesTo.Annotation>(jsonObject)
-                else -> {
-                    RelatesTo.Unknown(
-                        jsonObject,
-                        EventId((jsonObject["event_id"] as? JsonPrimitive)?.contentOrNull ?: ""),
-                        relationType?.name.let { RelationType.Unknown(it ?: "") },
-                        replyTo,
-                    )
+        override fun deserialize(decoder: Decoder): RelatesTo {
+            require(decoder is JsonDecoder)
+            val jsonObject = decoder.decodeJsonElement().jsonObject
+            val replyTo: ReplyTo? =
+                try {
+                    jsonObject[RelationType.Reply.name]?.let { decoder.json.decodeFromJsonElement(it) }
+                } catch (e: Exception) {
+                    log.warn(e) { "malformed reply" }
+                    null
                 }
+            val relationType: RelationType? =
+                try {
+                    (jsonObject["rel_type"] as? JsonPrimitive)?.let { decoder.json.decodeFromJsonElement(it) }
+                        ?: replyTo?.let { RelationType.Reply }
+                } catch (e: Exception) {
+                    log.warn(e) { "malformed rel_type" }
+                    null
+                }
+            return try {
+                when (relationType) {
+                    is RelationType.Reference -> decoder.json.decodeFromJsonElement<Reference>(jsonObject)
+                    is RelationType.Replace -> decoder.json.decodeFromJsonElement<Replace>(jsonObject)
+                    is RelationType.Reply -> decoder.json.decodeFromJsonElement<Reply>(jsonObject)
+                    is RelationType.Thread -> decoder.json.decodeFromJsonElement<Thread>(jsonObject)
+                    is RelationType.Annotation -> decoder.json.decodeFromJsonElement<Annotation>(jsonObject)
+                    else -> {
+                        Unknown(
+                            jsonObject,
+                            EventId((jsonObject["event_id"] as? JsonPrimitive)?.contentOrNull ?: ""),
+                            relationType?.name.let { RelationType.Unknown(it ?: "") },
+                            replyTo,
+                        )
+                    }
+                }
+            } catch (_: Exception) {
+                Unknown(
+                    jsonObject,
+                    EventId((jsonObject["event_id"] as? JsonPrimitive)?.contentOrNull ?: ""),
+                    relationType?.name.let { RelationType.Unknown(it ?: "") },
+                    replyTo,
+                )
             }
-        } catch (_: Exception) {
-            RelatesTo.Unknown(
-                jsonObject,
-                EventId((jsonObject["event_id"] as? JsonPrimitive)?.contentOrNull ?: ""),
-                relationType?.name.let { RelationType.Unknown(it ?: "") },
-                replyTo,
-            )
         }
-    }
 
-    override fun serialize(encoder: Encoder, value: RelatesTo) {
-        require(encoder is JsonEncoder)
-        val jsonObject = when (value) {
-            is RelatesTo.Reference -> encoder.json.encodeToJsonElement(value)
-            is RelatesTo.Replace -> encoder.json.encodeToJsonElement(value)
-            is RelatesTo.Reply -> encoder.json.encodeToJsonElement(value)
-            is RelatesTo.Thread -> encoder.json.encodeToJsonElement(value)
-            is RelatesTo.Annotation -> encoder.json.encodeToJsonElement(value)
-            is RelatesTo.Unknown -> JsonObject(buildMap {
-                putAll(value.raw)
-                put("event_id", JsonPrimitive(value.eventId.full))
-                put("rel_type", JsonPrimitive(value.relationType.name))
-                value.replyTo?.also { put(RelationType.Reply.name, encoder.json.encodeToJsonElement(it)) }
-            })
+        override fun serialize(encoder: Encoder, value: RelatesTo) {
+            require(encoder is JsonEncoder)
+            val jsonObject = when (value) {
+                is Reference -> encoder.json.encodeToJsonElement(value)
+                is Replace -> encoder.json.encodeToJsonElement(value)
+                is Reply -> encoder.json.encodeToJsonElement(value)
+                is Thread -> encoder.json.encodeToJsonElement(value)
+                is Annotation -> encoder.json.encodeToJsonElement(value)
+                is Unknown -> JsonObject(buildMap {
+                    putAll(value.raw)
+                    put("event_id", JsonPrimitive(value.eventId.full))
+                    put("rel_type", JsonPrimitive(value.relationType.name))
+                    value.replyTo?.also { put(RelationType.Reply.name, encoder.json.encodeToJsonElement(it)) }
+                })
+            }
+            encoder.encodeJsonElement(jsonObject)
         }
-        encoder.encodeJsonElement(jsonObject)
     }
 }

@@ -13,10 +13,9 @@ internal suspend fun RoomService.getTimelineEventWithContentAndTimeout(roomId: R
         allowReplaceContent = false
     }.firstWithContent()
 
-internal operator fun Mentions?.plus(other: Mentions?): Mentions {
-    val users = this?.users
+operator fun Mentions.plus(other: Mentions): Mentions {
     return Mentions(
-        users = if (users == null) other?.users else users + other?.users.orEmpty(),
-        room = other?.room
+        users = other.users.orEmpty() + users.orEmpty(),
+        room = other.room ?: room
     )
 }

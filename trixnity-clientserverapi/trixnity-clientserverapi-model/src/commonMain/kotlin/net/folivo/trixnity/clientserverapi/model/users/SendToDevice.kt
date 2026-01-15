@@ -18,7 +18,6 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.PUT
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.UserIdSerializer
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.contentSerializer
@@ -40,42 +39,43 @@ data class SendToDevice(
     ): KSerializer<Request> {
         val baseSerializer =
             mappings.toDevice.contentSerializer(type, value?.messages?.values?.firstOrNull()?.values?.firstOrNull())
-        return SendToDeviceRequestSerializer(baseSerializer)
+        return Request.Serializer(baseSerializer)
     }
 
     data class Request(
         val messages: Map<UserId, Map<String, ToDeviceEventContent>>
-    )
-}
+    ) {
+        class Serializer(baseSerializer: KSerializer<ToDeviceEventContent>) :
+            KSerializer<Request> {
+            override val descriptor = buildClassSerialDescriptor("Request")
 
-class SendToDeviceRequestSerializer(baseSerializer: KSerializer<ToDeviceEventContent>) :
-    KSerializer<SendToDevice.Request> {
-    override val descriptor = buildClassSerialDescriptor("SendToDeviceRequestSerializer")
-
-    private val messagesSerializer = MapSerializer(
-        UserIdSerializer,
-        MapSerializer(String.serializer(), baseSerializer)
-    )
-
-    override fun deserialize(decoder: Decoder): SendToDevice.Request {
-        require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement()
-        if (jsonObject !is JsonObject) throw SerializationException("send to device request was no object")
-        val messages = jsonObject["messages"]
-        if (messages !is JsonObject) throw SerializationException("send to device request messages was no object")
-        return SendToDevice.Request(
-            decoder.json.decodeFromJsonElement(messagesSerializer, messages)
-        )
-    }
-
-    override fun serialize(encoder: Encoder, value: SendToDevice.Request) {
-        require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(
-            JsonObject(
-                mapOf(
-                    "messages" to encoder.json.encodeToJsonElement(messagesSerializer, value.messages)
-                )
+            private val messagesSerializer = MapSerializer(
+                UserId.serializer(),
+                MapSerializer(String.serializer(), baseSerializer)
             )
-        )
+
+            override fun deserialize(decoder: Decoder): Request {
+                require(decoder is JsonDecoder)
+                val jsonObject = decoder.decodeJsonElement()
+                if (jsonObject !is JsonObject) throw SerializationException("send to device request was no object")
+                val messages = jsonObject["messages"]
+                if (messages !is JsonObject) throw SerializationException("send to device request messages was no object")
+                return Request(
+                    decoder.json.decodeFromJsonElement(messagesSerializer, messages)
+                )
+            }
+
+            override fun serialize(encoder: Encoder, value: Request) {
+                require(encoder is JsonEncoder)
+                encoder.encodeJsonElement(
+                    JsonObject(
+                        mapOf(
+                            "messages" to encoder.json.encodeToJsonElement(messagesSerializer, value.messages)
+                        )
+                    )
+                )
+            }
+
+        }
     }
 }

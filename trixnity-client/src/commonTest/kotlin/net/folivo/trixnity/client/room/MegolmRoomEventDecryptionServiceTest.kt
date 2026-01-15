@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.mocks.OlmEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.OutgoingRoomKeyRequestEventHandlerMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
-import net.folivo.trixnity.core.MegolmMessageValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

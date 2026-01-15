@@ -328,31 +328,31 @@ sealed interface ErrorResponse {
         @SerialName("errcode") val errorCode: String,
         override val error: String
     ) : ErrorResponse
-}
 
-object ErrorResponseSerializer : KSerializer<ErrorResponse> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ErrorResponseSerializer")
+    object Serializer : KSerializer<ErrorResponse> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ErrorResponse")
 
-    override fun deserialize(decoder: Decoder): ErrorResponse {
-        require(decoder is JsonDecoder)
-        val jsonElement = decoder.decodeJsonElement()
-        return try {
-            decoder.json.decodeFromJsonElement(jsonElement)
-        } catch (_: SerializationException) {
-            decoder.json.decodeFromJsonElement<ErrorResponse.CustomErrorResponse>(jsonElement)
+        override fun deserialize(decoder: Decoder): ErrorResponse {
+            require(decoder is JsonDecoder)
+            val jsonElement = decoder.decodeJsonElement()
+            return try {
+                decoder.json.decodeFromJsonElement(jsonElement)
+            } catch (_: SerializationException) {
+                decoder.json.decodeFromJsonElement<CustomErrorResponse>(jsonElement)
+            }
         }
-    }
 
-    override fun serialize(
-        encoder: Encoder,
-        value: ErrorResponse
-    ) {
-        require(encoder is JsonEncoder)
-        val jsonElement = when (value) {
-            is ErrorResponse.CustomErrorResponse -> encoder.json.encodeToJsonElement(value)
-            else -> encoder.json.encodeToJsonElement(value)
+        override fun serialize(
+            encoder: Encoder,
+            value: ErrorResponse
+        ) {
+            require(encoder is JsonEncoder)
+            val jsonElement = when (value) {
+                is CustomErrorResponse -> encoder.json.encodeToJsonElement(value)
+                else -> encoder.json.encodeToJsonElement(value)
+            }
+            return encoder.encodeJsonElement(jsonElement)
         }
-        return encoder.encodeJsonElement(jsonElement)
     }
 }
 
@@ -362,15 +362,15 @@ fun Json.decodeErrorResponse(body: String): ErrorResponse =
         decodeErrorResponse(bodyJson)
     } catch (error: Throwable) {
         ErrorResponse.NotJson(
-            "response could not be parsed to JSON (body=$body)"
+            "response could not be parsed to JSON (body=$body): ${error.message}"
         )
     }
 
 fun Json.decodeErrorResponse(body: JsonObject): ErrorResponse =
     try {
-        decodeFromJsonElement(ErrorResponseSerializer, body)
+        decodeFromJsonElement(ErrorResponse.Serializer, body)
     } catch (error: Throwable) {
         ErrorResponse.BadJson(
-            "response could not be parsed to ErrorResponse (body=$body)",
+            "response could not be parsed to ErrorResponse (body=$body): ${error.message}",
         )
     }

@@ -27,7 +27,7 @@ import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.MegolmMessageValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId

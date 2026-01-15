@@ -9,7 +9,6 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import net.folivo.trixnity.clientserverapi.model.discovery.GetSupport.Response.Contact.Role
 import net.folivo.trixnity.core.Auth
 import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.HttpMethod
@@ -36,7 +35,7 @@ object GetSupport : MatrixEndpoint<Unit, GetSupport.Response> {
             @SerialName("matrix_id") val userId: UserId? = null,
             @SerialName("role") val role: Role,
         ) {
-            @Serializable(with = RoleSerializer::class)
+            @Serializable(with = Role.Serializer::class)
             sealed interface Role {
                 val name: String
 
@@ -49,24 +48,24 @@ object GetSupport : MatrixEndpoint<Unit, GetSupport.Response> {
                 }
 
                 data class Unknown(override val name: String) : Role
+
+                object Serializer : KSerializer<Role> {
+                    override val descriptor: SerialDescriptor =
+                        PrimitiveSerialDescriptor("Role", PrimitiveKind.STRING)
+
+                    override fun deserialize(decoder: Decoder): Role {
+                        return when (val name = decoder.decodeString()) {
+                            Admin.name -> Admin
+                            Security.name -> Security
+                            else -> Unknown(name)
+                        }
+                    }
+
+                    override fun serialize(encoder: Encoder, value: Role) {
+                        encoder.encodeString(value.name)
+                    }
+                }
             }
         }
-    }
-}
-
-object RoleSerializer : KSerializer<Role> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("RoleSerializer", PrimitiveKind.STRING)
-
-    override fun deserialize(decoder: Decoder): Role {
-        return when (val name = decoder.decodeString()) {
-            Role.Admin.name -> Role.Admin
-            Role.Security.name -> Role.Security
-            else -> Role.Unknown(name)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: Role) {
-        encoder.encodeString(value.name)
     }
 }

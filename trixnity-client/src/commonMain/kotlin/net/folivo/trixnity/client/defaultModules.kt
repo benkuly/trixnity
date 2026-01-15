@@ -20,7 +20,6 @@ import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderM
 import net.folivo.trixnity.client.server.createServerModule
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.TimelineEventSerializer
 import net.folivo.trixnity.client.store.createStoreModule
 import net.folivo.trixnity.client.user.*
 import net.folivo.trixnity.client.verification.VerificationService
@@ -63,7 +62,7 @@ fun createDefaultMatrixJsonModule() = module {
         val config = get<MatrixClientConfiguration>()
         createMatrixEventJson(mappings, customModule = SerializersModule {
             contextual(
-                TimelineEventSerializer(
+                TimelineEvent.Serializer(
                     mappings.message + mappings.state,
                     config.storeTimelineEventContentUnencrypted
                 )

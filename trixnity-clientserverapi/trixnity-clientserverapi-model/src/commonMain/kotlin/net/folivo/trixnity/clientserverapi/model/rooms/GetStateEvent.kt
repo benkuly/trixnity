@@ -11,7 +11,6 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -63,7 +62,7 @@ data class GetStateEvent(
             private val stateBaseEventSerializer: KSerializer<ClientEvent.StateBaseEvent<*>>,
             private val stateEventContentSerializer: KSerializer<StateEventContent>,
         ) : KSerializer<Response> {
-            override val descriptor: SerialDescriptor = buildClassSerialDescriptor("GetStateEvent.Response")
+            override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Response")
 
             @OptIn(ExperimentalSerializationApi::class)
             override fun deserialize(decoder: Decoder): Response {

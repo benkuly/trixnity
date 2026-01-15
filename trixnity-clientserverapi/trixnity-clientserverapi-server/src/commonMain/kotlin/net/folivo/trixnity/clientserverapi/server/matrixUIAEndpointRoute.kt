@@ -1,7 +1,6 @@
 package net.folivo.trixnity.clientserverapi.server
 
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -14,7 +13,6 @@ import net.folivo.trixnity.api.server.MatrixEndpointContext
 import net.folivo.trixnity.api.server.matrixEndpointResource
 import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
-import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIASerializer
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA.*
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -30,7 +28,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
         val requestBody: RequestWithUIA<REQUEST> =
             when {
                 requestSerializer != null -> json.decodeFromJsonElement(
-                    RequestWithUIASerializer(requestSerializer),
+                    RequestWithUIA.Serializer(requestSerializer),
                     call.receive()
                 )
 

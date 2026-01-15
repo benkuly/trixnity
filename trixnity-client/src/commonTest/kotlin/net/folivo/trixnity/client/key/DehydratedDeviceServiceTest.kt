@@ -22,6 +22,7 @@ import net.folivo.trixnity.clientserverapi.model.devices.GetDehydratedDeviceEven
 import net.folivo.trixnity.clientserverapi.model.devices.SetDehydratedDevice
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.keys.SessionKeyValue
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent

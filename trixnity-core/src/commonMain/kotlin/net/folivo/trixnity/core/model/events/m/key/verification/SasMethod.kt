@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = SasMethodSerializer::class)
+@Serializable(with = SasMethod.Serializer::class)
 sealed interface SasMethod {
     val name: String
 
@@ -21,19 +21,19 @@ sealed interface SasMethod {
     }
 
     data class Unknown(override val name: String) : SasMethod
-}
 
-class SasMethodSerializer : KSerializer<SasMethod> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("SasMethod", PrimitiveKind.STRING)
+    class Serializer : KSerializer<SasMethod> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("SasMethod", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): SasMethod =
-        when (val name = decoder.decodeString()) {
-            SasMethod.Decimal.name -> SasMethod.Decimal
-            SasMethod.Emoji.name -> SasMethod.Emoji
-            else -> SasMethod.Unknown(name)
-        }
+        override fun deserialize(decoder: Decoder): SasMethod =
+            when (val name = decoder.decodeString()) {
+                Decimal.name -> Decimal
+                Emoji.name -> Emoji
+                else -> Unknown(name)
+            }
 
-    override fun serialize(encoder: Encoder, value: SasMethod) =
-        encoder.encodeString(value.name)
+        override fun serialize(encoder: Encoder, value: SasMethod) =
+            encoder.encodeString(value.name)
+    }
 }

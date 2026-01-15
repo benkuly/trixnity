@@ -14,7 +14,6 @@ import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,7 +42,7 @@ class MatrixQueryParameterOrBearerAuthTest : TrixnityBaseTest() {
         val response = client.get("/_matrix/something")
         assertEquals(HttpStatusCode.Unauthorized, response.status)
         assertEquals(ContentType.Application.Json.withCharset(Charsets.UTF_8), response.contentType())
-        Json.decodeFromString(ErrorResponseSerializer, response.body())
+        Json.decodeFromString(ErrorResponse.Serializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.Unauthorized>()
     }
 
@@ -53,7 +52,7 @@ class MatrixQueryParameterOrBearerAuthTest : TrixnityBaseTest() {
         val response = client.get("/_matrix/something?access_token=invalidToken")
         assertEquals(HttpStatusCode.Forbidden, response.status)
         assertEquals(ContentType.Application.Json.withCharset(Charsets.UTF_8), response.contentType())
-        Json.decodeFromString(ErrorResponseSerializer, response.body())
+        Json.decodeFromString(ErrorResponse.Serializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.Forbidden>()
     }
 
@@ -65,7 +64,7 @@ class MatrixQueryParameterOrBearerAuthTest : TrixnityBaseTest() {
         }
         assertEquals(HttpStatusCode.Forbidden, response.status)
         assertEquals(ContentType.Application.Json.withCharset(Charsets.UTF_8), response.contentType())
-        Json.decodeFromString(ErrorResponseSerializer, response.body())
+        Json.decodeFromString(ErrorResponse.Serializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.Forbidden>()
     }
 
@@ -77,7 +76,7 @@ class MatrixQueryParameterOrBearerAuthTest : TrixnityBaseTest() {
         }
         assertEquals(HttpStatusCode.Forbidden, response.status)
         assertEquals(ContentType.Application.Json.withCharset(Charsets.UTF_8), response.contentType())
-        Json.decodeFromString(ErrorResponseSerializer, response.body())
+        Json.decodeFromString(ErrorResponse.Serializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.Forbidden>()
     }
 

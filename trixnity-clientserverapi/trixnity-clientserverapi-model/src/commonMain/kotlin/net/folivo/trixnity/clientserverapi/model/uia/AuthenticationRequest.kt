@@ -10,9 +10,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.*
 
-@Serializable(with = AuthenticationRequestSerializer::class)
+@Serializable(with = AuthenticationRequest.Serializer::class)
 sealed interface AuthenticationRequest {
     val type: AuthenticationType?
 
@@ -74,63 +73,63 @@ sealed interface AuthenticationRequest {
         @SerialName("type")
         override val type: AuthenticationType? = null
     }
-
+    
     data class Unknown(
         val raw: JsonObject,
         override val type: AuthenticationType.Unknown?,
     ) : AuthenticationRequest
-}
 
-object AuthenticationRequestSerializer : KSerializer<AuthenticationRequest> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("AuthenticationRequestSerializer")
+    object Serializer : KSerializer<AuthenticationRequest> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("AuthenticationRequest")
 
-    override fun deserialize(decoder: Decoder): AuthenticationRequest {
-        require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement()
-        if (jsonObject !is JsonObject) throw SerializationException("auth should be a json object")
-        val type =
-            jsonObject["type"]?.let {
-                it as? JsonPrimitive ?: throw SerializationException("type should be a string")
-            }?.content
-        return when (type) {
-            AuthenticationType.Password.name -> decoder.json.decodeFromJsonElement<Password>(jsonObject)
-            AuthenticationType.Recaptcha.name -> decoder.json.decodeFromJsonElement<Recaptcha>(jsonObject)
-            AuthenticationType.EmailIdentity.name -> decoder.json.decodeFromJsonElement<EmailIdentify>(jsonObject)
-            AuthenticationType.Msisdn.name -> decoder.json.decodeFromJsonElement<Msisdn>(jsonObject)
-            AuthenticationType.Dummy.name -> decoder.json.decodeFromJsonElement<Dummy>(jsonObject)
-            AuthenticationType.RegistrationToken.name ->
-                decoder.json.decodeFromJsonElement<RegistrationToken>(jsonObject)
+        override fun deserialize(decoder: Decoder): AuthenticationRequest {
+            require(decoder is JsonDecoder)
+            val jsonObject = decoder.decodeJsonElement()
+            if (jsonObject !is JsonObject) throw SerializationException("auth should be a json object")
+            val type =
+                jsonObject["type"]?.let {
+                    it as? JsonPrimitive ?: throw SerializationException("type should be a string")
+                }?.content
+            return when (type) {
+                AuthenticationType.Password.name -> decoder.json.decodeFromJsonElement<Password>(jsonObject)
+                AuthenticationType.Recaptcha.name -> decoder.json.decodeFromJsonElement<Recaptcha>(jsonObject)
+                AuthenticationType.EmailIdentity.name -> decoder.json.decodeFromJsonElement<EmailIdentify>(jsonObject)
+                AuthenticationType.Msisdn.name -> decoder.json.decodeFromJsonElement<Msisdn>(jsonObject)
+                AuthenticationType.Dummy.name -> decoder.json.decodeFromJsonElement<Dummy>(jsonObject)
+                AuthenticationType.RegistrationToken.name ->
+                    decoder.json.decodeFromJsonElement<RegistrationToken>(jsonObject)
 
-            AuthenticationType.OAuth2.name -> decoder.json.decodeFromJsonElement<OAuth2>(jsonObject)
+                AuthenticationType.OAuth2.name -> decoder.json.decodeFromJsonElement<OAuth2>(jsonObject)
 
-            null -> {
-                if (jsonObject.size == 1) decoder.json.decodeFromJsonElement<Fallback>(jsonObject)
-                else Unknown(jsonObject, null)
+                null -> {
+                    if (jsonObject.size == 1) decoder.json.decodeFromJsonElement<Fallback>(jsonObject)
+                    else Unknown(jsonObject, null)
+                }
+
+                else -> Unknown(jsonObject, AuthenticationType.Unknown(type))
             }
-
-            else -> Unknown(jsonObject, AuthenticationType.Unknown(type))
         }
-    }
 
-    override fun serialize(encoder: Encoder, value: AuthenticationRequest) {
-        require(encoder is JsonEncoder)
-        val jsonElement = when (value) {
-            is Password -> encoder.json.encodeToJsonElement(value)
-            is Recaptcha -> encoder.json.encodeToJsonElement(value)
-            is EmailIdentify -> encoder.json.encodeToJsonElement(value)
-            is Msisdn -> encoder.json.encodeToJsonElement(value)
-            is Dummy -> encoder.json.encodeToJsonElement(value)
-            is RegistrationToken -> encoder.json.encodeToJsonElement(value)
-            is OAuth2 -> encoder.json.encodeToJsonElement(value)
-            is Fallback -> encoder.json.encodeToJsonElement(value)
-            is Unknown -> encoder.json.encodeToJsonElement(JsonObject(buildMap {
-                putAll(value.raw)
-                put("type", encoder.json.encodeToJsonElement(value.type))
+        override fun serialize(encoder: Encoder, value: AuthenticationRequest) {
+            require(encoder is JsonEncoder)
+            val jsonElement = when (value) {
+                is Password -> encoder.json.encodeToJsonElement(value)
+                is Recaptcha -> encoder.json.encodeToJsonElement(value)
+                is EmailIdentify -> encoder.json.encodeToJsonElement(value)
+                is Msisdn -> encoder.json.encodeToJsonElement(value)
+                is Dummy -> encoder.json.encodeToJsonElement(value)
+                is RegistrationToken -> encoder.json.encodeToJsonElement(value)
+                is OAuth2 -> encoder.json.encodeToJsonElement(value)
+                is Fallback -> encoder.json.encodeToJsonElement(value)
+                is Unknown -> encoder.json.encodeToJsonElement(JsonObject(buildMap {
+                    putAll(value.raw)
+                    put("type", encoder.json.encodeToJsonElement(value.type))
+                }))
+            }
+            encoder.encodeJsonElement(JsonObject(buildMap {
+                value.type?.name?.let { put("type", JsonPrimitive(it)) }
+                putAll(jsonElement.jsonObject)
             }))
         }
-        encoder.encodeJsonElement(JsonObject(buildMap {
-            value.type?.name?.let { put("type", JsonPrimitive(it)) }
-            putAll(jsonElement.jsonObject)
-        }))
     }
 }

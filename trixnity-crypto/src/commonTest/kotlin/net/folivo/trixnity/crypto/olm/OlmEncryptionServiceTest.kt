@@ -16,9 +16,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
-import net.folivo.trixnity.core.MegolmMessageValue
-import net.folivo.trixnity.core.OlmMessageValue
-import net.folivo.trixnity.core.SessionKeyValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
+import net.folivo.trixnity.core.model.keys.OlmMessageValue
+import net.folivo.trixnity.core.model.keys.SessionKeyValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId

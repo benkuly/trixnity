@@ -8,7 +8,7 @@ import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseType
 
 @OptIn(ExperimentalSerializationApi::class)
-@Serializable(with = ClientMetadataSerializer::class)
+@Serializable(with = ClientMetadata.Serializer::class)
 @KeepGeneratedSerializer
 internal data class ClientMetadata(
     @SerialName("application_type") val applicationType: ApplicationType = ApplicationType.Web,
@@ -21,7 +21,6 @@ internal data class ClientMetadata(
     @SerialName("response_types") val responseTypes: Set<ResponseType>? = null,
     @SerialName("token_endpoint_auth_method") val tokenEndpointAuthMethod: TokenEndpointAuthMethod? = null,
     @SerialName("tos_uri") val tosUri: LocalizedField<String>? = null,
-)
-
-internal object ClientMetadataSerializer :
-    LocalizedObjectSerializer<ClientMetadata>(ClientMetadata.generatedSerializer())
+) {
+    object Serializer : LocalizedObjectSerializer<ClientMetadata>(ClientMetadata.generatedSerializer())
+}

@@ -4,7 +4,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
-import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -26,6 +25,7 @@ import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Unknown
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.trimToFlatJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -117,15 +117,17 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             1432735824653,
             UnsignedMessageEventData(
                 1234, relations =
-                    mapOf(
-                        RelationType.Unknown("org.example.possible_annotations") to
-                                ServerAggregation.Unknown(
-                                    RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
-                                        add(buildJsonObject {
-                                            put("key", JsonPrimitive("👍"))
-                                            put("count", JsonPrimitive(3))
+                    Relations(
+                        mapOf(
+                            RelationType.Unknown("org.example.possible_annotations") to
+                                    ServerAggregation.Unknown(
+                                        RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                            add(buildJsonObject {
+                                                put("key", JsonPrimitive("👍"))
+                                                put("count", JsonPrimitive(3))
+                                            })
                                         })
-                                    })
+                        )
                     )
             ),
         )
@@ -427,15 +429,17 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 1432735824653,
                 UnsignedMessageEventData(
                     1234, relations =
-                        mapOf(
-                            RelationType.Unknown("org.example.possible_annotations") to
-                                    ServerAggregation.Unknown(
-                                        RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
-                                            add(buildJsonObject {
-                                                put("key", JsonPrimitive("👍"))
-                                                put("count", JsonPrimitive(3))
+                        Relations(
+                            mapOf(
+                                RelationType.Unknown("org.example.possible_annotations") to
+                                        ServerAggregation.Unknown(
+                                            RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                                add(buildJsonObject {
+                                                    put("key", JsonPrimitive("👍"))
+                                                    put("count", JsonPrimitive(3))
+                                                })
                                             })
-                                        })
+                            )
                         )
                 ),
             ), result

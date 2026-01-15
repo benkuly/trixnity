@@ -15,6 +15,7 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeyBackupVersionRequest
 import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.model.keys.ExportedSessionKeyValue
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent

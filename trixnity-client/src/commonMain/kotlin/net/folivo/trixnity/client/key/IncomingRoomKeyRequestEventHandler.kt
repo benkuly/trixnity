@@ -12,6 +12,7 @@ import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.model.keys.ExportedSessionKeyValue
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.ForwardedRoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction

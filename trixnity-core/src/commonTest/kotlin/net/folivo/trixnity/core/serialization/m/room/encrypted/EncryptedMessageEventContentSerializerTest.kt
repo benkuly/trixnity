@@ -2,14 +2,13 @@ package net.folivo.trixnity.core.serialization.m.room.encrypted
 
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContentSerializer
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Unknown
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
@@ -22,7 +21,7 @@ class EncryptedMessageEventContentSerializerTest : TrixnityBaseTest() {
     @Test
     fun shouldSerializeMegolm() {
         val result = json.encodeToString(
-            EncryptedMessageEventContentSerializer,
+            EncryptedMessageEventContent.Serializer,
             MegolmEncryptedMessageEventContent(
                 senderKey = Curve25519KeyValue("<sender_curve25519_key>"),
                 deviceId = "<sender_device_id>",

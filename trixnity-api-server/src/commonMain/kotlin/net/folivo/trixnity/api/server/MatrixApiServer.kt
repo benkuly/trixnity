@@ -12,7 +12,6 @@ import io.ktor.util.logging.*
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.MatrixServerException
 
 fun Application.matrixApiServer(json: Json, routes: Route.() -> Unit) {
@@ -38,7 +37,7 @@ fun Application.installMatrixApiServer(json: Json) {
                     }
                     call.respond(
                         cause.statusCode,
-                        json.encodeToJsonElement(ErrorResponseSerializer, errorResponse)
+                        json.encodeToJsonElement(ErrorResponse.Serializer, errorResponse)
                     )
                 }
 
@@ -46,7 +45,7 @@ fun Application.installMatrixApiServer(json: Json) {
                     call.respond(
                         HttpStatusCode.BadRequest,
                         json.encodeToJsonElement(
-                            ErrorResponseSerializer,
+                            ErrorResponse.Serializer,
                             ErrorResponse.BadJson(cause.message ?: "unknown")
                         )
                     )
@@ -55,7 +54,7 @@ fun Application.installMatrixApiServer(json: Json) {
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         json.encodeToJsonElement(
-                            ErrorResponseSerializer,
+                            ErrorResponse.Serializer,
                             ErrorResponse.Unknown(cause.message ?: "unknown")
                         )
                     )
@@ -66,7 +65,7 @@ fun Application.installMatrixApiServer(json: Json) {
             call.respond(
                 HttpStatusCode.NotFound,
                 json.encodeToJsonElement(
-                    ErrorResponseSerializer,
+                    ErrorResponse.Serializer,
                     ErrorResponse.Unrecognized("unsupported (or unknown) endpoint")
                 )
             )
@@ -75,7 +74,7 @@ fun Application.installMatrixApiServer(json: Json) {
             call.respond(
                 HttpStatusCode.MethodNotAllowed,
                 json.encodeToJsonElement(
-                    ErrorResponseSerializer,
+                    ErrorResponse.Serializer,
                     ErrorResponse.Unrecognized("http request method not allowed")
                 )
             )
@@ -84,7 +83,7 @@ fun Application.installMatrixApiServer(json: Json) {
             call.respond(
                 HttpStatusCode.UnsupportedMediaType,
                 json.encodeToJsonElement(
-                    ErrorResponseSerializer,
+                    ErrorResponse.Serializer,
                     ErrorResponse.Unrecognized("media type of request is not supported")
                 )
             )
