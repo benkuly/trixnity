@@ -27,7 +27,8 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushRule
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -105,7 +106,7 @@ class NotificationServiceTest : TrixnityBaseTest() {
         roomService = roomService,
         notificationStore = notificationStore,
         globalAccountDataStore = globalAccountDataStore,
-        eventContentSerializerMappings = DefaultEventContentSerializerMappings,
+        eventContentSerializerMappings = EventContentSerializerMappings.default,
         matrixClientStarted = matrixClientStarted,
         config = config,
         eventsToNotificationUpdates = object : EventsToNotificationUpdates {

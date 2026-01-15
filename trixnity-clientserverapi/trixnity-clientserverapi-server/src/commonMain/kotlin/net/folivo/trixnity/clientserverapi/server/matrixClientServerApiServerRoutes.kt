@@ -3,8 +3,8 @@ package net.folivo.trixnity.clientserverapi.server
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 
 fun Route.matrixClientServerApiServerRoutes(
     appserviceApiHandler: AppserviceApiHandler,
@@ -18,7 +18,7 @@ fun Route.matrixClientServerApiServerRoutes(
     serverApiHandler: ServerApiHandler,
     syncApiHandler: SyncApiHandler,
     usersApiHandler: UsersApiHandler,
-    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
 ) {
     appserviceApiRoutes(appserviceApiHandler, json, eventContentSerializerMappings)

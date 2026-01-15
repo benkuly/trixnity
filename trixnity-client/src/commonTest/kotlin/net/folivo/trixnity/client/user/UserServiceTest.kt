@@ -20,7 +20,8 @@ import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -118,7 +119,7 @@ class UserServiceTest : TrixnityBaseTest() {
         canDoAction = CanDoActionImpl(userInfo, GetPowerLevelImpl()),
         getPowerLevelDelegate = GetPowerLevelImpl(),
         clock = clock,
-        mappings = DefaultEventContentSerializerMappings,
+        mappings = EventContentSerializerMappings.default,
         config = MatrixClientConfiguration(),
     )
 

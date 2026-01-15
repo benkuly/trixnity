@@ -21,14 +21,15 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
 class MatrixAccessTokenAuthTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
-    private val mapping = createDefaultEventContentSerializerMappings()
+    private val mapping = EventContentSerializerMappings.default
     private val principal = MatrixClientPrincipal(UserId("user", "server"), "deviceId")
 
     private fun ApplicationTestBuilder.testEndpoint(

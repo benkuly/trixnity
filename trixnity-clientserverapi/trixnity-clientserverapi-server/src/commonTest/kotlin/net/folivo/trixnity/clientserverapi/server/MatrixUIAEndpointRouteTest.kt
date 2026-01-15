@@ -18,14 +18,15 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.HttpMethodType.POST
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
 class MatrixUIAEndpointRouteTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
-    private val mapping = createDefaultEventContentSerializerMappings()
+    private val mapping = EventContentSerializerMappings.default
 
     @Serializable
     @Resource("/path/{pathParam}")

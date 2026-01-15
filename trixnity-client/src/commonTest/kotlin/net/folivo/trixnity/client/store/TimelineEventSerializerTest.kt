@@ -20,7 +20,8 @@ import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
@@ -30,7 +31,7 @@ class TimelineEventSerializerTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson(customModule = SerializersModule {
         contextual(
             TimelineEvent.Serializer(
-                DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.message + EventContentSerializerMappings.default.state,
                 true
             )
         )
@@ -173,7 +174,7 @@ class TimelineEventSerializerTest : TrixnityBaseTest() {
     private val disabledJson = createMatrixEventJson(customModule = SerializersModule {
         contextual(
             TimelineEvent.Serializer(
-                DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.message + EventContentSerializerMappings.default.state,
                 false
             )
         )

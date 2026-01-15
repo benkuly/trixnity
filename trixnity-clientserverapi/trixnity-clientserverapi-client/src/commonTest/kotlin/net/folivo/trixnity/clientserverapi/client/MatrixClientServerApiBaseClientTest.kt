@@ -32,8 +32,9 @@ import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -48,7 +49,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     private val baseUrl = Url("https://matrix.host")
     private val json = createMatrixEventJson()
-    private val mappings = createDefaultEventContentSerializerMappings()
+    private val mappings = EventContentSerializerMappings.default
     var onLogout: LogoutInfo? = null.also {
         scheduleSetup { onLogout = null }
     }

@@ -5,7 +5,7 @@ import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 
-fun createEventSerializersModule(
+fun createMatrixEventSerializersModule(
     mappings: EventContentSerializerMappings,
 ): SerializersModule {
     val contextualMessageEventContentSerializer = ContextualMessageEventContentSerializer(mappings.message)

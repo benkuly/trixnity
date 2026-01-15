@@ -36,8 +36,9 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -57,7 +58,7 @@ class MatrixClientTest : TrixnityBaseTest() {
     private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val json = createMatrixEventJson()
-    private val mappings = createDefaultEventContentSerializerMappings()
+    private val mappings = EventContentSerializerMappings.default
     private val syncResponseSerializer = SyncResponseSerializer(json, mappings)
 
     private val serverResponse = Sync.Response(

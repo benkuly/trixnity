@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.room.outbox
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping.Companion.of
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
-val defaultOutboxMessageMediaUploaderMappings = OutboxMessageMediaUploaderMappings(
+private val outboxMessageMediaUploaderMappingsDefault = OutboxMessageMediaUploaderMappings(
     listOf(
         of<RoomMessageEventContent.FileBased.File>(FileMessageEventContentMediaUploader()),
         of<RoomMessageEventContent.FileBased.Image>(ImageMessageEventContentMediaUploader()),
@@ -12,3 +12,5 @@ val defaultOutboxMessageMediaUploaderMappings = OutboxMessageMediaUploaderMappin
         FallbackOutboxMessageMediaUploaderMapping,
     )
 )
+
+val OutboxMessageMediaUploaderMappings.Companion.default get() = outboxMessageMediaUploaderMappingsDefault

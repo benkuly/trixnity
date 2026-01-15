@@ -22,10 +22,9 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.test.utils.testClock
@@ -47,7 +46,7 @@ val simpleUserInfo =
 fun TrixnityBaseTest.mockMatrixClientServerApiClient(
     config: PortableMockEngineConfig = PortableMockEngineConfig(),
     json: Json = createMatrixEventJson(),
-    contentMappings: EventContentSerializerMappings = createDefaultEventContentSerializerMappings(),
+    contentMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
     syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
 ): MatrixClientServerApiClientImpl =
     MatrixClientServerApiClientImpl(
@@ -118,7 +117,7 @@ fun TrixnityBaseTest.getInMemoryRoomAccountDataStore(setup: suspend RoomAccountD
     RoomAccountDataStore(
         InMemoryRoomAccountDataRepository(),
         RepositoryTransactionManagerMock(),
-        DefaultEventContentSerializerMappings,
+        EventContentSerializerMappings.default,
         MatrixClientConfiguration(),
         ObservableCacheStatisticCollector(),
         testScope.backgroundScope,
@@ -134,7 +133,7 @@ fun TrixnityBaseTest.getInMemoryGlobalAccountDataStore(setup: suspend GlobalAcco
     GlobalAccountDataStore(
         InMemoryGlobalAccountDataRepository(),
         RepositoryTransactionManagerMock(),
-        DefaultEventContentSerializerMappings,
+        EventContentSerializerMappings.default,
         MatrixClientConfiguration(),
         ObservableCacheStatisticCollector(),
         testScope.backgroundScope,
@@ -233,7 +232,7 @@ fun TrixnityBaseTest.getInMemoryRoomTimelineStore(setup: suspend RoomTimelineSto
 fun TrixnityBaseTest.getInMemoryRoomStateStore(setup: suspend RoomStateStore.() -> Unit = {}) = RoomStateStore(
     InMemoryRoomStateRepository(),
     RepositoryTransactionManagerMock(),
-    DefaultEventContentSerializerMappings,
+    EventContentSerializerMappings.default,
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     testScope.backgroundScope,

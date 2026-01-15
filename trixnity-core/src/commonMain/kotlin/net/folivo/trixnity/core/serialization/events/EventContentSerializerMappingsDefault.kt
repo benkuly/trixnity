@@ -20,7 +20,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
 import net.folivo.trixnity.core.model.events.m.space.ParentEventContent
 
-val DefaultEventContentSerializerMappings = createEventContentSerializerMappings {
+private val eventContentSerializerMappingsDefault = EventContentSerializerMappings {
     messageOf<RoomMessageEventContent>("m.room.message")
     messageOf<ReactionEventContent>("m.reaction")
     messageOf<RedactionEventContent>("m.room.redaction")
@@ -102,3 +102,8 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     blockOf(TextContentBlock)
     blockOf(TopicContentBlock)
 }
+
+val EventContentSerializerMappings.Companion.default get() = eventContentSerializerMappingsDefault
+
+fun EventContentSerializerMappings.Companion.default(customMappings: EventContentSerializerMappings): EventContentSerializerMappings =
+    EventContentSerializerMappings.default + customMappings

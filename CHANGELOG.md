@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump Dependencies (Kotlin 2.2.21)
 - Implement IndexedDBMediaStore without juullabs indexeddb
 - Moved Serializers into serialized structures
+- Various refactorings
 
 ### Deprecated
 

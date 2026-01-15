@@ -20,15 +20,16 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.push.*
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class PushRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
-    private val mapping = createDefaultEventContentSerializerMappings()
+    private val mapping = EventContentSerializerMappings.default
 
     val handlerMock = mock<PushApiHandler>()
 

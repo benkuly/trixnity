@@ -29,8 +29,9 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.*
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -62,7 +63,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
         roomStore,
         roomTimelineStore,
         createMatrixEventJson(),
-        createDefaultEventContentSerializerMappings(),
+        EventContentSerializerMappings.default,
         MatrixClientConfiguration(),
         TransactionManagerMock(),
     )

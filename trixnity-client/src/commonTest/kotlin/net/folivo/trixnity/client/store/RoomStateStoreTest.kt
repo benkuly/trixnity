@@ -25,7 +25,8 @@ import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
@@ -38,7 +39,7 @@ class RoomStateStoreTest : TrixnityBaseTest() {
     private val cut = RoomStateStore(
         roomStateRepository,
         RepositoryTransactionManagerMock(),
-        DefaultEventContentSerializerMappings,
+        EventContentSerializerMappings.default,
         MatrixClientConfiguration(),
         ObservableCacheStatisticCollector(),
         testScope.backgroundScope,

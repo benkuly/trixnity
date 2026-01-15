@@ -2,7 +2,7 @@ package net.folivo.trixnity.core.serialization.events
 
 import net.folivo.trixnity.core.model.events.m.*
 
-val DefaultEphemeralDataUnitContentSerializerMappings = createEventContentSerializerMappings {
+private val eventContentSerializerMappingsDefaultEphemeralDataUnit = EventContentSerializerMappings {
     ephemeralDataUnitOf<PresenceDataUnitContent>("m.presence")
     ephemeralDataUnitOf<TypingDataUnitContent>("m.typing")
     ephemeralDataUnitOf<ReceiptDataUnitContent>("m.receipt")
@@ -10,3 +10,8 @@ val DefaultEphemeralDataUnitContentSerializerMappings = createEventContentSerial
     ephemeralDataUnitOf<SigningKeyUpdateDataUnitContent>("m.signing_key_update")
     ephemeralDataUnitOf<DirectToDeviceDataUnitContent>("m.direct_to_device")
 }
+
+val EventContentSerializerMappings.Companion.defaultEphemeralDataUnit get() = eventContentSerializerMappingsDefaultEphemeralDataUnit
+
+fun EventContentSerializerMappings.Companion.defaultEphemeralDataUnit(customMappings: EventContentSerializerMappings): EventContentSerializerMappings =
+    EventContentSerializerMappings.defaultDataUnit + customMappings

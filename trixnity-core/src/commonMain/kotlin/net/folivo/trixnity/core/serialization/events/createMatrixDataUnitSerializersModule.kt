@@ -4,7 +4,7 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 
-fun createDataUnitSerializersModule(
+fun createMatrixDataUnitSerializersModule(
     mappings: EventContentSerializerMappings,
     roomVersionStore: RoomVersionStore,
 ): SerializersModule {

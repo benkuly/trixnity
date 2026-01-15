@@ -63,7 +63,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             StateEventSerializer(
-                DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.state,
             ), content
         )
         assertEquals(expectedResult, result)
@@ -88,7 +88,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             StateEventSerializer(
-                DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.state,
             ), input
         )
         assertEquals(
@@ -161,7 +161,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ),
             content
         )
@@ -203,7 +203,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             StateEventSerializer(
-                DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.state,
             ), content
         )
         assertEquals(expectedResult, result)
@@ -232,7 +232,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             StateEventSerializer(
-                DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.state,
             ), input
         )
         assertEquals(
@@ -291,7 +291,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ),
             content
         )
@@ -336,7 +336,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ),
             content
         )
@@ -373,7 +373,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ),
             content
         )
@@ -413,7 +413,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
 
         val result = json.decodeFromString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ),
             input
         )
@@ -473,7 +473,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
 
         val result = json.decodeFromString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ),
             input
         )
@@ -517,7 +517,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ), input
         )
         assertEquals(
@@ -556,7 +556,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ), input
         )
         assertEquals(
@@ -597,7 +597,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ), input
         )
         assertEquals(
@@ -650,7 +650,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ), input
         )
         assertEquals(
@@ -744,7 +744,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             json.encodeToString(
                 ListSerializer(
                     StateEventSerializer(
-                        DefaultEventContentSerializerMappings.state,
+                        EventContentSerializerMappings.default.state,
                     )
                 ),
                 content
@@ -781,7 +781,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ),
             content
         )
@@ -819,7 +819,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ), input
         )
         assertEquals(
@@ -858,7 +858,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             StateEventSerializer(
-                DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.state,
             ), input
         )
         assertEquals(
@@ -922,7 +922,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(
-                DefaultEventContentSerializerMappings.message,
+                EventContentSerializerMappings.default.message,
             ),
             content
         )
@@ -949,7 +949,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             StateEventSerializer(
-                DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.state,
             ),
             input
         )
@@ -997,7 +997,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             StateEventSerializer(
-                DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.state,
             ),
             input
         )
@@ -1024,7 +1024,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.decodeFromString(
             StateEventSerializer(
-                DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.state,
             ),
             input
         )
@@ -1073,7 +1073,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     """.trimToFlatJson()
         val result = json.encodeToString(
             StateEventSerializer(
-                DefaultEventContentSerializerMappings.state,
+                EventContentSerializerMappings.default.state,
             ),
             input
         )

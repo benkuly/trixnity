@@ -39,15 +39,16 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class SyncRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
-    private val mapping = createDefaultEventContentSerializerMappings()
+    private val mapping = EventContentSerializerMappings.default
 
     val handlerMock = mock<SyncApiHandler>()
 

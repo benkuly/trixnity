@@ -25,8 +25,8 @@ import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiBaseClient")
 
@@ -55,7 +55,7 @@ private class UIAInterception(val body: JsonObject, val errorResponse: ErrorResp
 
 class MatrixClientServerApiBaseClient(
     private val authProvider: MatrixClientAuthProvider,
-    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     asUserId: UserId? = null,
     asDeviceId: String? = null,

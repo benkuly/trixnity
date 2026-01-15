@@ -8,8 +8,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
+import net.folivo.trixnity.core.serialization.events.invoke
 import net.folivo.trixnity.core.serialization.events.stateOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,7 +19,7 @@ class SyncResponseSerializerTest {
     @Test
     fun testSimpleSync() {
         val json = createMatrixEventJson()
-        val serializer = SyncResponseSerializer(json, DefaultEventContentSerializerMappings)
+        val serializer = SyncResponseSerializer(json, EventContentSerializerMappings.default)
         val value = json.decodeFromString(
             serializer,
             "{\"next_batch\":\"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\"device_lists\":{\"changed\":[\"@xxxxxxxx-xxxxxxxxxxxx:matrix.org\"]},\"device_one_time_keys_count\":{\"signed_curve25519\":50},\"org.matrix.msc2732.device_unused_fallback_key_types\":[\"signed_curve25519\"],\"device_unused_fallback_key_types\":[\"signed_curve25519\"],\"rooms\":{\"join\":{\"!xxxxxxxxxxxxxxxx:matrix.org\":{\"timeline\":{\"events\":[{\"content\":{\"algorithm\":\"m.megolm.v1.aes-sha2\",\"ciphertext\":\"AwgGEoAB54CgH052RDgJQpaoo0El/sfLtVLURAQGGu6QUnEyjKUjRul80IZmZYsmwxTC2Bs6yDAc0EOWXN8o3vHWSfQsYYwTRkXlMTssVLKGUnqRQajsEtQT0kqNda6WvejITkuZmY2ThUAssVK5NjEGdtaT+vit//zaHG/XAm24Rs9NMcHObrwv/sbQHPt2htPiWVHLXQtakXyU810BIKNxUR5ILT4qUW/e6Z6eZUinKwKnpy2nWkJIJPki9o3zpGjMTKcq4e28j3X/vwc\",\"device_id\":\"TCXQVOAEIN\",\"sender_key\":\"Yy+JlhZtawC9oqLnOjFEUwzl/879kwyi8ivZ3u99a14\",\"session_id\":\"BGCwyqkDmnAe5L+dTw7wQNV8NPlPI2xoxHxwhfMMYtY\"},\"origin_server_ts\":1753141908323,\"sender\":\"@xxxxxxxx-xxxxxxxxxxxx:matrix.org\",\"type\":\"m.room.encrypted\",\"unsigned\":{\"membership\":\"join\",\"age\":254,\"transaction_id\":\"m1753141907962.0\"},\"event_id\":\"\$xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"}],\"prev_batch\":\"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\"limited\":false},\"state\":{\"events\":[{\"content\":{\"avatar_url\":\"mxc://matrix.org/xxxxxxxxxxxxxxxx\",\"displayname\":\"justJanne\",\"membership\":\"join\"},\"origin_server_ts\":1748954082755,\"sender\":\"@xxxxxxxx-xxxxxxxxxxxx:matrix.org\",\"state_key\":\"@xxxxxxxx-xxxxxxxxxxxx:matrix.org\",\"type\":\"m.room.member\",\"unsigned\":{\"replaces_state\":\"\$xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\"age\":4187825822},\"event_id\":\"\$xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"}]},\"account_data\":{\"events\":[]},\"ephemeral\":{\"events\":[]},\"unread_notifications\":{\"notification_count\":0,\"highlight_count\":0},\"summary\":{}}}}}"
@@ -38,7 +39,7 @@ class SyncResponseSerializerTest {
 
     @Test
     fun supportCustomEvents() {
-        val mappings = DefaultEventContentSerializerMappings + createEventContentSerializerMappings {
+        val mappings = EventContentSerializerMappings.default + EventContentSerializerMappings {
             stateOf<CustomStateEventContent>("net.folivo.custom")
         }
         val json = createMatrixEventJson(mappings)
