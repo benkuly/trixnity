@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
-@Serializable(with = LoginTypeSerializer::class)
+@Serializable(with = LoginType.Serializer::class)
 sealed interface LoginType {
     val name: String
 
@@ -58,39 +58,39 @@ sealed interface LoginType {
         override val name: String,
         val raw: JsonObject
     ) : LoginType
-}
 
-object LoginTypeSerializer : KSerializer<LoginType> {
-    override fun deserialize(decoder: Decoder): LoginType {
-        require(decoder is JsonDecoder)
-        val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
-        requireNotNull(type)
-        return when (type) {
-            LoginType.Password.name -> decoder.json.decodeFromJsonElement<LoginType.Password>(jsonObj)
-            "m.login.token" -> decoder.json.decodeFromJsonElement<LoginType.Token>(jsonObj)
-            LoginType.AppService.name -> decoder.json.decodeFromJsonElement<LoginType.AppService>(jsonObj)
-            "m.login.sso" -> decoder.json.decodeFromJsonElement<LoginType.SSO>(jsonObj)
-            else -> LoginType.Unknown(type, jsonObj)
+    object Serializer : KSerializer<LoginType> {
+        override fun deserialize(decoder: Decoder): LoginType {
+            require(decoder is JsonDecoder)
+            val jsonObj = decoder.decodeJsonElement().jsonObject
+            val type = jsonObj["type"]?.jsonPrimitive?.content
+            requireNotNull(type)
+            return when (type) {
+                Password.name -> decoder.json.decodeFromJsonElement<Password>(jsonObj)
+                "m.login.token" -> decoder.json.decodeFromJsonElement<Token>(jsonObj)
+                AppService.name -> decoder.json.decodeFromJsonElement<AppService>(jsonObj)
+                "m.login.sso" -> decoder.json.decodeFromJsonElement<SSO>(jsonObj)
+                else -> Unknown(type, jsonObj)
+            }
         }
-    }
 
-    override fun serialize(encoder: Encoder, value: LoginType) {
-        require(encoder is JsonEncoder)
-        val jsonObject: JsonObject = when (value) {
-            is LoginType.Password -> encoder.json.encodeToJsonElement(value).jsonObject
-            is LoginType.Token -> encoder.json.encodeToJsonElement(value).jsonObject
-            is LoginType.AppService -> encoder.json.encodeToJsonElement(value).jsonObject
-            is LoginType.SSO -> encoder.json.encodeToJsonElement(value).jsonObject
-            is LoginType.Unknown -> JsonObject(buildMap {
-                putAll(value.raw)
-            })
+        override fun serialize(encoder: Encoder, value: LoginType) {
+            require(encoder is JsonEncoder)
+            val jsonObject: JsonObject = when (value) {
+                is Password -> encoder.json.encodeToJsonElement(value).jsonObject
+                is Token -> encoder.json.encodeToJsonElement(value).jsonObject
+                is AppService -> encoder.json.encodeToJsonElement(value).jsonObject
+                is SSO -> encoder.json.encodeToJsonElement(value).jsonObject
+                is Unknown -> JsonObject(buildMap {
+                    putAll(value.raw)
+                })
+            }
+            encoder.encodeJsonElement(JsonObject(buildMap {
+                putAll(jsonObject)
+                put("type", JsonPrimitive(value.name))
+            }))
         }
-        encoder.encodeJsonElement(JsonObject(buildMap {
-            putAll(jsonObject)
-            put("type", JsonPrimitive(value.name))
-        }))
-    }
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("LoginType")
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("LoginType")
+    }
 }

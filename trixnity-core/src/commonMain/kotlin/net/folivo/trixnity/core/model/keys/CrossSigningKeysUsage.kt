@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = CrossSigningKeyUsageSerializer::class)
+@Serializable(with = CrossSigningKeysUsage.Serializer::class)
 sealed interface CrossSigningKeysUsage {
     val name: String
 
@@ -27,22 +27,22 @@ sealed interface CrossSigningKeysUsage {
     data class UnknownCrossSigningKeyUsage(
         override val name: String
     ) : CrossSigningKeysUsage
-}
 
-object CrossSigningKeyUsageSerializer : KSerializer<CrossSigningKeysUsage> {
-    override fun deserialize(decoder: Decoder): CrossSigningKeysUsage {
-        return when (val name = decoder.decodeString()) {
-            CrossSigningKeysUsage.MasterKey.name -> CrossSigningKeysUsage.MasterKey
-            CrossSigningKeysUsage.SelfSigningKey.name -> CrossSigningKeysUsage.SelfSigningKey
-            CrossSigningKeysUsage.UserSigningKey.name -> CrossSigningKeysUsage.UserSigningKey
-            else -> CrossSigningKeysUsage.UnknownCrossSigningKeyUsage(name)
+    object Serializer : KSerializer<CrossSigningKeysUsage> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("CrossSigningKeysUsage", PrimitiveKind.STRING)
+
+        override fun deserialize(decoder: Decoder): CrossSigningKeysUsage {
+            return when (val name = decoder.decodeString()) {
+                MasterKey.name -> MasterKey
+                SelfSigningKey.name -> SelfSigningKey
+                UserSigningKey.name -> UserSigningKey
+                else -> UnknownCrossSigningKeyUsage(name)
+            }
+        }
+
+        override fun serialize(encoder: Encoder, value: CrossSigningKeysUsage) {
+            encoder.encodeString(value.name)
         }
     }
-
-    override fun serialize(encoder: Encoder, value: CrossSigningKeysUsage) {
-        encoder.encodeString(value.name)
-    }
-
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("CrossSigningKeyUsageSerializer", PrimitiveKind.STRING)
 }

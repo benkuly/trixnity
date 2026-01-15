@@ -102,7 +102,7 @@ fun MatrixClientAuthProviderData.Companion.oAuth2(
     accessToken: String,
     accessTokenExpiresInS: Long? = null,
     refreshToken: String? = null,
-    scope: Set<String>? = null,
+    scope: Set<Scope>? = null,
 ): OAuth2MatrixClientAuthProviderData = OAuth2MatrixClientAuthProviderData(
     baseUrl = baseUrl,
     accessToken = accessToken,
@@ -149,7 +149,7 @@ data class OAuth2MatrixClientAuthProviderData(
     val accessTokenExpiresInS: Long?,
     override val refreshToken: String?,
     val clientId: String,
-    val scope: Set<String>?,
+    val scope: Set<Scope>?,
 ) : MatrixClientAuthProviderData, BearerTokens {
     override fun toString(): String =
         "OAuth2MatrixAuthProviderData(" +

@@ -8,8 +8,8 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.utils.RetryFlowDelayConfig
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
@@ -41,7 +41,7 @@ interface MatrixClientServerApiClient : AutoCloseable {
 interface MatrixClientServerApiClientFactory {
     fun create(
         authProvider: MatrixClientAuthProvider,
-        eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+        eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
         json: Json = createMatrixEventJson(eventContentSerializerMappings),
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
         syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
@@ -66,7 +66,7 @@ interface MatrixClientServerApiClientFactory {
 
     fun create(
         baseUrl: Url,
-        eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+        eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
         json: Json = createMatrixEventJson(eventContentSerializerMappings),
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
         syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
@@ -94,7 +94,7 @@ interface MatrixClientServerApiClientFactory {
 
 class MatrixClientServerApiClientImpl(
     private val authProvider: MatrixClientAuthProvider,
-    override val eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    override val eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
     override val json: Json = createMatrixEventJson(eventContentSerializerMappings),
     syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
     syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
@@ -106,7 +106,7 @@ class MatrixClientServerApiClientImpl(
 ) : MatrixClientServerApiClient {
     constructor(
         baseUrl: Url,
-        eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+        eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
         json: Json = createMatrixEventJson(eventContentSerializerMappings),
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
         syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,

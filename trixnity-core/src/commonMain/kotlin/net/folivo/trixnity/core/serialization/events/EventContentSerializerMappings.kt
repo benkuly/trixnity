@@ -12,8 +12,7 @@ interface EventContentSerializerMappings {
     val roomAccountData: Set<EventContentSerializerMapping<RoomAccountDataEventContent>>
     val block: Set<EventContentBlockSerializerMapping<*>>
 
-    operator fun plus(plus: EventContentSerializerMappings?): EventContentSerializerMappings {
-        if (plus == null) return this
+    operator fun plus(plus: EventContentSerializerMappings): EventContentSerializerMappings {
         val roomEventContentSerializerMappings = this.message + plus.message
         val stateEventContentSerializerMappings = this.state + plus.state
         val ephemeralEventContentSerializerMappings = this.ephemeral + plus.ephemeral
@@ -34,8 +33,7 @@ interface EventContentSerializerMappings {
         }
     }
 
-    operator fun minus(minus: EventContentSerializerMappings?): EventContentSerializerMappings {
-        if (minus == null) return this
+    operator fun minus(minus: EventContentSerializerMappings): EventContentSerializerMappings {
         val roomEventContentSerializerMappings = this.message - minus.message
         val stateEventContentSerializerMappings = this.state - minus.state
         val ephemeralEventContentSerializerMappings = this.ephemeral - minus.ephemeral
@@ -55,4 +53,6 @@ interface EventContentSerializerMappings {
             override val block = blockMappings
         }
     }
+
+    companion object
 }

@@ -7,8 +7,9 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import net.folivo.trixnity.core.serialization.stringWrapperSerializer
 
-@Serializable(with = EncryptionAlgorithmSerializer::class)
+@Serializable(with = EncryptionAlgorithm.Serializer::class)
 sealed class EncryptionAlgorithm {
     abstract val name: String
 
@@ -16,74 +17,36 @@ sealed class EncryptionAlgorithm {
         return name
     }
 
-    @Serializable(with = MegolmEncryptionAlgorithmSerializer::class)
+    @Serializable(with = Megolm.Serializer::class)
     data object Megolm : EncryptionAlgorithm() {
-        override val name: String
-            get() = "m.megolm.v1.aes-sha2"
+        override val name: String = "m.megolm.v1.aes-sha2"
+
+        object Serializer : KSerializer<Megolm> by stringWrapperSerializer(Megolm, name)
     }
 
-    @Serializable(with = OlmEncryptionAlgorithmSerializer::class)
+    @Serializable(with = Olm.Serializer::class)
     data object Olm : EncryptionAlgorithm() {
-        override val name: String
-            get() = "m.olm.v1.curve25519-aes-sha2"
+        override val name: String = "m.olm.v1.curve25519-aes-sha2"
+
+        object Serializer : KSerializer<Olm> by stringWrapperSerializer(Olm, name)
     }
 
-    @Serializable(with = UnknownEncryptionAlgorithmSerializer::class)
     data class Unknown(override val name: String) : EncryptionAlgorithm()
-}
 
-object EncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm> {
-    override fun deserialize(decoder: Decoder): EncryptionAlgorithm {
-        return when (val name = decoder.decodeString()) {
-            EncryptionAlgorithm.Megolm.name -> EncryptionAlgorithm.Megolm
-            EncryptionAlgorithm.Olm.name -> EncryptionAlgorithm.Olm
-            else -> EncryptionAlgorithm.Unknown(name)
+    object Serializer : KSerializer<EncryptionAlgorithm> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("EncryptionAlgorithm", PrimitiveKind.STRING)
+
+        override fun deserialize(decoder: Decoder): EncryptionAlgorithm {
+            return when (val name = decoder.decodeString()) {
+                Megolm.name -> Megolm
+                Olm.name -> Olm
+                else -> Unknown(name)
+            }
+        }
+
+        override fun serialize(encoder: Encoder, value: EncryptionAlgorithm) {
+            encoder.encodeString(value.name)
         }
     }
-
-    override fun serialize(encoder: Encoder, value: EncryptionAlgorithm) {
-        encoder.encodeString(value.name)
-    }
-
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("EncryptionAlgorithmSerializer", PrimitiveKind.STRING)
-}
-
-object MegolmEncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm.Megolm> {
-    override fun deserialize(decoder: Decoder): EncryptionAlgorithm.Megolm {
-        return EncryptionAlgorithm.Megolm
-    }
-
-    override fun serialize(encoder: Encoder, value: EncryptionAlgorithm.Megolm) {
-        encoder.encodeString(value.name)
-    }
-
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("MegolmEncryptionAlgorithmSerializer", PrimitiveKind.STRING)
-}
-
-object OlmEncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm.Olm> {
-    override fun deserialize(decoder: Decoder): EncryptionAlgorithm.Olm {
-        return EncryptionAlgorithm.Olm
-    }
-
-    override fun serialize(encoder: Encoder, value: EncryptionAlgorithm.Olm) {
-        encoder.encodeString(value.name)
-    }
-
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("OlmEncryptionAlgorithmSerializer", PrimitiveKind.STRING)
-}
-
-object UnknownEncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm.Unknown> {
-    override fun deserialize(decoder: Decoder): EncryptionAlgorithm.Unknown {
-        return EncryptionAlgorithm.Unknown(decoder.decodeString())
-    }
-
-    override fun serialize(encoder: Encoder, value: EncryptionAlgorithm.Unknown) {
-        encoder.encodeString(value.name)
-    }
-
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("UnknownEncryptionAlgorithmSerializer", PrimitiveKind.STRING)
 }

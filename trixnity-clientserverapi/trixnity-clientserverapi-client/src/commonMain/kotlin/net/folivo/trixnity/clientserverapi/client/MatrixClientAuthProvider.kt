@@ -7,8 +7,8 @@ import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.utils.RetryFlowDelayConfig
 import kotlin.coroutines.CoroutineContext
 
@@ -61,7 +61,7 @@ interface MatrixClientAuthProviderData {
 }
 
 suspend fun <T> MatrixClientAuthProviderData.useApi(
-    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
     syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,

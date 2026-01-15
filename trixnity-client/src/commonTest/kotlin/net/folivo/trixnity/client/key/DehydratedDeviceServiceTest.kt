@@ -16,12 +16,13 @@ import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredSecret
-import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
-import net.folivo.trixnity.clientserverapi.model.devices.GetDehydratedDevice
-import net.folivo.trixnity.clientserverapi.model.devices.GetDehydratedDeviceEvents
-import net.folivo.trixnity.clientserverapi.model.devices.SetDehydratedDevice
+import net.folivo.trixnity.clientserverapi.model.device.DehydratedDeviceData
+import net.folivo.trixnity.clientserverapi.model.device.GetDehydratedDevice
+import net.folivo.trixnity.clientserverapi.model.device.GetDehydratedDeviceEvents
+import net.folivo.trixnity.clientserverapi.model.device.SetDehydratedDevice
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.keys.SessionKeyValue
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent

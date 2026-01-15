@@ -6,7 +6,6 @@ import net.folivo.trixnity.client.store.relatesTo
 import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 
@@ -27,10 +26,7 @@ suspend fun MessageBuilder.reply(
 ) {
     val replyTo = RelatesTo.ReplyTo(eventId)
     val repliedTimelineEvent = roomService.getTimelineEventWithContentAndTimeout(roomId, replyTo.eventId)
-    val repliedMentions = repliedTimelineEvent?.content?.getOrNull()?.let {
-        if (it is MessageEventContent) it.mentions else null
-    }
-    mentions = Mentions(setOfNotNull(repliedTimelineEvent?.sender)) + repliedMentions + mentions
+    mentions = Mentions(setOfNotNull(repliedTimelineEvent.sender)) + (mentions ?: Mentions())
     relatesTo =
         if (eventRelatesTo is RelatesTo.Thread) {
             RelatesTo.Thread(eventRelatesTo.eventId, replyTo, true)

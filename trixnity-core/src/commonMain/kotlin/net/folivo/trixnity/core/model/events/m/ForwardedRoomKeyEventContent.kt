@@ -2,7 +2,7 @@ package net.folivo.trixnity.core.model.events.m
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.ExportedSessionKeyValue
+import net.folivo.trixnity.core.model.keys.ExportedSessionKeyValue
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm

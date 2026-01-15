@@ -6,8 +6,8 @@ import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.client.store.repository.InMemoryAccountRepository
-import net.folivo.trixnity.clientserverapi.model.users.Profile
-import net.folivo.trixnity.clientserverapi.model.users.ProfileField
+import net.folivo.trixnity.clientserverapi.model.user.Profile
+import net.folivo.trixnity.clientserverapi.model.user.ProfileField
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest

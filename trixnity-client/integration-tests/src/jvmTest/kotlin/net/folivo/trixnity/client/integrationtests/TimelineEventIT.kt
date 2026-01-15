@@ -30,7 +30,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.classicLogin
 import net.folivo.trixnity.clientserverapi.client.classicLoginWith
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
@@ -46,9 +46,9 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
+import net.folivo.trixnity.core.serialization.events.invoke
 import net.folivo.trixnity.core.serialization.events.messageOf
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
@@ -371,7 +371,7 @@ class TimelineEventIT {
                 modulesFactories += {
                     module {
                         single<EventContentSerializerMappings> {
-                            DefaultEventContentSerializerMappings + createEventContentSerializerMappings {
+                            EventContentSerializerMappings.default + EventContentSerializerMappings {
                                 messageOf<TestUnknownEventContent>("net.folivo.test")
                             }
                         }

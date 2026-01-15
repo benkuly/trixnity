@@ -11,7 +11,7 @@ import kotlinx.serialization.json.*
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#actions">matrix spec</a>
  */
-@Serializable(with = PushActionSerializer::class)
+@Serializable(with = PushAction.Serializer::class)
 sealed interface PushAction {
     val name: String?
 
@@ -32,53 +32,52 @@ sealed interface PushAction {
     }
 
     data class Unknown(override val name: String?, val raw: JsonElement) : PushAction
-}
 
-object PushActionSerializer : KSerializer<PushAction> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PushActionSerializer")
+    object Serializer : KSerializer<PushAction> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PushAction")
 
-    override fun deserialize(decoder: Decoder): PushAction {
-        require(decoder is JsonDecoder)
-        return when (val json = decoder.decodeJsonElement()) {
-            is JsonPrimitive -> when (val name = json.content) {
-                PushAction.Notify.name -> PushAction.Notify
-                else -> PushAction.Unknown(name, json)
+        override fun deserialize(decoder: Decoder): PushAction {
+            require(decoder is JsonDecoder)
+            return when (val json = decoder.decodeJsonElement()) {
+                is JsonPrimitive -> when (val name = json.content) {
+                    Notify.name -> Notify
+                    else -> Unknown(name, json)
+                }
+
+                is JsonObject -> when (val name = (json["set_tweak"] as? JsonPrimitive)?.contentOrNull) {
+                    "sound" -> SetSoundTweak((json["value"] as? JsonPrimitive)?.contentOrNull)
+                    "highlight" -> SetHighlightTweak(
+                        json["value"]?.let { decoder.json.decodeFromJsonElement(it) } ?: true
+                    )
+
+                    else -> Unknown(name, json)
+                }
+
+                else -> Unknown(null, json)
             }
+        }
 
-            is JsonObject -> when (val name = (json["set_tweak"] as? JsonPrimitive)?.contentOrNull) {
-                "sound" -> PushAction.SetSoundTweak((json["value"] as? JsonPrimitive)?.contentOrNull)
-                "highlight" -> PushAction.SetHighlightTweak(
-                    json["value"]?.let { decoder.json.decodeFromJsonElement(it) } ?: true
+        override fun serialize(encoder: Encoder, value: PushAction) {
+            require(encoder is JsonEncoder)
+            val json = when (value) {
+                is Notify -> JsonPrimitive(Notify.name)
+                is SetSoundTweak -> JsonObject(
+                    buildMap {
+                        put("set_tweak", JsonPrimitive(value.name))
+                        value.value?.let { put("value", JsonPrimitive(it)) }
+                    }
                 )
 
-                else -> PushAction.Unknown(name, json)
+                is SetHighlightTweak -> JsonObject(
+                    buildMap {
+                        put("set_tweak", JsonPrimitive(value.name))
+                        put("value", JsonPrimitive(value.value))
+                    }
+                )
+
+                is Unknown -> value.raw
             }
-
-            else -> PushAction.Unknown(null, json)
+            encoder.encodeJsonElement(json)
         }
     }
-
-    override fun serialize(encoder: Encoder, value: PushAction) {
-        require(encoder is JsonEncoder)
-        val json = when (value) {
-            is PushAction.Notify -> JsonPrimitive(PushAction.Notify.name)
-            is PushAction.SetSoundTweak -> JsonObject(
-                buildMap {
-                    put("set_tweak", JsonPrimitive(value.name))
-                    value.value?.let { put("value", JsonPrimitive(it)) }
-                }
-            )
-
-            is PushAction.SetHighlightTweak -> JsonObject(
-                buildMap {
-                    put("set_tweak", JsonPrimitive(value.name))
-                    put("value", JsonPrimitive(value.value))
-                }
-            )
-
-            is PushAction.Unknown -> value.raw
-        }
-        encoder.encodeJsonElement(json)
-    }
-
 }

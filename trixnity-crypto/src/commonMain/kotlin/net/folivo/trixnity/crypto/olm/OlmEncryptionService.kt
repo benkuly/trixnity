@@ -9,8 +9,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import net.folivo.trixnity.core.MSC3814
-import net.folivo.trixnity.core.MegolmMessageValue
-import net.folivo.trixnity.core.SessionKeyValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
+import net.folivo.trixnity.core.model.keys.SessionKeyValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

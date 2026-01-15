@@ -23,10 +23,10 @@ import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
-import net.folivo.trixnity.clientserverapi.model.keys.*
-import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
+import net.folivo.trixnity.clientserverapi.model.key.*
+import net.folivo.trixnity.clientserverapi.model.user.SetGlobalAccountData
 import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.ExportedSessionKeyValue
+import net.folivo.trixnity.core.model.keys.ExportedSessionKeyValue
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId

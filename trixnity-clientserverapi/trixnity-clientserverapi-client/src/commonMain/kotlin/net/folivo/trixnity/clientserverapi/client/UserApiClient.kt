@@ -5,7 +5,7 @@ import io.ktor.http.*
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.clientserverapi.model.users.*
+import net.folivo.trixnity.clientserverapi.model.user.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
@@ -22,10 +22,10 @@ interface UserApiClient {
     /**
      * @see [GetProfileField]
      */
-    suspend fun getProfileField(
+    suspend fun <T : ProfileField> getProfileField(
         userId: UserId,
-        key: ProfileField.Key<*>,
-    ): Result<ProfileField>
+        key: ProfileField.Key<T>,
+    ): Result<T>
 
     /**
      * @see [SetProfileField]
@@ -150,11 +150,16 @@ class UserApiClientImpl(
     override val contentMappings: EventContentSerializerMappings
 ) : UserApiClient {
 
-    override suspend fun getProfileField(
+    override suspend fun <T : ProfileField> getProfileField(
         userId: UserId,
-        key: ProfileField.Key<*>,
-    ): Result<ProfileField> =
+        key: ProfileField.Key<T>
+    ): Result<T> =
+        @Suppress("UNCHECKED_CAST")
         baseClient.request(GetProfileField(userId, key))
+            .map {
+                if (it.key != key) error("unexpected type ${it.key}, expected $key")
+                else it as? T ?: error("unexpected type ${it::class}, expected ${key::class}")
+            }
 
     override suspend fun setProfileField(
         userId: UserId,
@@ -297,12 +302,3 @@ suspend inline fun <reified C : GlobalAccountDataEventContent> UserApiClient.get
     @Suppress("UNCHECKED_CAST")
     return getAccountData(type, userId, key) as Result<C>
 }
-
-/**
- * @see [GetProfileField]
- */
-suspend inline fun <reified T : ProfileField> UserApiClient.getProfileField(
-    userId: UserId,
-    key: ProfileField.Key<T>,
-): Result<T> =
-    getProfileField(userId, key).map { it as? T ?: error("unexpected type") }

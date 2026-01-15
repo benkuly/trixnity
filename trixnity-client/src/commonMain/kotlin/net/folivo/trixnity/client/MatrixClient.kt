@@ -14,9 +14,9 @@ import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryMigration
 import net.folivo.trixnity.clientserverapi.client.*
-import net.folivo.trixnity.clientserverapi.model.users.Filters
-import net.folivo.trixnity.clientserverapi.model.users.Profile
-import net.folivo.trixnity.clientserverapi.model.users.ProfileField
+import net.folivo.trixnity.clientserverapi.model.user.Filters
+import net.folivo.trixnity.clientserverapi.model.user.Profile
+import net.folivo.trixnity.clientserverapi.model.user.ProfileField
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence

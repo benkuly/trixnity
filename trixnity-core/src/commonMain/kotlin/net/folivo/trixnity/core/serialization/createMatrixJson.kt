@@ -7,7 +7,6 @@ import kotlinx.serialization.modules.overwriteWith
 import kotlinx.serialization.modules.plus
 import net.folivo.trixnity.core.serialization.events.*
 
-
 @OptIn(ExperimentalSerializationApi::class)
 private fun createMatrixJson(
     module: SerializersModule
@@ -20,19 +19,19 @@ private fun createMatrixJson(
 }
 
 fun createMatrixEventJson(
-    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
     customModule: SerializersModule? = null,
 ): Json {
-    val modules = createEventSerializersModule(eventContentSerializerMappings)
+    val modules = createMatrixEventSerializersModule(eventContentSerializerMappings)
     return createMatrixJson(if (customModule != null) modules + customModule else modules)
 }
 
 fun createMatrixDataUnitJson(
     roomVersionStore: RoomVersionStore,
-    eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
+    eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.defaultDataUnit,
     customModule: SerializersModule? = null,
 ): Json {
-    val modules = createDataUnitSerializersModule(
+    val modules = createMatrixDataUnitSerializersModule(
         eventContentSerializerMappings,
         roomVersionStore
     )
@@ -41,21 +40,15 @@ fun createMatrixDataUnitJson(
 
 fun createMatrixEventAndDataUnitJson(
     roomVersionStore: RoomVersionStore,
-    eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
+    eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.defaultDataUnit,
     customModule: SerializersModule? = null,
 ): Json {
-    val modules = createEventSerializersModule(eventContentSerializerMappings)
+    val modules = createMatrixEventSerializersModule(eventContentSerializerMappings)
         .overwriteWith(
-            createDataUnitSerializersModule(
+            createMatrixDataUnitSerializersModule(
                 eventContentSerializerMappings,
                 roomVersionStore
             )
         )
     return createMatrixJson(if (customModule != null) modules + customModule else modules)
 }
-
-fun createDefaultEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
-    DefaultEventContentSerializerMappings + customMappings
-
-fun createDefaultDataUnitContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
-    DefaultDataUnitContentSerializerMappings + customMappings

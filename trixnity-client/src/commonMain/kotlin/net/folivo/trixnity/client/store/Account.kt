@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.clientserverapi.model.users.Profile
+import net.folivo.trixnity.clientserverapi.model.user.Profile
 import net.folivo.trixnity.core.model.UserId
 
 @Serializable

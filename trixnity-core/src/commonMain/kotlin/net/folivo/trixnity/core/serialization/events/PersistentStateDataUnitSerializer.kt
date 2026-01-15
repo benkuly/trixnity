@@ -25,7 +25,7 @@ class PersistentStateDataUnitSerializer(
     stateEventContentSerializers: Set<EventContentSerializerMapping<StateEventContent>>,
     private val roomVersionStore: RoomVersionStore,
 ) : KSerializer<PersistentDataUnit.PersistentStateDataUnit<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PersistentStateDataUnitSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PersistentStateDataUnit")
     private val mappingV1 = RoomEventContentToEventSerializerMappings(
         baseMapping = stateEventContentSerializers,
         eventDeserializer = { PersistentStateDataUnitV1.serializer(it.serializer) },

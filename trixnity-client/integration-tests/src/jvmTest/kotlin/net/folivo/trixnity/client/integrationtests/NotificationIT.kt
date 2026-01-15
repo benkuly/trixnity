@@ -239,7 +239,7 @@ class NotificationIT {
                         startedClient1.client.room.sendMessage(room) {
                             text("$helloMessage!!")
                             replace(notificationMessages[index])
-                            mentions(startedClient2.client.userId)
+                            mentions(setOf(startedClient2.client.userId))
                         }.let { transactionId ->
                             startedClient1.client.room.getOutbox(room).flatten()
                                 .mapNotNull { it.find { it.transactionId == transactionId }?.eventId }
@@ -283,7 +283,7 @@ class NotificationIT {
             rooms.map { room ->
                 startedClient1.client.room.sendMessage(room) {
                     text(helloMessage)
-                    mentions(startedClient2.client.userId)
+                    mentions(setOf(startedClient2.client.userId))
                 }.let { transactionId ->
                     startedClient1.client.room.getOutbox(room).flatten()
                         .mapNotNull { it.find { it.transactionId == transactionId }?.eventId }

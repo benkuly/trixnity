@@ -20,7 +20,6 @@ import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
-import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
@@ -29,11 +28,13 @@ import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
+import net.folivo.trixnity.core.model.events.m.Relations
 import net.folivo.trixnity.core.model.events.m.ServerAggregation
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
@@ -124,11 +125,13 @@ class RoomServiceTest : TrixnityBaseTest() {
             room,
             1,
             UnsignedRoomEventData.UnsignedMessageEventData(
-                relations = mapOf(
-                    RelationType.Replace to ServerAggregation.Replace(
-                        replaceTimelineEvent.eventId,
-                        replaceTimelineEvent.event.sender,
-                        replaceTimelineEvent.event.originTimestamp
+                relations = Relations(
+                    mapOf(
+                        RelationType.Replace to ServerAggregation.Replace(
+                            replaceTimelineEvent.eventId,
+                            replaceTimelineEvent.event.sender,
+                            replaceTimelineEvent.event.originTimestamp
+                        )
                     )
                 )
             )
@@ -318,11 +321,13 @@ class RoomServiceTest : TrixnityBaseTest() {
                         room,
                         1,
                         UnsignedRoomEventData.UnsignedMessageEventData(
-                            relations = mapOf(
-                                RelationType.Replace to ServerAggregation.Replace(
-                                    replaceTimelineEvent.eventId,
-                                    replaceTimelineEvent.event.sender,
-                                    replaceTimelineEvent.event.originTimestamp
+                            relations = Relations(
+                                mapOf(
+                                    RelationType.Replace to ServerAggregation.Replace(
+                                        replaceTimelineEvent.eventId,
+                                        replaceTimelineEvent.event.sender,
+                                        replaceTimelineEvent.event.originTimestamp
+                                    )
                                 )
                             )
                         )
@@ -361,11 +366,13 @@ class RoomServiceTest : TrixnityBaseTest() {
                 room,
                 1,
                 UnsignedRoomEventData.UnsignedMessageEventData(
-                    relations = mapOf(
-                        RelationType.Replace to ServerAggregation.Replace(
-                            replaceTimelineEvent.eventId,
-                            replaceTimelineEvent.event.sender,
-                            replaceTimelineEvent.event.originTimestamp
+                    relations = Relations(
+                        mapOf(
+                            RelationType.Replace to ServerAggregation.Replace(
+                                replaceTimelineEvent.eventId,
+                                replaceTimelineEvent.event.sender,
+                                replaceTimelineEvent.event.originTimestamp
+                            )
                         )
                     )
                 )

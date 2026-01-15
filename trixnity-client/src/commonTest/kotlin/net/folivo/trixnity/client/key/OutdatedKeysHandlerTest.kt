@@ -21,7 +21,7 @@ import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
+import net.folivo.trixnity.clientserverapi.model.key.GetKeys
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId

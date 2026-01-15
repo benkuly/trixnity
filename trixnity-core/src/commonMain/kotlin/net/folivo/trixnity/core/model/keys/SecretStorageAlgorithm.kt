@@ -7,7 +7,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = SecretStorageAlgorithmSerializer::class)
+@Serializable(with = SecretStorageAlgorithm.Serializer::class)
 sealed interface SecretStorageAlgorithm {
     val value: String
 
@@ -16,20 +16,20 @@ sealed interface SecretStorageAlgorithm {
     }
 
     data class Unknown(override val value: String) : SecretStorageAlgorithm
-}
 
-object SecretStorageAlgorithmSerializer : KSerializer<SecretStorageAlgorithm> {
-    override val descriptor =
-        PrimitiveSerialDescriptor("SecretStorageAlgorithmSerializer", PrimitiveKind.STRING)
+    object Serializer : KSerializer<SecretStorageAlgorithm> {
+        override val descriptor =
+            PrimitiveSerialDescriptor("SecretStorageAlgorithm", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): SecretStorageAlgorithm {
-        return when (val value = decoder.decodeString()) {
-            SecretStorageAlgorithm.AesHmacSha2.value -> SecretStorageAlgorithm.AesHmacSha2
-            else -> SecretStorageAlgorithm.Unknown(value)
+        override fun deserialize(decoder: Decoder): SecretStorageAlgorithm {
+            return when (val value = decoder.decodeString()) {
+                AesHmacSha2.value -> AesHmacSha2
+                else -> Unknown(value)
+            }
         }
-    }
 
-    override fun serialize(encoder: Encoder, value: SecretStorageAlgorithm) {
-        encoder.encodeString(value.value)
+        override fun serialize(encoder: Encoder, value: SecretStorageAlgorithm) {
+            encoder.encodeString(value.value)
+        }
     }
 }

@@ -19,13 +19,13 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log =
-    KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.PersistentMessageDataUnitSerializer")
+    KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.PersistentMessageDataUnit")
 
 class PersistentMessageDataUnitSerializer(
     messageEventContentSerializers: Set<EventContentSerializerMapping<MessageEventContent>>,
     private val roomVersionStore: RoomVersionStore,
 ) : KSerializer<PersistentMessageDataUnit<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PersistentMessageDataUnitSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PersistentMessageDataUnit")
     private val mappingV1 = RoomEventContentToEventSerializerMappings(
         baseMapping = messageEventContentSerializers,
         eventDeserializer = {

@@ -8,7 +8,6 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonClassDiscriminator
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
@@ -59,7 +58,7 @@ data class RoomOutboxMessage<T : MessageEventContent>(
         @Serializable
         @SerialName("bad_request")
         data class BadRequest(
-            val errorResponse: @Serializable(with = ErrorResponseSerializer::class) ErrorResponse
+            val errorResponse: @Serializable(with = ErrorResponse.Serializer::class) ErrorResponse
         ) : SendError
 
         /**
@@ -79,7 +78,7 @@ data class RoomOutboxMessage<T : MessageEventContent>(
         @Serializable
         @SerialName("unknown")
         data class Unknown(
-            val errorResponse: @Serializable(with = ErrorResponseSerializer::class) ErrorResponse? = null,
+            val errorResponse: @Serializable(with = ErrorResponse.Serializer::class) ErrorResponse? = null,
             val message: String? = null,
         ) : SendError
     }

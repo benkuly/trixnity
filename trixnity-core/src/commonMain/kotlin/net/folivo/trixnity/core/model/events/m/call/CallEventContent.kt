@@ -275,28 +275,28 @@ sealed interface CallEventContent : MessageEventContent {
 
         override fun copyWith(relatesTo: RelatesTo?) = this
     }
-}
 
-internal object VersionSerializer : KSerializer<String> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("net.folivo.trixnity.core.model.call.Version")
+    object VersionSerializer : KSerializer<String> {
+        override val descriptor: SerialDescriptor =
+            buildClassSerialDescriptor("Version")
 
-    override fun deserialize(decoder: Decoder): String {
-        val jsonDecoder = decoder as? JsonDecoder ?: throw IllegalStateException("Expected JsonDecoder")
-        val element = jsonDecoder.decodeJsonElement().jsonPrimitive
+        override fun deserialize(decoder: Decoder): String {
+            val jsonDecoder = decoder as? JsonDecoder ?: throw IllegalStateException("Expected JsonDecoder")
+            val element = jsonDecoder.decodeJsonElement().jsonPrimitive
 
-        // All VoIP events have a version field. This is used to determine whether devices support this new version of
-        // the protocol. For example, clients can use this field to know whether to expect an m.call.select_answer event
-        // from their opponent. If clients see events with version other than 0 or "1" (including, for example, the
-        // numeric value 1), they should treat these the same as if they had version == "1".
-        // @see <a href="https://spec.matrix.org/v1.10/client-server-api/#voice-over-ip">matrix spec</a>
-        return element.content
-    }
+            // All VoIP events have a version field. This is used to determine whether devices support this new version of
+            // the protocol. For example, clients can use this field to know whether to expect an m.call.select_answer event
+            // from their opponent. If clients see events with version other than 0 or "1" (including, for example, the
+            // numeric value 1), they should treat these the same as if they had version == "1".
+            // @see <a href="https://spec.matrix.org/v1.10/client-server-api/#voice-over-ip">matrix spec</a>
+            return element.content
+        }
 
-    override fun serialize(encoder: kotlinx.serialization.encoding.Encoder, value: String) {
-        when (value) {
-            "0" -> encoder.encodeLong(0)
-            else -> encoder.encodeString(value)
+        override fun serialize(encoder: kotlinx.serialization.encoding.Encoder, value: String) {
+            when (value) {
+                "0" -> encoder.encodeLong(0)
+                else -> encoder.encodeString(value)
+            }
         }
     }
 }

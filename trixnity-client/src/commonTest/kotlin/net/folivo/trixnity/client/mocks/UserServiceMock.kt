@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.mocks
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserReceipts
@@ -15,16 +14,11 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomEventContent
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import kotlin.reflect.KClass
 
 class UserServiceMock : UserService {
-    @Deprecated("without function, use getPresence() instead", level = DeprecationLevel.ERROR)
-    override val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
-        get() = throw NotImplementedError()
-
     val loadMembersCalled = MutableStateFlow<RoomId?>(null)
     override suspend fun loadMembers(roomId: RoomId, wait: Boolean) {
         loadMembersCalled.value = roomId

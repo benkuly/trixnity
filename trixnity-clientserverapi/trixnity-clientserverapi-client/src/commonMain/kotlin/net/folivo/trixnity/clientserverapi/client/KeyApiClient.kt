@@ -2,7 +2,7 @@ package net.folivo.trixnity.clientserverapi.client
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
-import net.folivo.trixnity.clientserverapi.model.keys.*
+import net.folivo.trixnity.clientserverapi.model.key.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*

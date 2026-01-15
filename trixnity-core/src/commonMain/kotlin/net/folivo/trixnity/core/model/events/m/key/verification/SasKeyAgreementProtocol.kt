@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = SasKeyAgreementProtocolSerializer::class)
+@Serializable(with = SasKeyAgreementProtocol.Serializer::class)
 sealed interface SasKeyAgreementProtocol {
     val name: String
 
@@ -17,18 +17,18 @@ sealed interface SasKeyAgreementProtocol {
     }
 
     data class Unknown(override val name: String) : SasKeyAgreementProtocol
-}
 
-class SasKeyAgreementProtocolSerializer : KSerializer<SasKeyAgreementProtocol> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("SasKeyAgreementProtocol", PrimitiveKind.STRING)
+    class Serializer : KSerializer<SasKeyAgreementProtocol> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("SasKeyAgreementProtocol", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): SasKeyAgreementProtocol =
-        when (val name = decoder.decodeString()) {
-            SasKeyAgreementProtocol.Curve25519HkdfSha256.name -> SasKeyAgreementProtocol.Curve25519HkdfSha256
-            else -> SasKeyAgreementProtocol.Unknown(name)
-        }
+        override fun deserialize(decoder: Decoder): SasKeyAgreementProtocol =
+            when (val name = decoder.decodeString()) {
+                Curve25519HkdfSha256.name -> Curve25519HkdfSha256
+                else -> Unknown(name)
+            }
 
-    override fun serialize(encoder: Encoder, value: SasKeyAgreementProtocol) =
-        encoder.encodeString(value.name)
+        override fun serialize(encoder: Encoder, value: SasKeyAgreementProtocol) =
+            encoder.encodeString(value.name)
+    }
 }

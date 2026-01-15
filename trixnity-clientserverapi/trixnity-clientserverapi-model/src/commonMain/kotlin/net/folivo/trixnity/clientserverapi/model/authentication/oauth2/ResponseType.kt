@@ -9,7 +9,7 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = ResponseTypeSerializer::class)
+@Serializable(with = ResponseType.Serializer::class)
 sealed interface ResponseType {
     val value: String
 
@@ -18,16 +18,17 @@ sealed interface ResponseType {
     }
 
     data class Unknown(override val value: String) : ResponseType
-}
 
-object ResponseTypeSerializer : KSerializer<ResponseType> {
-    @OptIn(InternalSerializationApi::class)
-    override val descriptor: SerialDescriptor = buildSerialDescriptor("ResponseType", PrimitiveKind.STRING)
+    object Serializer : KSerializer<ResponseType> {
+        @OptIn(InternalSerializationApi::class)
+        override val descriptor: SerialDescriptor = buildSerialDescriptor("ResponseType", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): ResponseType = when (val value = decoder.decodeString().lowercase()) {
-        ResponseType.Code.value -> ResponseType.Code
-        else -> ResponseType.Unknown(value)
+        override fun deserialize(decoder: Decoder): ResponseType =
+            when (val value = decoder.decodeString().lowercase()) {
+                Code.value -> Code
+                else -> Unknown(value)
+            }
+
+        override fun serialize(encoder: Encoder, value: ResponseType) = encoder.encodeString(value.value)
     }
-
-    override fun serialize(encoder: Encoder, value: ResponseType) = encoder.encodeString(value.value)
 }

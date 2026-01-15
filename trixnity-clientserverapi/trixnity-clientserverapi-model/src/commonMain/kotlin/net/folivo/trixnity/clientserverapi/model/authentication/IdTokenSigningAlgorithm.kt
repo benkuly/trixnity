@@ -9,21 +9,7 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-object IdTokenSigningAlgorithmSerializer : KSerializer<IdTokenSigningAlgorithm> {
-    @OptIn(InternalSerializationApi::class)
-    override val descriptor: SerialDescriptor = buildSerialDescriptor("CodeChallengeMethod", SerialKind.ENUM)
-
-    override fun deserialize(decoder: Decoder): IdTokenSigningAlgorithm =
-        when (val value = decoder.decodeString()) {
-            IdTokenSigningAlgorithm.RS256.value -> IdTokenSigningAlgorithm.RS256
-            else -> IdTokenSigningAlgorithm.Unknown(value)
-        }
-
-    override fun serialize(encoder: Encoder, value: IdTokenSigningAlgorithm) = encoder.encodeString(value.value)
-}
-
-
-@Serializable(with = IdTokenSigningAlgorithmSerializer::class)
+@Serializable(with = IdTokenSigningAlgorithm.Serializer::class)
 sealed interface IdTokenSigningAlgorithm {
     val value: String
 
@@ -32,4 +18,17 @@ sealed interface IdTokenSigningAlgorithm {
     }
 
     data class Unknown(override val value: String) : IdTokenSigningAlgorithm
+
+    object Serializer : KSerializer<IdTokenSigningAlgorithm> {
+        @OptIn(InternalSerializationApi::class)
+        override val descriptor: SerialDescriptor = buildSerialDescriptor("IdTokenSigningAlgorithm", SerialKind.ENUM)
+
+        override fun deserialize(decoder: Decoder): IdTokenSigningAlgorithm =
+            when (val value = decoder.decodeString()) {
+                RS256.value -> RS256
+                else -> Unknown(value)
+            }
+
+        override fun serialize(encoder: Encoder, value: IdTokenSigningAlgorithm) = encoder.encodeString(value.value)
+    }
 }

@@ -24,8 +24,8 @@ import net.folivo.trixnity.client.store.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.clientserverapi.client.LogoutInfo
-import net.folivo.trixnity.clientserverapi.model.users.Profile
-import net.folivo.trixnity.clientserverapi.model.users.ProfileField
+import net.folivo.trixnity.clientserverapi.model.user.Profile
+import net.folivo.trixnity.clientserverapi.model.user.ProfileField
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

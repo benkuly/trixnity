@@ -6,7 +6,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.client.trimToFlatJson
-import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -19,8 +18,10 @@ import net.folivo.trixnity.core.model.events.block.EventContentBlocks
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
@@ -29,8 +30,8 @@ class TimelineEventSerializerTest : TrixnityBaseTest() {
 
     private val json = createMatrixEventJson(customModule = SerializersModule {
         contextual(
-            TimelineEventSerializer(
-                DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
+            TimelineEvent.Serializer(
+                EventContentSerializerMappings.default.message + EventContentSerializerMappings.default.state,
                 true
             )
         )
@@ -172,8 +173,8 @@ class TimelineEventSerializerTest : TrixnityBaseTest() {
 
     private val disabledJson = createMatrixEventJson(customModule = SerializersModule {
         contextual(
-            TimelineEventSerializer(
-                DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
+            TimelineEvent.Serializer(
+                EventContentSerializerMappings.default.message + EventContentSerializerMappings.default.state,
                 false
             )
         )

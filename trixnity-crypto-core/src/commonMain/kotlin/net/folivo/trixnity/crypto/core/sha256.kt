@@ -29,8 +29,3 @@ fun ByteArrayFlow.sha256(): Sha256ByteFlow {
 
     return Sha256ByteFlow(content, hash)
 }
-
-fun ByteArray.sha256(): String = Sha256().use {
-    it.update(this)
-    it.digest().encodeUnpaddedBase64()
-}

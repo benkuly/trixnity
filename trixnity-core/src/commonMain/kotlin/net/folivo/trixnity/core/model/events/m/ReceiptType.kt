@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = ReceiptTypeSerializer::class)
+@Serializable(with = ReceiptType.Serializer::class)
 abstract class ReceiptType {
     abstract val name: String
 
@@ -25,22 +25,21 @@ abstract class ReceiptType {
     }
 
     data class Unknown(override val name: String) : ReceiptType()
-}
 
-object ReceiptTypeSerializer : KSerializer<ReceiptType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ReceiptTypeSerializer", PrimitiveKind.STRING)
+    object Serializer : KSerializer<ReceiptType> {
+        override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ReceiptType", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): ReceiptType {
-        return when (val name = decoder.decodeString()) {
-            ReceiptType.Read.name -> ReceiptType.Read
-            ReceiptType.PrivateRead.name -> ReceiptType.PrivateRead
-            ReceiptType.FullyRead.name -> ReceiptType.FullyRead
-            else -> ReceiptType.Unknown(name)
+        override fun deserialize(decoder: Decoder): ReceiptType {
+            return when (val name = decoder.decodeString()) {
+                ReceiptType.Read.name -> ReceiptType.Read
+                ReceiptType.PrivateRead.name -> ReceiptType.PrivateRead
+                ReceiptType.FullyRead.name -> ReceiptType.FullyRead
+                else -> ReceiptType.Unknown(name)
+            }
+        }
+
+        override fun serialize(encoder: Encoder, value: ReceiptType) {
+            encoder.encodeString(value.name)
         }
     }
-
-    override fun serialize(encoder: Encoder, value: ReceiptType) {
-        encoder.encodeString(value.name)
-    }
-
 }

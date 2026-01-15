@@ -13,7 +13,7 @@ matrixClient.create(...){
 
 fun createCustomModule() = module {
     single<EventContentSerializerMappings> {
-        DefaultEventContentSerializerMappings + customMappings
+        EventContentSerializerMappings.default + customMappings
     }
 }
 ```
@@ -39,7 +39,7 @@ data class DinoEventContent(
     override val externalUrl: String? = null
 }
 
-val customMappings = createEventContentSerializerMappings { // add this to the modulesFactories (see example above)
+val customMappings = EventContentSerializerMappings { // add this to the modulesFactories (see example above)
     messageOf<DinoEventContent>("net.folivo.dino")
 }
 ```
@@ -49,7 +49,7 @@ It is also possible to add custom extensible events and content blocks. They als
 `TopicEventContent`.
 
 ```kotlin
-val customMappings = createEventContentSerializerMappings {
+val customMappings = EventContentSerializerMappings {
     blockOf(DinoContentBlock)
     messageOf<DinoEventContent>("net.folivo.dino")
 }

@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.EventContentSerializer")
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.EventContent")
 
 class EventContentSerializer<T : EventContent>(
     private val type: String,
@@ -110,7 +110,7 @@ class MessageEventContentSerializer(
 internal class ContextualMessageEventContentSerializer(
     private val mappings: Set<MessageEventContentSerializerMapping>,
 ) : KSerializer<MessageEventContent> {
-    override val descriptor = buildClassSerialDescriptor("ContextualMessageEventContentSerializer")
+    override val descriptor = buildClassSerialDescriptor("ContextualMessageEventContent")
 
     override fun deserialize(decoder: Decoder): MessageEventContent {
         require(decoder is JsonDecoder)
@@ -132,7 +132,7 @@ internal class ContextualMessageEventContentSerializer(
 internal class ContextualStateEventContentSerializer(
     private val mappings: Set<StateEventContentSerializerMapping>,
 ) : KSerializer<StateEventContent> {
-    override val descriptor = buildClassSerialDescriptor("ContextualStateEventContentSerializer")
+    override val descriptor = buildClassSerialDescriptor("ContextualStateEventContent")
 
     override fun deserialize(decoder: Decoder): StateEventContent {
         require(decoder is JsonDecoder)

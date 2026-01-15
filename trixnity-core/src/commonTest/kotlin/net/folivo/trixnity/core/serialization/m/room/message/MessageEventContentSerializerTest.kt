@@ -1,7 +1,6 @@
 package net.folivo.trixnity.core.serialization.m.room.message
 
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContentSerializer
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
@@ -14,7 +13,7 @@ class MessageEventContentSerializerTest : TrixnityBaseTest() {
     @Test
     fun shouldSerialize() {
         val result = json.encodeToString(
-            RoomMessageEventContentSerializer,
+            RoomMessageEventContent.Serializer,
             RoomMessageEventContent.TextBased.Notice("test")
         )
         assertEquals("""{"body":"test","msgtype":"m.notice"}""", result)
@@ -23,7 +22,7 @@ class MessageEventContentSerializerTest : TrixnityBaseTest() {
     @Test
     fun shouldDeserialize() {
         val input = """{"body":"test","format":null,"formatted_body":null,"msgtype":"m.text"}"""
-        val result = json.decodeFromString(RoomMessageEventContentSerializer, input)
+        val result = json.decodeFromString(RoomMessageEventContent.Serializer, input)
         assertEquals(RoomMessageEventContent.TextBased.Text("test"), result)
     }
 

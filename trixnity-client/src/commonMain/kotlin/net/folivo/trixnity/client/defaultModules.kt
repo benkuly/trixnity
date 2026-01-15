@@ -16,11 +16,10 @@ import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.notification.createNotificationModule
 import net.folivo.trixnity.client.room.*
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
-import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
+import net.folivo.trixnity.client.room.outbox.default
 import net.folivo.trixnity.client.server.createServerModule
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.TimelineEventSerializer
 import net.folivo.trixnity.client.store.createStoreModule
 import net.folivo.trixnity.client.user.*
 import net.folivo.trixnity.client.verification.VerificationService
@@ -32,8 +31,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.named
 import org.koin.core.module.dsl.singleOf
@@ -50,11 +49,11 @@ fun createClockModule() = module {
 }
 
 fun createDefaultEventContentSerializerMappingsModule() = module {
-    single<EventContentSerializerMappings> { DefaultEventContentSerializerMappings }
+    single<EventContentSerializerMappings> { EventContentSerializerMappings.default }
 }
 
 fun createDefaultOutboxMessageMediaUploaderMappingsModule() = module {
-    single<OutboxMessageMediaUploaderMappings> { defaultOutboxMessageMediaUploaderMappings }
+    single<OutboxMessageMediaUploaderMappings> { OutboxMessageMediaUploaderMappings.default }
 }
 
 fun createDefaultMatrixJsonModule() = module {
@@ -63,7 +62,7 @@ fun createDefaultMatrixJsonModule() = module {
         val config = get<MatrixClientConfiguration>()
         createMatrixEventJson(mappings, customModule = SerializersModule {
             contextual(
-                TimelineEventSerializer(
+                TimelineEvent.Serializer(
                     mappings.message + mappings.state,
                     config.storeTimelineEventContentUnencrypted
                 )

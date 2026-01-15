@@ -26,7 +26,8 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushRule
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.scheduleSetup
 import kotlin.test.Test
@@ -91,7 +92,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         notificationStore = notificationStore,
         eventsToNotificationUpdates = eventsToNotificationUpdates,
         transactionManager = TransactionManagerMock(),
-        eventContentSerializerMappings = DefaultEventContentSerializerMappings,
+        eventContentSerializerMappings = EventContentSerializerMappings.default,
         config = config
     )
 

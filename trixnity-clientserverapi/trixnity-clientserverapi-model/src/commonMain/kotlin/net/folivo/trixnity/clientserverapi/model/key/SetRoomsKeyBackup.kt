@@ -1,0 +1,19 @@
+package net.folivo.trixnity.clientserverapi.model.key
+
+import io.ktor.resources.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.HttpMethodType.PUT
+import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.model.keys.RoomsKeyBackup
+
+/**
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#put_matrixclientv3room_keyskeys">matrix spec</a>
+ */
+@Serializable
+@Resource("/_matrix/client/v3/room_keys/keys")
+@HttpMethod(PUT)
+data class SetRoomsKeyBackup(
+    @SerialName("version") val version: String,
+) : MatrixEndpoint<RoomsKeyBackup, SetRoomKeysResponse>

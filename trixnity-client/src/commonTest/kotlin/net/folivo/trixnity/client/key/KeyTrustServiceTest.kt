@@ -16,7 +16,7 @@ import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.store.KeyVerificationState.Verified
-import net.folivo.trixnity.clientserverapi.model.keys.AddSignatures
+import net.folivo.trixnity.clientserverapi.model.key.AddSignatures
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent

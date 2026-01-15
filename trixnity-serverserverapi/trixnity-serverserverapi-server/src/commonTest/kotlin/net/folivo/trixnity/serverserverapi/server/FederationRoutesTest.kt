@@ -33,8 +33,9 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
@@ -46,7 +47,7 @@ import kotlin.test.Test
 
 class FederationRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventAndDataUnitJson(TestRoomVersionStore("12"))
-    private val mapping = createDefaultEventContentSerializerMappings()
+    private val mapping = EventContentSerializerMappings.default
 
     val handlerMock = mock<FederationApiHandler>()
 

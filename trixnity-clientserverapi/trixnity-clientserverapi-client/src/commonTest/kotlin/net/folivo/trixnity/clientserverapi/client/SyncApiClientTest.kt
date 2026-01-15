@@ -20,7 +20,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import net.folivo.trixnity.clientserverapi.model.sync.SyncResponseSerializer
-import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -36,8 +35,10 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
+import net.folivo.trixnity.core.model.keys.SessionKeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.core.subscribeEachEvent
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -52,7 +53,7 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(ExperimentalCoroutinesApi::class)
 class SyncApiClientTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
-    private val syncResponseSerializer = SyncResponseSerializer(json, DefaultEventContentSerializerMappings)
+    private val syncResponseSerializer = SyncResponseSerializer(json, EventContentSerializerMappings.default)
 
     private val serverResponse1 = Response(
         nextBatch = "nextBatch1",

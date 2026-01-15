@@ -14,15 +14,16 @@ import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.authentication.DiscoveryInformation
 import net.folivo.trixnity.clientserverapi.model.discovery.GetSupport
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class DiscoveryRouteTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
-    private val mapping = createDefaultEventContentSerializerMappings()
+    private val mapping = EventContentSerializerMappings.default
 
     val handlerMock = mock<DiscoveryApiHandler>()
 

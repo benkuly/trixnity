@@ -3,6 +3,7 @@ package net.folivo.trixnity.clientserverapi.client
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.*
@@ -31,8 +32,9 @@ import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -47,7 +49,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     private val baseUrl = Url("https://matrix.host")
     private val json = createMatrixEventJson()
-    private val mappings = createDefaultEventContentSerializerMappings()
+    private val mappings = EventContentSerializerMappings.default
     var onLogout: LogoutInfo? = null.also {
         scheduleSetup { onLogout = null }
     }
@@ -197,12 +199,11 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             eventContentSerializerMappings = mappings,
         )
 
-        cut.request(PostPathWithDisabledAuth("1", "2"), PostPath.Request(true))
-            .exceptionOrNull() shouldBe
-                MatrixServerException(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse.BadJson(error = """response could not be parsed to ErrorResponse (body={"status":"ok"})"""),
-                )
+        val result = cut.request(PostPathWithDisabledAuth("1", "2"), PostPath.Request(true))
+            .exceptionOrNull()
+            .shouldBeInstanceOf<MatrixServerException>()
+        result.statusCode shouldBe HttpStatusCode.Unauthorized
+        result.errorResponse.shouldBeInstanceOf<ErrorResponse.BadJson>().error shouldStartWith "response could not be parsed to ErrorResponse"
     }
 
     @Test

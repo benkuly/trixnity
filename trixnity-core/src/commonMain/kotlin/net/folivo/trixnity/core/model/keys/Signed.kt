@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 
-@Serializable(with = SignedSerializer::class)
+@Serializable(with = Signed.Serializer::class)
 open class Signed<T, U>(
     open val signed: T,
     open val signatures: Signatures<U>? = null,
@@ -49,46 +49,46 @@ open class Signed<T, U>(
     override fun toString(): String {
         return "Signed(signed=$signed, signedRaw=$raw, signatures=$signatures)"
     }
-}
 
-class SignedSerializer<T, U>(
-    private val valueSerializer: KSerializer<T>,
-    private val signaturesKeySerializer: KSerializer<U>
-) : KSerializer<Signed<T, U>> {
-    override fun deserialize(decoder: Decoder): Signed<T, U> {
-        require(decoder is JsonDecoder)
-        val jsonObj = decoder.decodeJsonElement().jsonObject
-        val signaturesSerializer = MapSerializer(signaturesKeySerializer, KeysSerializer)
-        val signatures = jsonObj["signatures"]?.let {
-            if (it is JsonObject) decoder.json.decodeFromJsonElement(signaturesSerializer, it)
-            else null
-        }
-        return Signed(
-            signed = decoder.json.decodeFromJsonElement(valueSerializer, jsonObj),
-            signatures = signatures,
-            raw = JsonObject(jsonObj - "signatures")
-        )
-    }
-
-    override fun serialize(encoder: Encoder, value: Signed<T, U>) {
-        require(encoder is JsonEncoder)
-        val raw = value.raw
-        if (raw != null) {
-            encoder.encodeJsonElement(raw)
-        } else {
-            val signedValue = encoder.json.encodeToJsonElement(valueSerializer, value.signed)
-            val signaturesSerializer = MapSerializer(signaturesKeySerializer, KeysSerializer)
-            require(signedValue is JsonObject)
-            encoder.encodeJsonElement(
-                JsonObject(buildMap {
-                    putAll(signedValue)
-                    value.signatures?.let {
-                        put("signatures", encoder.json.encodeToJsonElement(signaturesSerializer, it))
-                    }
-                })
+    class Serializer<T, U>(
+        private val valueSerializer: KSerializer<T>,
+        private val signaturesKeySerializer: KSerializer<U>
+    ) : KSerializer<Signed<T, U>> {
+        override fun deserialize(decoder: Decoder): Signed<T, U> {
+            require(decoder is JsonDecoder)
+            val jsonObj = decoder.decodeJsonElement().jsonObject
+            val signaturesSerializer = MapSerializer(signaturesKeySerializer, Keys.Serializer)
+            val signatures = jsonObj["signatures"]?.let {
+                if (it is JsonObject) decoder.json.decodeFromJsonElement(signaturesSerializer, it)
+                else null
+            }
+            return Signed(
+                signed = decoder.json.decodeFromJsonElement(valueSerializer, jsonObj),
+                signatures = signatures,
+                raw = JsonObject(jsonObj - "signatures")
             )
         }
-    }
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Signed")
+        override fun serialize(encoder: Encoder, value: Signed<T, U>) {
+            require(encoder is JsonEncoder)
+            val raw = value.raw
+            if (raw != null) {
+                encoder.encodeJsonElement(raw)
+            } else {
+                val signedValue = encoder.json.encodeToJsonElement(valueSerializer, value.signed)
+                val signaturesSerializer = MapSerializer(signaturesKeySerializer, Keys.Serializer)
+                require(signedValue is JsonObject)
+                encoder.encodeJsonElement(
+                    JsonObject(buildMap {
+                        putAll(signedValue)
+                        value.signatures?.let {
+                            put("signatures", encoder.json.encodeToJsonElement(signaturesSerializer, it))
+                        }
+                    })
+                )
+            }
+        }
+
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Signed")
+    }
 }

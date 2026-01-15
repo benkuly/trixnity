@@ -5,12 +5,12 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.server.matrixEndpoint
 import net.folivo.trixnity.applicationserviceapi.model.*
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 
 fun Route.matrixApplicationServiceApiServerRoutes(
     applicationServiceApiServerHandler: ApplicationServiceApiServerHandler,
-    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    eventContentSerializerMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
 ) {
     matrixEndpoint<AddTransaction, AddTransaction.Request, Unit>(json, eventContentSerializerMappings) {

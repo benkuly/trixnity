@@ -14,7 +14,6 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest as IVerificationRequest
 
 /**
@@ -23,7 +22,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequ
  * Room messages have "type": "m.room.message".
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroommessage">matrix spec</a>
  */
-@Serializable(with = RoomMessageEventContentSerializer::class)
+@Serializable(with = RoomMessageEventContent.Serializer::class)
 sealed interface RoomMessageEventContent : MessageEventContent {
     val body: String
     val format: String?
@@ -267,58 +266,58 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     ) : RoomMessageEventContent {
         override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
     }
-}
 
-object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> {
+    object Serializer : KSerializer<RoomMessageEventContent> {
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomMessageEventContentSerializer")
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomMessageEventContent")
 
-    override fun deserialize(decoder: Decoder): RoomMessageEventContent {
-        require(decoder is JsonDecoder)
-        val jsonObj = decoder.decodeJsonElement().jsonObject
-        return when (val type = (jsonObj["msgtype"] as? JsonPrimitive)?.contentOrNull) {
-            TextBased.Text.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Text>(jsonObj)
-            TextBased.Notice.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Notice>(jsonObj)
-            TextBased.Emote.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Emote>(jsonObj)
-            FileBased.Image.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Image>(jsonObj)
-            FileBased.File.TYPE -> decoder.json.decodeFromJsonElement<FileBased.File>(jsonObj)
-            FileBased.Audio.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Audio>(jsonObj)
-            FileBased.Video.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Video>(jsonObj)
-            Location.TYPE -> decoder.json.decodeFromJsonElement<Location>(jsonObj)
-            VerificationRequest.TYPE ->
-                decoder.json.decodeFromJsonElement<VerificationRequest>(jsonObj)
+        override fun deserialize(decoder: Decoder): RoomMessageEventContent {
+            require(decoder is JsonDecoder)
+            val jsonObj = decoder.decodeJsonElement().jsonObject
+            return when (val type = (jsonObj["msgtype"] as? JsonPrimitive)?.contentOrNull) {
+                TextBased.Text.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Text>(jsonObj)
+                TextBased.Notice.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Notice>(jsonObj)
+                TextBased.Emote.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Emote>(jsonObj)
+                FileBased.Image.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Image>(jsonObj)
+                FileBased.File.TYPE -> decoder.json.decodeFromJsonElement<FileBased.File>(jsonObj)
+                FileBased.Audio.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Audio>(jsonObj)
+                FileBased.Video.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Video>(jsonObj)
+                Location.TYPE -> decoder.json.decodeFromJsonElement<Location>(jsonObj)
+                VerificationRequest.TYPE ->
+                    decoder.json.decodeFromJsonElement<VerificationRequest>(jsonObj)
 
-            else -> {
-                if (type == null) throw SerializationException("msgtype must not be null")
-                val body = (jsonObj["body"] as? JsonPrimitive)?.contentOrNull
-                    ?: throw SerializationException("body must not be null")
-                val format = (jsonObj["format"] as? JsonPrimitive)?.contentOrNull
-                val formattedBody = (jsonObj["formatted_body"] as? JsonPrimitive)?.contentOrNull
-                val relatesTo: RelatesTo? =
-                    (jsonObj["m.relates_to"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
-                val mentions: Mentions? =
-                    (jsonObj["m.mentions"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
-                val externalUrl: String? = (jsonObj["external_url"] as? JsonPrimitive)?.contentOrNull
-                Unknown(type, body, jsonObj, format, formattedBody, relatesTo, mentions, externalUrl)
+                else -> {
+                    if (type == null) throw SerializationException("msgtype must not be null")
+                    val body = (jsonObj["body"] as? JsonPrimitive)?.contentOrNull
+                        ?: throw SerializationException("body must not be null")
+                    val format = (jsonObj["format"] as? JsonPrimitive)?.contentOrNull
+                    val formattedBody = (jsonObj["formatted_body"] as? JsonPrimitive)?.contentOrNull
+                    val relatesTo: RelatesTo? =
+                        (jsonObj["m.relates_to"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
+                    val mentions: Mentions? =
+                        (jsonObj["m.mentions"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
+                    val externalUrl: String? = (jsonObj["external_url"] as? JsonPrimitive)?.contentOrNull
+                    Unknown(type, body, jsonObj, format, formattedBody, relatesTo, mentions, externalUrl)
+                }
             }
         }
-    }
 
-    override fun serialize(encoder: Encoder, value: RoomMessageEventContent) {
-        require(encoder is JsonEncoder)
-        val jsonElement = when (value) {
-            is TextBased.Notice -> encoder.json.encodeToJsonElement(value)
-            is TextBased.Text -> encoder.json.encodeToJsonElement(value)
-            is TextBased.Emote -> encoder.json.encodeToJsonElement(value)
-            is FileBased.Image -> encoder.json.encodeToJsonElement(value)
-            is FileBased.File -> encoder.json.encodeToJsonElement(value)
-            is FileBased.Audio -> encoder.json.encodeToJsonElement(value)
-            is FileBased.Video -> encoder.json.encodeToJsonElement(value)
-            is Location -> encoder.json.encodeToJsonElement(value)
-            is VerificationRequest -> encoder.json.encodeToJsonElement(value)
-            is Unknown -> value.raw
+        override fun serialize(encoder: Encoder, value: RoomMessageEventContent) {
+            require(encoder is JsonEncoder)
+            val jsonElement = when (value) {
+                is TextBased.Notice -> encoder.json.encodeToJsonElement(value)
+                is TextBased.Text -> encoder.json.encodeToJsonElement(value)
+                is TextBased.Emote -> encoder.json.encodeToJsonElement(value)
+                is FileBased.Image -> encoder.json.encodeToJsonElement(value)
+                is FileBased.File -> encoder.json.encodeToJsonElement(value)
+                is FileBased.Audio -> encoder.json.encodeToJsonElement(value)
+                is FileBased.Video -> encoder.json.encodeToJsonElement(value)
+                is Location -> encoder.json.encodeToJsonElement(value)
+                is VerificationRequest -> encoder.json.encodeToJsonElement(value)
+                is Unknown -> value.raw
+            }
+            encoder.encodeJsonElement(jsonElement)
         }
-        encoder.encodeJsonElement(jsonElement)
     }
 }
 

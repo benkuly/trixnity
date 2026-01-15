@@ -22,14 +22,14 @@ class MatrixClientServerApiServerTest : TrixnityBaseTest() {
     val appserviceApiHandlerMock = mock<AppserviceApiHandler>()
     val authenticationApiHandlerMock = mock<AuthenticationApiHandler>()
     val discoveryApiHandlerMock = mock<DiscoveryApiHandler>()
-    val devicesApiHandlerMock = mock<DevicesApiHandler>()
-    val keysApiHandlerMock = mock<KeysApiHandler>()
+    val deviceApiHandlerMock = mock<DeviceApiHandler>()
+    val keyApiHandlerMock = mock<KeyApiHandler>()
     val mediaApiHandlerMock = mock<MediaApiHandler>()
     val pushApiHandlerMock = mock<PushApiHandler>()
-    val roomsApiHandlerMock = mock<RoomsApiHandler>()
+    val roomApiHandlerMock = mock<RoomApiHandler>()
     val serverApiHandlerMock = mock<ServerApiHandler>()
     val syncApiHandlerMock = mock<SyncApiHandler>()
-    val usersApiHandlerMock = mock<UsersApiHandler>()
+    val userApiHandlerMock = mock<UserApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -47,15 +47,15 @@ class MatrixClientServerApiServerTest : TrixnityBaseTest() {
                 matrixClientServerApiServerRoutes(
                     appserviceApiHandler = appserviceApiHandlerMock,
                     authenticationApiHandler = authenticationApiHandlerMock,
-                    devicesApiHandler = devicesApiHandlerMock,
+                    deviceApiHandler = deviceApiHandlerMock,
                     discoveryApiHandler = discoveryApiHandlerMock,
-                    keysApiHandler = keysApiHandlerMock,
+                    keyApiHandler = keyApiHandlerMock,
                     mediaApiHandler = mediaApiHandlerMock,
                     pushApiHandler = pushApiHandlerMock,
-                    roomsApiHandler = roomsApiHandlerMock,
+                    roomApiHandler = roomApiHandlerMock,
                     serverApiHandler = serverApiHandlerMock,
                     syncApiHandler = syncApiHandlerMock,
-                    usersApiHandler = usersApiHandlerMock,
+                    userApiHandler = userApiHandlerMock,
                 )
             }
         }
@@ -67,14 +67,14 @@ class MatrixClientServerApiServerTest : TrixnityBaseTest() {
             appserviceApiHandlerMock,
             authenticationApiHandlerMock,
             discoveryApiHandlerMock,
-            devicesApiHandlerMock,
-            keysApiHandlerMock,
+            deviceApiHandlerMock,
+            keyApiHandlerMock,
             mediaApiHandlerMock,
             pushApiHandlerMock,
-            roomsApiHandlerMock,
+            roomApiHandlerMock,
             serverApiHandlerMock,
             syncApiHandlerMock,
-            usersApiHandlerMock,
+            userApiHandlerMock,
         ).toTypedArray()
         resetAnswers(*mocks)
         resetCalls(*mocks)

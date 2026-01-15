@@ -10,7 +10,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 
-@Serializable(with = TokenEndpointAuthMethodSerializer::class)
+@Serializable(with = TokenEndpointAuthMethod.Serializer::class)
 internal sealed interface TokenEndpointAuthMethod {
     val value: String
 
@@ -19,17 +19,17 @@ internal sealed interface TokenEndpointAuthMethod {
     }
 
     data class Unknown(override val value: String) : TokenEndpointAuthMethod
-}
 
-internal object TokenEndpointAuthMethodSerializer : KSerializer<TokenEndpointAuthMethod> {
-    @OptIn(InternalSerializationApi::class)
-    override val descriptor: SerialDescriptor = buildSerialDescriptor("TokenEndpointAuthMethod", SerialKind.ENUM)
+    object Serializer : KSerializer<TokenEndpointAuthMethod> {
+        @OptIn(InternalSerializationApi::class)
+        override val descriptor: SerialDescriptor = buildSerialDescriptor("TokenEndpointAuthMethod", SerialKind.ENUM)
 
-    override fun deserialize(decoder: Decoder): TokenEndpointAuthMethod =
-        when (val value = decoder.decodeString().lowercase()) {
-            TokenEndpointAuthMethod.None.value -> TokenEndpointAuthMethod.None
-            else -> TokenEndpointAuthMethod.Unknown(value)
-        }
+        override fun deserialize(decoder: Decoder): TokenEndpointAuthMethod =
+            when (val value = decoder.decodeString().lowercase()) {
+                None.value -> None
+                else -> Unknown(value)
+            }
 
-    override fun serialize(encoder: Encoder, value: TokenEndpointAuthMethod) = encoder.encodeString(value.value)
+        override fun serialize(encoder: Encoder, value: TokenEndpointAuthMethod) = encoder.encodeString(value.value)
+    }
 }

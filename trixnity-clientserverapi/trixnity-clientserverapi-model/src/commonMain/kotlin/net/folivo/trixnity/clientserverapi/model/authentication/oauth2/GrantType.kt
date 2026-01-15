@@ -10,7 +10,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 
-@Serializable(with = GrantTypeSerializer::class)
+@Serializable(with = GrantType.Serializer::class)
 sealed interface GrantType {
     val value: String
 
@@ -23,17 +23,17 @@ sealed interface GrantType {
     }
 
     data class Unknown(override val value: String) : GrantType
-}
 
-object GrantTypeSerializer : KSerializer<GrantType> {
-    @OptIn(InternalSerializationApi::class)
-    override val descriptor: SerialDescriptor = buildSerialDescriptor("GrantType", PrimitiveKind.STRING)
+    object Serializer : KSerializer<GrantType> {
+        @OptIn(InternalSerializationApi::class)
+        override val descriptor: SerialDescriptor = buildSerialDescriptor("GrantType", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): GrantType = when (val value = decoder.decodeString().lowercase()) {
-        GrantType.AuthorizationCode.value -> GrantType.AuthorizationCode
-        GrantType.RefreshToken.value -> GrantType.RefreshToken
-        else -> GrantType.Unknown(value)
+        override fun deserialize(decoder: Decoder): GrantType = when (val value = decoder.decodeString().lowercase()) {
+            AuthorizationCode.value -> AuthorizationCode
+            RefreshToken.value -> RefreshToken
+            else -> Unknown(value)
+        }
+
+        override fun serialize(encoder: Encoder, value: GrantType) = encoder.encodeString(value.value)
     }
-
-    override fun serialize(encoder: Encoder, value: GrantType) = encoder.encodeString(value.value)
 }

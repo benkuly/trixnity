@@ -9,18 +9,7 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-object TokenTypeHintSerializer : KSerializer<TokenTypeHint> {
-    @OptIn(InternalSerializationApi::class)
-    override val descriptor: SerialDescriptor = buildSerialDescriptor("TokenTypeHint", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TokenTypeHint) = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): TokenTypeHint = when (val value = decoder.decodeString().lowercase()) {
-        TokenTypeHint.RefreshToken.value -> TokenTypeHint.RefreshToken
-        TokenTypeHint.AccessToken.value -> TokenTypeHint.AccessToken
-        else -> TokenTypeHint.Unknown(value)
-    }
-}
-
-@Serializable(with = TokenTypeHintSerializer::class)
+@Serializable(with = TokenTypeHint.Serializer::class)
 sealed interface TokenTypeHint {
     val value: String
 
@@ -33,4 +22,16 @@ sealed interface TokenTypeHint {
     }
 
     data class Unknown(override val value: String) : TokenTypeHint
+
+    object Serializer : KSerializer<TokenTypeHint> {
+        @OptIn(InternalSerializationApi::class)
+        override val descriptor: SerialDescriptor = buildSerialDescriptor("TokenTypeHint", PrimitiveKind.STRING)
+        override fun serialize(encoder: Encoder, value: TokenTypeHint) = encoder.encodeString(value.value)
+        override fun deserialize(decoder: Decoder): TokenTypeHint =
+            when (val value = decoder.decodeString().lowercase()) {
+                RefreshToken.value -> RefreshToken
+                AccessToken.value -> AccessToken
+                else -> Unknown(value)
+            }
+    }
 }

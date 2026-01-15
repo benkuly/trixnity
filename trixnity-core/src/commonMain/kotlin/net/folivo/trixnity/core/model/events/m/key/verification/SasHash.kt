@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = SasHashSerializer::class)
+@Serializable(with = SasHash.Serializer::class)
 sealed interface SasHash {
     val name: String
 
@@ -17,18 +17,18 @@ sealed interface SasHash {
     }
 
     data class Unknown(override val name: String) : SasHash
-}
 
-class SasHashSerializer : KSerializer<SasHash> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("SasHash", PrimitiveKind.STRING)
+    class Serializer : KSerializer<SasHash> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("SasHash", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): SasHash =
-        when (val name = decoder.decodeString()) {
-            SasHash.Sha256.name -> SasHash.Sha256
-            else -> SasHash.Unknown(name)
-        }
+        override fun deserialize(decoder: Decoder): SasHash =
+            when (val name = decoder.decodeString()) {
+                Sha256.name -> Sha256
+                else -> Unknown(name)
+            }
 
-    override fun serialize(encoder: Encoder, value: SasHash) =
-        encoder.encodeString(value.name)
+        override fun serialize(encoder: Encoder, value: SasHash) =
+            encoder.encodeString(value.name)
+    }
 }

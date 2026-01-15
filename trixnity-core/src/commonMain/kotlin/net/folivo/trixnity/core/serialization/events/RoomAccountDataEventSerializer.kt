@@ -14,12 +14,12 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.RoomAccountDataEventSerializer")
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.RoomAccountDataEvent")
 
 class RoomAccountDataEventSerializer(
     private val roomAccountDataEventContentSerializers: Set<EventContentSerializerMapping<RoomAccountDataEventContent>>,
 ) : KSerializer<RoomAccountDataEvent<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomAccountDataEventSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomAccountDataEvent")
     private val mappings = EventContentToEventSerializerMappings(
         baseMapping = roomAccountDataEventContentSerializers,
         eventDeserializer = { RoomAccountDataEvent.serializer(it.serializer) },

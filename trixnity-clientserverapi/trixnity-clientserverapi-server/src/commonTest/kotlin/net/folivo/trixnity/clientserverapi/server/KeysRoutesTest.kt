@@ -14,25 +14,26 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.server.matrixApiServer
-import net.folivo.trixnity.clientserverapi.model.keys.*
+import net.folivo.trixnity.clientserverapi.model.key.*
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class KeysRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
-    private val mapping = createDefaultEventContentSerializerMappings()
+    private val mapping = EventContentSerializerMappings.default
     private val alice = UserId("alice", "example.com")
 
-    val handlerMock = mock<KeysApiHandler>()
+    val handlerMock = mock<KeyApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -47,7 +48,7 @@ class KeysRoutesTest : TrixnityBaseTest() {
                 }
             }
             matrixApiServer(json) {
-                keysApiRoutes(handlerMock, json, mapping)
+                keyApiRoutes(handlerMock, json, mapping)
             }
         }
     }

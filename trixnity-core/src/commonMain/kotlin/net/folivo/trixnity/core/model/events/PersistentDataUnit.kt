@@ -70,7 +70,7 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
         )
 
         object EventHashPairListSerializer : KSerializer<List<EventHashPair>> {
-            override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EventHashPairListSerializer")
+            override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EventHashPairList")
 
             override fun deserialize(decoder: Decoder): List<EventHashPair> {
                 require(decoder is JsonDecoder)

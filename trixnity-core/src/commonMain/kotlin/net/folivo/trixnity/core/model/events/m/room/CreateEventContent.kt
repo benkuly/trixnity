@@ -14,7 +14,6 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.m.room.CreateEventContent.RoomType
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroomcreate">matrix spec</a>
@@ -43,7 +42,7 @@ data class CreateEventContent(
         val eventId: EventId? = null
     )
 
-    @Serializable(with = RoomTypeSerializer::class)
+    @Serializable(with = RoomType.Serializer::class)
     sealed interface RoomType {
         val name: String?
 
@@ -56,25 +55,25 @@ data class CreateEventContent(
         }
 
         data class Unknown(override val name: String) : RoomType
-    }
-}
 
-object RoomTypeSerializer : KSerializer<RoomType> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomTypeSerializer")
+        object Serializer : KSerializer<RoomType> {
+            override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomType")
 
-    override fun deserialize(decoder: Decoder): RoomType {
-        require(decoder is JsonDecoder)
-        return when (val name = decoder.json.decodeFromJsonElement<String?>(decoder.decodeJsonElement())) {
-            null -> RoomType.Room
-            RoomType.Space.name -> RoomType.Space
-            else -> RoomType.Unknown(name)
+            override fun deserialize(decoder: Decoder): RoomType {
+                require(decoder is JsonDecoder)
+                return when (val name = decoder.json.decodeFromJsonElement<String?>(decoder.decodeJsonElement())) {
+                    null -> Room
+                    Space.name -> Space
+                    else -> Unknown(name)
+                }
+            }
+
+            @OptIn(ExperimentalSerializationApi::class)
+            override fun serialize(encoder: Encoder, value: RoomType) {
+                val name = value.name
+                if (name == null) encoder.encodeNull()
+                else encoder.encodeString(name)
+            }
         }
-    }
-
-    @OptIn(ExperimentalSerializationApi::class)
-    override fun serialize(encoder: Encoder, value: RoomType) {
-        val name = value.name
-        if (name == null) encoder.encodeNull()
-        else encoder.encodeString(name)
     }
 }

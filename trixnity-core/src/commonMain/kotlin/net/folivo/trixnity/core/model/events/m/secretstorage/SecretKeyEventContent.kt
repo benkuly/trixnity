@@ -8,13 +8,12 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.model.keys.SecretStorageAlgorithm
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#key-storage">matrix spec</a>
  */
-@Serializable(with = SecretKeyEventContentSerializer::class)
+@Serializable(with = SecretKeyEventContent.Serializer::class)
 sealed interface SecretKeyEventContent : GlobalAccountDataEventContent {
     @Serializable
     data class AesHmacSha2Key(
@@ -37,7 +36,7 @@ sealed interface SecretKeyEventContent : GlobalAccountDataEventContent {
             @SerialName("mac") val mac: String
         )
 
-        @Serializable(with = SecretStorageKeyPassphraseSerializer::class)
+        @Serializable(with = SecretStorageKeyPassphrase.Serializer::class)
         sealed interface SecretStorageKeyPassphrase {
             @Serializable
             data class Pbkdf2(
@@ -53,62 +52,62 @@ sealed interface SecretKeyEventContent : GlobalAccountDataEventContent {
             }
 
             data class Unknown(val raw: JsonObject) : SecretStorageKeyPassphrase
+
+            object Serializer : KSerializer<SecretStorageKeyPassphrase> {
+                override val descriptor = buildClassSerialDescriptor("SecretStorageKeyPassphrase")
+
+                override fun deserialize(decoder: Decoder): SecretStorageKeyPassphrase {
+                    require(decoder is JsonDecoder)
+                    val jsonElement = decoder.decodeJsonElement().jsonObject
+                    return try {
+                        when ((jsonElement["algorithm"] as? JsonPrimitive)?.contentOrNull) {
+                            "m.pbkdf2" -> decoder.json.decodeFromJsonElement<Pbkdf2>(jsonElement)
+                            else -> Unknown(jsonElement)
+                        }
+                    } catch (_: Exception) {
+                        Unknown(jsonElement)
+                    }
+                }
+
+                override fun serialize(encoder: Encoder, value: SecretStorageKeyPassphrase) {
+                    require(encoder is JsonEncoder)
+                    val jsonElement = when (value) {
+                        is Pbkdf2 -> encoder.json.encodeToJsonElement(value)
+                        is Unknown -> value.raw
+                    }
+                    return encoder.encodeJsonElement(jsonElement)
+                }
+            }
+
         }
     }
 
     data class Unknown(val raw: JsonObject) : SecretKeyEventContent
-}
 
-object SecretKeyEventContentSerializer : KSerializer<SecretKeyEventContent> {
-    override val descriptor = buildClassSerialDescriptor("SecretKeyEventContentSerializer")
+    object Serializer : KSerializer<SecretKeyEventContent> {
+        override val descriptor = buildClassSerialDescriptor("SecretKeyEventContent")
 
-    override fun deserialize(decoder: Decoder): SecretKeyEventContent {
-        require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement().jsonObject
-        val algorithm = jsonObject["algorithm"] as? JsonPrimitive
-        return when (algorithm?.content) {
-            SecretStorageAlgorithm.AesHmacSha2.value -> decoder.json.decodeFromJsonElement<AesHmacSha2Key>(jsonObject)
-            else -> SecretKeyEventContent.Unknown(jsonObject)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: SecretKeyEventContent) {
-        require(encoder is JsonEncoder)
-        val jsonElement = when (value) {
-            is SecretKeyEventContent.Unknown -> value.raw
-            is AesHmacSha2Key -> encoder.json.encodeToJsonElement(value)
-        }
-        encoder.encodeJsonElement(jsonElement)
-    }
-}
-
-object SecretStorageKeyPassphraseSerializer : KSerializer<AesHmacSha2Key.SecretStorageKeyPassphrase> {
-    override val descriptor = buildClassSerialDescriptor("SecretStorageKeyPassphraseSerializer")
-
-    override fun deserialize(decoder: Decoder): AesHmacSha2Key.SecretStorageKeyPassphrase {
-        require(decoder is JsonDecoder)
-        val jsonElement = decoder.decodeJsonElement().jsonObject
-        return try {
-            when ((jsonElement["algorithm"] as? JsonPrimitive)?.contentOrNull) {
-                "m.pbkdf2" -> decoder.json.decodeFromJsonElement<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>(
-                    jsonElement
+        override fun deserialize(decoder: Decoder): SecretKeyEventContent {
+            require(decoder is JsonDecoder)
+            val jsonObject = decoder.decodeJsonElement().jsonObject
+            val algorithm = jsonObject["algorithm"] as? JsonPrimitive
+            return when (algorithm?.content) {
+                SecretStorageAlgorithm.AesHmacSha2.value -> decoder.json.decodeFromJsonElement<AesHmacSha2Key>(
+                    jsonObject
                 )
 
-                else -> AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown(jsonElement)
+                else -> Unknown(jsonObject)
             }
-        } catch (error: Exception) {
-            AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown(jsonElement)
         }
-    }
 
-    override fun serialize(encoder: Encoder, value: AesHmacSha2Key.SecretStorageKeyPassphrase) {
-        require(encoder is JsonEncoder)
-        val jsonElement = when (value) {
-            is AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2 -> encoder.json.encodeToJsonElement(value)
-            is AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown -> value.raw
+        override fun serialize(encoder: Encoder, value: SecretKeyEventContent) {
+            require(encoder is JsonEncoder)
+            val jsonElement = when (value) {
+                is Unknown -> value.raw
+                is AesHmacSha2Key -> encoder.json.encodeToJsonElement(value)
+            }
+            encoder.encodeJsonElement(jsonElement)
         }
-        return encoder.encodeJsonElement(jsonElement)
     }
 }
-
 

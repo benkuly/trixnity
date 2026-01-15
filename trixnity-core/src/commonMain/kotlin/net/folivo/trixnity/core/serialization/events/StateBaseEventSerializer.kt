@@ -17,7 +17,7 @@ class StateBaseEventSerializer(
     private val stateEventSerializer: KSerializer<StateEvent<*>>,
     private val strippedStateEventSerializer: KSerializer<StrippedStateEvent<*>>,
 ) : KSerializer<StateBaseEvent<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("StateBaseEventSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("StateBaseEvent")
 
     override fun deserialize(decoder: Decoder): StateBaseEvent<*> {
         require(decoder is JsonDecoder)

@@ -10,8 +10,8 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
-import net.folivo.trixnity.clientserverapi.model.users.Filters
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents
+import net.folivo.trixnity.clientserverapi.model.user.Filters
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId

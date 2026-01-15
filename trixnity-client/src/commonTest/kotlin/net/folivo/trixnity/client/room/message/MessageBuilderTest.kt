@@ -168,7 +168,7 @@ class MessageBuilderTest : TrixnityBaseTest() {
     @Test
     fun `mentions » add mention`() = runTest {
         MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-            mentions(UserId("bla"), room = true)
+            mentions(users = setOf(UserId("bla")), room = true)
             contentBuilder = {
                 mentions shouldBe Mentions(setOf(UserId("bla")), true)
                 newContentMentions shouldBe Mentions()
@@ -183,7 +183,7 @@ class MessageBuilderTest : TrixnityBaseTest() {
             timelineEvent(EventId("bla"), mentions = Mentions(setOf(UserId("1"), UserId("2"))))
         )
         MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-            mentions(UserId("1"), UserId("3"), room = true)
+            mentions(users = setOf(UserId("1"), UserId("3")), room = true)
             replace(EventId("bla"))
             contentBuilder = {
                 mentions shouldBe Mentions(setOf(UserId("3")), true)
@@ -199,10 +199,10 @@ class MessageBuilderTest : TrixnityBaseTest() {
             timelineEvent(EventId("bla"), mentions = Mentions(setOf(UserId("1"))))
         )
         MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-            mentions(UserId("2"), room = true)
+            mentions(users = setOf(UserId("2")), room = true)
             reply(EventId("bla"), null)
             contentBuilder = {
-                mentions shouldBe Mentions(setOf(UserId("sender", "server"), UserId("1"), UserId("2")), true)
+                mentions shouldBe Mentions(setOf(UserId("2"), UserId("sender", "server")), true)
                 newContentMentions shouldBe Mentions()
                 mentionsEventContent
             }
@@ -215,10 +215,10 @@ class MessageBuilderTest : TrixnityBaseTest() {
             timelineEvent(EventId("bla"), mentions = Mentions(setOf(UserId("1"))))
         )
         MessageBuilder(encryptedRoom, roomService, mediaService, UserId("sender", "server")).build {
-            mentions(UserId("2"), room = true)
+            mentions(users = setOf(UserId("2"), UserId("sender", "server")), room = true)
             reply(EventId("bla"), null)
             contentBuilder = {
-                mentions shouldBe Mentions(setOf(UserId("1"), UserId("2")), true)
+                mentions shouldBe Mentions(setOf(UserId("2")), true)
                 newContentMentions shouldBe Mentions()
                 mentionsEventContent
             }

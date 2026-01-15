@@ -20,7 +20,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 @Resource("/_matrix/client/v3/pushers/set")
 @HttpMethod(POST)
 data object SetPushers : MatrixEndpoint<SetPushers.Request, Unit> {
-    @Serializable(with = SetPushersRequestSerializer::class)
+    @Serializable(with = Request.Serializer::class)
     sealed interface Request {
         val appId: String
         val pushkey: String
@@ -58,37 +58,36 @@ data object SetPushers : MatrixEndpoint<SetPushers.Request, Unit> {
             @SerialName("kind")
             override val kind: String? = null
         }
-    }
-}
 
-object SetPushersRequestSerializer : KSerializer<SetPushers.Request> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("SetPushersRequest")
+        object Serializer : KSerializer<Request> {
+            override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Request")
 
-    override fun deserialize(decoder: Decoder): SetPushers.Request {
-        require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement().jsonObject
-        val kind = jsonObject["kind"]
-        val isRemove = kind == null || kind is JsonNull
-        return when (isRemove) {
-            true -> decoder.json.decodeFromJsonElement<SetPushers.Request.Remove>(jsonObject)
-            false -> decoder.json.decodeFromJsonElement<SetPushers.Request.Set>(jsonObject)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: SetPushers.Request) {
-        require(encoder is JsonEncoder)
-        when (value) {
-            is SetPushers.Request.Remove -> {
-                encoder.encodeJsonElement(
-                    JsonObject(buildMap {
-                        putAll(encoder.json.encodeToJsonElement<SetPushers.Request.Remove>(value).jsonObject)
-                        put("kind", JsonNull)
-                    })
-                )
+            override fun deserialize(decoder: Decoder): Request {
+                require(decoder is JsonDecoder)
+                val jsonObject = decoder.decodeJsonElement().jsonObject
+                val kind = jsonObject["kind"]
+                val isRemove = kind == null || kind is JsonNull
+                return when (isRemove) {
+                    true -> decoder.json.decodeFromJsonElement<Remove>(jsonObject)
+                    false -> decoder.json.decodeFromJsonElement<Set>(jsonObject)
+                }
             }
 
-            is SetPushers.Request.Set ->
-                encoder.encodeSerializableValue(SetPushers.Request.Set.serializer(), value)
+            override fun serialize(encoder: Encoder, value: Request) {
+                require(encoder is JsonEncoder)
+                when (value) {
+                    is Remove -> {
+                        encoder.encodeJsonElement(
+                            JsonObject(buildMap {
+                                putAll(encoder.json.encodeToJsonElement<Remove>(value).jsonObject)
+                                put("kind", JsonNull)
+                            })
+                        )
+                    }
+
+                    is Set -> encoder.encodeSerializableValue(Set.serializer(), value)
+                }
+            }
         }
     }
 }

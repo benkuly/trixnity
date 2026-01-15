@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEventRelation
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -85,15 +85,6 @@ class RoomServiceMock : RoomService {
         syncResponseBufferSize: Int
     ): Flow<TimelineEvent> {
         return returnGetTimelineEventsFromNowOn
-    }
-
-    @Deprecated("use getTimeline without roomId instead")
-    override fun <T> getTimeline(
-        roomId: RoomId,
-        onStateChange: suspend (TimelineStateChange<T>) -> Unit,
-        transformer: suspend (Flow<TimelineEvent>) -> T
-    ): Timeline<T> {
-        throw NotImplementedError()
     }
 
     override fun <T> getTimeline(

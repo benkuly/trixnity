@@ -1,6 +1,6 @@
 package net.folivo.trixnity.clientserverapi.client
 
-import net.folivo.trixnity.clientserverapi.model.devices.*
+import net.folivo.trixnity.clientserverapi.model.device.*
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys

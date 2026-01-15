@@ -8,7 +8,6 @@ import io.ktor.resources.*
 import io.ktor.util.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
@@ -16,9 +15,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
-import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIASerializer
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
-import net.folivo.trixnity.core.ErrorResponseSerializer
+import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.MatrixServerException
@@ -66,7 +64,7 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
                         matrixEndpointLog.debug { "respond with MatrixServerException $exception" }
                         respond(
                             json.encodeToString(
-                                ErrorResponseSerializer,
+                                ErrorResponse.Serializer,
                                 exception.errorResponse
                             ), exception.statusCode,
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -108,7 +106,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                     endpoint.plainRequestSerializerBuilder(contentMappings, json) ?: serializer()
                 val requestBody: RequestWithUIA<REQUEST> =
                     json.decodeFromString(
-                        RequestWithUIASerializer(requestSerializer),
+                        RequestWithUIA.Serializer(requestSerializer),
                         requestString
                     )
                 when (val responseBody = handler(requestBody)) {
@@ -157,7 +155,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                         matrixEndpointLog.debug { "respond with MatrixServerException $exception" }
                         respond(
                             json.encodeToString(
-                                ErrorResponseSerializer,
+                                ErrorResponse.Serializer,
                                 exception.errorResponse
                             ).also { matrixEndpointLog.debug { "responseBody: $it" } }, exception.statusCode,
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())

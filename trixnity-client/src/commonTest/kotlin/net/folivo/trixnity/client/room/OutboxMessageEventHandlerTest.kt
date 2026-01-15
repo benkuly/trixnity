@@ -17,17 +17,17 @@ import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.*
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.message.image
-import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
+import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
+import net.folivo.trixnity.client.room.outbox.default
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
-import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
-import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
+import net.folivo.trixnity.clientserverapi.model.room.SendEventResponse
+import net.folivo.trixnity.clientserverapi.model.room.SendMessageEvent
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -38,6 +38,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -89,7 +90,7 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         userService,
         mediaServiceMock,
         roomOutboxMessageStore,
-        defaultOutboxMessageMediaUploaderMappings,
+        OutboxMessageMediaUploaderMappings.default,
         CurrentSyncState(currentSyncState),
         UserInfo(UserId("user", "server"), "device", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
         TransactionManagerMock(),

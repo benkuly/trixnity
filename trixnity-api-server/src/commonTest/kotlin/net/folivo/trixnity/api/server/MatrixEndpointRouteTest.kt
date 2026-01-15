@@ -16,15 +16,15 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
 class MatrixEndpointRouteTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
-    private val contentMappings = createDefaultEventContentSerializerMappings()
+    private val contentMappings = EventContentSerializerMappings.default
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -138,7 +138,7 @@ class MatrixEndpointRouteTest : TrixnityBaseTest() {
             value: Request?
         ): KSerializer<Request> {
             return object : KSerializer<Request> {
-                override val descriptor = buildClassSerialDescriptor("customRequestSerializer")
+                override val descriptor = buildClassSerialDescriptor("customRequest")
 
                 override fun deserialize(decoder: Decoder): Request {
                     require(decoder is JsonDecoder)
@@ -159,7 +159,7 @@ class MatrixEndpointRouteTest : TrixnityBaseTest() {
             value: Response?
         ): KSerializer<Response> {
             return object : KSerializer<Response> {
-                override val descriptor = buildClassSerialDescriptor("customResponseSerializer")
+                override val descriptor = buildClassSerialDescriptor("customResponse")
 
                 override fun deserialize(decoder: Decoder): Response {
                     throw NotImplementedError()

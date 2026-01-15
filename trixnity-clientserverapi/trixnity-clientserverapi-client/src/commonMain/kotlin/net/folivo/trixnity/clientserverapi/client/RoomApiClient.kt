@@ -1,6 +1,6 @@
 package net.folivo.trixnity.clientserverapi.client
 
-import net.folivo.trixnity.clientserverapi.model.rooms.*
+import net.folivo.trixnity.clientserverapi.model.room.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId

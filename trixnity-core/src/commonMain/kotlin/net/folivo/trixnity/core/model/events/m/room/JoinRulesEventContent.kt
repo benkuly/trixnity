@@ -9,8 +9,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent.AllowCondition.AllowConditionType
-import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent.JoinRule
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroomjoin_rules">matrix spec</a>
@@ -24,7 +22,7 @@ data class JoinRulesEventContent(
     @SerialName("external_url")
     override val externalUrl: String? = null,
 ) : StateEventContent {
-    @Serializable(with = JoinRuleSerializer::class)
+    @Serializable(with = JoinRule.Serializer::class)
     sealed interface JoinRule {
         abstract val name: String
 
@@ -53,6 +51,26 @@ data class JoinRulesEventContent(
         }
 
         data class Unknown(override val name: String) : JoinRule
+
+        object Serializer : KSerializer<JoinRule> {
+            override val descriptor: SerialDescriptor = buildClassSerialDescriptor("JoinRule")
+
+            override fun deserialize(decoder: Decoder): JoinRule {
+                return when (val name = decoder.decodeString()) {
+                    Public.name -> Public
+                    Knock.name -> Knock
+                    Invite.name -> Invite
+                    Private.name -> Private
+                    Restricted.name -> Restricted
+                    KnockRestricted.name -> KnockRestricted
+                    else -> Unknown(name)
+                }
+            }
+
+            override fun serialize(encoder: Encoder, value: JoinRule) {
+                encoder.encodeString(value.name)
+            }
+        }
     }
 
     @Serializable
@@ -62,7 +80,7 @@ data class JoinRulesEventContent(
         @SerialName("type")
         val type: AllowConditionType
     ) {
-        @Serializable(with = AllowConditionTypeSerializer::class)
+        @Serializable(with = AllowConditionType.Serializer::class)
         sealed interface AllowConditionType {
             val name: String
 
@@ -71,41 +89,21 @@ data class JoinRulesEventContent(
             }
 
             data class Unknown(override val name: String) : AllowConditionType
+
+            object Serializer : KSerializer<AllowConditionType> {
+                override val descriptor: SerialDescriptor = buildClassSerialDescriptor("AllowConditionType")
+
+                override fun deserialize(decoder: Decoder): AllowConditionType {
+                    return when (val name = decoder.decodeString()) {
+                        RoomMembership.name -> RoomMembership
+                        else -> Unknown(name)
+                    }
+                }
+
+                override fun serialize(encoder: Encoder, value: AllowConditionType) {
+                    encoder.encodeString(value.name)
+                }
+            }
         }
-    }
-}
-
-object JoinRuleSerializer : KSerializer<JoinRule> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("JoinRuleSerializer")
-
-    override fun deserialize(decoder: Decoder): JoinRule {
-        return when (val name = decoder.decodeString()) {
-            JoinRule.Public.name -> JoinRule.Public
-            JoinRule.Knock.name -> JoinRule.Knock
-            JoinRule.Invite.name -> JoinRule.Invite
-            JoinRule.Private.name -> JoinRule.Private
-            JoinRule.Restricted.name -> JoinRule.Restricted
-            JoinRule.KnockRestricted.name -> JoinRule.KnockRestricted
-            else -> JoinRule.Unknown(name)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: JoinRule) {
-        encoder.encodeString(value.name)
-    }
-}
-
-object AllowConditionTypeSerializer : KSerializer<AllowConditionType> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("AllowConditionTypeSerializer")
-
-    override fun deserialize(decoder: Decoder): AllowConditionType {
-        return when (val name = decoder.decodeString()) {
-            AllowConditionType.RoomMembership.name -> AllowConditionType.RoomMembership
-            else -> AllowConditionType.Unknown(name)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: AllowConditionType) {
-        encoder.encodeString(value.name)
     }
 }

@@ -21,14 +21,15 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.default
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
 class MatrixSignatureAuthTest : TrixnityBaseTest() {
     private val json = createMatrixDataUnitJson(TestRoomVersionStore("12"))
-    private val mapping = createDefaultEventContentSerializerMappings()
+    private val mapping = EventContentSerializerMappings.default
 
     private fun ApplicationTestBuilder.testEndpoint(
         authenticationFunction: SignatureAuthenticationFunction = {

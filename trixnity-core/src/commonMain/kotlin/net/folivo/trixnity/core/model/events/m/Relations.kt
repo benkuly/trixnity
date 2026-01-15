@@ -10,20 +10,71 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import kotlin.jvm.JvmInline
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.core.model.events.m.Relations")
 
-typealias Relations = @Serializable(with = RelationsSerializer::class) Map<RelationType, ServerAggregation>
+@Serializable(with = Relations.Serializer::class)
+@JvmInline
+value class Relations(val relations: Map<RelationType, ServerAggregation>) {
+    object Serializer : KSerializer<Relations> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Relations")
 
-val Map<RelationType, ServerAggregation>.replace: ServerAggregation.Replace?
+        override fun deserialize(decoder: Decoder): Relations {
+            require(decoder is JsonDecoder)
+            val aggregationsJson = decoder.decodeJsonElement().jsonObject
+            return Relations(
+                aggregationsJson
+                    .mapKeys { (key, _) -> RelationType.of(key) }
+                    .mapValues { (relationType, json) ->
+                        try {
+                            when (relationType) {
+                                is RelationType.Replace -> decoder.json.decodeFromJsonElement<ServerAggregation.Replace>(
+                                    json
+                                )
+
+                                is RelationType.Thread -> decoder.json.decodeFromJsonElement<ServerAggregation.Thread>(
+                                    json
+                                )
+
+                                is RelationType.Unknown -> ServerAggregation.Unknown(relationType, json)
+                                else -> ServerAggregation.Unknown(relationType, json)
+                            }
+                        } catch (e: Exception) {
+                            log.warn(e) { "malformed relation" }
+                            ServerAggregation.Unknown(relationType, json)
+                        }
+                    }
+            )
+        }
+
+        override fun serialize(encoder: Encoder, value: Relations) {
+            require(encoder is JsonEncoder)
+            val aggregationsJson = JsonObject(
+                value.relations
+                    .mapKeys { (_, value) -> value.relationType.name }
+                    .mapValues { (_, value) ->
+                        when (value) {
+                            is ServerAggregation.Replace -> encoder.json.encodeToJsonElement(value)
+                            is ServerAggregation.Thread -> encoder.json.encodeToJsonElement(value)
+                            is ServerAggregation.Unknown -> value.raw
+                        }
+                    }
+            )
+            encoder.encodeJsonElement(aggregationsJson)
+        }
+    }
+}
+
+val Relations.replace: ServerAggregation.Replace?
     get() {
-        val aggregation = this[RelationType.Replace]
+        val aggregation = relations[RelationType.Replace]
         return aggregation as? ServerAggregation.Replace
     }
 
-val Map<RelationType, ServerAggregation>.thread: ServerAggregation.Thread?
+val Relations.thread: ServerAggregation.Thread?
     get() {
-        val aggregation = this[RelationType.Thread]
+        val aggregation = relations[RelationType.Thread]
         return aggregation as? ServerAggregation.Thread
     }
 
@@ -55,44 +106,4 @@ sealed interface ServerAggregation {
         override val relationType: RelationType,
         val raw: JsonElement,
     ) : ServerAggregation
-}
-
-object RelationsSerializer : KSerializer<Relations> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RelationsSerializer")
-
-    override fun deserialize(decoder: Decoder): Relations {
-        require(decoder is JsonDecoder)
-        val aggregationsJson = decoder.decodeJsonElement().jsonObject
-        return aggregationsJson
-            .mapKeys { (key, _) -> RelationType.of(key) }
-            .mapValues { (relationType, json) ->
-                try {
-                    when (relationType) {
-                        is RelationType.Replace -> decoder.json.decodeFromJsonElement<ServerAggregation.Replace>(json)
-                        is RelationType.Thread -> decoder.json.decodeFromJsonElement<ServerAggregation.Thread>(json)
-                        is RelationType.Unknown -> ServerAggregation.Unknown(relationType, json)
-                        else -> ServerAggregation.Unknown(relationType, json)
-                    }
-                } catch (e: Exception) {
-                    log.warn(e) { "malformed relation" }
-                    ServerAggregation.Unknown(relationType, json)
-                }
-            }
-    }
-
-    override fun serialize(encoder: Encoder, value: Relations) {
-        require(encoder is JsonEncoder)
-        val aggregationsJson = JsonObject(
-            value
-                .mapKeys { (_, value) -> value.relationType.name }
-                .mapValues { (_, value) ->
-                    when (value) {
-                        is ServerAggregation.Replace -> encoder.json.encodeToJsonElement(value)
-                        is ServerAggregation.Thread -> encoder.json.encodeToJsonElement(value)
-                        is ServerAggregation.Unknown -> value.raw
-                    }
-                }
-        )
-        encoder.encodeJsonElement(aggregationsJson)
-    }
 }

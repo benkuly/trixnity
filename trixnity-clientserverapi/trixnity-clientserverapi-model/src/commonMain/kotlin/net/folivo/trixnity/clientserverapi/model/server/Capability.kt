@@ -93,78 +93,79 @@ sealed interface Capability {
 }
 
 @JvmInline
-@Serializable(with = CapabilitiesSerializer::class)
-value class Capabilities(private val delegate: Set<Capability>) : Set<Capability> by delegate
+@Serializable(with = Capabilities.Serializer::class)
+value class Capabilities(private val delegate: Set<Capability>) : Set<Capability> by delegate {
+    class Serializer : KSerializer<Capabilities> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Capabilities")
 
-class CapabilitiesSerializer : KSerializer<Capabilities> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("CapabilitiesSerializer")
-
-    override fun deserialize(decoder: Decoder): Capabilities {
-        require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement() as? JsonObject ?: throw SerializationException("expected object")
-        return Capabilities(
-            jsonObject.map { (key, value) ->
-                @Suppress("DEPRECATION")
-                when (key) {
-                    Capability.ChangePassword.name ->
-                        decoder.json.decodeFromJsonElement<Capability.ChangePassword>(value)
-
-                    Capability.RoomVersions.name ->
-                        decoder.json.decodeFromJsonElement<Capability.RoomVersions>(value)
-
-                    Capability.SetDisplayName.name ->
-                        decoder.json.decodeFromJsonElement<Capability.SetDisplayName>(value)
-
-                    Capability.SetAvatarUrl.name ->
-                        decoder.json.decodeFromJsonElement<Capability.SetAvatarUrl>(value)
-
-                    Capability.ProfileFields.name ->
-                        decoder.json.decodeFromJsonElement<Capability.ProfileFields>(value)
-
-                    Capability.ThirdPartyChanges.name ->
-                        decoder.json.decodeFromJsonElement<Capability.ThirdPartyChanges>(value)
-
-                    Capability.GetLoginToken.name ->
-                        decoder.json.decodeFromJsonElement<Capability.GetLoginToken>(value)
-
-                    else -> Capability.Unknown(key, value)
-                }
-            }.toSet()
-        )
-    }
-
-    override fun serialize(encoder: Encoder, value: Capabilities) {
-        require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(
-            encoder.json.encodeToJsonElement(
-                value.associate { element ->
+        override fun deserialize(decoder: Decoder): Capabilities {
+            require(decoder is JsonDecoder)
+            val jsonObject =
+                decoder.decodeJsonElement() as? JsonObject ?: throw SerializationException("expected object")
+            return Capabilities(
+                jsonObject.map { (key, value) ->
                     @Suppress("DEPRECATION")
-                    when (element) {
-                        is Capability.ChangePassword ->
-                            Capability.ChangePassword.name to encoder.json.encodeToJsonElement(element)
+                    when (key) {
+                        Capability.ChangePassword.name ->
+                            decoder.json.decodeFromJsonElement<Capability.ChangePassword>(value)
 
-                        is Capability.GetLoginToken ->
-                            Capability.GetLoginToken.name to encoder.json.encodeToJsonElement(element)
+                        Capability.RoomVersions.name ->
+                            decoder.json.decodeFromJsonElement<Capability.RoomVersions>(value)
 
-                        is Capability.RoomVersions ->
-                            Capability.RoomVersions.name to encoder.json.encodeToJsonElement(element)
+                        Capability.SetDisplayName.name ->
+                            decoder.json.decodeFromJsonElement<Capability.SetDisplayName>(value)
 
-                        is Capability.SetAvatarUrl ->
-                            Capability.SetAvatarUrl.name to encoder.json.encodeToJsonElement(element)
+                        Capability.SetAvatarUrl.name ->
+                            decoder.json.decodeFromJsonElement<Capability.SetAvatarUrl>(value)
 
-                        is Capability.SetDisplayName ->
-                            Capability.SetDisplayName.name to encoder.json.encodeToJsonElement(element)
+                        Capability.ProfileFields.name ->
+                            decoder.json.decodeFromJsonElement<Capability.ProfileFields>(value)
 
-                        is Capability.ProfileFields ->
-                            Capability.ProfileFields.name to encoder.json.encodeToJsonElement(element)
+                        Capability.ThirdPartyChanges.name ->
+                            decoder.json.decodeFromJsonElement<Capability.ThirdPartyChanges>(value)
 
-                        is Capability.ThirdPartyChanges ->
-                            Capability.ThirdPartyChanges.name to encoder.json.encodeToJsonElement(element)
+                        Capability.GetLoginToken.name ->
+                            decoder.json.decodeFromJsonElement<Capability.GetLoginToken>(value)
 
-                        is Capability.Unknown -> element.name to element.raw
+                        else -> Capability.Unknown(key, value)
                     }
-                }
-            ))
+                }.toSet()
+            )
+        }
+
+        override fun serialize(encoder: Encoder, value: Capabilities) {
+            require(encoder is JsonEncoder)
+            encoder.encodeJsonElement(
+                encoder.json.encodeToJsonElement(
+                    value.associate { element ->
+                        @Suppress("DEPRECATION")
+                        when (element) {
+                            is Capability.ChangePassword ->
+                                Capability.ChangePassword.name to encoder.json.encodeToJsonElement(element)
+
+                            is Capability.GetLoginToken ->
+                                Capability.GetLoginToken.name to encoder.json.encodeToJsonElement(element)
+
+                            is Capability.RoomVersions ->
+                                Capability.RoomVersions.name to encoder.json.encodeToJsonElement(element)
+
+                            is Capability.SetAvatarUrl ->
+                                Capability.SetAvatarUrl.name to encoder.json.encodeToJsonElement(element)
+
+                            is Capability.SetDisplayName ->
+                                Capability.SetDisplayName.name to encoder.json.encodeToJsonElement(element)
+
+                            is Capability.ProfileFields ->
+                                Capability.ProfileFields.name to encoder.json.encodeToJsonElement(element)
+
+                            is Capability.ThirdPartyChanges ->
+                                Capability.ThirdPartyChanges.name to encoder.json.encodeToJsonElement(element)
+
+                            is Capability.Unknown -> element.name to element.raw
+                        }
+                    }
+                ))
+        }
     }
 }
 

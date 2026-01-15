@@ -6,10 +6,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import net.folivo.trixnity.core.ExportedSessionKeyValue
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 
-@Serializable(with = RoomKeyBackupSessionDataSerializer::class)
+@Serializable(with = RoomKeyBackupSessionData.Serializer::class)
 sealed interface RoomKeyBackupSessionData {
     @Serializable
     data class EncryptedRoomKeyBackupV1SessionData(
@@ -34,23 +33,23 @@ sealed interface RoomKeyBackupSessionData {
             val algorithm: EncryptionAlgorithm = EncryptionAlgorithm.Megolm
         )
     }
-}
 
-object RoomKeyBackupSessionDataSerializer : KSerializer<RoomKeyBackupSessionData> {
-    override val descriptor = buildClassSerialDescriptor("RoomKeyBackupSessionDataSerializer")
+    object Serializer : KSerializer<RoomKeyBackupSessionData> {
+        override val descriptor = buildClassSerialDescriptor("RoomKeyBackupSessionData")
 
-    override fun deserialize(decoder: Decoder): RoomKeyBackupSessionData {
-        return decoder.decodeSerializableValue(RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.serializer())
-    }
-
-    override fun serialize(encoder: Encoder, value: RoomKeyBackupSessionData) {
-        when (value) {
-            is RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData ->
-                encoder.encodeSerializableValue(
-                    RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.serializer(),
-                    value
-                )
+        override fun deserialize(decoder: Decoder): RoomKeyBackupSessionData {
+            return decoder.decodeSerializableValue(EncryptedRoomKeyBackupV1SessionData.serializer())
         }
-    }
 
+        override fun serialize(encoder: Encoder, value: RoomKeyBackupSessionData) {
+            when (value) {
+                is EncryptedRoomKeyBackupV1SessionData ->
+                    encoder.encodeSerializableValue(
+                        EncryptedRoomKeyBackupV1SessionData.serializer(),
+                        value
+                    )
+            }
+        }
+
+    }
 }

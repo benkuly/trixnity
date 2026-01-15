@@ -29,7 +29,7 @@ class EventContentSerializerMappingsBuilder {
         }
 }
 
-fun createEventContentSerializerMappings(builder: EventContentSerializerMappingsBuilder.() -> Unit): EventContentSerializerMappings =
+operator fun EventContentSerializerMappings.Companion.invoke(builder: EventContentSerializerMappingsBuilder.() -> Unit): EventContentSerializerMappings =
     EventContentSerializerMappingsBuilder().apply(builder).build()
 
 inline fun <reified C : MessageEventContent> EventContentSerializerMappingsBuilder.messageOf(

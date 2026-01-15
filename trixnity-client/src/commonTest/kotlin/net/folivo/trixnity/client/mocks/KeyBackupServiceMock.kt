@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.mocks
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.client.key.KeyBackupService
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
+import net.folivo.trixnity.clientserverapi.model.key.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.core.model.RoomId
 
 class KeyBackupServiceMock : KeyBackupService {

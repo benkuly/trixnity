@@ -34,7 +34,7 @@ internal class IndexedDBRoomOutboxMessageRepository(
 ) : RoomOutboxMessageRepository, IndexedDBRepository(objectStoreName) {
 
     private val serializer = object : KSerializer<IndexedDBRoomOutboxMessage<*>> {
-        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("IndexedDBRoomOutboxMessageSerializer")
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("IndexedDBRoomOutboxMessage")
 
         override fun deserialize(decoder: Decoder): IndexedDBRoomOutboxMessage<*> {
             require(decoder is JsonDecoder)

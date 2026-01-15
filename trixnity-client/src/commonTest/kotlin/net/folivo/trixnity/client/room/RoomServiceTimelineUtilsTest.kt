@@ -17,11 +17,11 @@ import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.clientserverapi.client.SyncBatchTokenStore
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.startOnce
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents.Direction.BACKWARDS
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
-import net.folivo.trixnity.core.MegolmMessageValue
+import net.folivo.trixnity.core.model.keys.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

@@ -20,11 +20,11 @@ import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.OlmDecrypterMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
-import net.folivo.trixnity.clientserverapi.model.devices.GetDehydratedDevice
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeyBackupVersion
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
-import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
+import net.folivo.trixnity.clientserverapi.model.device.DehydratedDeviceData
+import net.folivo.trixnity.clientserverapi.model.device.GetDehydratedDevice
+import net.folivo.trixnity.clientserverapi.model.key.GetRoomKeyBackupVersion
+import net.folivo.trixnity.clientserverapi.model.key.GetRoomKeysBackupVersionResponse
+import net.folivo.trixnity.clientserverapi.model.user.SendToDevice
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.MatrixServerException

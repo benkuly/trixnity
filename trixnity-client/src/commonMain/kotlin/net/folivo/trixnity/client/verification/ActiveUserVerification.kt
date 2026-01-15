@@ -13,7 +13,7 @@ import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveUserVerificationImpl.VerificationStepSearchResult.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
