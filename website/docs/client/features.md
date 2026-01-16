@@ -16,7 +16,6 @@ sidebar_position: 12
       implements a database for trixnity-client
       with [room](https://developer.android.com/jetpack/androidx/releases/room).
       This supports JVM/Android and iOS.
-- [x] extremely fast reactive cache on top of the database
 - [x] exchangeable media store
     - in memory (e. g. for tests)
     - [trixnity-client-media-okio](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-media-okio)
@@ -28,14 +27,20 @@ sidebar_position: 12
       This supports JS (browser).
     - [trixnity-client-media-indexeddb](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-media-indexeddb)
       implements a store with [indexeddb](https://github.com/JuulLabs/indexeddb).
-      This supports JS (browser). This does not support streaming data yet.
-- [x] media support (thumbnail generation, offline "upload", huge files, etc.)
-- [x] E2E (olm, megolm)
-- [x] verification
-- [x] cross signing
-- [x] fallback keys
-- [x] room key backup
-- [x] room key requests (only between own verified devices and when key backup is disabled)
+      This supports JS (browser).
+- [x] exchangeable crypto driver
+    - [trixnity-client-cryptodriver-libolm](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-cryptodriver-libolm)
+      using [libolm](https://gitlab.matrix.org/matrix-org/olm).
+    - [trixnity-client-cryptostore-vodozemac](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-cryptostore-vodozemac)
+      using [vodozemac](https://github.com/matrix-org/vodozemac).
+- [x] extremely fast reactive cache on top of the database
+- [x] media support (offline, huge files, etc.)
+- [x] E2E support
+    - [x] cross signing
+    - [x] fallback keys
+    - [x] room key backup
+    - [x] room key requests (only between own verified devices and when key backup is disabled)
+    - [x] dehydrated devices
 - [x] room list
 - [x] timelines
 - [x] room upgrades (invisible due to merged timelines and auto-join)
@@ -49,6 +54,7 @@ sidebar_position: 12
     - [ ] thread (basic support, no separate timelines or client aggregations yet)
 - [x] notifications
 - [x] server discovery
+- ... many more
 
 ## Cache
 
