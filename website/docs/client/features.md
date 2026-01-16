@@ -33,6 +33,9 @@ sidebar_position: 12
       using [libolm](https://gitlab.matrix.org/matrix-org/olm).
     - [trixnity-client-cryptostore-vodozemac](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-cryptostore-vodozemac)
       using [vodozemac](https://github.com/matrix-org/vodozemac).
+- [x] exchangeable authentication
+    - [x] classic login
+    - [x] OAuth2-based login
 - [x] extremely fast reactive cache on top of the database
 - [x] media support (offline, huge files, etc.)
 - [x] E2E support
