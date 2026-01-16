@@ -1,4 +1,4 @@
-![Version](https://gitlab.com/trixnity/trixnity/-/badges/release.svg?value_width=90)
+![Version](https://gitlab.com/connect2x/trixnity/trixnity/-/badges/release.svg?value_width=90)
 
 # Trixnity - Multiplatform Matrix SDK
 
@@ -14,7 +14,7 @@ You can register custom events and Trixnity will take care, that you can send an
 If you just want to implement a messenger without having to dive too deep into trixnity-client and Matrix, consider
 using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 
-[Website with documentation](https://trixnity.gitlab.io/trixnity)
+[Website with documentation](https://trixnity.connect2x.de)
 
 **You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).**
 
