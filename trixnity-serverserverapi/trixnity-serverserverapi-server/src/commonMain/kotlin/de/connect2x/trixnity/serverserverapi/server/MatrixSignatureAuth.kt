@@ -1,0 +1,139 @@
+package de.connect2x.trixnity.serverserverapi.server
+
+import io.ktor.http.*
+import io.ktor.http.auth.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.AuthenticationFailedCause.*
+import io.ktor.server.plugins.doublereceive.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.utils.io.*
+import de.connect2x.trixnity.core.AuthRequired
+import de.connect2x.trixnity.core.ErrorResponse
+import de.connect2x.trixnity.core.model.keys.Key
+import de.connect2x.trixnity.core.model.keys.KeyAlgorithm
+import de.connect2x.trixnity.serverserverapi.model.requestAuthenticationBody
+
+class MatrixSignatureAuth internal constructor(
+    private val config: Config,
+) : AuthenticationProvider(config) {
+    class Config internal constructor(name: String? = null, val fallbackDestination: String) :
+        AuthenticationProvider.Config(name) {
+        var authenticationFunction: SignatureAuthenticationFunction = {
+            throw NotImplementedError("MatrixSignatureAuth validate function is not specified.")
+        }
+    }
+
+    override suspend fun onAuthenticate(context: AuthenticationContext) {
+        val call = context.call
+        val credentials = call.request.getSignature(config.fallbackDestination)
+        val authResult = credentials?.let { config.authenticationFunction(it) }
+        val principal = authResult?.principal
+
+        val cause = when {
+            credentials == null || authResult == null -> NoCredentials
+            authResult.cause != null -> authResult.cause
+            principal == null -> InvalidCredentials
+            else -> null
+        }
+
+        if (cause != null) {
+            context.challenge("MatrixSignatureAuth", cause) { challenge, challengeCall ->
+                when (cause) {
+                    NoCredentials ->
+                        challengeCall.respond<ErrorResponse>(
+                            HttpStatusCode.Unauthorized,
+                            ErrorResponse.Unauthorized("missing signature")
+                        )
+
+                    InvalidCredentials -> challengeCall.respond<ErrorResponse>(
+                        HttpStatusCode.Unauthorized,
+                        ErrorResponse.Unauthorized("wrong signature")
+                    )
+
+                    is Error -> challengeCall.respond<ErrorResponse>(
+                        HttpStatusCode.Unauthorized,
+                        ErrorResponse.Unauthorized(cause.message)
+                    )
+                }
+                challenge.complete()
+            }
+        }
+        if (principal != null) {
+            context.principal(principal)
+        }
+    }
+}
+
+data class SignedRequestAuthenticationBody(
+    val signed: String,
+    val signature: Key.Ed25519Key,
+    val origin: String,
+)
+
+data class SignatureAuthenticationFunctionResult(val principal: UserIdPrincipal?, val cause: AuthenticationFailedCause?)
+
+typealias SignatureAuthenticationFunction = suspend (SignedRequestAuthenticationBody) -> SignatureAuthenticationFunctionResult
+
+private suspend fun ApplicationRequest.getSignature(fallbackDestination: String): SignedRequestAuthenticationBody? {
+    return when (val authHeader = parseAuthorizationHeader()) {
+        is HttpAuthHeader.Parameterized -> {
+            if (!authHeader.authScheme.equals("X-Matrix", ignoreCase = true)) null
+            else {
+                val origin = authHeader.parameter("origin") ?: return null
+                val destination = authHeader.parameter("destination") ?: fallbackDestination
+                val (keyAlgorithm, keyId) = authHeader.parameter("key")?.let {
+                    KeyAlgorithm.of(it.substringBefore(":")) to it.substringAfter(":")
+                } ?: return null
+                val signatureValue = authHeader.parameter("sig") ?: return null
+                val signature =
+                    when (keyAlgorithm) {
+                        is KeyAlgorithm.Ed25519 -> Key.Ed25519Key(keyId, signatureValue)
+                        else -> return null
+                    }
+                SignedRequestAuthenticationBody(
+                    signed = requestAuthenticationBody(
+                        content = call.receiveNullable<ByteReadChannel>()?.toByteArray()?.decodeToString(),
+                        destination = destination,
+                        method = httpMethod.value,
+                        origin = origin,
+                        uri = uri
+                    ),
+                    signature = signature,
+                    origin = origin
+                )
+            }
+        }
+
+        else -> null
+    }
+}
+
+fun AuthenticationConfig.matrixSignatureAuth(
+    name: String? = null,
+    hostname: String,
+    configure: MatrixSignatureAuth.Config.() -> Unit
+) {
+    val provider = MatrixSignatureAuth(
+        MatrixSignatureAuth.Config(name, hostname)
+            .apply(configure)
+            .apply {
+                skipWhen {
+                    val authRequired = it.attributes.getOrNull(AuthRequired.attributeKey)
+                    authRequired == AuthRequired.NO || authRequired == AuthRequired.NEVER
+                }
+            })
+    register(provider)
+}
+
+fun Application.installMatrixSignatureAuth(
+    name: String? = null,
+    hostname: String,
+    configure: MatrixSignatureAuth.Config.() -> Unit
+) {
+    install(DoubleReceive)
+    install(Authentication) {
+        matrixSignatureAuth(name, hostname, configure)
+    }
+}

@@ -16,16 +16,16 @@ kotlinxCoroutines = "1.10.2" # https://github.com/Kotlin/kotlinx.coroutines/rele
 kotlinxSerialization = "1.9.0" # https://github.com/Kotlin/kotlinx.serialization/releases
 
 ### native bindings ###
-trixnityOlmBinaries = "2.0.4" # https://gitlab.com/trixnity/trixnity-olm-binaries/-/releases
-trixnityOpensslBinaries = "1.0.5" # https://gitlab.com/trixnity/trixnity-openssl-binaries/-/releases
+trixnityOlmBinaries = "2.0.4" # https://gitlab.com/connect2x/trixnity/trixnity-olm-binaries/-/releases
+trixnityOpensslBinaries = "1.0.6" # https://gitlab.com/connect2x/trixnity/trixnity-openssl-binaries/-/releases
 jna = "5.18.1" # https://github.com/java-native-access/jna/tags
 
 ### vodozemac - checksums come from the registry, web has to be sha1 for yarn ###
-vodozemac-tag = "v0.1.1" # https://gitlab.com/trixnity/trixnity-vodozemac-binaries/-/packages/
-vodozemac-jvmJni = "a0c7a5e6bb94de9bbc6624590ed36b23617cb271f40ddf51463e8ecdc90d3859"
-vodozemac-androidJni = "30087d3b7df3a2ed534785a2f2899acc7dc6e8f440b343b7dd0b8475b649f90a"
-vodozemac-native = "ba88dec54d829d7dd61dff99e83e18e9615513b94f74c40c8c24e4c3b87e92cb"
-vodozemac-webNpm = "de77bb056026d0ed10c808bd4f023e320b9524e3"
+vodozemac-tag = "v0.1.2" # https://gitlab.com/connect2x/trixnity/trixnity-vodozemac-binaries/-/packages/
+vodozemac-jvmJni = "ff6698f8385941be0ea13669fe8e924a665463627cca02e83171eb20ef448c01"
+vodozemac-androidJni = "2d10a865681febb902c82c58934d0e9a566691f51fae0319f3fd2bd6eb9c0ac1"
+vodozemac-native = "7cf47088ddc961b20019cb2a4fe79d4d4c45d0c6059aa25049d0fbb3a9e7bccc"
+vodozemac-webNpm = "fad112ea8c19dfa8b35fd3fef924522454573b76"
 
 ### libraries ###
 ktor = "3.3.3" # https://github.com/ktorio/ktor/releases

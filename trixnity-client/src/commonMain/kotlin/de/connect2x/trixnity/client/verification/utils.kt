@@ -1,0 +1,47 @@
+package de.connect2x.trixnity.client.verification
+
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
+import de.connect2x.trixnity.client.verification.ActiveVerificationState.*
+import de.connect2x.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
+import de.connect2x.trixnity.core.serialization.canonicalJsonString
+import de.connect2x.trixnity.crypto.core.sha256
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
+
+fun isVerificationRequestActive(timestamp: Long, clock: Clock): Boolean {
+    val duration = clock.now() - Instant.fromEpochMilliseconds(timestamp)
+    return duration < 10.minutes && duration > (-5).minutes
+}
+
+fun isVerificationRequestActive(timestamp: Long, clock: Clock, state: ActiveVerificationState): Boolean {
+    return state !is Done && state !is Cancel
+            && state !is AcceptedByOtherDevice && state !is Undefined
+            && isVerificationRequestActive(timestamp, clock)
+}
+
+fun isVerificationTimedOut(timestamp: Long, clock: Clock, state: ActiveVerificationState): Boolean {
+    return state !is Done && state !is Cancel
+            && state !is AcceptedByOtherDevice && state !is Undefined
+            && !isVerificationRequestActive(timestamp, clock)
+}
+
+internal suspend fun createSasCommitment(
+    publicKey: String,
+    content: VerificationStartEventContent,
+    json: Json
+): String {
+    val jsonObject = json.encodeToJsonElement(content)
+    require(jsonObject is JsonObject)
+    val canonicalJson = canonicalJsonString(jsonObject)
+    val sha256Flow = flowOf(
+        (publicKey + canonicalJson).encodeToByteArray()
+    ).sha256()
+    sha256Flow.collect()
+
+    return checkNotNull(sha256Flow.hash.value)
+}

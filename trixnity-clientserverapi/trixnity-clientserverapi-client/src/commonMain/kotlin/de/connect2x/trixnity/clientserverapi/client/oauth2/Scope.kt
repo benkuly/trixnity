@@ -1,0 +1,46 @@
+package de.connect2x.trixnity.clientserverapi.client.oauth2
+
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+
+
+@Serializable(with = Scope.Serializer::class)
+sealed interface Scope {
+    val value: String
+
+    object MatrixClientApi : Scope {
+        override val value: String = "urn:matrix:client:api:*"
+    }
+
+    data class MatrixClientDevice(val deviceId: String) : Scope {
+        companion object {
+            const val PREFIX = "urn:matrix:client:device:"
+        }
+
+        override val value: String = "$PREFIX$deviceId"
+    }
+
+    data class Unknown(override val value: String) : Scope
+
+    object Serializer : KSerializer<Scope> {
+        @OptIn(InternalSerializationApi::class)
+        override val descriptor: SerialDescriptor = buildSerialDescriptor("Scope", PrimitiveKind.STRING)
+
+        override fun deserialize(decoder: Decoder): Scope {
+            val value = decoder.decodeString().lowercase()
+            return when {
+                value == MatrixClientApi.value -> MatrixClientApi
+                value.startsWith(MatrixClientDevice.PREFIX) -> MatrixClientDevice(value.removePrefix(MatrixClientDevice.PREFIX))
+                else -> Unknown(value)
+            }
+        }
+
+        override fun serialize(encoder: Encoder, value: Scope) = encoder.encodeString(value.value)
+    }
+}

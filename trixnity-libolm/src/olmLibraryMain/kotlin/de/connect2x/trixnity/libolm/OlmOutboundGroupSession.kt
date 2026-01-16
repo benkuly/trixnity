@@ -1,0 +1,93 @@
+package de.connect2x.trixnity.libolm
+
+import de.connect2x.trixnity.libolm.OlmLibrary.clear_outbound_group_session
+import de.connect2x.trixnity.libolm.OlmLibrary.group_encrypt
+import de.connect2x.trixnity.libolm.OlmLibrary.group_encrypt_message_length
+import de.connect2x.trixnity.libolm.OlmLibrary.init_outbound_group_session
+import de.connect2x.trixnity.libolm.OlmLibrary.init_outbound_group_session_random_length
+import de.connect2x.trixnity.libolm.OlmLibrary.outbound_group_session
+import de.connect2x.trixnity.libolm.OlmLibrary.outbound_group_session_id
+import de.connect2x.trixnity.libolm.OlmLibrary.outbound_group_session_id_length
+import de.connect2x.trixnity.libolm.OlmLibrary.outbound_group_session_key
+import de.connect2x.trixnity.libolm.OlmLibrary.outbound_group_session_key_length
+import de.connect2x.trixnity.libolm.OlmLibrary.outbound_group_session_last_error
+import de.connect2x.trixnity.libolm.OlmLibrary.outbound_group_session_message_index
+import de.connect2x.trixnity.libolm.OlmLibrary.pickle_outbound_group_session
+import de.connect2x.trixnity.libolm.OlmLibrary.pickle_outbound_group_session_length
+import de.connect2x.trixnity.libolm.OlmLibrary.unpickle_outbound_group_session
+
+actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
+    internal actual val ptr: OlmOutboundGroupSessionPointer = outbound_group_session()
+
+    actual companion object {
+        actual fun create(): OlmOutboundGroupSession =
+            OlmOutboundGroupSession().apply {
+                try {
+                    val result = withRandom(init_outbound_group_session_random_length(ptr)) { random ->
+                        init_outbound_group_session(ptr, random)
+                    }
+                    checkError(ptr, result, ::outbound_group_session_last_error)
+                } catch (e: Exception) {
+                    free()
+                    throw e
+                }
+            }
+
+        actual fun unpickle(key: String?, pickle: String): OlmOutboundGroupSession =
+            OlmOutboundGroupSession().apply {
+                try {
+                    val result =
+                        unpickle_outbound_group_session(
+                            ptr,
+                            key?.encodeToByteArray() ?: ByteArray(0),
+                            pickle.encodeToByteArray()
+                        )
+                    checkError(ptr, result, ::outbound_group_session_last_error)
+                } catch (e: Exception) {
+                    free()
+                    throw e
+                }
+            }
+    }
+
+    actual val sessionId: String
+        get() {
+            val sessionId = ByteArray(outbound_group_session_id_length(ptr).toInt())
+            val size = checkResult { outbound_group_session_id(ptr, sessionId) }
+            return sessionId.decodeToString(endIndex = size.toInt())
+        }
+
+    actual val sessionKey: String
+        get() {
+            val sessionKey = ByteArray(outbound_group_session_key_length(ptr).toInt())
+            val size = checkResult { outbound_group_session_key(ptr, sessionKey) }
+            return sessionKey.decodeToString(endIndex = size.toInt())
+        }
+
+    actual val messageIndex: Long
+        get() = outbound_group_session_message_index(ptr).toLong()
+
+    actual override fun free() {
+        clear_outbound_group_session(ptr)
+        ptr.free()
+    }
+
+    actual fun pickle(key: String?): String =
+        pickle(
+            ptr,
+            key ?: "",
+            ::pickle_outbound_group_session_length,
+            ::pickle_outbound_group_session,
+            ::outbound_group_session_last_error
+        )
+
+    actual fun encrypt(plainText: String): String {
+        val plainTextBytes = plainText.encodeToByteArray()
+        val encryptedText = ByteArray(group_encrypt_message_length(ptr, plainTextBytes.size.toULong()).toInt())
+        val size = checkResult { group_encrypt(ptr, plainTextBytes, encryptedText) }
+        return encryptedText.decodeToString(endIndex = size.toInt())
+    }
+
+    private fun checkResult(block: () -> ULong): ULong =
+        checkError(ptr, block(), ::outbound_group_session_last_error)
+}

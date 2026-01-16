@@ -60,7 +60,7 @@ kotlin {
 }
 
 android {
-    namespace = "net.folivo.trixnity.test.utils"
+    namespace = "de.connect2x.trixnity.test.utils"
     compileSdk = libs.versions.androidTargetSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.androidMinSdk.get().toInt()

@@ -25,7 +25,7 @@ is not wanted!
 
 One goal in developing Trixnity was the ability to add custom events. This is achieved by mapping event types to
 serializers. In this example,
-we added a new message event: `net.folivo.dino`. As a developer, you can then receive events of this Kotlin type like
+we added a new message event: `de.connect2x.dino`. As a developer, you can then receive events of this Kotlin type like
 all other default events.
 
 ```kotlin
@@ -40,7 +40,7 @@ data class DinoEventContent(
 }
 
 val customMappings = EventContentSerializerMappings { // add this to the modulesFactories (see example above)
-    messageOf<DinoEventContent>("net.folivo.dino")
+    messageOf<DinoEventContent>("de.connect2x.dino")
 }
 ```
 
@@ -51,7 +51,7 @@ It is also possible to add custom extensible events and content blocks. They als
 ```kotlin
 val customMappings = EventContentSerializerMappings {
     blockOf(DinoContentBlock)
-    messageOf<DinoEventContent>("net.folivo.dino")
+    messageOf<DinoEventContent>("de.connect2x.dino")
 }
 
 @Serializable
@@ -62,7 +62,7 @@ value class DinoContentBlock(
     override val type: EventContentBlock.Type<*> get() = Type
 
     companion object Type : EventContentBlock.Type<DinoContentBlock> {
-        override val value: String = "net.folivo..dino"
+        override val value: String = "de.connect2x..dino"
     }
 }
 

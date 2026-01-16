@@ -1,0 +1,35 @@
+package de.connect2x.trixnity.clientserverapi.model.room
+
+import io.ktor.resources.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import de.connect2x.trixnity.core.HttpMethod
+import de.connect2x.trixnity.core.HttpMethodType.PUT
+import de.connect2x.trixnity.core.MatrixEndpoint
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.MessageEventContent
+import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import de.connect2x.trixnity.core.serialization.events.contentSerializer
+
+/**
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid">matrix spec</a>
+ */
+@Serializable
+@Resource("/_matrix/client/v3/rooms/{roomId}/send/{type}/{txnId}")
+@HttpMethod(PUT)
+data class SendMessageEvent(
+    @SerialName("roomId") val roomId: RoomId,
+    @SerialName("type") val type: String,
+    @SerialName("txnId") val txnId: String,
+    @SerialName("ts") val ts: Long? = null,
+) : MatrixEndpoint<MessageEventContent, SendEventResponse> {
+    override fun requestSerializerBuilder(
+        mappings: EventContentSerializerMappings,
+        json: Json,
+        value: MessageEventContent?
+    ): KSerializer<MessageEventContent> {
+        return mappings.message.contentSerializer(type, value)
+    }
+}

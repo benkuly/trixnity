@@ -1,8 +1,8 @@
-package net.folivo.trixnity.serverserverapi.client
+package de.connect2x.trixnity.serverserverapi.client
 
-import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.PersistentDataUnit
-import net.folivo.trixnity.core.serialization.events.RoomVersionStore
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.PersistentDataUnit
+import de.connect2x.trixnity.core.serialization.events.RoomVersionStore
 
 fun String.trimToFlatJson() = this.trimIndent().lines().joinToString("") { it.replace(": ", ":").trim() }
 

@@ -34,7 +34,7 @@ publishing {
             pom {
                 name.set(project.name)
                 description.set("Multiplatform Kotlin SDK for matrix-protocol")
-                url.set("https://gitlab.com/trixnity/trixnity")
+                url.set("https://gitlab.com/connect2x/trixnity/trixnity")
                 inceptionYear.set("2021")
                 licenses {
                     license {
@@ -49,7 +49,7 @@ publishing {
                     }
                 }
                 scm {
-                    url.set("https://gitlab.com/trixnity/trixnity")
+                    url.set("https://gitlab.com/connect2x/trixnity/trixnity")
                 }
             }
             if (isCI) artifact(dokkaJar)

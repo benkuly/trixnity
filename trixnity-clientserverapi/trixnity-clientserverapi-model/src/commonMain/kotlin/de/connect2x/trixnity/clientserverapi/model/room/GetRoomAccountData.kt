@@ -1,0 +1,34 @@
+package de.connect2x.trixnity.clientserverapi.model.room
+
+import io.ktor.resources.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import de.connect2x.trixnity.core.HttpMethod
+import de.connect2x.trixnity.core.HttpMethodType.GET
+import de.connect2x.trixnity.core.MatrixEndpoint
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
+import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import de.connect2x.trixnity.core.serialization.events.contentSerializer
+
+/**
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+ */
+@Serializable
+@Resource("/_matrix/client/v3/user/{userId}/rooms/{roomId}/account_data/{type}")
+@HttpMethod(GET)
+data class GetRoomAccountData(
+    @SerialName("userId") val userId: UserId,
+    @SerialName("roomId") val roomId: RoomId,
+    @SerialName("type") val type: String,
+) : MatrixEndpoint<Unit, RoomAccountDataEventContent> {
+    override fun responseSerializerBuilder(
+        mappings: EventContentSerializerMappings,
+        json: Json,
+        value: RoomAccountDataEventContent?
+    ): KSerializer<RoomAccountDataEventContent> =
+        mappings.roomAccountData.contentSerializer(type, value)
+}

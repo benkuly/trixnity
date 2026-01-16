@@ -1,0 +1,44 @@
+package de.connect2x.trixnity.clientserverapi.model.room
+
+import io.ktor.resources.*
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import de.connect2x.trixnity.core.HttpMethod
+import de.connect2x.trixnity.core.HttpMethodType.GET
+import de.connect2x.trixnity.core.MatrixEndpoint
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+
+/**
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixclientv3roomsroomidmessages">matrix spec</a>
+ */
+@Serializable
+@Resource("/_matrix/client/v3/rooms/{roomId}/messages")
+@HttpMethod(GET)
+data class GetEvents(
+    @SerialName("roomId") val roomId: RoomId,
+    @SerialName("from") val from: String? = null,
+    @SerialName("to") val to: String? = null,
+    @SerialName("dir") val dir: Direction,
+    @SerialName("limit") val limit: Long? = null,
+    @SerialName("filter") val filter: String? = null,
+) : MatrixEndpoint<Unit, GetEvents.Response> {
+    @Serializable
+    enum class Direction {
+        @SerialName("f")
+        FORWARDS,
+
+        @SerialName("b")
+        BACKWARDS
+    }
+
+    @Serializable
+    data class Response(
+        @SerialName("start") val start: String,
+        @SerialName("end") val end: String? = null,
+        @SerialName("chunk") val chunk: List<@Contextual RoomEvent<*>>? = null,
+        @SerialName("state") val state: List<@Contextual StateEvent<*>>? = null
+    )
+}

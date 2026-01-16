@@ -59,7 +59,7 @@ kotlin {
 }
 
 android {
-    namespace = "net.folivo.trixnity.vodozemac"
+    namespace = "de.connect2x.trixnity.vodozemac"
     compileSdk = libs.versions.androidTargetSdk.get().toInt()
 
     defaultConfig {

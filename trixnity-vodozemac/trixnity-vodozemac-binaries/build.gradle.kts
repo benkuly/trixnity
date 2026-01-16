@@ -1,11 +1,10 @@
-import org.gradle.api.tasks.Copy
-import java.util.Properties
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.properties.hasProperty
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import java.net.URI
 import java.security.DigestOutputStream
 import java.security.MessageDigest
+import java.util.*
 
 plugins {
     kotlin("multiplatform")
@@ -16,14 +15,17 @@ plugins {
 registerLibvodozemac(
     VodozemacBinaries.Remote(
         baseUrl =
-            "https://gitlab.com/api/v4/projects/trixnity%2Ftrixnity-vodozemac-binaries/packages/generic/libvodozemac",
+            "https://gitlab.com/api/v4/projects/69401252/packages/generic/libvodozemac",
         version = libs.versions.vodozemac.tag,
         hashes =
             Hashes(
                 jvmJni = libs.versions.vodozemac.jvmJni,
                 androidJni = libs.versions.vodozemac.androidJni,
                 native = libs.versions.vodozemac.native,
-                webNpm = libs.versions.vodozemac.webNpm)))
+                webNpm = libs.versions.vodozemac.webNpm
+            )
+    )
+)
 
 kotlin {
     jvmToolchain()
@@ -37,7 +39,7 @@ kotlin {
 }
 
 android {
-    namespace = "net.folivo.trixnity.vodozemac.binaries"
+    namespace = "de.connect2x.trixnity.vodozemac.binaries"
     compileSdk = libs.versions.androidTargetSdk.get().toInt()
 
     defaultConfig {
@@ -259,7 +261,7 @@ abstract class WriteDefFile @Inject constructor(
         output.parentFile.mkdirs()
         output.writeText(
             """
-            package = net.folivo.trixnity.vodozemac
+            package = de.connect2x.trixnity.vodozemac
 
             $libPaths
             $libNames
@@ -359,5 +361,5 @@ abstract class CopyTar @Inject constructor(
     }
 }
 
-private fun <T: Any, U: Any, R: Any> combine(left: Provider<T>, right: Provider<U>, f: (T, U) -> R) : Provider<R>
-    = left.zip(right, f)
+private fun <T : Any, U : Any, R : Any> combine(left: Provider<T>, right: Provider<U>, f: (T, U) -> R): Provider<R> =
+    left.zip(right, f)

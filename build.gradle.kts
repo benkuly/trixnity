@@ -14,7 +14,7 @@ plugins {
 }
 
 allprojects {
-    group = "net.folivo"
+    group = "de.connect2x"
     version = withVersionSuffix(rootProject.libs.versions.trixnity.get())
 
     if (System.getenv("WITH_LOCK")?.toBoolean() == true) {
@@ -132,7 +132,7 @@ kover {
     }
     reports {
         filters {
-            includes.classes("net.folivo.trixnity.*")
+            includes.classes("de.connect2x.trixnity.*")
         }
     }
 }

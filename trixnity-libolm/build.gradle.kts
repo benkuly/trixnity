@@ -77,7 +77,7 @@ tasks.withType<ExternalNativeBuildTask> {
 }
 
 android {
-    namespace = "net.folivo.trixnity.libolm"
+    namespace = "de.connect2x.trixnity.libolm"
     compileSdk = libs.versions.androidTargetSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.androidMinSdk.get().toInt()

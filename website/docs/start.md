@@ -13,7 +13,7 @@ Select from [modules](/docs/modules) the dependency you need and add it to you p
 val trixnityVersion = "x.x.x"
 
 fun trixnity(module: String, version: String = trixnityVersion) =
-    "net.folivo:trixnity-$module:$version"
+    "de.connect2x:trixnity-$module:$version"
 
 // for example:
 implementation(trixnity("client"))
@@ -26,10 +26,10 @@ modules:
 val trixnityVersion = "x.x.x"
 
 dependencies {
-    implementation(platform("net.folivo:trixnity-bom:$trixnityVersion"))
+    implementation(platform("de.connect2x:trixnity-bom:$trixnityVersion"))
 
     // Trixnity dependency versions are covered by the Trixnity BOM
-    implementation("net.folivo:trixnity-client")
+    implementation("de.connect2x:trixnity-client")
 }
 ```
 

@@ -1,0 +1,93 @@
+package de.connect2x.trixnity.clientserverapi.model.push
+
+import io.ktor.resources.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.*
+import de.connect2x.trixnity.core.HttpMethod
+import de.connect2x.trixnity.core.HttpMethodType.POST
+import de.connect2x.trixnity.core.MatrixEndpoint
+
+/**
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3pushersset">matrix spec</a>
+ */
+@Serializable
+@Resource("/_matrix/client/v3/pushers/set")
+@HttpMethod(POST)
+data object SetPushers : MatrixEndpoint<SetPushers.Request, Unit> {
+    @Serializable(with = Request.Serializer::class)
+    sealed interface Request {
+        val appId: String
+        val pushkey: String
+        val kind: String?
+
+        @Serializable
+        data class Set(
+            @SerialName("app_id")
+            override val appId: String,
+            @SerialName("pushkey")
+            override val pushkey: String,
+            @SerialName("kind")
+            override val kind: String,
+            @SerialName("app_display_name")
+            val appDisplayName: String,
+            @SerialName("device_display_name")
+            val deviceDisplayName: String,
+            @SerialName("lang")
+            val lang: String,
+            @SerialName("data")
+            val data: PusherData,
+            @SerialName("append")
+            val append: Boolean? = null,
+            @SerialName("profile_tag")
+            val profileTag: String? = null,
+        ) : Request
+
+        @Serializable
+        data class Remove(
+            @SerialName("app_id")
+            override val appId: String,
+            @SerialName("pushkey")
+            override val pushkey: String,
+        ) : Request {
+            @SerialName("kind")
+            override val kind: String? = null
+        }
+
+        object Serializer : KSerializer<Request> {
+            override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Request")
+
+            override fun deserialize(decoder: Decoder): Request {
+                require(decoder is JsonDecoder)
+                val jsonObject = decoder.decodeJsonElement().jsonObject
+                val kind = jsonObject["kind"]
+                val isRemove = kind == null || kind is JsonNull
+                return when (isRemove) {
+                    true -> decoder.json.decodeFromJsonElement<Remove>(jsonObject)
+                    false -> decoder.json.decodeFromJsonElement<Set>(jsonObject)
+                }
+            }
+
+            override fun serialize(encoder: Encoder, value: Request) {
+                require(encoder is JsonEncoder)
+                when (value) {
+                    is Remove -> {
+                        encoder.encodeJsonElement(
+                            JsonObject(buildMap {
+                                putAll(encoder.json.encodeToJsonElement<Remove>(value).jsonObject)
+                                put("kind", JsonNull)
+                            })
+                        )
+                    }
+
+                    is Set -> encoder.encodeSerializableValue(Set.serializer(), value)
+                }
+            }
+        }
+    }
+}

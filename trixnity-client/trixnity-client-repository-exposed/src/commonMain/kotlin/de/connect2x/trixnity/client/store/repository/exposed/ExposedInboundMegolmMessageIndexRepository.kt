@@ -1,0 +1,59 @@
+package de.connect2x.trixnity.client.store.repository.exposed
+
+import de.connect2x.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
+import de.connect2x.trixnity.client.store.repository.InboundMegolmMessageIndexRepositoryKey
+import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+
+internal object ExposedInboundMegolmMessageIndex : Table("inbound_megolm_message_index") {
+    val sessionId = varchar("session_id", length = 250)
+    val roomId = varchar("room_id", length = 255)
+    val messageIndex = long("message_index")
+    override val primaryKey = PrimaryKey(sessionId, roomId, messageIndex)
+    val eventId = text("event_id")
+    val origin_timestamp = long("origin_timestamp")
+}
+
+internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessageIndexRepository {
+    override suspend fun get(key: InboundMegolmMessageIndexRepositoryKey): StoredInboundMegolmMessageIndex? =
+        withExposedRead {
+            ExposedInboundMegolmMessageIndex.selectAll().where {
+                ExposedInboundMegolmMessageIndex.sessionId.eq(key.sessionId) and
+                        ExposedInboundMegolmMessageIndex.roomId.eq(key.roomId.full) and
+                        ExposedInboundMegolmMessageIndex.messageIndex.eq(key.messageIndex)
+            }.firstOrNull()?.let {
+                StoredInboundMegolmMessageIndex(
+                    key.sessionId, key.roomId, key.messageIndex,
+                    EventId(it[ExposedInboundMegolmMessageIndex.eventId]),
+                    it[ExposedInboundMegolmMessageIndex.origin_timestamp]
+                )
+            }
+        }
+
+    override suspend fun save(
+        key: InboundMegolmMessageIndexRepositoryKey,
+        value: StoredInboundMegolmMessageIndex
+    ): Unit = withExposedWrite {
+        ExposedInboundMegolmMessageIndex.upsert {
+            it[sessionId] = value.sessionId
+            it[roomId] = value.roomId.full
+            it[messageIndex] = value.messageIndex
+            it[eventId] = value.eventId.full
+            it[origin_timestamp] = value.originTimestamp
+        }
+    }
+
+    override suspend fun delete(key: InboundMegolmMessageIndexRepositoryKey): Unit = withExposedWrite {
+        ExposedInboundMegolmMessageIndex.deleteWhere {
+            sessionId.eq(key.sessionId) and
+                    roomId.eq(key.roomId.full) and
+                    messageIndex.eq(key.messageIndex)
+        }
+    }
+
+    override suspend fun deleteAll(): Unit = withExposedWrite {
+        ExposedInboundMegolmMessageIndex.deleteAll()
+    }
+}

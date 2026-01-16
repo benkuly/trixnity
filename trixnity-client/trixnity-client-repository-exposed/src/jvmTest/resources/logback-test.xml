@@ -10,5 +10,5 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="net.folivo.trixnity" level="TRACE"/>
+    <logger name="de.connect2x.trixnity" level="TRACE"/>
 </configuration>

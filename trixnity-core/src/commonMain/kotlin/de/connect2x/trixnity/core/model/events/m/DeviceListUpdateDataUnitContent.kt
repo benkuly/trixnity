@@ -1,0 +1,28 @@
+package de.connect2x.trixnity.core.model.events.m
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.EphemeralDataUnitContent
+import de.connect2x.trixnity.core.model.keys.SignedDeviceKeys
+
+/**
+ * @see <a href="https://spec.matrix.org/v1.10/server-server-api/#device-management">matrix spec</a>
+ */
+@Serializable
+data class DeviceListUpdateDataUnitContent(
+    @SerialName("deleted")
+    val deleted: Boolean? = null,
+    @SerialName("device_display_name")
+    val deviceDisplayName: String? = null,
+    @SerialName("device_id")
+    val deviceId: String,
+    @SerialName("keys")
+    val keys: SignedDeviceKeys? = null,
+    @SerialName("prev_id")
+    val previousStreamIds: List<Long>? = null,
+    @SerialName("stream_id")
+    val streamId: Long,
+    @SerialName("user_id")
+    val userId: UserId,
+) : EphemeralDataUnitContent

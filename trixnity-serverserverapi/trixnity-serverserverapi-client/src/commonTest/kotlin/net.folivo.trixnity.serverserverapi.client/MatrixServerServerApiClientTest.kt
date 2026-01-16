@@ -1,4 +1,4 @@
-package net.folivo.trixnity.serverserverapi.client
+package de.connect2x.trixnity.serverserverapi.client
 
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
@@ -7,9 +7,9 @@ import io.ktor.http.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
-import net.folivo.trixnity.testutils.scopedMockEngine
+import de.connect2x.trixnity.core.model.keys.Key
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import de.connect2x.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 
 class MatrixServerServerApiClientTest : TrixnityBaseTest() {

@@ -1,0 +1,40 @@
+package de.connect2x.trixnity.clientserverapi.model.room
+
+import io.ktor.resources.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import de.connect2x.trixnity.core.HttpMethod
+import de.connect2x.trixnity.core.HttpMethodType.POST
+import de.connect2x.trixnity.core.MatrixEndpoint
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.keys.Signed
+
+/**
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
+ */
+@Serializable
+@Resource("/_matrix/client/v3/join/{roomIdOrRoomAliasId}")
+@HttpMethod(POST)
+data class JoinRoom(
+    @SerialName("roomIdOrRoomAliasId") val roomIdOrRoomAliasId: String,
+    @SerialName("via") val via: Set<String>? = null,
+) : MatrixEndpoint<JoinRoom.Request, JoinRoom.Response> {
+    @Serializable
+    data class Request(
+        @SerialName("reason") val reason: String? = null,
+        @SerialName("third_party_signed") val thirdPartySigned: Signed<ThirdParty, String>? = null,
+    ) {
+        @Serializable
+        data class ThirdParty(
+            @SerialName("sender") val sender: UserId,
+            @SerialName("mxid") val mxid: UserId,
+            @SerialName("token") val token: String,
+        )
+    }
+
+    @Serializable
+    data class Response(
+        @SerialName("room_id") val roomId: RoomId
+    )
+}

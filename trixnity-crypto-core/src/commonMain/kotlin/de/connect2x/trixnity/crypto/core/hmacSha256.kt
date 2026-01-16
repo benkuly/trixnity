@@ -1,0 +1,3 @@
+package de.connect2x.trixnity.crypto.core
+
+expect suspend fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray
