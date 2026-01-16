@@ -68,7 +68,7 @@ variables:
 build:mac:
   stage: build
   interruptible: true
-  tags: [ "trixnity-mac-internal" ]
+  tags: [ "connect2x-mac" ]
   cache:
     - *cache
   rules:
@@ -82,7 +82,7 @@ build:mac:
 build:linux:
   stage: build
   interruptible: true
-  tags: [ "saas-linux-large-amd64" ]
+  tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache
@@ -101,7 +101,7 @@ test:mac:
   interruptible: true
   timeout: 1h
   needs: [ "build:mac" ]
-  tags: [ "trixnity-mac-internal" ]
+  tags: [ "connect2x-mac" ]
   cache:
     - *cache
   artifacts: *artifact-reports
@@ -117,7 +117,7 @@ test:linux:
   interruptible: true
   timeout: 1h
   needs: [ "build:linux" ]
-  tags: [ "saas-linux-large-amd64" ]
+  tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache
@@ -136,7 +136,7 @@ test:integration-test:
   interruptible: true
   timeout: 1h
   needs: [ "build:linux" ]
-  tags: [ "saas-linux-medium-amd64" ]
+  tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:dind
@@ -158,7 +158,7 @@ security:dependencies:
   interruptible: true
   timeout: 30m
   needs: [ ]
-  tags: [ "saas-linux-small-amd64" ]
+  tags: [ "connect2x-linux" ]
   image: $TRIVY_LINUX_IMAGE_NAME
   variables:
     TRIVY_CACHE_DIR: ".trivycache/"
@@ -192,7 +192,7 @@ changelog:
   stage: changelog
   interruptible: true
   timeout: 5m
-  tags: [ "saas-linux-small-amd64" ]
+  tags: [ "connect2x-linux" ]
   rules:
     - *if-merge-request
   script:
@@ -207,7 +207,7 @@ changelog:
 
 publish:mac-dev:
   stage: publish
-  tags: [ "trixnity-mac-internal" ]
+  tags: [ "connect2x-mac" ]
   cache:
     - *cache
   rules:
@@ -219,7 +219,7 @@ publish:mac-dev:
 
 publish:linux-dev:
   stage: publish
-  tags: [ "saas-linux-medium-amd64" ]
+  tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache
@@ -236,7 +236,7 @@ publish:linux-dev:
 
 publish:mac:
   stage: publish
-  tags: [ "trixnity-mac-internal" ]
+  tags: [ "connect2x-mac" ]
   cache:
     - *cache
   rules:
@@ -252,7 +252,7 @@ publish:mac:
 
 publish:linux:
   stage: publish
-  tags: [ "saas-linux-medium-amd64" ]
+  tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache
@@ -270,7 +270,7 @@ publish:linux:
 publish:maven-central:
   stage: publish
   needs: [ "publish:linux", "publish:mac" ]
-  tags: [ "saas-linux-small-amd64" ]
+  tags: [ "connect2x-linux" ]
   image: ubuntu:latest
   rules:
     - *if-release
