@@ -27,14 +27,14 @@ kotlin {
                 implementation(projects.trixnityClient.trixnityClientCryptodriverVodozemac)
                 implementation(libs.androidx.sqlite.bundled)
                 implementation(kotlin("test"))
-                implementation(libs.kotest.assertions.core)
+                implementation(sharedLibs.kotest.assertions.core)
                 implementation(libs.oshai.logging)
             }
         }
         jvmTest {
             dependencies {
-                implementation(libs.ktor.client.java)
-                implementation(libs.ktor.client.logging)
+                implementation(sharedLibs.ktor.client.java)
+                implementation(sharedLibs.ktor.client.logging)
                 implementation(libs.testcontainers)
                 implementation(libs.testcontainers.postgresql)
                 implementation(libs.testcontainers.junitJupiter)

@@ -14,7 +14,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project.dependencies.platform(libs.kotlin.wrappers.bom))
+            implementation(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
             implementation(libs.kotlin.wrappers.browser)
         }
     }

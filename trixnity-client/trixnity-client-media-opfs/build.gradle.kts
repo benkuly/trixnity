@@ -17,7 +17,7 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityClient)
 
-                api(project.dependencies.platform(libs.kotlin.wrappers.bom))
+                api(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
                 api(libs.kotlin.wrappers.browser)
                 implementation(libs.oshai.logging)
             }

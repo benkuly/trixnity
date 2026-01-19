@@ -2,7 +2,7 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     alias(libs.plugins.ksp)
-    alias(libs.plugins.kotlinxKover)
+    alias(sharedLibs.plugins.kotlinx.kover)
     alias(libs.plugins.room)
     `maven-publish`
     signing
@@ -37,7 +37,7 @@ kotlin {
 
                 implementation(libs.androidx.sqlite.bundled)
 
-                implementation(libs.kotest.assertions.core)
+                implementation(sharedLibs.kotest.assertions.core)
             }
         }
         jvmTest {

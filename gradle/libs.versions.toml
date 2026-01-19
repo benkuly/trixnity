@@ -5,20 +5,12 @@ trixnity = "5.0.0"
 ### build ###
 kotlin = "2.2.21" # https://github.com/JetBrains/kotlin/releases
 ksp = "2.3.3" # https://github.com/google/ksp/releases
-kotlinWrappers = "2025.12.6" # https://github.com/JetBrains/kotlin-wrappers/releases
-dokka = "2.1.0" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.12.0" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
-kotlinxKover = "0.9.4" # https://github.com/Kotlin/kotlinx-kover/releases
-
-### kotlinx ###
-kotlinxCoroutines = "1.10.2" # https://github.com/Kotlin/kotlinx.coroutines/releases
-kotlinxSerialization = "1.9.0" # https://github.com/Kotlin/kotlinx.serialization/releases
 
 ### native bindings ###
 trixnityOlmBinaries = "2.0.4" # https://gitlab.com/connect2x/trixnity/trixnity-olm-binaries/-/releases
 trixnityOpensslBinaries = "1.0.6" # https://gitlab.com/connect2x/trixnity/trixnity-openssl-binaries/-/releases
-jna = "5.18.1" # https://github.com/java-native-access/jna/tags
 
 ### vodozemac - checksums come from the registry, web has to be sha1 for yarn ###
 vodozemac-tag = "v0.1.2" # https://gitlab.com/connect2x/trixnity/trixnity-vodozemac-binaries/-/packages/
@@ -28,8 +20,6 @@ vodozemac-native = "7cf47088ddc961b20019cb2a4fe79d4d4c45d0c6059aa25049d0fbb3a9e7
 vodozemac-webNpm = "fad112ea8c19dfa8b35fd3fef924522454573b76"
 
 ### libraries ###
-ktor = "3.3.3" # https://github.com/ktorio/ktor/releases
-koin = "4.1.1" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.16.4" # https://square.github.io/okio/changelog/
 
 ### databases ###
@@ -43,12 +33,9 @@ androidxSqlite = "2.6.2" # https://developer.android.com/jetpack/androidx/releas
 
 ### logging ###
 oshaiKotlinLogging = "7.0.13" # https://github.com/oshai/kotlin-logging/releases
-slf4j = "2.0.17" # https://github.com/qos-ch/slf4j/releases
 logback = "1.5.22" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
-kotest = "6.0.7" # https://github.com/kotest/kotest/releases
-mokkery = "3.0.0" # https://github.com/lupuuss/Mokkery/releases
 testContainers = "2.0.3" # https://github.com/testcontainers/testcontainers-java/releases
 androidxTestRunner = "1.7.0" # https://developer.android.com/jetpack/androidx/releases/test
 openjdkJol = "0.17" # https://github.com/openjdk/jol/tags
@@ -64,43 +51,10 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
 kotlin-gradle-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
-kotlin-wrappers-bom = { module = "org.jetbrains.kotlin-wrappers:kotlin-wrappers-bom", version.ref = "kotlinWrappers" }
 kotlin-wrappers-browser = { module = "org.jetbrains.kotlin-wrappers:kotlin-browser" }
 kotlin-wrappers-node = { module = "org.jetbrains.kotlin-wrappers:kotlin-node" }
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-
-### kotlinx ###
-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
-kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-
-### native bindings ###
-jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 
 ### libraries ###
-ktor-bom = { module = "io.ktor:ktor-bom", version.ref = "ktor" }
-ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
-ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
-ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
-ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
-ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
-ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
-ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
-ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
-ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
-ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
-ktor-server-resources = { module = "io.ktor:ktor-server-resources", version.ref = "ktor" }
-ktor-server-statusPages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
-ktor-server-contentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
-ktor-server-doubleReceive = { module = "io.ktor:ktor-server-double-receive", version.ref = "ktor" }
-ktor-server-testHost = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
-ktor-utils = { module = "io.ktor:ktor-utils", version.ref = "ktor" }
-ktor-http = { module = "io.ktor:ktor-http", version.ref = "ktor" }
-ktor-resources = { module = "io.ktor:ktor-resources", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
-
-koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
-
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 okio-nodefilesystem = { module = "com.squareup.okio:okio-nodefilesystem", version.ref = "okio" }
 okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
@@ -124,13 +78,8 @@ hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 ### logging ###
 oshai-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "oshaiKotlinLogging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 ### testing ###
-kotest-common = { module = "io.kotest:kotest-common", version.ref = "kotest" }
-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
-kotest-assertions-json = { module = "io.kotest:kotest-assertions-json", version.ref = "kotest" }
-
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testContainers" }
 testcontainers-junitJupiter = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testContainers" }
 testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testContainers" }
@@ -141,9 +90,6 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 openjdk-jol = { module = "org.openjdk.jol:jol-core", version.ref = "openjdkJol" }
 
 [plugins]
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 download = { id = "de.undercouch.download", version.ref = "downloadGradlePlugin" }
-mokkery = { id = "dev.mokkery", version.ref = "mokkery" }
 room = { id = "androidx.room", version.ref = "androidxRoom" }
-kotlinxKover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kotlinxKover" }

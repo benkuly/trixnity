@@ -19,10 +19,10 @@ kotlin {
 
                 implementation(libs.oshai.logging)
 
-                api(libs.ktor.client.mock)
-                implementation(libs.ktor.resources)
+                api(sharedLibs.ktor.client.mock)
+                implementation(sharedLibs.ktor.resources)
 
-                implementation(libs.kotest.assertions.core)
+                implementation(sharedLibs.kotest.assertions.core)
             }
         }
         commonTest {

@@ -39,13 +39,13 @@ kotlin {
 
         commonMain.dependencies {
             api(kotlin("test"))
-            api(libs.kotlinx.coroutines.test)
-            api(libs.kotest.assertions.core)
+            api(sharedLibs.kotlinx.coroutines.test)
+            api(sharedLibs.kotest.assertions.core)
             api(libs.oshai.logging)
         }
 
         logbackMain.dependencies {
-            implementation(libs.slf4j.api)
+            implementation(sharedLibs.slf4j.api)
             implementation(libs.logback.classic)
         }
 

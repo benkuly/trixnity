@@ -20,7 +20,7 @@ kotlin {
                 api(projects.trixnityClientserverapi.trixnityClientserverapiClient)
                 api(projects.trixnityCrypto)
 
-                api(libs.koin.core)
+                api(sharedLibs.koin.core)
 
                 implementation(libs.oshai.logging)
             }
@@ -32,8 +32,8 @@ kotlin {
                 implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverVodozemac)
                 implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverLibolm)
 
-                implementation(libs.ktor.client.mock)
-                implementation(libs.kotest.common)
+                implementation(sharedLibs.ktor.client.mock)
+                implementation(sharedLibs.kotest.common)
             }
         }
     }

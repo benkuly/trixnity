@@ -47,13 +47,13 @@ kotlin {
             implementation(projects.trixnityVodozemac.trixnityVodozemacBinaries)
         }
         webMain.dependencies {
-            implementation(project.dependencies.platform(libs.kotlin.wrappers.bom))
+            implementation(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
             implementation(libs.kotlin.wrappers.browser)
         }
 
         commonTest.dependencies {
-            implementation(libs.kotlin.test)
-            implementation(libs.kotlinx.coroutines.test)
+            implementation(sharedLibs.kotlin.test)
+            implementation(sharedLibs.kotlinx.coroutines.test)
         }
     }
 }

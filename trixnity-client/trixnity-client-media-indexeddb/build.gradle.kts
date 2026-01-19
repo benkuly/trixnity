@@ -24,7 +24,7 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityTestUtils)
                 implementation(projects.idbSchemaexporter)
-                implementation(libs.kotest.assertions.json)
+                implementation(sharedLibs.kotest.assertions.json)
             }
         }
     }

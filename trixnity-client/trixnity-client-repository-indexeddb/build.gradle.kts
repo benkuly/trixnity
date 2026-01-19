@@ -27,7 +27,7 @@ kotlin {
                 implementation(projects.trixnityTestUtils)
                 implementation(projects.trixnityClient.clientRepositoryTest)
                 implementation(projects.idbSchemaexporter)
-                implementation(libs.kotest.assertions.json)
+                implementation(sharedLibs.kotest.assertions.json)
             }
         }
     }

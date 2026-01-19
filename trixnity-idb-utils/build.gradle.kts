@@ -16,9 +16,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project.dependencies.platform(libs.kotlin.wrappers.bom))
+            api(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
             api(libs.kotlin.wrappers.browser)
-            api(libs.kotlinx.coroutines.core)
+            api(sharedLibs.kotlinx.coroutines.core)
         }
     }
 }

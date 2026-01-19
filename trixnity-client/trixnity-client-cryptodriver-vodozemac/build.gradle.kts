@@ -26,8 +26,8 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation(libs.kotlinx.coroutines.test)
-                implementation(libs.kotest.assertions.core)
+                implementation(sharedLibs.kotlinx.coroutines.test)
+                implementation(sharedLibs.kotest.assertions.core)
             }
         }
     }
