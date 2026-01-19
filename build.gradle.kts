@@ -1,3 +1,8 @@
+import de.connect2x.conventions.*
+import org.jetbrains.dokka.gradle.DokkaPlugin
+import java.time.Duration
+import java.time.ZonedDateTime
+
 buildscript {
     dependencies {
         classpath(libs.kotlin.gradle.plugin.api)
@@ -7,22 +12,70 @@ buildscript {
 plugins {
     `maven-publish`
     signing
-    id(libs.plugins.dokka.get().pluginId)
-    alias(libs.plugins.kotlinxKover)
+    alias(sharedLibs.plugins.dokka)
+    alias(sharedLibs.plugins.kotlinx.kover)
     alias(libs.plugins.download).apply(false)
-    alias(libs.plugins.mokkery).apply(false)
+    alias(sharedLibs.plugins.mokkery).apply(false)
+    alias(sharedLibs.plugins.c2xConventions)
+    alias(sharedLibs.plugins.kotlin.serialization) apply false
+
+    alias(sharedLibs.plugins.gradleNexus)
 }
 
 allprojects {
     group = "de.connect2x"
-    version = withVersionSuffix(rootProject.libs.versions.trixnity.get())
+    version = withVersionSuffix(rootProject.libs.versions.trixnity)
+    if (System.getenv("WITH_LOCK")?.toBoolean() == true) defaultDependencyLocking()
+    configureJava(11)
+}
 
-    if (System.getenv("WITH_LOCK")?.toBoolean() == true) {
-        dependencyLocking {
-            lockAllConfigurations()
+subprojects {
+    if (project.name.startsWith("trixnity-")) return@subprojects
+
+    apply<MavenPublishPlugin>()
+    apply<SigningPlugin>()
+    apply<DokkaPlugin>()
+
+    signing {
+        isRequired = isRelease
+        signPublications()
+    }
+
+    dokka {
+        moduleName = project.name
+        pluginsConfiguration {
+            html {
+                homepageLink = "https://trixnity.connect2x.de"
+                footerMessage = "&copy; ${ZonedDateTime.now().year} connect2x GmbH"
+            }
         }
+    }
 
-        val dependenciesForAll by tasks.registering(DependencyReportTask::class) { }
+    val javadocJar by tasks.registering(Jar::class) {
+        archiveClassifier = "javadoc"
+        dependsOn(tasks.dokkaGeneratePublicationHtml)
+        from(tasks.dokkaGeneratePublicationHtml)
+        onlyIf { isCI }
+    }
+
+    publishing {
+        repositories {
+            authenticatedPackageRegistry()
+        }
+        publications.configureEach {
+            if (this is MavenPublication) {
+                pom {
+                    apache2()
+                    c2xOrganization()
+                    setProjectInfo(
+                        name = project.name,
+                        description = "Multiplatform Kotlin SDK for matrix-protocol",
+                        repository = "connect2x/trixnity/trixnity",
+                    )
+                }
+                if (isCI) artifact(javadocJar)
+            }
+        }
     }
 }
 
@@ -116,6 +169,8 @@ val dokkaHtmlToWebsite by tasks.registering(Copy::class) {
     dependsOn(":dokkaGenerate")
 }
 
+registerCoverageTask()
+
 kover {
     dependencies {
         fun DependencyHandler.addSubProjectsWithKoverAsDependency(project: Project) {
@@ -137,25 +192,12 @@ kover {
     }
 }
 
-val testCoverage by tasks.registering {
-    fun collectTasksByName(project: Project, name: String, foundTasks: MutableList<Task>) {
-        project.tasks.findByName(name)?.let { foundTasks.add(it) }
-        project.subprojects.forEach { collectTasksByName(it, name, foundTasks) }
-    }
 
-    val reportTask = tasks.named("koverXmlReport").get()
-    dependsOn(reportTask)
-    doLast {
-        val regex = """<counter type="INSTRUCTION" missed="(\d+)" covered="(\d+)"/>""".toRegex()
-        reportTask.outputs.files.forEach { file ->
-            file.useLines { lines ->
-                val coverage = lines.last(regex::containsMatchIn)
-                regex.find(coverage)?.let { coverageData ->
-                    val covered = coverageData.groupValues[2].toInt()
-                    val missed = coverageData.groupValues[1].toInt()
-                    println("Total test coverage: ${covered * 100 / (missed + covered)}%")
-                }
-            }
-        }
-    }
-}
+// TODO this causes a gradle incompatibility
+//  Unable to load class 'io.github.gradlenexus.publishplugin.NexusPublishExtension'
+//  io.github.gradlenexus.publishplugin.NexusPublishExtension
+//nexusPublishing {
+//    authenticatedSonatype()
+//    connectTimeout = Duration.ofSeconds(30)
+//    clientTimeout = Duration.ofMinutes(45)
+//}

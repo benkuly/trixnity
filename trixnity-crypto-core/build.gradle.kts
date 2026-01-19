@@ -9,8 +9,9 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    alias(libs.plugins.kotlinxKover)
-    trixnity.publish
+    alias(sharedLibs.plugins.kotlinx.kover)
+    `maven-publish`
+    signing
 }
 
 val opensslBinariesDirs = TrixnityOpensslBinariesDirs(project, libs.versions.trixnityOpensslBinaries.get())
@@ -35,7 +36,6 @@ val opensslNativeTargetList = listOf(
 )
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
     addNativeAppleTargets()

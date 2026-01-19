@@ -1,12 +1,12 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    alias(libs.plugins.kotlinxKover)
-    trixnity.publish
+    alias(sharedLibs.plugins.kotlinx.kover)
+    `maven-publish`
+    signing
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
     addNativeTargets()
@@ -18,8 +18,8 @@ kotlin {
         commonMain {
             dependencies {
                 api(projects.trixnityUtils)
-                api(libs.kotlinx.serialization.json)
-                api(libs.ktor.http)
+                api(sharedLibs.kotlinx.serialization.json)
+                api(sharedLibs.ktor.http)
                 implementation(libs.oshai.logging)
             }
         }

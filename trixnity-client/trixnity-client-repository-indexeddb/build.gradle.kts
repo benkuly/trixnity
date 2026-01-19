@@ -1,11 +1,11 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    trixnity.publish
+    `maven-publish`
+    signing
 }
 
 kotlin {
-    jvmToolchain()
     addJsTarget(rootDir, nodeJsEnabled = false)
 
     sourceSets {

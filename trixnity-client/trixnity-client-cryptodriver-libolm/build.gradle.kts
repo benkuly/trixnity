@@ -1,10 +1,10 @@
 plugins {
     kotlin("multiplatform")
-    trixnity.publish
+    `maven-publish`
+    signing
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addNativeTargets()
     addJsTarget(rootDir)

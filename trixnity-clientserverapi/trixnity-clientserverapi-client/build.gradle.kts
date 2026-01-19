@@ -1,12 +1,12 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    alias(libs.plugins.kotlinxKover)
-    trixnity.publish
+    alias(sharedLibs.plugins.kotlinx.kover)
+    `maven-publish`
+    signing
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
     addNativeTargets()
@@ -21,10 +21,10 @@ kotlin {
                 api(projects.trixnityApiClient)
                 api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
-                api(libs.ktor.client.auth)
-                implementation(libs.ktor.client.contentNegotiation)
-                implementation(libs.ktor.client.resources)
-                implementation(libs.ktor.serialization.kotlinx.json)
+                api(sharedLibs.ktor.client.auth)
+                implementation(sharedLibs.ktor.client.contentNegotiation)
+                implementation(sharedLibs.ktor.client.resources)
+                implementation(sharedLibs.ktor.serialization.kotlinx.json)
 
                 implementation(libs.oshai.logging)
             }
@@ -34,7 +34,7 @@ kotlin {
                 implementation(projects.trixnityTestUtils)
                 implementation(projects.ktorTestUtils)
 
-                implementation(libs.ktor.client.mock)
+                implementation(sharedLibs.ktor.client.mock)
             }
         }
     }

@@ -1,11 +1,11 @@
 plugins {
     kotlin("multiplatform")
-    alias(libs.plugins.kotlinxKover)
-    trixnity.publish
+    alias(sharedLibs.plugins.kotlinx.kover)
+    `maven-publish`
+    signing
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
     addNativeTargets()
@@ -16,15 +16,15 @@ kotlin {
         }
         commonMain {
             dependencies {
-                api(libs.ktor.utils)
-                api(libs.kotlinx.coroutines.core)
+                api(sharedLibs.ktor.utils)
+                api(sharedLibs.kotlinx.coroutines.core)
                 api(libs.okio)
                 api(libs.oshai.logging)
             }
         }
         jsMain {
             dependencies {
-                api(project.dependencies.platform(libs.kotlin.wrappers.bom))
+                api(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
                 api(libs.kotlin.wrappers.browser)
             }
         }

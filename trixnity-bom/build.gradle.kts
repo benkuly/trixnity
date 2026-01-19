@@ -1,7 +1,7 @@
 plugins {
     `java-platform`
     `maven-publish`
-    trixnity.publish
+    signing
 }
 
 javaPlatform {

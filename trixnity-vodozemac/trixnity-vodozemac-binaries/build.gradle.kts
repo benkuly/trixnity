@@ -9,7 +9,8 @@ import java.util.*
 plugins {
     kotlin("multiplatform")
     id("com.android.library")
-    trixnity.publish
+    `maven-publish`
+    signing
 }
 
 registerLibvodozemac(
@@ -28,7 +29,6 @@ registerLibvodozemac(
 )
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addAndroidTarget()
     addNativeTargets()

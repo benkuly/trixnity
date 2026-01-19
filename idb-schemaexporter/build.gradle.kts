@@ -7,7 +7,6 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain()
     addJsTarget(rootDir, nodeJsEnabled = false)
 
     // TODO: add wasm helper in buildSrc

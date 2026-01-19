@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.konan.target.HostManager
+import de.connect2x.conventions.isCI
 
 plugins {
     kotlin("multiplatform")
@@ -6,7 +7,6 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget(testEnabled = (isCI && HostManager.hostIsMac).not()) {
         maxHeapSize = "8g"
         maxParallelForks = if (isCI) 3 else 1

@@ -4,11 +4,11 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlinxKover)
     alias(libs.plugins.room)
-    trixnity.publish
+    `maven-publish`
+    signing
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     // does not use addNativeTargets() because some ar not supported yet
     addNativeAppleTargets()
