@@ -4,5 +4,5 @@ sidebar_position: 100
 
 # Logging
 
-This project uses [kotlin-logging](https://github.com/MicroUtils/kotlin-logging). On JVM this needs a logging backend.
-You can use for example `implementation("ch.qos.logback:logback-classic:<version>")`.
+This project uses [Lognity](https://gitlab.com/connect2x/lognity) for logging.
+Lognity is highly configurable and integrates with existing libraries and APIs like java.logging, slf4j and Ktor.

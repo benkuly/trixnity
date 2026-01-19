@@ -1,16 +1,16 @@
 package de.connect2x.trixnity.clientserverapi.client
 
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.serialization.createMatrixEventJson
+import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import de.connect2x.trixnity.core.serialization.events.default
+import de.connect2x.trixnity.utils.RetryFlowDelayConfig
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
-import de.connect2x.trixnity.core.model.UserId
-import de.connect2x.trixnity.core.serialization.createMatrixEventJson
-import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
-import de.connect2x.trixnity.core.serialization.events.default
-import de.connect2x.trixnity.utils.RetryFlowDelayConfig
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
