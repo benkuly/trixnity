@@ -1,8 +1,6 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    `maven-publish`
-    signing
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -25,7 +23,7 @@ kotlin {
         }
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
+                implementation(sharedLibs.kotlin.test)
                 implementation(sharedLibs.kotlinx.coroutines.test)
                 implementation(sharedLibs.kotest.assertions.core)
             }

@@ -3,10 +3,8 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("com.android.library")
-    kotlin("multiplatform")
-    `maven-publish`
-    signing
+    builtin(sharedLibs.plugins.android.library)
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
@@ -38,7 +36,7 @@ kotlin {
         val logbackMain by getting
 
         commonMain.dependencies {
-            api(kotlin("test"))
+            api(sharedLibs.kotlin.test)
             api(sharedLibs.kotlinx.coroutines.test)
             api(sharedLibs.kotest.assertions.core)
             api(libs.oshai.logging)

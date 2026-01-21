@@ -1,25 +1,26 @@
 import de.connect2x.conventions.*
+import io.github.gradlenexus.publishplugin.NexusPublishExtension
+import io.github.gradlenexus.publishplugin.NexusPublishPlugin
+import kotlinx.kover.gradle.plugin.KoverGradlePlugin
+import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.DokkaPlugin
 import java.time.Duration
 import java.time.ZonedDateTime
 
-buildscript {
-    dependencies {
-        classpath(libs.kotlin.gradle.plugin.api)
-    }
-}
-
 plugins {
-    `maven-publish`
-    signing
-    alias(sharedLibs.plugins.dokka)
-    alias(sharedLibs.plugins.kotlinx.kover)
-    alias(libs.plugins.download).apply(false)
-    alias(sharedLibs.plugins.mokkery).apply(false)
     alias(sharedLibs.plugins.c2xConventions)
-    alias(sharedLibs.plugins.kotlin.serialization) apply false
 
+    alias(sharedLibs.plugins.dokka)
     alias(sharedLibs.plugins.gradleNexus)
+    alias(sharedLibs.plugins.kotlinx.kover)
+
+    alias(libs.plugins.download) apply false
+
+    builtin(sharedLibs.plugins.kotlin.multiplatform) apply false
+    builtin(sharedLibs.plugins.android.library) apply false
+
+    alias(sharedLibs.plugins.kotlin.serialization) apply false
+    alias(sharedLibs.plugins.mokkery) apply false
 }
 
 allprojects {
@@ -30,18 +31,19 @@ allprojects {
 }
 
 subprojects {
-    if (project.name.startsWith("trixnity-")) return@subprojects
+    if (!project.name.startsWith("trixnity-")) return@subprojects
 
     apply<MavenPublishPlugin>()
     apply<SigningPlugin>()
     apply<DokkaPlugin>()
+    apply<KoverGradlePlugin>()
 
-    signing {
+    extensions.configure<SigningExtension> {
         isRequired = isRelease
         signPublications()
     }
 
-    dokka {
+    extensions.configure<DokkaExtension> {
         moduleName = project.name
         pluginsConfiguration {
             html {
@@ -58,23 +60,21 @@ subprojects {
         onlyIf { isCI }
     }
 
-    publishing {
+    extensions.configure<PublishingExtension> {
         repositories {
             authenticatedPackageRegistry()
         }
-        publications.configureEach {
-            if (this is MavenPublication) {
-                pom {
-                    apache2()
-                    c2xOrganization()
-                    setProjectInfo(
-                        name = project.name,
-                        description = "Multiplatform Kotlin SDK for matrix-protocol",
-                        repository = "connect2x/trixnity/trixnity",
-                    )
-                }
-                if (isCI) artifact(javadocJar)
+        publications.withType<MavenPublication>().configureEach {
+            pom {
+                apache2()
+                c2xOrganization()
+                setProjectInfo(
+                    name = project.name,
+                    description = "Multiplatform Kotlin SDK for matrix-protocol",
+                    repository = "connect2x/trixnity/trixnity",
+                )
             }
+            if (isCI) artifact(javadocJar)
         }
     }
 }
@@ -192,12 +192,8 @@ kover {
     }
 }
 
-
-// TODO this causes a gradle incompatibility
-//  Unable to load class 'io.github.gradlenexus.publishplugin.NexusPublishExtension'
-//  io.github.gradlenexus.publishplugin.NexusPublishExtension
-//nexusPublishing {
-//    authenticatedSonatype()
-//    connectTimeout = Duration.ofSeconds(30)
-//    clientTimeout = Duration.ofMinutes(45)
-//}
+nexusPublishing {
+    authenticatedSonatype()
+    connectTimeout = Duration.ofSeconds(30)
+    clientTimeout = Duration.ofMinutes(45)
+}

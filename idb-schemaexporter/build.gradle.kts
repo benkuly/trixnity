@@ -3,7 +3,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    kotlin("multiplatform")
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
 }
 
 kotlin {

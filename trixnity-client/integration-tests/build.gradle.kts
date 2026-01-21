@@ -2,8 +2,8 @@ import org.jetbrains.kotlin.konan.target.HostManager
 import de.connect2x.conventions.isCI
 
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -26,7 +26,7 @@ kotlin {
                 implementation(projects.trixnityClient.trixnityClientRepositoryRoom)
                 implementation(projects.trixnityClient.trixnityClientCryptodriverVodozemac)
                 implementation(libs.androidx.sqlite.bundled)
-                implementation(kotlin("test"))
+                implementation(sharedLibs.kotlin.test)
                 implementation(sharedLibs.kotest.assertions.core)
                 implementation(libs.oshai.logging)
             }

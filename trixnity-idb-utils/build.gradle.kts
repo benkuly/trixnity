@@ -3,9 +3,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    kotlin("multiplatform")
-    `maven-publish`
-    signing
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
 }
 
 kotlin {

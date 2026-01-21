@@ -1,11 +1,8 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(sharedLibs.plugins.kotlinx.kover)
     alias(libs.plugins.room)
-    `maven-publish`
-    signing
 }
 
 kotlin {

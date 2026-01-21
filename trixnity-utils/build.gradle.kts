@@ -1,8 +1,5 @@
 plugins {
-    kotlin("multiplatform")
-    alias(sharedLibs.plugins.kotlinx.kover)
-    `maven-publish`
-    signing
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
