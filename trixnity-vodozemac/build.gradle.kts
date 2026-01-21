@@ -46,7 +46,7 @@ kotlin {
         }
         webMain.dependencies {
             implementation(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
-            implementation(libs.kotlin.wrappers.browser)
+            implementation(sharedLibs.kotlin.browser)
         }
 
         commonTest.dependencies {

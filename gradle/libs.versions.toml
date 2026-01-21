@@ -3,9 +3,7 @@
 trixnity = "5.0.0"
 
 ### build ###
-kotlin = "2.2.21" # https://github.com/JetBrains/kotlin/releases
 ksp = "2.3.3" # https://github.com/google/ksp/releases
-androidGradlePlugin = "8.12.0" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 
 ### native bindings ###
@@ -47,12 +45,6 @@ androidTargetSdk = "36"
 androidMinSdk = "24"
 
 [libraries]
-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
-kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
-kotlin-gradle-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
-android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
-kotlin-wrappers-browser = { module = "org.jetbrains.kotlin-wrappers:kotlin-browser" }
-kotlin-wrappers-node = { module = "org.jetbrains.kotlin-wrappers:kotlin-node" }
 
 ### libraries ###
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
