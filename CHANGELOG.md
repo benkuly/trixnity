@@ -9,30 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add Migration interface to run migrations registered in DI
+- Add Migration interface to run repository migrations registered in DI
 - Add new module trixnity-crypto-driver to allow for multiple crypto implementations (libolm, vodozemac, ...)
 - Add new module trixnity-crypto-driver-libolm for a driver based on libolm
-- Add trixnity-vodozemac implementation
-- Support for the OAuth2-based authentication API since Matrix v1.15
-- Support for account management deep-linking (MSC4191)
+- Add new module trixnity-crypto-driver-vodozemac for a driver based on vodozemac
+- Add extensible authentication including OAuth2 support
 - Completely new NotificationService
-- Completely new authentication approach
-- Support of OAuth2 login
 - Support for Matrix 1.14, 1.15, 1.16, 1.17
 - Support extensible events
-- Check IDB Schema with Tests
+- Check IndexedDB Schema with Tests
 - Support dehydrated devices as specified in MSC3814 additionally to the already existing compatibility mode for libolm
 
 ### Changed
 
-- Make trixnity-olm API non suspend
-- Make trixnity-olm API accept null pickle keys
-- Add StringWrapper's for more type safety
-- Switch to trixnity-crypto-driver interface instead trixnity-olm
-- Bump Dependencies (Kotlin 2.2.21)
+- New API for creating a MatrixCLient
+- Bump Dependencies
 - Implement IndexedDBMediaStore without juullabs indexeddb
-- Moved Serializers into serialized structures
-- Various refactorings
+- Various refactorings, code cleanups and improvements
 
 ### Deprecated
 
@@ -44,11 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed cache timing issues (full or mapping cache)
 - Fixed cache cancellation issues (full or mapping cache)
-- Fixed calculation of emojis for verification
-- Fixed gradle warnings
-- Fixed gradle warnings(even more fixes)
 - Fix joining upgraded room, when not invited to it
-- Fix vodozemac library not found on silicon macs
 
 ### Security
 
