@@ -7,9 +7,8 @@ import java.security.MessageDigest
 import java.util.*
 
 plugins {
-    kotlin("multiplatform")
-    id("com.android.library")
-    trixnity.publish
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    builtin(sharedLibs.plugins.android.library)
 }
 
 registerLibvodozemac(
@@ -28,7 +27,6 @@ registerLibvodozemac(
 )
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addAndroidTarget()
     addNativeTargets()

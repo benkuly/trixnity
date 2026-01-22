@@ -1,14 +1,11 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.kotlinxKover)
     alias(libs.plugins.room)
-    trixnity.publish
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     // does not use addNativeTargets() because some ar not supported yet
     addNativeAppleTargets()
@@ -37,7 +34,7 @@ kotlin {
 
                 implementation(libs.androidx.sqlite.bundled)
 
-                implementation(libs.kotest.assertions.core)
+                implementation(sharedLibs.kotest.assertions.core)
             }
         }
         jvmTest {

@@ -1,12 +1,9 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    alias(libs.plugins.kotlinxKover)
-    trixnity.publish
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     linuxX64()
 
@@ -19,11 +16,11 @@ kotlin {
                 api(projects.trixnityApiServer)
                 api(projects.trixnityApplicationserviceapi.trixnityApplicationserviceapiModel)
 
-                implementation(libs.ktor.server.core)
-                implementation(libs.ktor.server.contentNegotiation)
-                implementation(libs.ktor.server.resources)
-                implementation(libs.ktor.server.auth)
-                implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(sharedLibs.ktor.server.core)
+                implementation(sharedLibs.ktor.server.contentNegotiation)
+                implementation(sharedLibs.ktor.server.resources)
+                implementation(sharedLibs.ktor.server.auth)
+                implementation(sharedLibs.ktor.serialization.kotlinx.json)
 
                 implementation(libs.oshai.logging)
             }
@@ -31,7 +28,7 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(projects.trixnityTestUtils)
-                implementation(libs.ktor.server.testHost)
+                implementation(sharedLibs.ktor.server.testHost)
             }
         }
     }

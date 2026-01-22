@@ -3,9 +3,8 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
-    id("com.android.library")
-    kotlin("multiplatform")
-    trixnity.publish
+    builtin(sharedLibs.plugins.android.library)
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
@@ -25,7 +24,6 @@ kotlin {
         }
     }
 
-    jvmToolchain()
     addJvmTarget()
     addAndroidTarget()
     addJsTarget(rootDir)
@@ -47,13 +45,13 @@ kotlin {
             implementation(projects.trixnityVodozemac.trixnityVodozemacBinaries)
         }
         webMain.dependencies {
-            implementation(project.dependencies.platform(libs.kotlin.wrappers.bom))
-            implementation(libs.kotlin.wrappers.browser)
+            implementation(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
+            implementation(sharedLibs.kotlin.browser)
         }
 
         commonTest.dependencies {
-            implementation(libs.kotlin.test)
-            implementation(libs.kotlinx.coroutines.test)
+            implementation(sharedLibs.kotlin.test)
+            implementation(sharedLibs.kotlinx.coroutines.test)
         }
     }
 }

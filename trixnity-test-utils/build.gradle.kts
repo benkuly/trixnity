@@ -3,13 +3,11 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("com.android.library")
-    kotlin("multiplatform")
-    trixnity.publish
+    builtin(sharedLibs.plugins.android.library)
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
     addAndroidTarget()
@@ -38,14 +36,14 @@ kotlin {
         val logbackMain by getting
 
         commonMain.dependencies {
-            api(kotlin("test"))
-            api(libs.kotlinx.coroutines.test)
-            api(libs.kotest.assertions.core)
+            api(sharedLibs.kotlin.test)
+            api(sharedLibs.kotlinx.coroutines.test)
+            api(sharedLibs.kotest.assertions.core)
             api(libs.oshai.logging)
         }
 
         logbackMain.dependencies {
-            implementation(libs.slf4j.api)
+            implementation(sharedLibs.slf4j.api)
             implementation(libs.logback.classic)
         }
 

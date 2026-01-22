@@ -1,10 +1,9 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
     addNativeTargets()
@@ -20,15 +19,15 @@ kotlin {
 
                 implementation(libs.oshai.logging)
 
-                api(libs.ktor.client.mock)
-                implementation(libs.ktor.resources)
+                api(sharedLibs.ktor.client.mock)
+                implementation(sharedLibs.ktor.resources)
 
-                implementation(libs.kotest.assertions.core)
+                implementation(sharedLibs.kotest.assertions.core)
             }
         }
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
+                implementation(sharedLibs.kotlin.test)
             }
         }
         jvmTest {

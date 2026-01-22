@@ -2,18 +2,17 @@
 
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
+import de.connect2x.conventions.asAAR
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
-    id("com.android.library")
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
+    builtin(sharedLibs.plugins.android.library)
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
     alias(libs.plugins.download)
-    alias(libs.plugins.kotlinxKover)
-    trixnity.publish
 }
 
 val olmBinariesDirs = TrixnityOlmBinariesDirs(project, libs.versions.trixnityOlmBinaries.get())
@@ -113,7 +112,6 @@ val desktopOlmLibs by tasks.registering(Jar::class) {
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addAndroidTarget()
     addJsTarget(rootDir)
@@ -168,25 +166,25 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(projects.trixnityCryptoCore)
-                implementation(libs.kotlinx.serialization.json)
-                implementation(libs.ktor.utils)
+                implementation(sharedLibs.kotlinx.serialization.json)
+                implementation(sharedLibs.ktor.utils)
                 implementation(libs.oshai.logging)
             }
         }
         // TODO: proper kotlin multiplatform variant of using jna
         val jnaMain by getting {
             dependencies {
-                compileOnly(libs.jna)
+                compileOnly(sharedLibs.jna)
             }
         }
         androidMain {
             dependencies {
-                implementation(libs.jna.get().toString() + "@aar")
+                implementation(sharedLibs.jna.asProvider().asAAR())
             }
         }
         jvmMain {
             dependencies {
-                implementation(libs.jna.get().toString() + "@jar")
+                implementation(sharedLibs.jna.asProvider().asJar())
             }
         }
         jsMain {
@@ -207,7 +205,7 @@ kotlin {
         androidUnitTest {
             dependencies {
                 implementation(files(desktopOlmLibs))
-                implementation(libs.jna.get().toString() + "@jar")
+                implementation(sharedLibs.jna.asProvider().asJar())
             }
         }
         androidInstrumentedTest {
@@ -217,3 +215,5 @@ kotlin {
         }
     }
 }
+
+private fun Provider<MinimalExternalModuleDependency>.asJar(): Provider<String> = map { "$it@jar" }

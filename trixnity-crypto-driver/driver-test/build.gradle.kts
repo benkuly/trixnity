@@ -1,9 +1,8 @@
 plugins {
-    kotlin("multiplatform")
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
     addNativeTargets()
