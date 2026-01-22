@@ -32,7 +32,7 @@ sidebar_position: 12
     - [trixnity-client-cryptodriver-libolm](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-cryptodriver-libolm)
       using [libolm](https://gitlab.matrix.org/matrix-org/olm).
     - [trixnity-client-cryptostore-vodozemac](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-cryptostore-vodozemac)
-      using [vodozemac](https://github.com/matrix-org/vodozemac).
+      using [vodozemac](https://github.com/matrix-org/vodozemac). Includes migration from `cryptodriver-libolm`.
 - [x] exchangeable authentication
     - [x] classic login
     - [x] OAuth2-based login
