@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Moved from net.folivo to de.connect2x
 - New API for creating a MatrixCLient
 - Bump Dependencies
 - Implement IndexedDBMediaStore without juullabs indexeddb
