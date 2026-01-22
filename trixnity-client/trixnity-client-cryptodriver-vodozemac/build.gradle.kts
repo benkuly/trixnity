@@ -1,11 +1,9 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    trixnity.publish
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addNativeTargets()
     addJsTarget(rootDir)
@@ -25,9 +23,9 @@ kotlin {
         }
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
-                implementation(libs.kotlinx.coroutines.test)
-                implementation(libs.kotest.assertions.core)
+                implementation(sharedLibs.kotlin.test)
+                implementation(sharedLibs.kotlinx.coroutines.test)
+                implementation(sharedLibs.kotest.assertions.core)
             }
         }
     }

@@ -49,64 +49,22 @@ include("trixnity-idb-utils")
 include("ktor-test-utils")
 include("idb-schemaexporter")
 
-buildCache {
-    val buildCacheUrl = System.getenv("GRADLE_BUILD_CACHE_URL")
-    local {
-        isEnabled = buildCacheUrl == null
-        directory = File(rootDir, ".gradle").resolve("build-cache")
-    }
-    remote<HttpBuildCache> {
-        isEnabled = buildCacheUrl != null
-        if (buildCacheUrl != null) {
-            url = uri(buildCacheUrl)
-            isPush = true
-            credentials {
-                username = System.getenv("GRADLE_BUILD_CACHE_USERNAME")
-                password = System.getenv("GRADLE_BUILD_CACHE_PASSWORD")
-            }
-        }
-    }
-}
-
 pluginManagement {
     repositories {
-        val dependencyCacheUrl = System.getenv("GRADLE_DEPENDENCY_CACHE_URL")
-        if (dependencyCacheUrl != null)
-            maven {
-                url = uri(dependencyCacheUrl)
-                authentication {
-                    credentials {
-                        username = System.getenv("GRADLE_DEPENDENCY_CACHE_USERNAME")
-                        password = System.getenv("GRADLE_DEPENDENCY_CACHE_PASSWORD")
-                    }
-                }
-            }
-        mavenCentral()
         gradlePluginPortal()
-        google()
+        maven("https://gitlab.com/api/v4/projects/68438621/packages/maven") // c2x Conventions
     }
 }
 
 dependencyResolutionManagement {
     repositories {
-        val dependencyCacheUrl = System.getenv("GRADLE_DEPENDENCY_CACHE_URL")
-        if (dependencyCacheUrl != null)
-            maven {
-                url = uri(dependencyCacheUrl)
-                authentication {
-                    credentials {
-                        username = System.getenv("GRADLE_DEPENDENCY_CACHE_USERNAME")
-                        password = System.getenv("GRADLE_DEPENDENCY_CACHE_PASSWORD")
-                    }
-                }
-            }
-        mavenCentral()
-        google()
+        maven("https://gitlab.com/api/v4/projects/68438621/packages/maven") // c2x Conventions
     }
 }
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version ("1.0.0") // https://github.com/gradle/foojay-toolchains/tags
+    id("de.connect2x.conventions.c2x-settings-plugin") version "20260120.150206"
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

@@ -1,10 +1,8 @@
 plugins {
-    kotlin("multiplatform")
-    trixnity.publish
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget()
     addNativeTargets()
     addJsTarget(rootDir)

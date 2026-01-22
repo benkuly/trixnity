@@ -1,12 +1,9 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-
-    trixnity.publish
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    jvmToolchain()
     addJsTarget(rootDir, nodeJsEnabled = false)
 
     sourceSets {
@@ -24,7 +21,7 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityTestUtils)
                 implementation(projects.idbSchemaexporter)
-                implementation(libs.kotest.assertions.json)
+                implementation(sharedLibs.kotest.assertions.json)
             }
         }
     }

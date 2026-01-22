@@ -3,12 +3,10 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    kotlin("multiplatform")
-    trixnity.publish
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
-    jvmToolchain()
     addJsTarget(rootDir, nodeJsEnabled = false)
 
     // TODO: add wasm helper in buildSrc
@@ -16,9 +14,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project.dependencies.platform(libs.kotlin.wrappers.bom))
-            api(libs.kotlin.wrappers.browser)
-            api(libs.kotlinx.coroutines.core)
+            api(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
+            api(sharedLibs.kotlin.browser)
+            api(sharedLibs.kotlinx.coroutines.core)
         }
     }
 }

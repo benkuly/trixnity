@@ -1,12 +1,12 @@
 import org.jetbrains.kotlin.konan.target.HostManager
+import de.connect2x.conventions.isCI
 
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
+    builtin(sharedLibs.plugins.kotlin.multiplatform)
+    alias(sharedLibs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    jvmToolchain()
     addJvmTarget(testEnabled = (isCI && HostManager.hostIsMac).not()) {
         maxHeapSize = "8g"
         maxParallelForks = if (isCI) 3 else 1
@@ -26,15 +26,15 @@ kotlin {
                 implementation(projects.trixnityClient.trixnityClientRepositoryRoom)
                 implementation(projects.trixnityClient.trixnityClientCryptodriverVodozemac)
                 implementation(libs.androidx.sqlite.bundled)
-                implementation(kotlin("test"))
-                implementation(libs.kotest.assertions.core)
+                implementation(sharedLibs.kotlin.test)
+                implementation(sharedLibs.kotest.assertions.core)
                 implementation(libs.oshai.logging)
             }
         }
         jvmTest {
             dependencies {
-                implementation(libs.ktor.client.java)
-                implementation(libs.ktor.client.logging)
+                implementation(sharedLibs.ktor.client.java)
+                implementation(sharedLibs.ktor.client.logging)
                 implementation(libs.testcontainers)
                 implementation(libs.testcontainers.postgresql)
                 implementation(libs.testcontainers.junitJupiter)
