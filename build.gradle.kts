@@ -1,8 +1,10 @@
 import com.vanniktech.maven.publish.MavenPublishPlugin
 import de.connect2x.conventions.*
 import kotlinx.kover.gradle.plugin.KoverGradlePlugin
+import org.gradle.kotlin.dsl.configure
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.DokkaPlugin
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import java.time.ZonedDateTime
 
 plugins {
@@ -36,6 +38,12 @@ subprojects {
     apply<KoverGradlePlugin>()
 
     defaultPublishing()
+
+    plugins.withId(PluginIds.KOTLIN_MULTIPLATFORM) {
+        extensions.configure<KotlinMultiplatformExtension> {
+            enableAbiChecker("TrixnityPrivateApi", "de.connect2x.trixnity.utils")
+        }
+    }
 
     extensions.configure<DokkaExtension> {
         moduleName = project.name
