@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Various refactorings, code cleanups and improvements
 - SDK: migrate from kotlin-logging to lognity
 - Use c2x conventions for configuration and publishing
+- Update c2x conventions
 
 ### Deprecated
 
