@@ -1,5 +1,5 @@
-import de.connect2x.conventions.*
 import com.vanniktech.maven.publish.MavenPublishPlugin
+import de.connect2x.conventions.*
 import kotlinx.kover.gradle.plugin.KoverGradlePlugin
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.DokkaPlugin
@@ -22,7 +22,7 @@ plugins {
 }
 
 allprojects {
-    group = "de.connect2x"
+    group = "de.connect2x.trixnity"
     version = withVersionSuffix(rootProject.libs.versions.trixnity)
     if (System.getenv("WITH_LOCK")?.toBoolean() == true) defaultDependencyLocking()
     configureJava(17)

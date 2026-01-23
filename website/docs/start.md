@@ -13,7 +13,7 @@ Select from [modules](/docs/modules) the dependency you need and add it to you p
 val trixnityVersion = "x.x.x"
 
 fun trixnity(module: String, version: String = trixnityVersion) =
-    "de.connect2x:trixnity-$module:$version"
+    "de.connect2x.trixnity:trixnity-$module:$version"
 
 // for example:
 implementation(trixnity("client"))
@@ -26,10 +26,10 @@ modules:
 val trixnityVersion = "x.x.x"
 
 dependencies {
-    implementation(platform("de.connect2x:trixnity-bom:$trixnityVersion"))
+    implementation(platform("de.connect2x.trixnity:trixnity-bom:$trixnityVersion"))
 
     // Trixnity dependency versions are covered by the Trixnity BOM
-    implementation("de.connect2x:trixnity-client")
+    implementation("de.connect2x.trixnity:trixnity-client")
 }
 ```
 
@@ -54,9 +54,11 @@ MatrixClientServerApiClientImpl().use {
 
 ### Browser Tests
 
-If you are running Kotlin Browser tests using Karma, you will most likely run into the following [bug](https://github.com/karma-runner/karma/issues/3804).
+If you are running Kotlin Browser tests using Karma, you will most likely run into the
+following [bug](https://github.com/karma-runner/karma/issues/3804).
 
-To work around this issue, take a look at this [config](https://gitlab.com/trixnity/trixnity/-/blob/main/karma.config.d/karma-esm.js).
+To work around this issue, take a look at
+this [config](https://gitlab.com/trixnity/trixnity/-/blob/main/karma.config.d/karma-esm.js).
 
 ## Examples
 

@@ -195,7 +195,7 @@ changelog:
   tags: [ "connect2x-linux" ]
   image:
     name: alpine/git:latest
-    entrypoint: [""] # tell gitlab to use `sh` instead of `git sh`
+    entrypoint: [ "" ] # tell gitlab to use `sh` instead of `git sh`
   rules:
     - *if-merge-request
   script:
@@ -211,6 +211,7 @@ changelog:
 publish:mac-dev:
   stage: publish
   tags: [ "connect2x-mac" ]
+  timeout: 2h
   cache:
     - *cache
   rules:
@@ -223,6 +224,7 @@ publish:mac-dev:
 publish:linux-dev:
   stage: publish
   tags: [ "connect2x-linux" ]
+  timeout: 2h
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache
@@ -240,6 +242,7 @@ publish:linux-dev:
 publish:release:
   stage: publish
   tags: [ "connect2x-mac" ]
+  timeout: 2h
   cache:
     - *cache
   rules:
