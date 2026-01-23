@@ -1,12 +1,10 @@
 package de.connect2x.trixnity.test.utils
 
-import io.github.oshai.kotlinlogging.Level
+import de.connect2x.lognity.api.backend.Backend
+import de.connect2x.lognity.api.config.ConfigBuilder
+import de.connect2x.lognity.api.logger.Level
+import de.connect2x.lognity.backend.DefaultBackend
 import kotlin.test.BeforeTest
-
-internal expect fun setupTestLogging(
-    defaultLogLevel: Level,
-    packageLogLevels: Map<String, Level>,
-)
 
 /**
  * The precedence works like the following:
@@ -36,9 +34,13 @@ interface LoggedTest {
 
     @BeforeTest
     fun setupLogged() {
-        setupTestLogging(
-            defaultLogLevel,
-            packageLogLevels,
-        )
+        // TODO packageLogLevels
+        Backend.set(DefaultBackend)
+        Backend.configSpec = {
+            level = defaultLogLevel
+            configure(pattern = "{{levelColor}}>>  {{levelSymbol}}\t{{hh}}:{{mm}}:{{ss}}.{{SSS}} ({{name}} @ {{threadId}}) {{message}}{{r}}",)
+        }
     }
 }
+
+internal expect fun ConfigBuilder.configure(pattern: String)

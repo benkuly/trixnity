@@ -18,7 +18,7 @@ kotlin {
                 implementation(projects.trixnityClient)
 
                 api(libs.okio)
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
             }
         }
         jsMain {
@@ -30,11 +30,6 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityTestUtils)
                 implementation(libs.okio.fakefilesystem)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.logback.classic)
             }
         }
     }

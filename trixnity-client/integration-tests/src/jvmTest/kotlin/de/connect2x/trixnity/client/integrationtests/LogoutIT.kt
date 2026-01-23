@@ -13,11 +13,12 @@ import de.connect2x.trixnity.clientserverapi.client.UIA
 import de.connect2x.trixnity.clientserverapi.model.authentication.IdentifierType.User
 import de.connect2x.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.Test
 
 @Testcontainers
-class LogoutIT {
+class LogoutIT : TrixnityBaseTest() {
 
     @Test
     fun shouldLogoutOnDeviceDeletion(): Unit = runBlocking(Dispatchers.Default) {

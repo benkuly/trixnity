@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.store.*
 import de.connect2x.trixnity.client.store.KeySignatureTrustLevel.*
@@ -23,7 +23,7 @@ import de.connect2x.trixnity.crypto.sign.*
 import de.connect2x.trixnity.utils.decodeUnpaddedBase64Bytes
 import kotlin.jvm.JvmName
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.key.KeyTrustService")
+private val log = Logger("de.connect2x.trixnity.client.key.KeyTrustService")
 
 interface KeyTrustService {
 

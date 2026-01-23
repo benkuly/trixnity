@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.core.serialization.events
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -19,7 +19,7 @@ import de.connect2x.trixnity.core.serialization.AddFieldsSerializer
 import de.connect2x.trixnity.core.serialization.canonicalJson
 
 private val log =
-    KotlinLogging.logger("de.connect2x.trixnity.core.serialization.events.PersistentMessageDataUnit")
+    Logger("de.connect2x.trixnity.core.serialization.events.PersistentMessageDataUnit")
 
 class PersistentMessageDataUnitSerializer(
     messageEventContentSerializers: Set<EventContentSerializerMapping<MessageEventContent>>,

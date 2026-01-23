@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.store.cache
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Level
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -8,7 +9,7 @@ import kotlinx.coroutines.launch
 import de.connect2x.trixnity.core.EventHandler
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.store.cache.ObservableCacheStatistic")
+private val log = Logger("de.connect2x.trixnity.client.store.cache.ObservableCacheStatistic")
 
 data class ObservableCacheStatistic(
     val name: String,
@@ -29,7 +30,7 @@ class ObservableCacheStatisticCollector : EventHandler {
     internal fun addCache(cache: ObservableCache<*, *, *>) = caches.add(cache)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        if (log.isTraceEnabled())
+        if (log.level <= Level.TRACE)
             scope.launch {
                 while (isActive) {
                     delay(10.seconds)

@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.verification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
@@ -26,7 +26,7 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent.Ve
 import de.connect2x.trixnity.crypto.driver.CryptoDriver
 import kotlin.time.Clock
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.verification.ActiveUserVerification")
+private val log = Logger("de.connect2x.trixnity.client.verification.ActiveUserVerification")
 
 interface ActiveUserVerification : ActiveVerification {
     val requestEventId: EventId

@@ -1,6 +1,8 @@
 package de.connect2x.trixnity.client.room
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
+import de.connect2x.lognity.api.logger.warn
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
@@ -29,7 +31,7 @@ import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.room.OutboxMessageEventHandler")
+private val log = Logger("de.connect2x.trixnity.client.room.OutboxMessageEventHandler")
 
 class OutboxMessageEventHandler(
     private val config: MatrixClientConfiguration,

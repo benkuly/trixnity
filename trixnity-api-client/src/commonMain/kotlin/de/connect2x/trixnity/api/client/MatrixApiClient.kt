@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.api.client
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.*
@@ -22,7 +22,7 @@ import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.api.client.MatrixApiClient")
+private val log = Logger("de.connect2x.trixnity.api.client.MatrixApiClient")
 
 open class MatrixApiClient(
     val contentMappings: EventContentSerializerMappings = EventContentSerializerMappings.default,

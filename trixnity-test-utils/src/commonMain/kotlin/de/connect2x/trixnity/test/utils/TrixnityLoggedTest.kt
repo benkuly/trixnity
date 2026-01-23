@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.test.utils
 
-import io.github.oshai.kotlinlogging.Level
+import de.connect2x.lognity.api.logger.Level
 
 interface TrixnityLoggedTest : LoggedTest {
 

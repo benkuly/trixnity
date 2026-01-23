@@ -16,6 +16,7 @@ import de.connect2x.trixnity.client.store.repository.exposed.exposed
 import de.connect2x.trixnity.core.model.events.InitialStateEvent
 import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
 import de.connect2x.trixnity.core.model.keys.KeyAlgorithm
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.junit.jupiter.api.fail
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -26,7 +27,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
-class FallbackKeyIT {
+class FallbackKeyIT : TrixnityBaseTest() {
 
     private lateinit var startedClient1: StartedClient
     private lateinit var startedClient2: StartedClient

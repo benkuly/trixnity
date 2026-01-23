@@ -1,6 +1,8 @@
 package de.connect2x.trixnity.clientserverapi.client
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Level
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.*
@@ -26,7 +28,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.clientserverapi.client.SyncApiClient")
+private val log = Logger("de.connect2x.trixnity.clientserverapi.client.SyncApiClient")
 
 interface SyncBatchTokenStore {
     suspend fun getSyncBatchToken(): String?
@@ -196,7 +198,7 @@ class SyncApiClientImpl(
 
     init {
         coroutineScope.launch { syncLoop() }
-        if (log.isInfoEnabled()) {
+        if (log.level <= Level.INFO) {
             coroutineScope.launch {
                 currentSyncState.collect {
                     log.info { "current sync state: $it" }

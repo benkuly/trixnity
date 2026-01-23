@@ -1,6 +1,8 @@
 package de.connect2x.trixnity.clientserverapi.client
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Level
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
@@ -28,7 +30,7 @@ import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiBaseClient")
+private val log = Logger("de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiBaseClient")
 
 @Serializable
 data class LogoutInfo(
@@ -102,7 +104,7 @@ class MatrixClientServerApiBaseClient(
                 (throwable is MatrixServerException && throwable.statusCode == HttpStatusCode.TooManyRequests)
                     .also {
                         if (it) {
-                            log.warn(if (log.isDebugEnabled()) throwable else null) { "rate limit exceeded" }
+                            log.warn(if (log.level <= Level.DEBUG) throwable else null) { "rate limit exceeded" }
                         }
                     }
             }

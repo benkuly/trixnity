@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.util.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -46,7 +46,7 @@ import de.connect2x.trixnity.crypto.sign.sign
 import de.connect2x.trixnity.utils.encodeUnpaddedBase64
 import kotlin.random.Random
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.key.KeyService")
+private val log = Logger("de.connect2x.trixnity.client.key.KeyService")
 
 interface KeyService {
     val bootstrapRunning: StateFlow<Boolean>

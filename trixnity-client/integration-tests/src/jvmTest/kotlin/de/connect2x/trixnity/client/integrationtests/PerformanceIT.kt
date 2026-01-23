@@ -4,7 +4,7 @@ import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -29,6 +29,7 @@ import de.connect2x.trixnity.core.model.events.m.room.EncryptedMessageEventConte
 import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.subscribeEventList
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.utils.nextString
 import org.jetbrains.exposed.sql.Database
 import org.openjdk.jol.info.GraphStats
@@ -46,10 +47,10 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.integrationtests.PerformanceIT")
+private val log = Logger("de.connect2x.trixnity.client.integrationtests.PerformanceIT")
 
 @Testcontainers
-class PerformanceIT {
+class PerformanceIT : TrixnityBaseTest() {
 
     @Test
     fun realmVsExposedSyncSpeed(): Unit = runBlocking(Dispatchers.Default) {

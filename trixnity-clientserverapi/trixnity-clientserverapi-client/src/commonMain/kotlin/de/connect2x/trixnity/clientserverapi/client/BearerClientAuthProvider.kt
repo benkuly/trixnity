@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.clientserverapi.client
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.client.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.request.*
@@ -17,7 +17,7 @@ import de.connect2x.trixnity.core.ErrorResponse
 import de.connect2x.trixnity.core.MatrixServerException
 import de.connect2x.trixnity.core.decodeErrorResponse
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.clientserverapi.client.BearerMatrixAuthProvider")
+private val log = Logger("de.connect2x.trixnity.clientserverapi.client.BearerMatrixAuthProvider")
 
 abstract class BearerClientAuthProvider<T : BearerTokens>(
     private val store: MatrixClientAuthProviderDataStore,

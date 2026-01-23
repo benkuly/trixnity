@@ -23,9 +23,10 @@ import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.IntByReference
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.libolm.OlmLibraryWrapper")
+private val log = Logger("de.connect2x.trixnity.libolm.OlmLibraryWrapper")
 
 object OlmLibraryWrapper : Library {
     private const val JNA_LIBRARY_NAME: String = "olm"

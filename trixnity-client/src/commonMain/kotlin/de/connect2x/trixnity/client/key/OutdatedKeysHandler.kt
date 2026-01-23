@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import de.connect2x.trixnity.client.CurrentSyncState
@@ -29,7 +30,7 @@ import de.connect2x.trixnity.crypto.sign.SignService
 import de.connect2x.trixnity.crypto.sign.VerifyResult
 import de.connect2x.trixnity.crypto.sign.verify
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.key.OutdatedKeysHandler")
+private val log = Logger("de.connect2x.trixnity.client.key.OutdatedKeysHandler")
 
 class OutdatedKeysHandler(
     private val api: MatrixClientServerApiClient,

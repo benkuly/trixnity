@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.serverserverapi.client
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.client.plugins.api.*
 import io.ktor.http.*
 import io.ktor.http.cio.*
@@ -8,7 +8,7 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.CoroutineScope
 import de.connect2x.trixnity.serverserverapi.model.federation.Media
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.serverserverapi.client.ConvertMediaPlugin")
+private val log = Logger("de.connect2x.trixnity.serverserverapi.client.ConvertMediaPlugin")
 
 val ConvertMediaPlugin = createClientPlugin("ConvertMediaPlugin") {
     transformResponseBody { response, body, requestedType ->

@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.room
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import de.connect2x.trixnity.client.store.GlobalAccountDataStore
@@ -18,7 +18,7 @@ import de.connect2x.trixnity.core.model.events.m.room.Membership.LEAVE
 import de.connect2x.trixnity.core.subscribeEventList
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.room.DirectRoomEventHandler")
+private val log = Logger("de.connect2x.trixnity.client.room.DirectRoomEventHandler")
 
 class DirectRoomEventHandler(
     private val userInfo: UserInfo,

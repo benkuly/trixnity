@@ -17,7 +17,7 @@ kotlin {
 
                 api(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
                 api(sharedLibs.kotlin.browser)
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
             }
         }
         jsTest {

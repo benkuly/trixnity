@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import de.connect2x.trixnity.client.MatrixClientConfiguration
@@ -55,6 +54,8 @@ import de.connect2x.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import de.connect2x.trixnity.crypto.olm.StoredInboundMegolmSession
 import de.connect2x.trixnity.crypto.olm.StoredOlmSession
 import de.connect2x.trixnity.crypto.olm.StoredOutboundMegolmSession
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import de.connect2x.trixnity.test.utils.runTest
 import org.koin.core.Koin
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
@@ -68,7 +69,7 @@ import kotlin.time.Instant
 abstract class RepositoryTestSuite(
     private val customRepositoryTransactionManager: suspend () -> RepositoryTransactionManager? = { null },
     private val repositoriesModule: RepositoriesModule
-) {
+) : TrixnityBaseTest() {
     lateinit var di: Koin
     lateinit var rtm: RepositoryTransactionManager
     lateinit var coroutineScope: CoroutineScope

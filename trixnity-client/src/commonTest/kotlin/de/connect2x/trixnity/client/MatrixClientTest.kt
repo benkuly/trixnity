@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
@@ -248,7 +248,7 @@ class MatrixClientTest : TrixnityBaseTest() {
 
                     }
                 }
-            val log = KotlinLogging.logger("MatrixClientImplTest")
+            val log = Logger("MatrixClientImplTest")
             val cut = MatrixClient.create(
                 repositoriesModule = repositoriesModule,
                 mediaStoreModule = MediaStoreModule.inMemory(),

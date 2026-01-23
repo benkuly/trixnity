@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.user
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -21,7 +21,7 @@ import de.connect2x.trixnity.core.model.events.roomIdOrNull
 import de.connect2x.trixnity.core.subscribeEventList
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.user.UserMemberEventHandler")
+private val log = Logger("de.connect2x.trixnity.client.user.UserMemberEventHandler")
 
 class UserMemberEventHandler(
     private val api: MatrixClientServerApiClient,

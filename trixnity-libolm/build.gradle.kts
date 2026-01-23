@@ -168,7 +168,7 @@ kotlin {
                 implementation(projects.trixnityCryptoCore)
                 implementation(sharedLibs.kotlinx.serialization.json)
                 implementation(sharedLibs.ktor.utils)
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
             }
         }
         // TODO: proper kotlin multiplatform variant of using jna

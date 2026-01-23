@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.room
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filterIsInstance
@@ -28,7 +28,7 @@ import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMap
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
 import de.connect2x.trixnity.utils.KeyedMutex
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.room.TimelineEventHandler")
+private val log = Logger("de.connect2x.trixnity.client.room.TimelineEventHandler")
 
 interface TimelineEventHandler {
     /**

@@ -1,7 +1,7 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
 import com.juul.indexeddb.openDatabase
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 import de.connect2x.trixnity.client.RepositoriesModule
@@ -11,7 +11,7 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 private val log =
-    KotlinLogging.logger("de.connect2x.trixnity.client.store.repository.indexeddb.IndexedDBRepositoriesModule")
+    Logger("de.connect2x.trixnity.client.store.repository.indexeddb.IndexedDBRepositoriesModule")
 
 fun RepositoriesModule.Companion.indexedDB(databaseName: String = "trixnity"): RepositoriesModule = RepositoriesModule {
     log.debug { "create missing tables and columns" }

@@ -31,6 +31,7 @@ import de.connect2x.trixnity.core.model.events.m.Mentions
 import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership.JOIN
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
@@ -38,7 +39,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 @Testcontainers
-class KeyBackupIT {
+class KeyBackupIT : TrixnityBaseTest() {
 
     private lateinit var startedClient1: StartedClient
     private lateinit var startedClient2: StartedClient

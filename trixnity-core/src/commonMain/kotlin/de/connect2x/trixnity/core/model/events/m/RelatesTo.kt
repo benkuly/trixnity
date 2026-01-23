@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.core.model.events.m
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -10,7 +11,7 @@ import kotlinx.serialization.json.*
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.core.model.events.m.RelatesTo")
+private val log = Logger("de.connect2x.trixnity.core.model.events.m.RelatesTo")
 
 @Serializable(with = RelatesTo.Serializer::class)
 sealed interface RelatesTo {

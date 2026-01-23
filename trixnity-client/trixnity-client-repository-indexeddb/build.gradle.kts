@@ -15,7 +15,7 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityClient)
 
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
 
                 api(libs.juulLabs.indexeddb)
             }

@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.server
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.coroutines.*
 import de.connect2x.trixnity.client.store.ServerData
 import de.connect2x.trixnity.client.store.ServerDataStore
@@ -11,7 +12,7 @@ import de.connect2x.trixnity.core.EventHandler
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.server.ServerDataService")
+private val log = Logger("de.connect2x.trixnity.client.server.ServerDataService")
 
 class ServerDataService(
     private val api: MatrixClientServerApiClient,

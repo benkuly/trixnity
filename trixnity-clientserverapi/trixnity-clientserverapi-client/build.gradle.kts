@@ -23,7 +23,7 @@ kotlin {
                 implementation(sharedLibs.ktor.client.resources)
                 implementation(sharedLibs.ktor.serialization.kotlinx.json)
 
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
             }
         }
         commonTest {

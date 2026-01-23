@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.notification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
@@ -29,7 +29,7 @@ import kotlin.time.Duration.Companion.seconds
 import de.connect2x.trixnity.client.notification.Notification as Notification2
 
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.notification.NotificationService")
+private val log = Logger("de.connect2x.trixnity.client.notification.NotificationService")
 
 /**
  * Access and manage user-visible notifications.

@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.crypto.olm
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
@@ -27,7 +28,7 @@ import de.connect2x.trixnity.crypto.sign.SignService
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.crypto.olm.OlmEventHandler")
+private val log = Logger("de.connect2x.trixnity.crypto.olm.OlmEventHandler")
 
 class OlmEventHandler(
     private val userInfo: UserInfo,

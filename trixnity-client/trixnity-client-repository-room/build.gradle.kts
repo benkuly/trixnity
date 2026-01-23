@@ -22,7 +22,7 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityClient)
 
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
 
                 api(libs.androidx.room.runtime)
             }
@@ -35,11 +35,6 @@ kotlin {
                 implementation(libs.androidx.sqlite.bundled)
 
                 implementation(sharedLibs.kotest.assertions.core)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.logback.classic)
             }
         }
     }

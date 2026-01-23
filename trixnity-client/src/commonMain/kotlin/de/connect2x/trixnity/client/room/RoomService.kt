@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.room
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.CurrentSyncState
@@ -39,7 +40,7 @@ import kotlin.time.Duration.Companion.INFINITE
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.room.RoomService")
+private val log = Logger("de.connect2x.trixnity.client.room.RoomService")
 
 interface RoomService {
     val usersTyping: StateFlow<Map<RoomId, TypingEventContent>>

@@ -1,6 +1,8 @@
 package de.connect2x.trixnity.client
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
+import de.connect2x.lognity.api.logger.warn
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -35,7 +37,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.time.Duration
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.MatrixClient")
+private val log = Logger("de.connect2x.trixnity.client.MatrixClient")
 
 interface MatrixClient : AutoCloseable {
     companion object

@@ -1,13 +1,13 @@
 package de.connect2x.trixnity.client.store.cache
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 import de.connect2x.trixnity.utils.concurrentMutableList
 import kotlin.coroutines.CoroutineContext
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.store.cache.CacheTransaction")
+private val log = Logger("de.connect2x.trixnity.client.store.cache.CacheTransaction")
 
 internal class CacheTransaction : CoroutineContext.Element {
     val onCommitActions = concurrentMutableList<suspend () -> Unit>()

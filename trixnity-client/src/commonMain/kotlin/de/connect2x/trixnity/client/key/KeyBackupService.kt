@@ -1,6 +1,8 @@
 package de.connect2x.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.trace
+import de.connect2x.lognity.api.logger.warn
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -39,7 +41,7 @@ import de.connect2x.trixnity.utils.retry
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.key.KeyBackupService")
+private val log = Logger("de.connect2x.trixnity.client.key.KeyBackupService")
 
 interface KeyBackupService {
     /**

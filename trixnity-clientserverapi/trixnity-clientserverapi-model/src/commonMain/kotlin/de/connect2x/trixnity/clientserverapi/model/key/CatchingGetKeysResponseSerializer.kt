@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.clientserverapi.model.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.clientserverapi.model.keys.CatchingGetKeysResponse")
+private val log = Logger("de.connect2x.trixnity.clientserverapi.model.keys.CatchingGetKeysResponse")
 

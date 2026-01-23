@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.testutils
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.client.engine.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.coroutines.ContinuationInterceptor
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.testutils.MockEngineFactory")
+private val log = Logger("de.connect2x.trixnity.testutils.MockEngineFactory")
 
 fun CoroutineScope.scopedMockEngine(
     withDefaultResponse: Boolean = true,

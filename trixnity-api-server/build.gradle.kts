@@ -21,7 +21,7 @@ kotlin {
                 implementation(sharedLibs.ktor.server.statusPages)
                 implementation(sharedLibs.ktor.serialization.kotlinx.json)
 
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
             }
         }
         commonTest {
