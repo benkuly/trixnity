@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump Dependencies
 - Implement IndexedDBMediaStore without juullabs indexeddb
 - Various refactorings, code cleanups and improvements
-- Use the c2x convention plugin
+- Use c2x conventions for configuration and publishing
 
 ### Deprecated
 

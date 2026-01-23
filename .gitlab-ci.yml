@@ -237,51 +237,18 @@ publish:linux-dev:
       dokkaHtmlToWebsite
       --stacktrace
 
-publish:mac:
+publish:release:
   stage: publish
   tags: [ "connect2x-mac" ]
   cache:
     - *cache
   rules:
     - *if-release
-  artifacts:
-    paths:
-      - build/maven-central-bundle
   script:
-    - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew
-      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationTo{Central,Gitlab}Repository
+      publishAllPublicationsToGitLabRepository
+      publishAndReleaseToMavenCentral
       --stacktrace
-
-publish:linux:
-  stage: publish
-  tags: [ "connect2x-linux" ]
-  image: $BUILD_LINUX_IMAGE_NAME
-  cache:
-    - *cache
-  rules:
-    - *if-release
-  artifacts:
-    paths:
-      - build/maven-central-bundle
-  script:
-    - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-    - ./gradlew
-      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationTo{Central,Gitlab}Repository
-      --stacktrace
-
-publish:maven-central:
-  stage: publish
-  needs: [ "publish:linux", "publish:mac" ]
-  tags: [ "connect2x-linux" ]
-  image: ubuntu:latest
-  rules:
-    - *if-release
-  script:
-    - apt-get update && apt-get install -y curl jq zip
-    - cd build/maven-central-bundle && zip -r ../maven-central-bundle.zip . && cd ../..
-    - chmod +x ./publish-to-maven-central.sh
-    - ./publish-to-maven-central.sh
 
 pages:
   stage: website

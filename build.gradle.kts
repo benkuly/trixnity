@@ -1,17 +1,15 @@
 import de.connect2x.conventions.*
-import io.github.gradlenexus.publishplugin.NexusPublishExtension
-import io.github.gradlenexus.publishplugin.NexusPublishPlugin
+import com.vanniktech.maven.publish.MavenPublishPlugin
 import kotlinx.kover.gradle.plugin.KoverGradlePlugin
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.DokkaPlugin
-import java.time.Duration
 import java.time.ZonedDateTime
 
 plugins {
     alias(sharedLibs.plugins.c2xConventions)
 
     alias(sharedLibs.plugins.dokka)
-    alias(sharedLibs.plugins.gradleNexus)
+    alias(sharedLibs.plugins.mavenPublish) apply false
     alias(sharedLibs.plugins.kotlinx.kover)
 
     alias(libs.plugins.download) apply false
@@ -31,17 +29,13 @@ allprojects {
 }
 
 subprojects {
-    if (!project.name.startsWith("trixnity-")) return@subprojects
+    if (!project.name.startsWith("trixnity-") || !buildFile.exists()) return@subprojects
 
     apply<MavenPublishPlugin>()
-    apply<SigningPlugin>()
     apply<DokkaPlugin>()
     apply<KoverGradlePlugin>()
 
-    extensions.configure<SigningExtension> {
-        isRequired = isRelease
-        signPublications()
-    }
+    defaultPublishing()
 
     extensions.configure<DokkaExtension> {
         moduleName = project.name
@@ -53,17 +47,7 @@ subprojects {
         }
     }
 
-    val javadocJar by tasks.registering(Jar::class) {
-        archiveClassifier = "javadoc"
-        dependsOn(tasks.dokkaGeneratePublicationHtml)
-        from(tasks.dokkaGeneratePublicationHtml)
-        onlyIf { isCI }
-    }
-
     extensions.configure<PublishingExtension> {
-        repositories {
-            authenticatedPackageRegistry()
-        }
         publications.withType<MavenPublication>().configureEach {
             pom {
                 apache2()
@@ -74,7 +58,6 @@ subprojects {
                     repository = "connect2x/trixnity/trixnity",
                 )
             }
-            if (isCI) artifact(javadocJar)
         }
     }
 }
@@ -190,10 +173,4 @@ kover {
             includes.classes("de.connect2x.trixnity.*")
         }
     }
-}
-
-nexusPublishing {
-    authenticatedSonatype()
-    connectTimeout = Duration.ofSeconds(30)
-    clientTimeout = Duration.ofMinutes(45)
 }
