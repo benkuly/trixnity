@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 5.0.0
+
+### Added
+
 - Add Migration interface to run repository migrations registered in DI
 - Add new module trixnity-crypto-driver to allow for multiple crypto implementations (libolm, vodozemac, ...)
 - Add new module trixnity-crypto-driver-libolm for a driver based on libolm
@@ -27,11 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump Dependencies
 - Implement IndexedDBMediaStore without juullabs indexeddb
 - Various refactorings, code cleanups and improvements
-- SDK: migrate from kotlin-logging to lognity
-- Use c2x conventions for configuration and publishing
-- Update c2x conventions
-
-### Deprecated
+- Migrate from kotlin-logging to lognity
+- Internal: Use c2x conventions for configuration and publishing
 
 ### Removed
 
@@ -42,8 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cache timing issues (full or mapping cache)
 - Fixed cache cancellation issues (full or mapping cache)
 - Fix joining upgraded room, when not invited to it
-
-### Security
 
 ## 4.22.7
 
