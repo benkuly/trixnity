@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.notification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
@@ -23,7 +23,7 @@ import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMap
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.notification.EventsToNotificationUpdates")
+private val log = Logger("de.connect2x.trixnity.client.notification.EventsToNotificationUpdates")
 
 interface EventsToNotificationUpdates {
     /**

@@ -1,23 +1,31 @@
 package de.connect2x.trixnity.test.utils
 
-import io.github.oshai.kotlinlogging.Level
+import de.connect2x.lognity.api.appender.Filter
 
-private fun isInstrumentationClassPresent(): Boolean {
+import de.connect2x.lognity.api.config.ConfigBuilder
+import de.connect2x.lognity.api.format.Formatter
+import de.connect2x.lognity.appender.ConsoleAppender
+import de.connect2x.lognity.config.systemLogAppender
+
+private fun isUnitTest(): Boolean {
     try {
         Class.forName("androidx.test.runner.AndroidJUnitRunner")
-        return true
-    } catch (e: ClassNotFoundException) {
         return false
+    } catch (e: ClassNotFoundException) {
+        return true
     }
 }
 
-internal actual fun setupTestLogging(
-    defaultLogLevel: Level,
-    packageLogLevels: Map<String, Level>,
-) {
-    if (isInstrumentationClassPresent()) {
-        System.setProperty("kotlin-logging-to-android-native", "true")
+internal actual fun ConfigBuilder.configure(pattern: String) {
+    if (isUnitTest()) {
+        appender(
+            ConsoleAppender(
+                pattern = pattern,
+                formatter = Formatter.default,
+                filter = Filter.always,
+            )
+        )
     } else {
-        setupLogback(defaultLogLevel, packageLogLevels)
+        systemLogAppender(pattern)
     }
 }

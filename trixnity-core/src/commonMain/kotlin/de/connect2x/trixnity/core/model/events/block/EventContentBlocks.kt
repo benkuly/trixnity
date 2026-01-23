@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.core.model.events.block
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -14,7 +15,7 @@ import de.connect2x.trixnity.core.serialization.events.EventContentBlockSerializ
 import kotlin.jvm.JvmInline
 import kotlin.reflect.KClass
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.core.model.events.block.EventContentBlocks")
+private val log = Logger("de.connect2x.trixnity.core.model.events.block.EventContentBlocks")
 
 @JvmInline
 value class EventContentBlocks private constructor(

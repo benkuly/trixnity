@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.user
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -16,7 +17,7 @@ import de.connect2x.trixnity.core.MatrixServerException
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.user.LoadMembersService")
+private val log = Logger("de.connect2x.trixnity.client.user.LoadMembersService")
 
 fun interface LoadMembersService {
     suspend operator fun invoke(roomId: RoomId, wait: Boolean)

@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 
 plugins {
     builtin(sharedLibs.plugins.android.library)
@@ -16,16 +17,11 @@ kotlin {
 
     applyDefaultHierarchyTemplate {
         common {
-            group("logback") {
-                withAndroidTarget()
-                withJvm()
-            }
-
-            group("direct") {
-                group("linux")
-                group("mingw")
-                group("web") { withJs() }
-            }
+           group("nonAndroid"){
+               withCompilations {
+                   it !is KotlinJvmAndroidCompilation
+               }
+           }
         }
     }
 
@@ -33,22 +29,18 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.time.ExperimentalTime")
         }
-        val logbackMain by getting
 
         commonMain.dependencies {
             api(sharedLibs.kotlin.test)
             api(sharedLibs.kotlinx.coroutines.test)
             api(sharedLibs.kotest.assertions.core)
-            api(libs.oshai.logging)
-        }
-
-        logbackMain.dependencies {
-            implementation(sharedLibs.slf4j.api)
-            implementation(libs.logback.classic)
+            api(libs.lognity.api)
+            implementation(libs.lognity.core)
         }
 
         jvmMain.dependencies {
             api(kotlin("test-junit5"))
+            implementation(libs.lognity.slf4j)
         }
 
         androidMain.dependencies {

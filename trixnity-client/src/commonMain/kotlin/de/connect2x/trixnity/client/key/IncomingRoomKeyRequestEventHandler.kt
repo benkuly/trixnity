@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -25,7 +25,7 @@ import de.connect2x.trixnity.crypto.olm.DecryptedOlmEventContainer
 import de.connect2x.trixnity.crypto.olm.OlmDecrypter
 import de.connect2x.trixnity.crypto.olm.OlmEncryptionService
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.key.IncomingRoomKeyRequestEventHandler")
+private val log = Logger("de.connect2x.trixnity.client.key.IncomingRoomKeyRequestEventHandler")
 
 class IncomingRoomKeyRequestEventHandler(
     userInfo: UserInfo,

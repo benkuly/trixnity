@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.notification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.MatrixClientConfiguration
@@ -25,7 +25,7 @@ import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMap
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.notification.NotificationEventHandler")
+private val log = Logger("de.connect2x.trixnity.client.notification.NotificationEventHandler")
 
 class NotificationEventHandler(
     private val userInfo: UserInfo,

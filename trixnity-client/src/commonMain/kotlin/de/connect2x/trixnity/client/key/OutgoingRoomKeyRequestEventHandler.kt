@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import de.connect2x.trixnity.client.CurrentSyncState
@@ -26,7 +27,7 @@ import de.connect2x.trixnity.utils.nextString
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.key.OutgoingRoomKeyRequestEventHandler")
+private val log = Logger("de.connect2x.trixnity.client.key.OutgoingRoomKeyRequestEventHandler")
 
 interface OutgoingRoomKeyRequestEventHandler {
     suspend fun requestRoomKeys(

@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.notification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.core.model.events.ClientEvent
@@ -8,7 +8,7 @@ import de.connect2x.trixnity.core.model.events.idOrNull
 import de.connect2x.trixnity.core.model.push.PushAction
 import de.connect2x.trixnity.core.model.push.PushRule
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.notification.EvaluatePushRules")
+private val log = Logger("de.connect2x.trixnity.client.notification.EvaluatePushRules")
 
 fun interface EvaluatePushRules {
     /**

@@ -27,7 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump Dependencies
 - Implement IndexedDBMediaStore without juullabs indexeddb
 - Various refactorings, code cleanups and improvements
+- SDK: migrate from kotlin-logging to lognity
 - Use c2x conventions for configuration and publishing
+- Update c2x conventions
 
 ### Deprecated
 
@@ -58,9 +60,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 4.22.5
 
+### Added
+
 ### Changed
 
 - Bump versions
+
+### Deprecated
+
+### Removed
 
 ### Fixed
 

@@ -20,6 +20,7 @@ import de.connect2x.trixnity.clientserverapi.client.*
 import de.connect2x.trixnity.clientserverapi.model.authentication.IdentifierType
 import de.connect2x.trixnity.core.model.events.m.key.verification.VerificationMethod
 import de.connect2x.trixnity.crypto.key.DeviceTrustLevel
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -28,7 +29,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 @Testcontainers
-class SasVerificationIT {
+class SasVerificationIT : TrixnityBaseTest() {
 
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient

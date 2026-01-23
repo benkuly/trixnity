@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.crypto.olm
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
@@ -45,7 +46,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.crypto.olm.OlmEncryptionService")
+private val log = Logger("de.connect2x.trixnity.crypto.olm.OlmEncryptionService")
 
 interface OlmEncryptionService {
 

@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.media.opfs
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
 import js.buffer.ArrayBuffer
 import js.iterable.asFlow
 import js.typedarrays.Uint8Array
@@ -23,7 +24,7 @@ import web.window.window
 import kotlin.random.Random
 import kotlin.time.Clock
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.media.opfs.OpfsMediaStore")
+private val log = Logger("de.connect2x.trixnity.client.media.opfs.OpfsMediaStore")
 
 internal class OpfsMediaStore(
     private val basePath: FileSystemDirectoryHandle,

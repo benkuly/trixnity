@@ -5,7 +5,8 @@ import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.utils.RetryFlowDelayConfig
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.http.*
@@ -14,7 +15,7 @@ import kotlinx.serialization.json.Json
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient")
+private val log = Logger("de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient")
 
 interface MatrixClientServerApiClient : AutoCloseable {
     val baseUrl: Url

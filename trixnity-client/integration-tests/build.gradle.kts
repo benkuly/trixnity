@@ -11,6 +11,7 @@ kotlin {
         maxHeapSize = "8g"
         maxParallelForks = if (CI.isCI) 3 else 1
         jvmArgs(jolOpens)
+        jvmArgs("-Djol.magicFieldOffset=true")
     }
 
     sourceSets {
@@ -28,7 +29,8 @@ kotlin {
                 implementation(libs.androidx.sqlite.bundled)
                 implementation(sharedLibs.kotlin.test)
                 implementation(sharedLibs.kotest.assertions.core)
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
+                implementation(projects.trixnityTestUtils)
             }
         }
         jvmTest {
@@ -41,8 +43,7 @@ kotlin {
                 implementation(libs.h2)
                 implementation(libs.postgresql)
                 implementation(libs.hikari)
-                implementation(libs.logback.classic)
-
+                
                 // If/When this is removed, also remove [jolOpens]
                 implementation(libs.openjdk.jol)
             }

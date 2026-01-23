@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.room
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.select
@@ -18,7 +18,7 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration.Companion.INFINITE
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.room.Timeline")
+private val log = Logger("de.connect2x.trixnity.client.room.Timeline")
 
 typealias SimpleTimeline = Timeline<Flow<TimelineEvent>>
 

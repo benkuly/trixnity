@@ -32,6 +32,7 @@ import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership.INVITE
 import de.connect2x.trixnity.core.model.events.m.room.Membership.JOIN
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
@@ -40,7 +41,7 @@ import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
-class EncryptionIT {
+class EncryptionIT : TrixnityBaseTest() {
 
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient

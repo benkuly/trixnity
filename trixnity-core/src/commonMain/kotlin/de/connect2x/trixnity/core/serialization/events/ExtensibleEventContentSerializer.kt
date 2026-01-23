@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.core.serialization.events
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -12,7 +13,7 @@ import kotlinx.serialization.serializer
 import de.connect2x.trixnity.core.model.events.ExtensibleEventContent
 import de.connect2x.trixnity.core.model.events.block.EventContentBlocks
 
-private val log = KotlinLogging.logger(" de.connect2x.trixnity.core.serialization.events.ExtensibleEventContent")
+private val log = Logger(" de.connect2x.trixnity.core.serialization.events.ExtensibleEventContent")
 
 open class ExtensibleEventContentSerializer<L : ExtensibleEventContent.Legacy, C : ExtensibleEventContent<L>>(
     val name: String,

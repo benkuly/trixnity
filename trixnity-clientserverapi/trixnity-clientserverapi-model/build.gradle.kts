@@ -18,7 +18,7 @@ kotlin {
 
                 implementation(sharedLibs.ktor.resources)
 
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
             }
         }
         commonTest {

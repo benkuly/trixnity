@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.verification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.key.getAllKeysFromUser
 import de.connect2x.trixnity.client.store.KeyStore
@@ -21,7 +21,7 @@ import de.connect2x.trixnity.core.model.keys.Keys
 import de.connect2x.trixnity.crypto.driver.sas.EstablishedSas
 import de.connect2x.trixnity.crypto.of
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.verification.ActiveSasVerificationState")
+private val log = Logger("de.connect2x.trixnity.client.verification.ActiveSasVerificationState")
 
 sealed interface ActiveSasVerificationState {
     data class OwnSasStart(

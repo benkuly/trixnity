@@ -15,6 +15,7 @@ import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import de.connect2x.trixnity.clientserverapi.client.SyncState
 import de.connect2x.trixnity.clientserverapi.client.classicLoginWith
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.selectAll
@@ -28,7 +29,7 @@ import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
-class OutboxIT {
+class OutboxIT : TrixnityBaseTest() {
 
     private lateinit var client: MatrixClient
     private lateinit var database: Database

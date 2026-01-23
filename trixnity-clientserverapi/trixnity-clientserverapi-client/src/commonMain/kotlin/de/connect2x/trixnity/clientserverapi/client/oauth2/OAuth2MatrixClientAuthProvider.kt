@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.clientserverapi.client.oauth2
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
@@ -15,7 +15,7 @@ import de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.ServerM
 import de.connect2x.trixnity.core.AuthRequired
 import okio.ByteString.Companion.toByteString
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.clientserverapi.client.oauth2.OAuth2MatrixAuthProvider")
+private val log = Logger("de.connect2x.trixnity.clientserverapi.client.oauth2.OAuth2MatrixAuthProvider")
 
 class OAuth2MatrixClientAuthProvider(
     override val baseUrl: Url,

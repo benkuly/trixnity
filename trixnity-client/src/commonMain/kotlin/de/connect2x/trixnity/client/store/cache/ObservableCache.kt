@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.store.cache
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.utils.concurrentMutableMap
@@ -11,7 +11,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.store.cache.ObservableCache")
+private val log = Logger("de.connect2x.trixnity.client.store.cache.ObservableCache")
 
 internal sealed interface CacheValue<T> {
     class Init<T> : CacheValue<T>

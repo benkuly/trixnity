@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.user
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -25,7 +25,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Clock
 import kotlin.time.Duration
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.user.UserService")
+private val log = Logger("de.connect2x.trixnity.client.user.UserService")
 
 
 interface UserService {

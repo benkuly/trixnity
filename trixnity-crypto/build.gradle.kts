@@ -20,7 +20,7 @@ kotlin {
                 api(projects.trixnityCryptoDriver)
                 api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
             }
         }
         commonTest {

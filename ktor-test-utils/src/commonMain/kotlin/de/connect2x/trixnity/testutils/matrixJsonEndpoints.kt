@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.testutils
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -22,7 +23,7 @@ import de.connect2x.trixnity.core.MatrixEndpoint
 import de.connect2x.trixnity.core.MatrixServerException
 import kotlin.jvm.JvmName
 
-val matrixEndpointLog = KotlinLogging.logger("de.connect2x.trixnity.testutils.MatrixJsonEndpoints")
+val matrixEndpointLog = Logger("de.connect2x.trixnity.testutils.MatrixJsonEndpoints")
 
 data class CustomErrorResponse(val httpStatusCode: HttpStatusCode, override val message: String) : Exception(message)
 

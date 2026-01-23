@@ -50,6 +50,7 @@ import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMap
 import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.core.serialization.events.invoke
 import de.connect2x.trixnity.core.serialization.events.messageOf
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.and
@@ -63,7 +64,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 @Testcontainers
-class TimelineEventIT {
+class TimelineEventIT : TrixnityBaseTest() {
 
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient

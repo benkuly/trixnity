@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.store
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
@@ -17,7 +17,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlin.time.Duration
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.store.KeyStore")
+private val log = Logger("de.connect2x.trixnity.client.store.KeyStore")
 
 class KeyStore(
     outdatedKeysRepository: OutdatedKeysRepository,

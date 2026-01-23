@@ -15,7 +15,7 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityClient)
 
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
             }
         }
         commonTest {
@@ -35,7 +35,6 @@ kotlin {
         jvmTest {
             dependencies {
                 implementation(libs.h2)
-                implementation(libs.logback.classic)
             }
         }
     }

@@ -19,6 +19,7 @@ import de.connect2x.trixnity.core.model.events.InitialStateEvent
 import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership.INVITE
 import de.connect2x.trixnity.core.model.events.m.room.Membership.JOIN
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -27,7 +28,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 @Testcontainers
-class UsersIT {
+class UsersIT : TrixnityBaseTest() {
 
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient

@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.crypto.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -11,7 +11,7 @@ import de.connect2x.trixnity.core.model.events.m.secretstorage.SecretKeyEventCon
 import de.connect2x.trixnity.crypto.core.decryptAesHmacSha2
 import de.connect2x.trixnity.crypto.core.encryptAesHmacSha2
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.crypto.key.KeySecretUtils")
+private val log = Logger("de.connect2x.trixnity.crypto.key.KeySecretUtils")
 
 suspend fun decryptSecret(
     key: ByteArray,

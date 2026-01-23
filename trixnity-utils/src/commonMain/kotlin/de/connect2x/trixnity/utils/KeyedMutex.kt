@@ -1,12 +1,12 @@
 package de.connect2x.trixnity.utils
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.utils.KeyedMutex")
+private val log = Logger("de.connect2x.trixnity.utils.KeyedMutex")
 
 open class KeyedMutex<K : Any> {
     private data class ClaimedMutex(

@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.media.okio
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.job
@@ -18,7 +19,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 import kotlin.time.Clock
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.media.okio.OkioMediaStore")
+private val log = Logger("de.connect2x.trixnity.client.media.okio.OkioMediaStore")
 
 internal class OkioMediaStore(
     private val basePath: Path,

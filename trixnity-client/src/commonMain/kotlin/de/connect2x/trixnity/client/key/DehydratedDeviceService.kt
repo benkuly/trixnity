@@ -1,6 +1,8 @@
 package de.connect2x.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
+import de.connect2x.lognity.api.logger.warn
 import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -41,7 +43,7 @@ import okio.ByteString.Companion.decodeBase64
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.key.DehydratedDeviceService")
+private val log = Logger("de.connect2x.trixnity.client.key.DehydratedDeviceService")
 
 @MSC3814
 class DehydratedDeviceService(

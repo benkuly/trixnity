@@ -25,7 +25,7 @@ allprojects {
     group = "de.connect2x"
     version = withVersionSuffix(rootProject.libs.versions.trixnity)
     if (System.getenv("WITH_LOCK")?.toBoolean() == true) defaultDependencyLocking()
-    configureJava(11)
+    configureJava(17)
 }
 
 subprojects {

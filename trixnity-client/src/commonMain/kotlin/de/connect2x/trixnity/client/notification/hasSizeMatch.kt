@@ -1,8 +1,8 @@
 package de.connect2x.trixnity.client.notification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.notification.hasSizeMatch")
+private val log = Logger("de.connect2x.trixnity.client.notification.hasSizeMatch")
 private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
 internal fun hasSizeMatch(value: String, size: Long): Boolean {
     value.toLongOrNull()?.let { count ->

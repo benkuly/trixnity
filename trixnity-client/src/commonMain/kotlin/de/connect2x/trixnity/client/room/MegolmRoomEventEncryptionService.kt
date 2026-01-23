@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.room
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -19,7 +19,7 @@ import de.connect2x.trixnity.core.model.keys.EncryptionAlgorithm
 import de.connect2x.trixnity.crypto.olm.OlmEncryptionService
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.room.MegolmRoomEventEncryptionService")
+private val log = Logger("de.connect2x.trixnity.client.room.MegolmRoomEventEncryptionService")
 
 class MegolmRoomEventEncryptionService(
     private val roomStore: RoomStore,

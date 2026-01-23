@@ -1,6 +1,8 @@
 package de.connect2x.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.error
+import de.connect2x.lognity.api.logger.warn
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.MatrixClientConfiguration
@@ -19,7 +21,7 @@ import de.connect2x.trixnity.crypto.key.encryptSecret
 import de.connect2x.trixnity.utils.encodeUnpaddedBase64
 import kotlin.random.Random
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.key.KeySecretService")
+private val log = Logger("de.connect2x.trixnity.client.key.KeySecretService")
 
 interface KeySecretService {
     suspend fun decryptOrCreateMissingSecrets(

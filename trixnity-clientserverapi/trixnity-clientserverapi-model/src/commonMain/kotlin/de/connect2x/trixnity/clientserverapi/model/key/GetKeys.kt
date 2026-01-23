@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.clientserverapi.model.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.resources.*
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -18,7 +18,7 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.keys.SignedCrossSigningKeys
 import de.connect2x.trixnity.core.model.keys.SignedDeviceKeys
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.clientserverapi.model.keys.GetKeys")
+private val log = Logger("de.connect2x.trixnity.clientserverapi.model.keys.GetKeys")
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3keysquery">matrix spec</a>

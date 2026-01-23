@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.room
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.MatrixClientConfiguration
@@ -26,7 +26,7 @@ import de.connect2x.trixnity.utils.concurrentMutableMap
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.room.RoomListHandler")
+private val log = Logger("de.connect2x.trixnity.client.room.RoomListHandler")
 
 class RoomListHandler(
     private val api: MatrixClientServerApiClient,

@@ -85,7 +85,7 @@ kotlin {
             dependencies {
                 api(projects.trixnityUtils)
 
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
             }
         }
 

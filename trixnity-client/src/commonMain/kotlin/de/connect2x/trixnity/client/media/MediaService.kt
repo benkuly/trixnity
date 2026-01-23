@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.media
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onCompletion
@@ -23,7 +23,7 @@ import de.connect2x.trixnity.crypto.core.encryptAes256Ctr
 import de.connect2x.trixnity.crypto.core.sha256
 import de.connect2x.trixnity.utils.*
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.media.MediaService")
+private val log = Logger("de.connect2x.trixnity.client.media.MediaService")
 
 interface MediaService {
     suspend fun getMedia(

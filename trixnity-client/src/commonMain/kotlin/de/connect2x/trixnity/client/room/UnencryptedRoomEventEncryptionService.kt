@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.room
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.flow.first
 import de.connect2x.trixnity.client.store.RoomStore
 import de.connect2x.trixnity.core.model.RoomId
@@ -8,7 +8,7 @@ import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.room.UnencryptedRoomEventEncryptionService")
+private val log = Logger("de.connect2x.trixnity.client.room.UnencryptedRoomEventEncryptionService")
 
 class UnencryptedRoomEventEncryptionService(
     private val roomStore: RoomStore,

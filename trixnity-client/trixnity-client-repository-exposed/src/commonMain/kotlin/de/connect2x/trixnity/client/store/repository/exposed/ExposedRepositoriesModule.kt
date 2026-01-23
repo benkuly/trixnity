@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.store.repository.exposed
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.Dispatchers
 import de.connect2x.trixnity.client.RepositoriesModule
 import de.connect2x.trixnity.client.store.repository.*
@@ -12,7 +12,7 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 private val log =
-    KotlinLogging.logger("de.connect2x.trixnity.client.store.repository.exposed.ExposedRepositoriesModule")
+    Logger("de.connect2x.trixnity.client.store.repository.exposed.ExposedRepositoriesModule")
 
 fun RepositoriesModule.Companion.exposed(database: Database): RepositoriesModule = RepositoriesModule {
     log.debug { "create missing tables and columns" }

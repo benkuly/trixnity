@@ -17,7 +17,7 @@ kotlin {
                 api(projects.trixnityCore)
                 api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
-                implementation(libs.oshai.logging)
+                implementation(libs.lognity.api)
 
                 api(sharedLibs.ktor.client.mock)
                 implementation(sharedLibs.ktor.resources)
@@ -28,11 +28,6 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(sharedLibs.kotlin.test)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.logback.classic)
             }
         }
     }

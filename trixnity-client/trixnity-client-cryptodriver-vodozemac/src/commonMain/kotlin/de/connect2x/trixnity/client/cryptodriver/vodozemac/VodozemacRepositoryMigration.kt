@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.cryptodriver.vodozemac
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.trixnity.client.store.repository.*
 import de.connect2x.trixnity.vodozemac.PickleKey
 import de.connect2x.trixnity.vodozemac.megolm.GroupSession
@@ -9,7 +9,7 @@ import de.connect2x.trixnity.vodozemac.olm.Account
 import de.connect2x.trixnity.vodozemac.olm.Session
 
 private val log =
-    KotlinLogging.logger("de.connect2x.trixnity.client.cryptodriver.vodozemac.VodozemacRepositoryMigration")
+    Logger("de.connect2x.trixnity.client.cryptodriver.vodozemac.VodozemacRepositoryMigration")
 
 data class VodozemacRepositoryMigration(
     val transactionManager: RepositoryTransactionManager,

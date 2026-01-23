@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.core
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
@@ -14,7 +14,7 @@ import de.connect2x.trixnity.core.ClientEventEmitter.Priority
 import de.connect2x.trixnity.core.model.events.*
 import kotlin.reflect.KClass
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.core.ClientEventEmitter")
+private val log = Logger("de.connect2x.trixnity.core.ClientEventEmitter")
 
 typealias Subscriber<T> = suspend (T) -> Unit
 typealias Unsubscriber = () -> Unit

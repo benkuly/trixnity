@@ -1,12 +1,12 @@
 package de.connect2x.trixnity.clientserverapi.client
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.http.*
 import de.connect2x.trixnity.clientserverapi.model.authentication.*
 import de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.ServerMetadata
 import de.connect2x.trixnity.core.model.UserId
 
-private val log = KotlinLogging.logger { }
+private val log = Logger { }
 
 interface AuthenticationApiClient {
     /**

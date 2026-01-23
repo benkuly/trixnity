@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.verification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
@@ -25,7 +25,7 @@ import de.connect2x.trixnity.crypto.driver.sas.Sas
 import de.connect2x.trixnity.crypto.driver.useAll
 import de.connect2x.trixnity.crypto.of
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.verification.ActiveSasVerificationMethod")
+private val log = Logger("de.connect2x.trixnity.client.verification.ActiveSasVerificationMethod")
 
 class ActiveSasVerificationMethod private constructor(
     override val startEventContent: SasStartEventContent,

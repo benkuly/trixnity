@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.integrationtests
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -34,16 +34,17 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.push.PushCondition
 import de.connect2x.trixnity.core.model.push.PushRuleKind
 import de.connect2x.trixnity.core.model.push.ServerDefaultPushRules
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.integrationtests.NotificationIT")
+private val log = Logger("de.connect2x.trixnity.client.integrationtests.NotificationIT")
 
 @Testcontainers
-class NotificationIT {
+class NotificationIT : TrixnityBaseTest() {
     private lateinit var startedClient1: StartedClient
     private lateinit var startedClient2: StartedClient
 

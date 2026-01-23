@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.store.cache
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.store.repository.MapRepository
@@ -9,7 +9,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.store.cache.MapRepositoryObservableCache")
+private val log = Logger("de.connect2x.trixnity.client.store.cache.MapRepositoryObservableCache")
 
 data class MapRepositoryCoroutinesCacheKey<K1, K2>(
     val firstKey: K1,

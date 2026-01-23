@@ -1,5 +1,6 @@
 package de.connect2x.trixnity.libolm
 
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
@@ -10,7 +11,7 @@ import io.kotest.matchers.string.shouldNotBeBlank
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-class OlmInboundGroupSessionTest {
+class OlmInboundGroupSessionTest : TrixnityBaseTest() {
 
     private val sessionKey = "AgAAAAAwMTIzNDU2Nzg5QUJERUYwMTIzNDU2Nzg5QUJDREVGMDEyMzQ1Njc4OUFCREVGM" +
             "DEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkRFRjAxMjM0NTY3ODlBQkNERUYwMTIzND" +

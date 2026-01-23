@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.notification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -21,7 +21,7 @@ import de.connect2x.trixnity.core.model.events.roomIdOrNull
 import de.connect2x.trixnity.core.model.events.senderOrNull
 import de.connect2x.trixnity.core.model.push.PushCondition
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.notification.PushRuleConditionMatcher")
+private val log = Logger("de.connect2x.trixnity.client.notification.PushRuleConditionMatcher")
 
 interface PushRuleConditionMatcher {
     /**

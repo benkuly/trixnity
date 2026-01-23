@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.integrationtests
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.kotest.assertions.withClue
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.java.*
@@ -154,7 +154,7 @@ suspend fun <T> Flow<T>.firstWithTimeout(
     send(result)
 }.first()
 
-val clueLog = KotlinLogging.logger("de.connect2x.trixnity.client.integrationtests.clues")
+val clueLog = Logger("de.connect2x.trixnity.client.integrationtests.clues")
 inline fun <R> withCluePrintln(clue: Any?, thunk: () -> R): R {
     clueLog.info { ">>> $clue" }
     val result = withClue(clue, thunk)

@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.core.util
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import io.ktor.http.Parameters
 import io.ktor.http.URLParserException
 import io.ktor.http.URLProtocol
@@ -13,7 +13,7 @@ import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 
-private val log = KotlinLogging.logger {}
+private val log = Logger {}
 
 /**
  * Represents a mention. A mention can refer to various entities and potentially include actions associated with them.

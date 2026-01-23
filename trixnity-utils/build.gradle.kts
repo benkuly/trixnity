@@ -16,7 +16,7 @@ kotlin {
                 api(sharedLibs.ktor.utils)
                 api(sharedLibs.kotlinx.coroutines.core)
                 api(libs.okio)
-                api(libs.oshai.logging)
+                api(libs.lognity.api)
             }
         }
         jsMain {
@@ -28,11 +28,6 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(projects.trixnityTestUtils)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.logback.classic)
             }
         }
     }

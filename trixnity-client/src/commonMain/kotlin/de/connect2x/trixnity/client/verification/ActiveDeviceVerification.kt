@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.verification
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.delay
 import de.connect2x.trixnity.client.key.KeyTrustService
 import de.connect2x.trixnity.client.store.KeyStore
@@ -19,7 +19,7 @@ import de.connect2x.trixnity.crypto.olm.OlmEncryptionService
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger("de.connect2x.trixnity.client.verification.ActiveDeviceVerification")
+private val log = Logger("de.connect2x.trixnity.client.verification.ActiveDeviceVerification")
 
 interface ActiveDeviceVerification : ActiveVerification
 class ActiveDeviceVerificationImpl(

@@ -13,6 +13,7 @@ import de.connect2x.trixnity.client.store.repository.exposed.exposed
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import de.connect2x.trixnity.clientserverapi.client.SyncState
 import de.connect2x.trixnity.clientserverapi.client.classicLoginWith
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.utils.toByteArrayFlow
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
@@ -22,7 +23,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 @Testcontainers
-class MediaIT {
+class MediaIT : TrixnityBaseTest() {
 
     private lateinit var client: MatrixClient
     private lateinit var database: Database

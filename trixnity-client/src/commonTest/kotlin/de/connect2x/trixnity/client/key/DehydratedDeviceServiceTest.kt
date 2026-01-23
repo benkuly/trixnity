@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.Level
+import de.connect2x.lognity.api.logger.Level
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf

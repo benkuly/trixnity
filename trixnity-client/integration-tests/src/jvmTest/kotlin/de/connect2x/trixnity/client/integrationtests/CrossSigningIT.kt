@@ -1,5 +1,6 @@
 package de.connect2x.trixnity.client.integrationtests
 
+import de.connect2x.lognity.api.logger.Logger
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -34,6 +35,7 @@ import de.connect2x.trixnity.crypto.key.DeviceTrustLevel
 import de.connect2x.trixnity.crypto.key.DeviceTrustLevel.NotCrossSigned
 import de.connect2x.trixnity.crypto.key.UserTrustLevel.CrossSigned
 import de.connect2x.trixnity.crypto.key.UserTrustLevel.NotAllDevicesCrossSigned
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -42,7 +44,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 @Testcontainers
-class CrossSigningIT {
+class CrossSigningIT : TrixnityBaseTest() {
 
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient
