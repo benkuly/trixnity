@@ -11,6 +11,7 @@ kotlin {
         maxHeapSize = "8g"
         maxParallelForks = if (CI.isCI) 3 else 1
         jvmArgs(jolOpens)
+        jvmArgs("-Djol.magicFieldOffset=true")
     }
 
     sourceSets {
