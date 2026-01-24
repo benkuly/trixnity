@@ -2,6 +2,7 @@ package de.connect2x.trixnity.core.model.events.block
 
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.warn
+import de.connect2x.trixnity.core.serialization.events.EventContentBlockSerializerMapping
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -11,7 +12,6 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonObject
-import de.connect2x.trixnity.core.serialization.events.EventContentBlockSerializerMapping
 import kotlin.jvm.JvmInline
 import kotlin.reflect.KClass
 
@@ -80,6 +80,7 @@ value class EventContentBlocks private constructor(
                     value.blocks
                         .mapKeys { (key, _) -> key.value }
                         .mapValues { (_, value) ->
+                            if (value is EventContentBlock.Unknown) return@mapValues value.raw
                             val serializer = mappings.find { it.kClass.isInstance(value) }?.serializer
                                 ?: throw UnsupportedEventContentBlockTypeException(value::class)
                             @Suppress("UNCHECKED_CAST")
