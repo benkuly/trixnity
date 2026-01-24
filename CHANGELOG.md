@@ -17,9 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed serialization of unknown event content blocks failed
-
 ### Security
+
+## 5.0.1
+
+### Fixed
+
+- Fixed serialization of unknown event content blocks failed
 
 ## 5.0.0
 
