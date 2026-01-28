@@ -44,7 +44,7 @@ variables:
 .artifact-reports: &artifact-reports
   name: reports
   when: always
-  paths: [ "**/build/reports" ]
+  paths: [ "**/build/reports", "**/build/**/yarn.lock" ]
   reports:
     junit: "**/build/test-results/**/TEST-*.xml"
     coverage_report:

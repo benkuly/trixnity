@@ -20,7 +20,7 @@ kotlin {
                 implementation(sharedLibs.ktor.client.contentNegotiation)
                 implementation(sharedLibs.ktor.client.resources)
 
-                implementation(libs.lognity.api)
+                implementation(sharedLibs.lognity.api)
             }
         }
         commonTest {

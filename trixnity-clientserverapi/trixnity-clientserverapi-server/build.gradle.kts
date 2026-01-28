@@ -21,7 +21,7 @@ kotlin {
                 api(sharedLibs.ktor.server.auth)
                 implementation(sharedLibs.ktor.server.cors)
 
-                implementation(libs.lognity.api)
+                implementation(sharedLibs.lognity.api)
             }
         }
         commonTest {

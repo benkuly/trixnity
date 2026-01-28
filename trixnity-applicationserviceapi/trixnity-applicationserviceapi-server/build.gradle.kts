@@ -22,7 +22,7 @@ kotlin {
                 implementation(sharedLibs.ktor.server.auth)
                 implementation(sharedLibs.ktor.serialization.kotlinx.json)
 
-                implementation(libs.lognity.api)
+                implementation(sharedLibs.lognity.api)
             }
         }
         commonTest {

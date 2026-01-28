@@ -22,7 +22,7 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityClient)
 
-                implementation(libs.lognity.api)
+                implementation(sharedLibs.lognity.api)
 
                 api(libs.androidx.room.runtime)
             }

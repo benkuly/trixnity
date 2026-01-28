@@ -1,13 +1,5 @@
 package de.connect2x.trixnity.client.key
 
-import de.connect2x.lognity.api.logger.Level
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.http.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.serialization.ExperimentalSerializationApi
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.cryptodriver.ClientOlmStore
 import de.connect2x.trixnity.client.mocks.KeyServiceMock
@@ -53,6 +45,13 @@ import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.testClock
 import de.connect2x.trixnity.testutils.PortableMockEngineConfig
 import de.connect2x.trixnity.testutils.matrixJsonEndpoint
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.http.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -66,9 +65,6 @@ class DehydratedDeviceServiceTestLibOlm : DehydratedDeviceServiceTest(LibOlmCryp
 abstract class DehydratedDeviceServiceTest(
     protected val driver: CryptoDriver,
 ) : TrixnityBaseTest() {
-    override val packageLogLevels: Map<String, Level>
-        get() = super.packageLogLevels + mapOf("de.connect2x.trixnity.client.store.cache" to Level.INFO)
-
     protected val roomId = RoomId("!room:server")
     protected val alice = UserId("alice", "server")
     protected val bob = UserId("bob", "server")

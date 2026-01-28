@@ -40,18 +40,7 @@ robolectric = "4.16" # https://github.com/robolectric/robolectric/releases
 androidTargetSdk = "36"
 androidMinSdk = "24"
 
-
-lognity = "1.2.1" # https://gitlab.com/connect2x/lognity/-/packages
-
 [libraries]
-
-### logging ###
-lognity-api = { module = "de.connect2x.lognity:lognity-api", version.ref = "lognity" }
-lognity-core = { module = "de.connect2x.lognity:lognity-core", version.ref = "lognity" }
-#lognity-config = { module = "de.connect2x.lognity:lognity-config", version.ref = "lognity" }
-#lognity-core-config = { module = "de.connect2x.lognity:lognity-core-config", version.ref = "lognity" }
-lognity-slf4j = { module = "de.connect2x.lognity:lognity-slf4j", version.ref = "lognity" }
-
 
 ### libraries ###
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
