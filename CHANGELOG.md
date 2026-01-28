@@ -11,8 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Upgrade dependencies including Lognity to re-allow Android API level 24
-
 ### Deprecated
 
 ### Removed
@@ -20,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## 5.0.2
+
+### Changed
+
+- Upgrade dependencies including Lognity to re-allow Android API level 24
 
 ## 5.0.1
 
