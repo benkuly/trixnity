@@ -17,7 +17,7 @@ kotlin {
                 api(projects.trixnityCore)
                 api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
-                implementation(libs.lognity.api)
+                implementation(sharedLibs.lognity.api)
 
                 api(sharedLibs.ktor.client.mock)
                 implementation(sharedLibs.ktor.resources)

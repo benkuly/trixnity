@@ -1,20 +1,16 @@
 package de.connect2x.trixnity.utils
 
-import de.connect2x.lognity.api.logger.Level
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import de.connect2x.trixnity.test.utils.runTest
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import de.connect2x.trixnity.test.utils.TrixnityBaseTest
-import de.connect2x.trixnity.test.utils.runTest
 import kotlin.test.Test
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 class KeyedMutexTest : TrixnityBaseTest() {
-
-    override val packageLogLevels: Map<String, Level>
-        get() = mapOf("de.connect2x.trixnity" to Level.INFO)
 
     @Test
     fun shouldLockKey() = runTest {

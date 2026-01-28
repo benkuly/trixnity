@@ -1,5 +1,5 @@
-import org.jetbrains.kotlin.konan.target.HostManager
 import de.connect2x.conventions.CI
+import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
     builtin(sharedLibs.plugins.kotlin.multiplatform)
@@ -29,7 +29,7 @@ kotlin {
                 implementation(libs.androidx.sqlite.bundled)
                 implementation(sharedLibs.kotlin.test)
                 implementation(sharedLibs.kotest.assertions.core)
-                implementation(libs.lognity.api)
+                implementation(sharedLibs.lognity.api)
                 implementation(projects.trixnityTestUtils)
             }
         }
@@ -43,7 +43,7 @@ kotlin {
                 implementation(libs.h2)
                 implementation(libs.postgresql)
                 implementation(libs.hikari)
-                
+
                 // If/When this is removed, also remove [jolOpens]
                 implementation(libs.openjdk.jol)
             }

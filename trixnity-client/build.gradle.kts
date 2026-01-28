@@ -20,7 +20,7 @@ kotlin {
 
                 api(sharedLibs.koin.core)
 
-                implementation(libs.lognity.api)
+                implementation(sharedLibs.lognity.api)
             }
         }
         commonTest {

@@ -16,7 +16,7 @@ kotlin {
                 api(sharedLibs.ktor.utils)
                 api(sharedLibs.kotlinx.coroutines.core)
                 api(libs.okio)
-                api(libs.lognity.api)
+                api(sharedLibs.lognity.api)
             }
         }
         jsMain {

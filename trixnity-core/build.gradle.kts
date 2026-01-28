@@ -17,7 +17,7 @@ kotlin {
                 api(projects.trixnityUtils)
                 api(sharedLibs.kotlinx.serialization.json)
                 api(sharedLibs.ktor.http)
-                implementation(libs.lognity.api)
+                implementation(sharedLibs.lognity.api)
             }
         }
         commonTest {

@@ -17,7 +17,7 @@ kotlin {
 
                 api(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
                 api(sharedLibs.kotlin.browser)
-                implementation(libs.lognity.api)
+                implementation(sharedLibs.lognity.api)
             }
         }
         jsTest {
