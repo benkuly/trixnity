@@ -1,0 +1,12 @@
+public final class de/connect2x/trixnity/api/server/MatrixApiServerKt {
+	public static final fun installMatrixApiServer (Lio/ktor/server/application/Application;Lkotlinx/serialization/json/Json;)V
+	public static final fun matrixApiServer (Lio/ktor/server/application/Application;Lkotlinx/serialization/json/Json;Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class de/connect2x/trixnity/api/server/MatrixEndpointContext {
+	public fun <init> (Lde/connect2x/trixnity/core/MatrixEndpoint;Ljava/lang/Object;Lio/ktor/server/application/ApplicationCall;)V
+	public final fun getCall ()Lio/ktor/server/application/ApplicationCall;
+	public final fun getEndpoint ()Lde/connect2x/trixnity/core/MatrixEndpoint;
+	public final fun getRequestBody ()Ljava/lang/Object;
+}
+

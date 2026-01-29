@@ -1,0 +1,716 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-libolm>
+abstract interface de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/WantsToBeFree|null[0]
+    abstract fun free() // de.connect2x.trixnity.libolm/WantsToBeFree.free|free(){}[0]
+}
+
+final class de.connect2x.trixnity.libolm/OlmAccount : de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/OlmAccount|null[0]
+    final val identityKeys // de.connect2x.trixnity.libolm/OlmAccount.identityKeys|{}identityKeys[0]
+        final fun <get-identityKeys>(): de.connect2x.trixnity.libolm/OlmIdentityKeys // de.connect2x.trixnity.libolm/OlmAccount.identityKeys.<get-identityKeys>|<get-identityKeys>(){}[0]
+    final val maxNumberOfOneTimeKeys // de.connect2x.trixnity.libolm/OlmAccount.maxNumberOfOneTimeKeys|{}maxNumberOfOneTimeKeys[0]
+        final fun <get-maxNumberOfOneTimeKeys>(): kotlin/Long // de.connect2x.trixnity.libolm/OlmAccount.maxNumberOfOneTimeKeys.<get-maxNumberOfOneTimeKeys>|<get-maxNumberOfOneTimeKeys>(){}[0]
+    final val oneTimeKeys // de.connect2x.trixnity.libolm/OlmAccount.oneTimeKeys|{}oneTimeKeys[0]
+        final fun <get-oneTimeKeys>(): de.connect2x.trixnity.libolm/OlmOneTimeKeys // de.connect2x.trixnity.libolm/OlmAccount.oneTimeKeys.<get-oneTimeKeys>|<get-oneTimeKeys>(){}[0]
+    final val unpublishedFallbackKey // de.connect2x.trixnity.libolm/OlmAccount.unpublishedFallbackKey|{}unpublishedFallbackKey[0]
+        final fun <get-unpublishedFallbackKey>(): de.connect2x.trixnity.libolm/OlmOneTimeKeys // de.connect2x.trixnity.libolm/OlmAccount.unpublishedFallbackKey.<get-unpublishedFallbackKey>|<get-unpublishedFallbackKey>(){}[0]
+
+    final fun forgetOldFallbackKey() // de.connect2x.trixnity.libolm/OlmAccount.forgetOldFallbackKey|forgetOldFallbackKey(){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/OlmAccount.free|free(){}[0]
+    final fun generateFallbackKey() // de.connect2x.trixnity.libolm/OlmAccount.generateFallbackKey|generateFallbackKey(){}[0]
+    final fun generateOneTimeKeys(kotlin/Long) // de.connect2x.trixnity.libolm/OlmAccount.generateOneTimeKeys|generateOneTimeKeys(kotlin.Long){}[0]
+    final fun markKeysAsPublished() // de.connect2x.trixnity.libolm/OlmAccount.markKeysAsPublished|markKeysAsPublished(){}[0]
+    final fun pickle(kotlin/String?): kotlin/String // de.connect2x.trixnity.libolm/OlmAccount.pickle|pickle(kotlin.String?){}[0]
+    final fun removeOneTimeKeys(de.connect2x.trixnity.libolm/OlmSession) // de.connect2x.trixnity.libolm/OlmAccount.removeOneTimeKeys|removeOneTimeKeys(de.connect2x.trixnity.libolm.OlmSession){}[0]
+    final fun sign(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OlmAccount.sign|sign(kotlin.String){}[0]
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmAccount.Companion|null[0]
+        final fun create(): de.connect2x.trixnity.libolm/OlmAccount // de.connect2x.trixnity.libolm/OlmAccount.Companion.create|create(){}[0]
+        final fun unpickle(kotlin/String?, kotlin/String): de.connect2x.trixnity.libolm/OlmAccount // de.connect2x.trixnity.libolm/OlmAccount.Companion.unpickle|unpickle(kotlin.String?;kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmIdentityKeys { // de.connect2x.trixnity.libolm/OlmIdentityKeys|null[0]
+    constructor <init>(kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/OlmIdentityKeys.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val curve25519 // de.connect2x.trixnity.libolm/OlmIdentityKeys.curve25519|{}curve25519[0]
+        final fun <get-curve25519>(): kotlin/String // de.connect2x.trixnity.libolm/OlmIdentityKeys.curve25519.<get-curve25519>|<get-curve25519>(){}[0]
+    final val ed25519 // de.connect2x.trixnity.libolm/OlmIdentityKeys.ed25519|{}ed25519[0]
+        final fun <get-ed25519>(): kotlin/String // de.connect2x.trixnity.libolm/OlmIdentityKeys.ed25519.<get-ed25519>|<get-ed25519>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.libolm/OlmIdentityKeys.component1|component1(){}[0]
+    final fun component2(): kotlin/String // de.connect2x.trixnity.libolm/OlmIdentityKeys.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ...): de.connect2x.trixnity.libolm/OlmIdentityKeys // de.connect2x.trixnity.libolm/OlmIdentityKeys.copy|copy(kotlin.String;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.libolm/OlmIdentityKeys.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.libolm/OlmIdentityKeys.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.libolm/OlmIdentityKeys.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.libolm/OlmIdentityKeys> { // de.connect2x.trixnity.libolm/OlmIdentityKeys.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.libolm/OlmIdentityKeys.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.libolm/OlmIdentityKeys.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.libolm/OlmIdentityKeys.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.libolm/OlmIdentityKeys // de.connect2x.trixnity.libolm/OlmIdentityKeys.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.libolm/OlmIdentityKeys) // de.connect2x.trixnity.libolm/OlmIdentityKeys.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.libolm.OlmIdentityKeys){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmIdentityKeys.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.libolm/OlmIdentityKeys> // de.connect2x.trixnity.libolm/OlmIdentityKeys.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmInboundGroupMessage { // de.connect2x.trixnity.libolm/OlmInboundGroupMessage|null[0]
+    constructor <init>(kotlin/String, kotlin/Long) // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.<init>|<init>(kotlin.String;kotlin.Long){}[0]
+
+    final val index // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.index|{}index[0]
+        final fun <get-index>(): kotlin/Long // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.index.<get-index>|<get-index>(){}[0]
+    final val message // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.message|{}message[0]
+        final fun <get-message>(): kotlin/String // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.message.<get-message>|<get-message>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/Long = ...): de.connect2x.trixnity.libolm/OlmInboundGroupMessage // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.copy|copy(kotlin.String;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.libolm/OlmInboundGroupMessage.toString|toString(){}[0]
+}
+
+final class de.connect2x.trixnity.libolm/OlmInboundGroupSession : de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/OlmInboundGroupSession|null[0]
+    final val firstKnownIndex // de.connect2x.trixnity.libolm/OlmInboundGroupSession.firstKnownIndex|{}firstKnownIndex[0]
+        final fun <get-firstKnownIndex>(): kotlin/Long // de.connect2x.trixnity.libolm/OlmInboundGroupSession.firstKnownIndex.<get-firstKnownIndex>|<get-firstKnownIndex>(){}[0]
+    final val sessionId // de.connect2x.trixnity.libolm/OlmInboundGroupSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.libolm/OlmInboundGroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+
+    final fun decrypt(kotlin/String): de.connect2x.trixnity.libolm/OlmInboundGroupMessage // de.connect2x.trixnity.libolm/OlmInboundGroupSession.decrypt|decrypt(kotlin.String){}[0]
+    final fun export(kotlin/Long): kotlin/String // de.connect2x.trixnity.libolm/OlmInboundGroupSession.export|export(kotlin.Long){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/OlmInboundGroupSession.free|free(){}[0]
+    final fun pickle(kotlin/String?): kotlin/String // de.connect2x.trixnity.libolm/OlmInboundGroupSession.pickle|pickle(kotlin.String?){}[0]
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmInboundGroupSession.Companion|null[0]
+        final fun create(kotlin/String): de.connect2x.trixnity.libolm/OlmInboundGroupSession // de.connect2x.trixnity.libolm/OlmInboundGroupSession.Companion.create|create(kotlin.String){}[0]
+        final fun import(kotlin/String): de.connect2x.trixnity.libolm/OlmInboundGroupSession // de.connect2x.trixnity.libolm/OlmInboundGroupSession.Companion.import|import(kotlin.String){}[0]
+        final fun unpickle(kotlin/String?, kotlin/String): de.connect2x.trixnity.libolm/OlmInboundGroupSession // de.connect2x.trixnity.libolm/OlmInboundGroupSession.Companion.unpickle|unpickle(kotlin.String?;kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmLibraryException : kotlin/IllegalStateException { // de.connect2x.trixnity.libolm/OlmLibraryException|null[0]
+    constructor <init>(kotlin/String? = ..., kotlin/Throwable? = ...) // de.connect2x.trixnity.libolm/OlmLibraryException.<init>|<init>(kotlin.String?;kotlin.Throwable?){}[0]
+}
+
+final class de.connect2x.trixnity.libolm/OlmMessage { // de.connect2x.trixnity.libolm/OlmMessage|null[0]
+    constructor <init>(kotlin/String, de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType) // de.connect2x.trixnity.libolm/OlmMessage.<init>|<init>(kotlin.String;de.connect2x.trixnity.libolm.OlmMessage.OlmMessageType){}[0]
+
+    final val cipherText // de.connect2x.trixnity.libolm/OlmMessage.cipherText|{}cipherText[0]
+        final fun <get-cipherText>(): kotlin/String // de.connect2x.trixnity.libolm/OlmMessage.cipherText.<get-cipherText>|<get-cipherText>(){}[0]
+    final val type // de.connect2x.trixnity.libolm/OlmMessage.type|{}type[0]
+        final fun <get-type>(): de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType // de.connect2x.trixnity.libolm/OlmMessage.type.<get-type>|<get-type>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.libolm/OlmMessage.component1|component1(){}[0]
+    final fun component2(): de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType // de.connect2x.trixnity.libolm/OlmMessage.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType = ...): de.connect2x.trixnity.libolm/OlmMessage // de.connect2x.trixnity.libolm/OlmMessage.copy|copy(kotlin.String;de.connect2x.trixnity.libolm.OlmMessage.OlmMessageType){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.libolm/OlmMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.libolm/OlmMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.libolm/OlmMessage.toString|toString(){}[0]
+
+    final enum class OlmMessageType : kotlin/Enum<de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType> { // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType|null[0]
+        enum entry INITIAL_PRE_KEY // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.INITIAL_PRE_KEY|null[0]
+        enum entry ORDINARY // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.ORDINARY|null[0]
+
+        final val entries // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType> // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.entries.<get-entries>|<get-entries>#static(){}[0]
+        final val value // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.value|{}value[0]
+            final fun <get-value>(): kotlin/Int // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.value.<get-value>|<get-value>(){}[0]
+
+        final fun valueOf(kotlin/String): de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType> // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.values|values#static(){}[0]
+
+        final object Companion { // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.Companion|null[0]
+            final fun of(kotlin/Int): de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType // de.connect2x.trixnity.libolm/OlmMessage.OlmMessageType.Companion.of|of(kotlin.Int){}[0]
+        }
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmOneTimeKeys { // de.connect2x.trixnity.libolm/OlmOneTimeKeys|null[0]
+    constructor <init>(kotlin.collections/Map<kotlin/String, kotlin/String>) // de.connect2x.trixnity.libolm/OlmOneTimeKeys.<init>|<init>(kotlin.collections.Map<kotlin.String,kotlin.String>){}[0]
+
+    final val curve25519 // de.connect2x.trixnity.libolm/OlmOneTimeKeys.curve25519|{}curve25519[0]
+        final fun <get-curve25519>(): kotlin.collections/Map<kotlin/String, kotlin/String> // de.connect2x.trixnity.libolm/OlmOneTimeKeys.curve25519.<get-curve25519>|<get-curve25519>(){}[0]
+
+    final fun component1(): kotlin.collections/Map<kotlin/String, kotlin/String> // de.connect2x.trixnity.libolm/OlmOneTimeKeys.component1|component1(){}[0]
+    final fun copy(kotlin.collections/Map<kotlin/String, kotlin/String> = ...): de.connect2x.trixnity.libolm/OlmOneTimeKeys // de.connect2x.trixnity.libolm/OlmOneTimeKeys.copy|copy(kotlin.collections.Map<kotlin.String,kotlin.String>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.libolm/OlmOneTimeKeys.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.libolm/OlmOneTimeKeys.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.libolm/OlmOneTimeKeys.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.libolm/OlmOneTimeKeys> { // de.connect2x.trixnity.libolm/OlmOneTimeKeys.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.libolm/OlmOneTimeKeys.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.libolm/OlmOneTimeKeys.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.libolm/OlmOneTimeKeys.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.libolm/OlmOneTimeKeys // de.connect2x.trixnity.libolm/OlmOneTimeKeys.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.libolm/OlmOneTimeKeys) // de.connect2x.trixnity.libolm/OlmOneTimeKeys.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.libolm.OlmOneTimeKeys){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmOneTimeKeys.Companion|null[0]
+        final val $childSerializers // de.connect2x.trixnity.libolm/OlmOneTimeKeys.Companion.$childSerializers|{}$childSerializers[0]
+
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.libolm/OlmOneTimeKeys> // de.connect2x.trixnity.libolm/OlmOneTimeKeys.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmOutboundGroupSession : de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/OlmOutboundGroupSession|null[0]
+    final val messageIndex // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.messageIndex|{}messageIndex[0]
+        final fun <get-messageIndex>(): kotlin/Long // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.messageIndex.<get-messageIndex>|<get-messageIndex>(){}[0]
+    final val sessionId // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+    final val sessionKey // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.sessionKey|{}sessionKey[0]
+        final fun <get-sessionKey>(): kotlin/String // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.sessionKey.<get-sessionKey>|<get-sessionKey>(){}[0]
+
+    final fun encrypt(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.encrypt|encrypt(kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.free|free(){}[0]
+    final fun pickle(kotlin/String?): kotlin/String // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.pickle|pickle(kotlin.String?){}[0]
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.Companion|null[0]
+        final fun create(): de.connect2x.trixnity.libolm/OlmOutboundGroupSession // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.Companion.create|create(){}[0]
+        final fun unpickle(kotlin/String?, kotlin/String): de.connect2x.trixnity.libolm/OlmOutboundGroupSession // de.connect2x.trixnity.libolm/OlmOutboundGroupSession.Companion.unpickle|unpickle(kotlin.String?;kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmPkDecryption : de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/OlmPkDecryption|null[0]
+    final val privateKey // de.connect2x.trixnity.libolm/OlmPkDecryption.privateKey|{}privateKey[0]
+        final fun <get-privateKey>(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkDecryption.privateKey.<get-privateKey>|<get-privateKey>(){}[0]
+    final val publicKey // de.connect2x.trixnity.libolm/OlmPkDecryption.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkDecryption.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun decrypt(de.connect2x.trixnity.libolm/OlmPkMessage): kotlin/String // de.connect2x.trixnity.libolm/OlmPkDecryption.decrypt|decrypt(de.connect2x.trixnity.libolm.OlmPkMessage){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/OlmPkDecryption.free|free(){}[0]
+    final fun pickle(kotlin/String?): kotlin/String // de.connect2x.trixnity.libolm/OlmPkDecryption.pickle|pickle(kotlin.String?){}[0]
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmPkDecryption.Companion|null[0]
+        final fun create(kotlin/String? = ...): de.connect2x.trixnity.libolm/OlmPkDecryption // de.connect2x.trixnity.libolm/OlmPkDecryption.Companion.create|create(kotlin.String?){}[0]
+        final fun unpickle(kotlin/String?, kotlin/String): de.connect2x.trixnity.libolm/OlmPkDecryption // de.connect2x.trixnity.libolm/OlmPkDecryption.Companion.unpickle|unpickle(kotlin.String?;kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmPkEncryption : de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/OlmPkEncryption|null[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.libolm/OlmPkMessage // de.connect2x.trixnity.libolm/OlmPkEncryption.encrypt|encrypt(kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/OlmPkEncryption.free|free(){}[0]
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmPkEncryption.Companion|null[0]
+        final fun create(kotlin/String): de.connect2x.trixnity.libolm/OlmPkEncryption // de.connect2x.trixnity.libolm/OlmPkEncryption.Companion.create|create(kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmPkMessage { // de.connect2x.trixnity.libolm/OlmPkMessage|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/OlmPkMessage.<init>|<init>(kotlin.String;kotlin.String;kotlin.String){}[0]
+
+    final val cipherText // de.connect2x.trixnity.libolm/OlmPkMessage.cipherText|{}cipherText[0]
+        final fun <get-cipherText>(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkMessage.cipherText.<get-cipherText>|<get-cipherText>(){}[0]
+    final val ephemeralKey // de.connect2x.trixnity.libolm/OlmPkMessage.ephemeralKey|{}ephemeralKey[0]
+        final fun <get-ephemeralKey>(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkMessage.ephemeralKey.<get-ephemeralKey>|<get-ephemeralKey>(){}[0]
+    final val mac // de.connect2x.trixnity.libolm/OlmPkMessage.mac|{}mac[0]
+        final fun <get-mac>(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkMessage.mac.<get-mac>|<get-mac>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkMessage.component1|component1(){}[0]
+    final fun component2(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkMessage.component2|component2(){}[0]
+    final fun component3(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkMessage.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ...): de.connect2x.trixnity.libolm/OlmPkMessage // de.connect2x.trixnity.libolm/OlmPkMessage.copy|copy(kotlin.String;kotlin.String;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.libolm/OlmPkMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.libolm/OlmPkMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkMessage.toString|toString(){}[0]
+}
+
+final class de.connect2x.trixnity.libolm/OlmPkSigning : de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/OlmPkSigning|null[0]
+    final val privateKey // de.connect2x.trixnity.libolm/OlmPkSigning.privateKey|{}privateKey[0]
+        final fun <get-privateKey>(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkSigning.privateKey.<get-privateKey>|<get-privateKey>(){}[0]
+    final val publicKey // de.connect2x.trixnity.libolm/OlmPkSigning.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): kotlin/String // de.connect2x.trixnity.libolm/OlmPkSigning.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmPkSigning.free|free(){}[0]
+    final fun sign(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OlmPkSigning.sign|sign(kotlin.String){}[0]
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmPkSigning.Companion|null[0]
+        final fun create(kotlin/String? = ...): de.connect2x.trixnity.libolm/OlmPkSigning // de.connect2x.trixnity.libolm/OlmPkSigning.Companion.create|create(kotlin.String?){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmSAS : de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/OlmSAS|null[0]
+    final val publicKey // de.connect2x.trixnity.libolm/OlmSAS.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): kotlin/String // de.connect2x.trixnity.libolm/OlmSAS.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun calculateMac(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OlmSAS.calculateMac|calculateMac(kotlin.String;kotlin.String){}[0]
+    final fun calculateMacFixedBase64(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OlmSAS.calculateMacFixedBase64|calculateMacFixedBase64(kotlin.String;kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/OlmSAS.free|free(){}[0]
+    final fun generateShortCode(kotlin/String, kotlin/Int): kotlin/ByteArray // de.connect2x.trixnity.libolm/OlmSAS.generateShortCode|generateShortCode(kotlin.String;kotlin.Int){}[0]
+    final fun setTheirPublicKey(kotlin/String) // de.connect2x.trixnity.libolm/OlmSAS.setTheirPublicKey|setTheirPublicKey(kotlin.String){}[0]
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmSAS.Companion|null[0]
+        final fun create(): de.connect2x.trixnity.libolm/OlmSAS // de.connect2x.trixnity.libolm/OlmSAS.Companion.create|create(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmSession : de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/OlmSession|null[0]
+    final val description // de.connect2x.trixnity.libolm/OlmSession.description|{}description[0]
+        final fun <get-description>(): kotlin/String // de.connect2x.trixnity.libolm/OlmSession.description.<get-description>|<get-description>(){}[0]
+    final val hasReceivedMessage // de.connect2x.trixnity.libolm/OlmSession.hasReceivedMessage|{}hasReceivedMessage[0]
+        final fun <get-hasReceivedMessage>(): kotlin/Boolean // de.connect2x.trixnity.libolm/OlmSession.hasReceivedMessage.<get-hasReceivedMessage>|<get-hasReceivedMessage>(){}[0]
+    final val sessionId // de.connect2x.trixnity.libolm/OlmSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.libolm/OlmSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+
+    final fun decrypt(de.connect2x.trixnity.libolm/OlmMessage): kotlin/String // de.connect2x.trixnity.libolm/OlmSession.decrypt|decrypt(de.connect2x.trixnity.libolm.OlmMessage){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.libolm/OlmMessage // de.connect2x.trixnity.libolm/OlmSession.encrypt|encrypt(kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/OlmSession.free|free(){}[0]
+    final fun matchesInboundSession(kotlin/String): kotlin/Boolean // de.connect2x.trixnity.libolm/OlmSession.matchesInboundSession|matchesInboundSession(kotlin.String){}[0]
+    final fun matchesInboundSessionFrom(kotlin/String, kotlin/String): kotlin/Boolean // de.connect2x.trixnity.libolm/OlmSession.matchesInboundSessionFrom|matchesInboundSessionFrom(kotlin.String;kotlin.String){}[0]
+    final fun pickle(kotlin/String?): kotlin/String // de.connect2x.trixnity.libolm/OlmSession.pickle|pickle(kotlin.String?){}[0]
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmSession.Companion|null[0]
+        final fun createInbound(de.connect2x.trixnity.libolm/OlmAccount, kotlin/String): de.connect2x.trixnity.libolm/OlmSession // de.connect2x.trixnity.libolm/OlmSession.Companion.createInbound|createInbound(de.connect2x.trixnity.libolm.OlmAccount;kotlin.String){}[0]
+        final fun createInboundFrom(de.connect2x.trixnity.libolm/OlmAccount, kotlin/String, kotlin/String): de.connect2x.trixnity.libolm/OlmSession // de.connect2x.trixnity.libolm/OlmSession.Companion.createInboundFrom|createInboundFrom(de.connect2x.trixnity.libolm.OlmAccount;kotlin.String;kotlin.String){}[0]
+        final fun createOutbound(de.connect2x.trixnity.libolm/OlmAccount, kotlin/String, kotlin/String): de.connect2x.trixnity.libolm/OlmSession // de.connect2x.trixnity.libolm/OlmSession.Companion.createOutbound|createOutbound(de.connect2x.trixnity.libolm.OlmAccount;kotlin.String;kotlin.String){}[0]
+        final fun unpickle(kotlin/String?, kotlin/String): de.connect2x.trixnity.libolm/OlmSession // de.connect2x.trixnity.libolm/OlmSession.Companion.unpickle|unpickle(kotlin.String?;kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmUtility : de.connect2x.trixnity.libolm/WantsToBeFree { // de.connect2x.trixnity.libolm/OlmUtility|null[0]
+    final fun free() // de.connect2x.trixnity.libolm/OlmUtility.free|free(){}[0]
+    final fun sha256(kotlin/ByteArray): kotlin/String // de.connect2x.trixnity.libolm/OlmUtility.sha256|sha256(kotlin.ByteArray){}[0]
+    final fun sha256(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OlmUtility.sha256|sha256(kotlin.String){}[0]
+    final fun verifyEd25519(kotlin/String, kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/OlmUtility.verifyEd25519|verifyEd25519(kotlin.String;kotlin.String;kotlin.String){}[0]
+
+    final object Companion { // de.connect2x.trixnity.libolm/OlmUtility.Companion|null[0]
+        final fun create(): de.connect2x.trixnity.libolm/OlmUtility // de.connect2x.trixnity.libolm/OlmUtility.Companion.create|create(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.libolm/OlmVersion { // de.connect2x.trixnity.libolm/OlmVersion|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int) // de.connect2x.trixnity.libolm/OlmVersion.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val major // de.connect2x.trixnity.libolm/OlmVersion.major|{}major[0]
+        final fun <get-major>(): kotlin/Int // de.connect2x.trixnity.libolm/OlmVersion.major.<get-major>|<get-major>(){}[0]
+    final val minor // de.connect2x.trixnity.libolm/OlmVersion.minor|{}minor[0]
+        final fun <get-minor>(): kotlin/Int // de.connect2x.trixnity.libolm/OlmVersion.minor.<get-minor>|<get-minor>(){}[0]
+    final val patch // de.connect2x.trixnity.libolm/OlmVersion.patch|{}patch[0]
+        final fun <get-patch>(): kotlin/Int // de.connect2x.trixnity.libolm/OlmVersion.patch.<get-patch>|<get-patch>(){}[0]
+
+    final fun component1(): kotlin/Int // de.connect2x.trixnity.libolm/OlmVersion.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // de.connect2x.trixnity.libolm/OlmVersion.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // de.connect2x.trixnity.libolm/OlmVersion.component3|component3(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): de.connect2x.trixnity.libolm/OlmVersion // de.connect2x.trixnity.libolm/OlmVersion.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.libolm/OlmVersion.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.libolm/OlmVersion.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.libolm/OlmVersion.toString|toString(){}[0]
+}
+
+final fun de.connect2x.trixnity.libolm/getOlmVersion(): de.connect2x.trixnity.libolm/OlmVersion // de.connect2x.trixnity.libolm/getOlmVersion|getOlmVersion(){}[0]
+final inline fun <#A: kotlin/Any?, #B: de.connect2x.trixnity.libolm/WantsToBeFree, #C: de.connect2x.trixnity.libolm/WantsToBeFree, #D: de.connect2x.trixnity.libolm/WantsToBeFree, #E: de.connect2x.trixnity.libolm/WantsToBeFree> de.connect2x.trixnity.libolm/freeAfter(#B, #C, #D, #E, kotlin/Function4<#B, #C, #D, #E, #A>): #A // de.connect2x.trixnity.libolm/freeAfter|freeAfter(0:1;0:2;0:3;0:4;kotlin.Function4<0:1,0:2,0:3,0:4,0:0>){0§<kotlin.Any?>;1§<de.connect2x.trixnity.libolm.WantsToBeFree>;2§<de.connect2x.trixnity.libolm.WantsToBeFree>;3§<de.connect2x.trixnity.libolm.WantsToBeFree>;4§<de.connect2x.trixnity.libolm.WantsToBeFree>}[0]
+final inline fun <#A: kotlin/Any?, #B: de.connect2x.trixnity.libolm/WantsToBeFree, #C: de.connect2x.trixnity.libolm/WantsToBeFree, #D: de.connect2x.trixnity.libolm/WantsToBeFree> de.connect2x.trixnity.libolm/freeAfter(#B, #C, #D, kotlin/Function3<#B, #C, #D, #A>): #A // de.connect2x.trixnity.libolm/freeAfter|freeAfter(0:1;0:2;0:3;kotlin.Function3<0:1,0:2,0:3,0:0>){0§<kotlin.Any?>;1§<de.connect2x.trixnity.libolm.WantsToBeFree>;2§<de.connect2x.trixnity.libolm.WantsToBeFree>;3§<de.connect2x.trixnity.libolm.WantsToBeFree>}[0]
+final inline fun <#A: kotlin/Any?, #B: de.connect2x.trixnity.libolm/WantsToBeFree, #C: de.connect2x.trixnity.libolm/WantsToBeFree> de.connect2x.trixnity.libolm/freeAfter(#B, #C, kotlin/Function2<#B, #C, #A>): #A // de.connect2x.trixnity.libolm/freeAfter|freeAfter(0:1;0:2;kotlin.Function2<0:1,0:2,0:0>){0§<kotlin.Any?>;1§<de.connect2x.trixnity.libolm.WantsToBeFree>;2§<de.connect2x.trixnity.libolm.WantsToBeFree>}[0]
+final inline fun <#A: kotlin/Any?, #B: de.connect2x.trixnity.libolm/WantsToBeFree> de.connect2x.trixnity.libolm/freeAfter(#B, kotlin/Function1<#B, #A>): #A // de.connect2x.trixnity.libolm/freeAfter|freeAfter(0:1;kotlin.Function1<0:1,0:0>){0§<kotlin.Any?>;1§<de.connect2x.trixnity.libolm.WantsToBeFree>}[0]
+
+// Targets: [native]
+final class <#A: kotlin/Any?> de.connect2x.trixnity.libolm/MutableWrapper { // de.connect2x.trixnity.libolm/MutableWrapper|null[0]
+    constructor <init>(#A) // de.connect2x.trixnity.libolm/MutableWrapper.<init>|<init>(1:0){}[0]
+
+    final var value // de.connect2x.trixnity.libolm/MutableWrapper.value|{}value[0]
+        final fun <get-value>(): #A // de.connect2x.trixnity.libolm/MutableWrapper.value.<get-value>|<get-value>(){}[0]
+        final fun <set-value>(#A) // de.connect2x.trixnity.libolm/MutableWrapper.value.<set-value>|<set-value>(1:0){}[0]
+
+    final fun component1(): #A // de.connect2x.trixnity.libolm/MutableWrapper.component1|component1(){}[0]
+    final fun copy(#A = ...): de.connect2x.trixnity.libolm/MutableWrapper<#A> // de.connect2x.trixnity.libolm/MutableWrapper.copy|copy(1:0){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.libolm/MutableWrapper.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.libolm/MutableWrapper.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.libolm/MutableWrapper.toString|toString(){}[0]
+}
+
+// Targets: [native]
+final class de.connect2x.trixnity.libolm/OlmAccountPointer { // de.connect2x.trixnity.libolm/OlmAccountPointer|null[0]
+    constructor <init>(kotlinx.cinterop/CPointer<cnames.structs/OlmAccount>) // de.connect2x.trixnity.libolm/OlmAccountPointer.<init>|<init>(kotlinx.cinterop.CPointer<cnames.structs.OlmAccount>){}[0]
+
+    final val ptr // de.connect2x.trixnity.libolm/OlmAccountPointer.ptr|{}ptr[0]
+        final fun <get-ptr>(): kotlinx.cinterop/CPointer<cnames.structs/OlmAccount> // de.connect2x.trixnity.libolm/OlmAccountPointer.ptr.<get-ptr>|<get-ptr>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmAccountPointer.free|free(){}[0]
+}
+
+// Targets: [native]
+final class de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer { // de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer|null[0]
+    constructor <init>(kotlinx.cinterop/CPointer<cnames.structs/OlmInboundGroupSession>) // de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer.<init>|<init>(kotlinx.cinterop.CPointer<cnames.structs.OlmInboundGroupSession>){}[0]
+
+    final val ptr // de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer.ptr|{}ptr[0]
+        final fun <get-ptr>(): kotlinx.cinterop/CPointer<cnames.structs/OlmInboundGroupSession> // de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer.ptr.<get-ptr>|<get-ptr>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer.free|free(){}[0]
+}
+
+// Targets: [native]
+final class de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer { // de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer|null[0]
+    constructor <init>(kotlinx.cinterop/CPointer<cnames.structs/OlmOutboundGroupSession>) // de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer.<init>|<init>(kotlinx.cinterop.CPointer<cnames.structs.OlmOutboundGroupSession>){}[0]
+
+    final val ptr // de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer.ptr|{}ptr[0]
+        final fun <get-ptr>(): kotlinx.cinterop/CPointer<cnames.structs/OlmOutboundGroupSession> // de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer.ptr.<get-ptr>|<get-ptr>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer.free|free(){}[0]
+}
+
+// Targets: [native]
+final class de.connect2x.trixnity.libolm/OlmPkDecryptionPointer { // de.connect2x.trixnity.libolm/OlmPkDecryptionPointer|null[0]
+    constructor <init>(kotlinx.cinterop/CPointer<cnames.structs/OlmPkDecryption>) // de.connect2x.trixnity.libolm/OlmPkDecryptionPointer.<init>|<init>(kotlinx.cinterop.CPointer<cnames.structs.OlmPkDecryption>){}[0]
+
+    final val ptr // de.connect2x.trixnity.libolm/OlmPkDecryptionPointer.ptr|{}ptr[0]
+        final fun <get-ptr>(): kotlinx.cinterop/CPointer<cnames.structs/OlmPkDecryption> // de.connect2x.trixnity.libolm/OlmPkDecryptionPointer.ptr.<get-ptr>|<get-ptr>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmPkDecryptionPointer.free|free(){}[0]
+}
+
+// Targets: [native]
+final class de.connect2x.trixnity.libolm/OlmPkEncryptionPointer { // de.connect2x.trixnity.libolm/OlmPkEncryptionPointer|null[0]
+    constructor <init>(kotlinx.cinterop/CPointer<cnames.structs/OlmPkEncryption>) // de.connect2x.trixnity.libolm/OlmPkEncryptionPointer.<init>|<init>(kotlinx.cinterop.CPointer<cnames.structs.OlmPkEncryption>){}[0]
+
+    final val ptr // de.connect2x.trixnity.libolm/OlmPkEncryptionPointer.ptr|{}ptr[0]
+        final fun <get-ptr>(): kotlinx.cinterop/CPointer<cnames.structs/OlmPkEncryption> // de.connect2x.trixnity.libolm/OlmPkEncryptionPointer.ptr.<get-ptr>|<get-ptr>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmPkEncryptionPointer.free|free(){}[0]
+}
+
+// Targets: [native]
+final class de.connect2x.trixnity.libolm/OlmPkSigningPointer { // de.connect2x.trixnity.libolm/OlmPkSigningPointer|null[0]
+    constructor <init>(kotlinx.cinterop/CPointer<cnames.structs/OlmPkSigning>) // de.connect2x.trixnity.libolm/OlmPkSigningPointer.<init>|<init>(kotlinx.cinterop.CPointer<cnames.structs.OlmPkSigning>){}[0]
+
+    final val ptr // de.connect2x.trixnity.libolm/OlmPkSigningPointer.ptr|{}ptr[0]
+        final fun <get-ptr>(): kotlinx.cinterop/CPointer<cnames.structs/OlmPkSigning> // de.connect2x.trixnity.libolm/OlmPkSigningPointer.ptr.<get-ptr>|<get-ptr>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmPkSigningPointer.free|free(){}[0]
+}
+
+// Targets: [native]
+final class de.connect2x.trixnity.libolm/OlmSASPointer { // de.connect2x.trixnity.libolm/OlmSASPointer|null[0]
+    constructor <init>(kotlinx.cinterop/CPointer<cnames.structs/OlmSAS>) // de.connect2x.trixnity.libolm/OlmSASPointer.<init>|<init>(kotlinx.cinterop.CPointer<cnames.structs.OlmSAS>){}[0]
+
+    final val ptr // de.connect2x.trixnity.libolm/OlmSASPointer.ptr|{}ptr[0]
+        final fun <get-ptr>(): kotlinx.cinterop/CPointer<cnames.structs/OlmSAS> // de.connect2x.trixnity.libolm/OlmSASPointer.ptr.<get-ptr>|<get-ptr>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmSASPointer.free|free(){}[0]
+}
+
+// Targets: [native]
+final class de.connect2x.trixnity.libolm/OlmSessionPointer { // de.connect2x.trixnity.libolm/OlmSessionPointer|null[0]
+    constructor <init>(kotlinx.cinterop/CPointer<cnames.structs/OlmSession>) // de.connect2x.trixnity.libolm/OlmSessionPointer.<init>|<init>(kotlinx.cinterop.CPointer<cnames.structs.OlmSession>){}[0]
+
+    final val ptr // de.connect2x.trixnity.libolm/OlmSessionPointer.ptr|{}ptr[0]
+        final fun <get-ptr>(): kotlinx.cinterop/CPointer<cnames.structs/OlmSession> // de.connect2x.trixnity.libolm/OlmSessionPointer.ptr.<get-ptr>|<get-ptr>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmSessionPointer.free|free(){}[0]
+}
+
+// Targets: [native]
+final class de.connect2x.trixnity.libolm/OlmUtilityPointer { // de.connect2x.trixnity.libolm/OlmUtilityPointer|null[0]
+    constructor <init>(kotlinx.cinterop/CPointer<cnames.structs/OlmUtility>) // de.connect2x.trixnity.libolm/OlmUtilityPointer.<init>|<init>(kotlinx.cinterop.CPointer<cnames.structs.OlmUtility>){}[0]
+
+    final val ptr // de.connect2x.trixnity.libolm/OlmUtilityPointer.ptr|{}ptr[0]
+        final fun <get-ptr>(): kotlinx.cinterop/CPointer<cnames.structs/OlmUtility> // de.connect2x.trixnity.libolm/OlmUtilityPointer.ptr.<get-ptr>|<get-ptr>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/OlmUtilityPointer.free|free(){}[0]
+}
+
+// Targets: [native]
+final object de.connect2x.trixnity.libolm/OlmLibrary { // de.connect2x.trixnity.libolm/OlmLibrary|null[0]
+    final fun account(): de.connect2x.trixnity.libolm/OlmAccountPointer // de.connect2x.trixnity.libolm/OlmLibrary.account|account(){}[0]
+    final fun account_forget_old_fallback_key(de.connect2x.trixnity.libolm/OlmAccountPointer) // de.connect2x.trixnity.libolm/OlmLibrary.account_forget_old_fallback_key|account_forget_old_fallback_key(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun account_generate_fallback_key(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray?): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_generate_fallback_key|account_generate_fallback_key(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray?){}[0]
+    final fun account_generate_fallback_key_random_length(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_generate_fallback_key_random_length|account_generate_fallback_key_random_length(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun account_generate_one_time_keys(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ULong, kotlin/ByteArray?): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_generate_one_time_keys|account_generate_one_time_keys(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ULong;kotlin.ByteArray?){}[0]
+    final fun account_generate_one_time_keys_random_length(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ULong): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_generate_one_time_keys_random_length|account_generate_one_time_keys_random_length(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ULong){}[0]
+    final fun account_identity_keys(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_identity_keys|account_identity_keys(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray){}[0]
+    final fun account_identity_keys_length(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_identity_keys_length|account_identity_keys_length(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun account_last_error(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.account_last_error|account_last_error(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun account_mark_keys_as_published(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_mark_keys_as_published|account_mark_keys_as_published(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun account_max_number_of_one_time_keys(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_max_number_of_one_time_keys|account_max_number_of_one_time_keys(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun account_one_time_keys(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_one_time_keys|account_one_time_keys(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray){}[0]
+    final fun account_one_time_keys_length(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_one_time_keys_length|account_one_time_keys_length(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun account_sign(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_sign|account_sign(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun account_signature_length(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_signature_length|account_signature_length(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun account_unpublished_fallback_key(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_unpublished_fallback_key|account_unpublished_fallback_key(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray){}[0]
+    final fun account_unpublished_fallback_key_length(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.account_unpublished_fallback_key_length|account_unpublished_fallback_key_length(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun clear_account(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.clear_account|clear_account(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun clear_inbound_group_session(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.clear_inbound_group_session|clear_inbound_group_session(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer){}[0]
+    final fun clear_outbound_group_session(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.clear_outbound_group_session|clear_outbound_group_session(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer){}[0]
+    final fun clear_pk_decryption(de.connect2x.trixnity.libolm/OlmPkDecryptionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.clear_pk_decryption|clear_pk_decryption(de.connect2x.trixnity.libolm.OlmPkDecryptionPointer){}[0]
+    final fun clear_pk_encryption(de.connect2x.trixnity.libolm/OlmPkEncryptionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.clear_pk_encryption|clear_pk_encryption(de.connect2x.trixnity.libolm.OlmPkEncryptionPointer){}[0]
+    final fun clear_pk_signing(de.connect2x.trixnity.libolm/OlmPkSigningPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.clear_pk_signing|clear_pk_signing(de.connect2x.trixnity.libolm.OlmPkSigningPointer){}[0]
+    final fun clear_sas(de.connect2x.trixnity.libolm/OlmSASPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.clear_sas|clear_sas(de.connect2x.trixnity.libolm.OlmSASPointer){}[0]
+    final fun clear_session(de.connect2x.trixnity.libolm/OlmSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.clear_session|clear_session(de.connect2x.trixnity.libolm.OlmSessionPointer){}[0]
+    final fun clear_utility(de.connect2x.trixnity.libolm/OlmUtilityPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.clear_utility|clear_utility(de.connect2x.trixnity.libolm.OlmUtilityPointer){}[0]
+    final fun create_account(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray?): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.create_account|create_account(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray?){}[0]
+    final fun create_account_random_length(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.create_account_random_length|create_account_random_length(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun create_inbound_session(de.connect2x.trixnity.libolm/OlmSessionPointer, de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.create_inbound_session|create_inbound_session(de.connect2x.trixnity.libolm.OlmSessionPointer;de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray){}[0]
+    final fun create_inbound_session_from(de.connect2x.trixnity.libolm/OlmSessionPointer, de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.create_inbound_session_from|create_inbound_session_from(de.connect2x.trixnity.libolm.OlmSessionPointer;de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun create_outbound_session(de.connect2x.trixnity.libolm/OlmSessionPointer, de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray?): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.create_outbound_session|create_outbound_session(de.connect2x.trixnity.libolm.OlmSessionPointer;de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray?){}[0]
+    final fun create_outbound_session_random_length(de.connect2x.trixnity.libolm/OlmSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.create_outbound_session_random_length|create_outbound_session_random_length(de.connect2x.trixnity.libolm.OlmSessionPointer){}[0]
+    final fun create_sas(de.connect2x.trixnity.libolm/OlmSASPointer, kotlin/ByteArray?): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.create_sas|create_sas(de.connect2x.trixnity.libolm.OlmSASPointer;kotlin.ByteArray?){}[0]
+    final fun create_sas_random_length(de.connect2x.trixnity.libolm/OlmSASPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.create_sas_random_length|create_sas_random_length(de.connect2x.trixnity.libolm.OlmSASPointer){}[0]
+    final fun decrypt(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ULong, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.decrypt|decrypt(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ULong;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun decrypt_max_plaintext_length(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ULong, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.decrypt_max_plaintext_length|decrypt_max_plaintext_length(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ULong;kotlin.ByteArray){}[0]
+    final fun ed25519_verify(de.connect2x.trixnity.libolm/OlmUtilityPointer, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.ed25519_verify|ed25519_verify(de.connect2x.trixnity.libolm.OlmUtilityPointer;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun encrypt(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ByteArray, kotlin/ByteArray?, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.encrypt|encrypt(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ByteArray;kotlin.ByteArray?;kotlin.ByteArray){}[0]
+    final fun encrypt_message_length(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ULong): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.encrypt_message_length|encrypt_message_length(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ULong){}[0]
+    final fun encrypt_message_type(de.connect2x.trixnity.libolm/OlmSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.encrypt_message_type|encrypt_message_type(de.connect2x.trixnity.libolm.OlmSessionPointer){}[0]
+    final fun encrypt_random_length(de.connect2x.trixnity.libolm/OlmSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.encrypt_random_length|encrypt_random_length(de.connect2x.trixnity.libolm.OlmSessionPointer){}[0]
+    final fun error(): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.error|error(){}[0]
+    final fun export_inbound_group_session(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer, kotlin/ByteArray, kotlin/UInt): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.export_inbound_group_session|export_inbound_group_session(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer;kotlin.ByteArray;kotlin.UInt){}[0]
+    final fun export_inbound_group_session_length(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.export_inbound_group_session_length|export_inbound_group_session_length(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer){}[0]
+    final fun get_library_version(de.connect2x.trixnity.libolm/MutableWrapper<kotlin/UInt>, de.connect2x.trixnity.libolm/MutableWrapper<kotlin/UInt>, de.connect2x.trixnity.libolm/MutableWrapper<kotlin/UInt>) // de.connect2x.trixnity.libolm/OlmLibrary.get_library_version|get_library_version(de.connect2x.trixnity.libolm.MutableWrapper<kotlin.UInt>;de.connect2x.trixnity.libolm.MutableWrapper<kotlin.UInt>;de.connect2x.trixnity.libolm.MutableWrapper<kotlin.UInt>){}[0]
+    final fun group_decrypt(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer, kotlin/ByteArray, kotlin/ByteArray, de.connect2x.trixnity.libolm/MutableWrapper<kotlin/UInt>): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.group_decrypt|group_decrypt(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer;kotlin.ByteArray;kotlin.ByteArray;de.connect2x.trixnity.libolm.MutableWrapper<kotlin.UInt>){}[0]
+    final fun group_decrypt_max_plaintext_length(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.group_decrypt_max_plaintext_length|group_decrypt_max_plaintext_length(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer;kotlin.ByteArray){}[0]
+    final fun group_encrypt(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.group_encrypt|group_encrypt(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun group_encrypt_message_length(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer, kotlin/ULong): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.group_encrypt_message_length|group_encrypt_message_length(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer;kotlin.ULong){}[0]
+    final fun import_inbound_group_session(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.import_inbound_group_session|import_inbound_group_session(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer;kotlin.ByteArray){}[0]
+    final fun inbound_group_session(): de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer // de.connect2x.trixnity.libolm/OlmLibrary.inbound_group_session|inbound_group_session(){}[0]
+    final fun inbound_group_session_first_known_index(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer): kotlin/UInt // de.connect2x.trixnity.libolm/OlmLibrary.inbound_group_session_first_known_index|inbound_group_session_first_known_index(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer){}[0]
+    final fun inbound_group_session_id(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.inbound_group_session_id|inbound_group_session_id(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer;kotlin.ByteArray){}[0]
+    final fun inbound_group_session_id_length(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.inbound_group_session_id_length|inbound_group_session_id_length(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer){}[0]
+    final fun inbound_group_session_is_verified(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer): kotlin/Int // de.connect2x.trixnity.libolm/OlmLibrary.inbound_group_session_is_verified|inbound_group_session_is_verified(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer){}[0]
+    final fun inbound_group_session_last_error(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.inbound_group_session_last_error|inbound_group_session_last_error(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer){}[0]
+    final fun init_inbound_group_session(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.init_inbound_group_session|init_inbound_group_session(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer;kotlin.ByteArray){}[0]
+    final fun init_outbound_group_session(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer, kotlin/ByteArray?): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.init_outbound_group_session|init_outbound_group_session(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer;kotlin.ByteArray?){}[0]
+    final fun init_outbound_group_session_random_length(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.init_outbound_group_session_random_length|init_outbound_group_session_random_length(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer){}[0]
+    final fun matches_inbound_session(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.matches_inbound_session|matches_inbound_session(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ByteArray){}[0]
+    final fun matches_inbound_session_from(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.matches_inbound_session_from|matches_inbound_session_from(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun outbound_group_session(): de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer // de.connect2x.trixnity.libolm/OlmLibrary.outbound_group_session|outbound_group_session(){}[0]
+    final fun outbound_group_session_id(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.outbound_group_session_id|outbound_group_session_id(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer;kotlin.ByteArray){}[0]
+    final fun outbound_group_session_id_length(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.outbound_group_session_id_length|outbound_group_session_id_length(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer){}[0]
+    final fun outbound_group_session_key(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.outbound_group_session_key|outbound_group_session_key(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer;kotlin.ByteArray){}[0]
+    final fun outbound_group_session_key_length(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.outbound_group_session_key_length|outbound_group_session_key_length(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer){}[0]
+    final fun outbound_group_session_last_error(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.outbound_group_session_last_error|outbound_group_session_last_error(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer){}[0]
+    final fun outbound_group_session_message_index(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer): kotlin/UInt // de.connect2x.trixnity.libolm/OlmLibrary.outbound_group_session_message_index|outbound_group_session_message_index(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer){}[0]
+    final fun pickle_account(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_account|pickle_account(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun pickle_account_length(de.connect2x.trixnity.libolm/OlmAccountPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_account_length|pickle_account_length(de.connect2x.trixnity.libolm.OlmAccountPointer){}[0]
+    final fun pickle_inbound_group_session(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_inbound_group_session|pickle_inbound_group_session(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun pickle_inbound_group_session_length(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_inbound_group_session_length|pickle_inbound_group_session_length(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer){}[0]
+    final fun pickle_outbound_group_session(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_outbound_group_session|pickle_outbound_group_session(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun pickle_outbound_group_session_length(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_outbound_group_session_length|pickle_outbound_group_session_length(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer){}[0]
+    final fun pickle_pk_decryption(de.connect2x.trixnity.libolm/OlmPkDecryptionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_pk_decryption|pickle_pk_decryption(de.connect2x.trixnity.libolm.OlmPkDecryptionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun pickle_pk_decryption_length(de.connect2x.trixnity.libolm/OlmPkDecryptionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_pk_decryption_length|pickle_pk_decryption_length(de.connect2x.trixnity.libolm.OlmPkDecryptionPointer){}[0]
+    final fun pickle_session(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_session|pickle_session(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun pickle_session_length(de.connect2x.trixnity.libolm/OlmSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pickle_session_length|pickle_session_length(de.connect2x.trixnity.libolm.OlmSessionPointer){}[0]
+    final fun pk_ciphertext_length(de.connect2x.trixnity.libolm/OlmPkEncryptionPointer, kotlin/ULong): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_ciphertext_length|pk_ciphertext_length(de.connect2x.trixnity.libolm.OlmPkEncryptionPointer;kotlin.ULong){}[0]
+    final fun pk_decrypt(de.connect2x.trixnity.libolm/OlmPkDecryptionPointer, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_decrypt|pk_decrypt(de.connect2x.trixnity.libolm.OlmPkDecryptionPointer;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun pk_decryption(): de.connect2x.trixnity.libolm/OlmPkDecryptionPointer // de.connect2x.trixnity.libolm/OlmLibrary.pk_decryption|pk_decryption(){}[0]
+    final fun pk_decryption_last_error(de.connect2x.trixnity.libolm/OlmPkDecryptionPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.pk_decryption_last_error|pk_decryption_last_error(de.connect2x.trixnity.libolm.OlmPkDecryptionPointer){}[0]
+    final fun pk_encrypt(de.connect2x.trixnity.libolm/OlmPkEncryptionPointer, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray?): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_encrypt|pk_encrypt(de.connect2x.trixnity.libolm.OlmPkEncryptionPointer;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray?){}[0]
+    final fun pk_encrypt_random_length(de.connect2x.trixnity.libolm/OlmPkEncryptionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_encrypt_random_length|pk_encrypt_random_length(de.connect2x.trixnity.libolm.OlmPkEncryptionPointer){}[0]
+    final fun pk_encryption(): de.connect2x.trixnity.libolm/OlmPkEncryptionPointer // de.connect2x.trixnity.libolm/OlmLibrary.pk_encryption|pk_encryption(){}[0]
+    final fun pk_encryption_last_error(de.connect2x.trixnity.libolm/OlmPkEncryptionPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.pk_encryption_last_error|pk_encryption_last_error(de.connect2x.trixnity.libolm.OlmPkEncryptionPointer){}[0]
+    final fun pk_encryption_set_recipient_key(de.connect2x.trixnity.libolm/OlmPkEncryptionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_encryption_set_recipient_key|pk_encryption_set_recipient_key(de.connect2x.trixnity.libolm.OlmPkEncryptionPointer;kotlin.ByteArray){}[0]
+    final fun pk_get_private_key(de.connect2x.trixnity.libolm/OlmPkDecryptionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_get_private_key|pk_get_private_key(de.connect2x.trixnity.libolm.OlmPkDecryptionPointer;kotlin.ByteArray){}[0]
+    final fun pk_key_from_private(de.connect2x.trixnity.libolm/OlmPkDecryptionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_key_from_private|pk_key_from_private(de.connect2x.trixnity.libolm.OlmPkDecryptionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun pk_key_length(): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_key_length|pk_key_length(){}[0]
+    final fun pk_mac_length(de.connect2x.trixnity.libolm/OlmPkEncryptionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_mac_length|pk_mac_length(de.connect2x.trixnity.libolm.OlmPkEncryptionPointer){}[0]
+    final fun pk_max_plaintext_length(de.connect2x.trixnity.libolm/OlmPkDecryptionPointer, kotlin/ULong): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_max_plaintext_length|pk_max_plaintext_length(de.connect2x.trixnity.libolm.OlmPkDecryptionPointer;kotlin.ULong){}[0]
+    final fun pk_private_key_length(): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_private_key_length|pk_private_key_length(){}[0]
+    final fun pk_sign(de.connect2x.trixnity.libolm/OlmPkSigningPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_sign|pk_sign(de.connect2x.trixnity.libolm.OlmPkSigningPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun pk_signature_length(): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_signature_length|pk_signature_length(){}[0]
+    final fun pk_signing(): de.connect2x.trixnity.libolm/OlmPkSigningPointer // de.connect2x.trixnity.libolm/OlmLibrary.pk_signing|pk_signing(){}[0]
+    final fun pk_signing_key_from_seed(de.connect2x.trixnity.libolm/OlmPkSigningPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_signing_key_from_seed|pk_signing_key_from_seed(de.connect2x.trixnity.libolm.OlmPkSigningPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun pk_signing_last_error(de.connect2x.trixnity.libolm/OlmPkSigningPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.pk_signing_last_error|pk_signing_last_error(de.connect2x.trixnity.libolm.OlmPkSigningPointer){}[0]
+    final fun pk_signing_public_key_length(): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_signing_public_key_length|pk_signing_public_key_length(){}[0]
+    final fun pk_signing_seed_length(): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.pk_signing_seed_length|pk_signing_seed_length(){}[0]
+    final fun remove_one_time_keys(de.connect2x.trixnity.libolm/OlmAccountPointer, de.connect2x.trixnity.libolm/OlmSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.remove_one_time_keys|remove_one_time_keys(de.connect2x.trixnity.libolm.OlmAccountPointer;de.connect2x.trixnity.libolm.OlmSessionPointer){}[0]
+    final fun sas(): de.connect2x.trixnity.libolm/OlmSASPointer // de.connect2x.trixnity.libolm/OlmLibrary.sas|sas(){}[0]
+    final fun sas_calculate_mac(de.connect2x.trixnity.libolm/OlmSASPointer, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sas_calculate_mac|sas_calculate_mac(de.connect2x.trixnity.libolm.OlmSASPointer;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun sas_calculate_mac_ULong_kdf(de.connect2x.trixnity.libolm/OlmSASPointer, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sas_calculate_mac_ULong_kdf|sas_calculate_mac_ULong_kdf(de.connect2x.trixnity.libolm.OlmSASPointer;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun sas_calculate_mac_fixed_base64(de.connect2x.trixnity.libolm/OlmSASPointer, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sas_calculate_mac_fixed_base64|sas_calculate_mac_fixed_base64(de.connect2x.trixnity.libolm.OlmSASPointer;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun sas_generate_bytes(de.connect2x.trixnity.libolm/OlmSASPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sas_generate_bytes|sas_generate_bytes(de.connect2x.trixnity.libolm.OlmSASPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun sas_get_pubkey(de.connect2x.trixnity.libolm/OlmSASPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sas_get_pubkey|sas_get_pubkey(de.connect2x.trixnity.libolm.OlmSASPointer;kotlin.ByteArray){}[0]
+    final fun sas_is_their_key_set(de.connect2x.trixnity.libolm/OlmSASPointer): kotlin/Int // de.connect2x.trixnity.libolm/OlmLibrary.sas_is_their_key_set|sas_is_their_key_set(de.connect2x.trixnity.libolm.OlmSASPointer){}[0]
+    final fun sas_last_error(de.connect2x.trixnity.libolm/OlmSASPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.sas_last_error|sas_last_error(de.connect2x.trixnity.libolm.OlmSASPointer){}[0]
+    final fun sas_mac_length(de.connect2x.trixnity.libolm/OlmSASPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sas_mac_length|sas_mac_length(de.connect2x.trixnity.libolm.OlmSASPointer){}[0]
+    final fun sas_pubkey_length(de.connect2x.trixnity.libolm/OlmSASPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sas_pubkey_length|sas_pubkey_length(de.connect2x.trixnity.libolm.OlmSASPointer){}[0]
+    final fun sas_set_their_key(de.connect2x.trixnity.libolm/OlmSASPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sas_set_their_key|sas_set_their_key(de.connect2x.trixnity.libolm.OlmSASPointer;kotlin.ByteArray){}[0]
+    final fun session(): de.connect2x.trixnity.libolm/OlmSessionPointer // de.connect2x.trixnity.libolm/OlmLibrary.session|session(){}[0]
+    final fun session_describe(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ByteArray) // de.connect2x.trixnity.libolm/OlmLibrary.session_describe|session_describe(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ByteArray){}[0]
+    final fun session_has_received_message(de.connect2x.trixnity.libolm/OlmSessionPointer): kotlin/Int // de.connect2x.trixnity.libolm/OlmLibrary.session_has_received_message|session_has_received_message(de.connect2x.trixnity.libolm.OlmSessionPointer){}[0]
+    final fun session_id(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.session_id|session_id(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ByteArray){}[0]
+    final fun session_id_length(de.connect2x.trixnity.libolm/OlmSessionPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.session_id_length|session_id_length(de.connect2x.trixnity.libolm.OlmSessionPointer){}[0]
+    final fun session_last_error(de.connect2x.trixnity.libolm/OlmSessionPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.session_last_error|session_last_error(de.connect2x.trixnity.libolm.OlmSessionPointer){}[0]
+    final fun sha256(de.connect2x.trixnity.libolm/OlmUtilityPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sha256|sha256(de.connect2x.trixnity.libolm.OlmUtilityPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun sha256_length(de.connect2x.trixnity.libolm/OlmUtilityPointer): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.sha256_length|sha256_length(de.connect2x.trixnity.libolm.OlmUtilityPointer){}[0]
+    final fun unpickle_account(de.connect2x.trixnity.libolm/OlmAccountPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.unpickle_account|unpickle_account(de.connect2x.trixnity.libolm.OlmAccountPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun unpickle_inbound_group_session(de.connect2x.trixnity.libolm/OlmInboundGroupSessionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.unpickle_inbound_group_session|unpickle_inbound_group_session(de.connect2x.trixnity.libolm.OlmInboundGroupSessionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun unpickle_outbound_group_session(de.connect2x.trixnity.libolm/OlmOutboundGroupSessionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.unpickle_outbound_group_session|unpickle_outbound_group_session(de.connect2x.trixnity.libolm.OlmOutboundGroupSessionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun unpickle_pk_decryption(de.connect2x.trixnity.libolm/OlmPkDecryptionPointer, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.unpickle_pk_decryption|unpickle_pk_decryption(de.connect2x.trixnity.libolm.OlmPkDecryptionPointer;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun unpickle_session(de.connect2x.trixnity.libolm/OlmSessionPointer, kotlin/ByteArray, kotlin/ByteArray): kotlin/ULong // de.connect2x.trixnity.libolm/OlmLibrary.unpickle_session|unpickle_session(de.connect2x.trixnity.libolm.OlmSessionPointer;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun utility(): de.connect2x.trixnity.libolm/OlmUtilityPointer // de.connect2x.trixnity.libolm/OlmLibrary.utility|utility(){}[0]
+    final fun utility_last_error(de.connect2x.trixnity.libolm/OlmUtilityPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.utility_last_error|utility_last_error(de.connect2x.trixnity.libolm.OlmUtilityPointer){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/Account { // de.connect2x.trixnity.libolm/Account|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/Account.<init>|<init>(){}[0]
+
+    final fun create() // de.connect2x.trixnity.libolm/Account.create|create(){}[0]
+    final fun forget_old_fallback_key() // de.connect2x.trixnity.libolm/Account.forget_old_fallback_key|forget_old_fallback_key(){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/Account.free|free(){}[0]
+    final fun generate_fallback_key() // de.connect2x.trixnity.libolm/Account.generate_fallback_key|generate_fallback_key(){}[0]
+    final fun generate_one_time_keys(kotlin/Number) // de.connect2x.trixnity.libolm/Account.generate_one_time_keys|generate_one_time_keys(kotlin.Number){}[0]
+    final fun identity_keys(): kotlin/String // de.connect2x.trixnity.libolm/Account.identity_keys|identity_keys(){}[0]
+    final fun mark_keys_as_published() // de.connect2x.trixnity.libolm/Account.mark_keys_as_published|mark_keys_as_published(){}[0]
+    final fun max_number_of_one_time_keys(): kotlin/Number // de.connect2x.trixnity.libolm/Account.max_number_of_one_time_keys|max_number_of_one_time_keys(){}[0]
+    final fun one_time_keys(): kotlin/String // de.connect2x.trixnity.libolm/Account.one_time_keys|one_time_keys(){}[0]
+    final fun pickle(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Account.pickle|pickle(kotlin.String){}[0]
+    final fun remove_one_time_keys(de.connect2x.trixnity.libolm/Session) // de.connect2x.trixnity.libolm/Account.remove_one_time_keys|remove_one_time_keys(de.connect2x.trixnity.libolm.Session){}[0]
+    final fun sign(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Account.sign|sign(kotlin.String){}[0]
+    final fun unpickle(kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/Account.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
+    final fun unpublished_fallback_key(): kotlin/String // de.connect2x.trixnity.libolm/Account.unpublished_fallback_key|unpublished_fallback_key(){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/InboundGroupMessage { // de.connect2x.trixnity.libolm/InboundGroupMessage|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/InboundGroupMessage.<init>|<init>(){}[0]
+
+    final val message_index // de.connect2x.trixnity.libolm/InboundGroupMessage.message_index|{}message_index[0]
+        final fun <get-message_index>(): kotlin/Number // de.connect2x.trixnity.libolm/InboundGroupMessage.message_index.<get-message_index>|<get-message_index>(){}[0]
+    final val plaintext // de.connect2x.trixnity.libolm/InboundGroupMessage.plaintext|{}plaintext[0]
+        final fun <get-plaintext>(): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupMessage.plaintext.<get-plaintext>|<get-plaintext>(){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/InboundGroupSession { // de.connect2x.trixnity.libolm/InboundGroupSession|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/InboundGroupSession.<init>|<init>(){}[0]
+
+    final fun create(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.create|create(kotlin.String){}[0]
+    final fun decrypt(kotlin/String): de.connect2x.trixnity.libolm/InboundGroupMessage // de.connect2x.trixnity.libolm/InboundGroupSession.decrypt|decrypt(kotlin.String){}[0]
+    final fun export_session(kotlin/Number): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.export_session|export_session(kotlin.Number){}[0]
+    final fun first_known_index(): kotlin/Number // de.connect2x.trixnity.libolm/InboundGroupSession.first_known_index|first_known_index(){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/InboundGroupSession.free|free(){}[0]
+    final fun import_session(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.import_session|import_session(kotlin.String){}[0]
+    final fun pickle(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.pickle|pickle(kotlin.String){}[0]
+    final fun session_id(): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.session_id|session_id(){}[0]
+    final fun unpickle(kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/InboundGroupSession.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/Message { // de.connect2x.trixnity.libolm/Message|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/Message.<init>|<init>(){}[0]
+
+    final val body // de.connect2x.trixnity.libolm/Message.body|{}body[0]
+        final fun <get-body>(): kotlin/String // de.connect2x.trixnity.libolm/Message.body.<get-body>|<get-body>(){}[0]
+    final val type // de.connect2x.trixnity.libolm/Message.type|{}type[0]
+        final fun <get-type>(): kotlin/Number // de.connect2x.trixnity.libolm/Message.type.<get-type>|<get-type>(){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/OutboundGroupSession { // de.connect2x.trixnity.libolm/OutboundGroupSession|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/OutboundGroupSession.<init>|<init>(){}[0]
+
+    final fun create() // de.connect2x.trixnity.libolm/OutboundGroupSession.create|create(){}[0]
+    final fun encrypt(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OutboundGroupSession.encrypt|encrypt(kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/OutboundGroupSession.free|free(){}[0]
+    final fun message_index(): kotlin/Number // de.connect2x.trixnity.libolm/OutboundGroupSession.message_index|message_index(){}[0]
+    final fun pickle(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OutboundGroupSession.pickle|pickle(kotlin.String){}[0]
+    final fun session_id(): kotlin/String // de.connect2x.trixnity.libolm/OutboundGroupSession.session_id|session_id(){}[0]
+    final fun session_key(): kotlin/String // de.connect2x.trixnity.libolm/OutboundGroupSession.session_key|session_key(){}[0]
+    final fun unpickle(kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/OutboundGroupSession.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/PkDecryption { // de.connect2x.trixnity.libolm/PkDecryption|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/PkDecryption.<init>|<init>(){}[0]
+
+    final fun decrypt(kotlin/String, kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/PkDecryption.decrypt|decrypt(kotlin.String;kotlin.String;kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/PkDecryption.free|free(){}[0]
+    final fun generate_key(): kotlin/String // de.connect2x.trixnity.libolm/PkDecryption.generate_key|generate_key(){}[0]
+    final fun get_private_key(): js.typedarrays/Uint8Array<*> // de.connect2x.trixnity.libolm/PkDecryption.get_private_key|get_private_key(){}[0]
+    final fun init_with_private_key(js.typedarrays/Uint8Array<*>): kotlin/String // de.connect2x.trixnity.libolm/PkDecryption.init_with_private_key|init_with_private_key(js.typedarrays.Uint8Array<*>){}[0]
+    final fun pickle(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/PkDecryption.pickle|pickle(kotlin.String){}[0]
+    final fun unpickle(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/PkDecryption.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/PkEncryption { // de.connect2x.trixnity.libolm/PkEncryption|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/PkEncryption.<init>|<init>(){}[0]
+
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.libolm/PkMessage // de.connect2x.trixnity.libolm/PkEncryption.encrypt|encrypt(kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/PkEncryption.free|free(){}[0]
+    final fun set_recipient_key(kotlin/String) // de.connect2x.trixnity.libolm/PkEncryption.set_recipient_key|set_recipient_key(kotlin.String){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/PkMessage { // de.connect2x.trixnity.libolm/PkMessage|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/PkMessage.<init>|<init>(){}[0]
+
+    final val ciphertext // de.connect2x.trixnity.libolm/PkMessage.ciphertext|{}ciphertext[0]
+        final fun <get-ciphertext>(): kotlin/String // de.connect2x.trixnity.libolm/PkMessage.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+    final val ephemeral // de.connect2x.trixnity.libolm/PkMessage.ephemeral|{}ephemeral[0]
+        final fun <get-ephemeral>(): kotlin/String // de.connect2x.trixnity.libolm/PkMessage.ephemeral.<get-ephemeral>|<get-ephemeral>(){}[0]
+    final val mac // de.connect2x.trixnity.libolm/PkMessage.mac|{}mac[0]
+        final fun <get-mac>(): kotlin/String // de.connect2x.trixnity.libolm/PkMessage.mac.<get-mac>|<get-mac>(){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/PkSigning { // de.connect2x.trixnity.libolm/PkSigning|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/PkSigning.<init>|<init>(){}[0]
+
+    final fun free() // de.connect2x.trixnity.libolm/PkSigning.free|free(){}[0]
+    final fun generate_seed(): js.typedarrays/Uint8Array<*> // de.connect2x.trixnity.libolm/PkSigning.generate_seed|generate_seed(){}[0]
+    final fun init_with_seed(js.typedarrays/Uint8Array<*>): kotlin/String // de.connect2x.trixnity.libolm/PkSigning.init_with_seed|init_with_seed(js.typedarrays.Uint8Array<*>){}[0]
+    final fun sign(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/PkSigning.sign|sign(kotlin.String){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/SAS { // de.connect2x.trixnity.libolm/SAS|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/SAS.<init>|<init>(){}[0]
+
+    final fun calculate_mac(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/SAS.calculate_mac|calculate_mac(kotlin.String;kotlin.String){}[0]
+    final fun calculate_mac_fixed_base64(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/SAS.calculate_mac_fixed_base64|calculate_mac_fixed_base64(kotlin.String;kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/SAS.free|free(){}[0]
+    final fun generate_bytes(kotlin/String, kotlin/Number): js.typedarrays/Uint8Array<*> // de.connect2x.trixnity.libolm/SAS.generate_bytes|generate_bytes(kotlin.String;kotlin.Number){}[0]
+    final fun get_pubkey(): kotlin/String // de.connect2x.trixnity.libolm/SAS.get_pubkey|get_pubkey(){}[0]
+    final fun set_their_key(kotlin/String) // de.connect2x.trixnity.libolm/SAS.set_their_key|set_their_key(kotlin.String){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/Session { // de.connect2x.trixnity.libolm/Session|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/Session.<init>|<init>(){}[0]
+
+    final fun create_inbound(de.connect2x.trixnity.libolm/Account, kotlin/String) // de.connect2x.trixnity.libolm/Session.create_inbound|create_inbound(de.connect2x.trixnity.libolm.Account;kotlin.String){}[0]
+    final fun create_inbound_from(de.connect2x.trixnity.libolm/Account, kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/Session.create_inbound_from|create_inbound_from(de.connect2x.trixnity.libolm.Account;kotlin.String;kotlin.String){}[0]
+    final fun create_outbound(de.connect2x.trixnity.libolm/Account, kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/Session.create_outbound|create_outbound(de.connect2x.trixnity.libolm.Account;kotlin.String;kotlin.String){}[0]
+    final fun decrypt(kotlin/Number, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Session.decrypt|decrypt(kotlin.Number;kotlin.String){}[0]
+    final fun describe(): kotlin/String // de.connect2x.trixnity.libolm/Session.describe|describe(){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.libolm/Message // de.connect2x.trixnity.libolm/Session.encrypt|encrypt(kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/Session.free|free(){}[0]
+    final fun has_received_message(): kotlin/Boolean // de.connect2x.trixnity.libolm/Session.has_received_message|has_received_message(){}[0]
+    final fun matches_inbound(kotlin/String): kotlin/Boolean // de.connect2x.trixnity.libolm/Session.matches_inbound|matches_inbound(kotlin.String){}[0]
+    final fun matches_inbound_from(kotlin/String, kotlin/String): kotlin/Boolean // de.connect2x.trixnity.libolm/Session.matches_inbound_from|matches_inbound_from(kotlin.String;kotlin.String){}[0]
+    final fun pickle(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Session.pickle|pickle(kotlin.String){}[0]
+    final fun session_id(): kotlin/String // de.connect2x.trixnity.libolm/Session.session_id|session_id(){}[0]
+    final fun unpickle(kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/Session.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
+}
+
+// Targets: [js]
+final class de.connect2x.trixnity.libolm/Utility { // de.connect2x.trixnity.libolm/Utility|null[0]
+    constructor <init>() // de.connect2x.trixnity.libolm/Utility.<init>|<init>(){}[0]
+
+    final fun ed25519_verify(kotlin/String, kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/Utility.ed25519_verify|ed25519_verify(kotlin.String;kotlin.String;kotlin.String){}[0]
+    final fun free() // de.connect2x.trixnity.libolm/Utility.free|free(){}[0]
+    final fun sha256(js.typedarrays/Uint8Array<*>): kotlin/String // de.connect2x.trixnity.libolm/Utility.sha256|sha256(js.typedarrays.Uint8Array<*>){}[0]
+    final fun sha256(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Utility.sha256|sha256(kotlin.String){}[0]
+}
+
+// Targets: [js]
+final var de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH|{}PRIVATE_KEY_LENGTH[0]
+    final fun <get-PRIVATE_KEY_LENGTH>(): kotlin/Number // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH.<get-PRIVATE_KEY_LENGTH>|<get-PRIVATE_KEY_LENGTH>(){}[0]
+    final fun <set-PRIVATE_KEY_LENGTH>(kotlin/Number) // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH.<set-PRIVATE_KEY_LENGTH>|<set-PRIVATE_KEY_LENGTH>(kotlin.Number){}[0]
+
+// Targets: [js]
+final fun <#A: kotlin/Any?> de.connect2x.trixnity.libolm/rethrow(kotlin/Function0<#A>): #A // de.connect2x.trixnity.libolm/rethrow|rethrow(kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]
+
+// Targets: [js]
+final fun de.connect2x.trixnity.libolm/get_library_version(): kotlin.collections/List<kotlin/Number> // de.connect2x.trixnity.libolm/get_library_version|get_library_version(){}[0]

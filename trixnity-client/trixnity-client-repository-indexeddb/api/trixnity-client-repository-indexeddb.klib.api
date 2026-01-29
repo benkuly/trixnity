@@ -1,0 +1,135 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-client-repository-indexeddb>
+abstract class de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepository { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepository|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepository.<init>|<init>(kotlin.String){}[0]
+
+    final val objectStoreName // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepository.objectStoreName|{}objectStoreName[0]
+        final fun <get-objectStoreName>(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepository.objectStoreName.<get-objectStoreName>|<get-objectStoreName>(){}[0]
+}
+
+final class de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession|null[0]
+    constructor <init>(de.connect2x.trixnity.crypto.olm/StoredInboundMegolmSession, kotlin/Int) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.<init>|<init>(de.connect2x.trixnity.crypto.olm.StoredInboundMegolmSession;kotlin.Int){}[0]
+
+    final val hasBeenBackedUp // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.hasBeenBackedUp|{}hasBeenBackedUp[0]
+        final fun <get-hasBeenBackedUp>(): kotlin/Int // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.hasBeenBackedUp.<get-hasBeenBackedUp>|<get-hasBeenBackedUp>(){}[0]
+    final val value // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.value|{}value[0]
+        final fun <get-value>(): de.connect2x.trixnity.crypto.olm/StoredInboundMegolmSession // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.value.<get-value>|<get-value>(){}[0]
+
+    final fun component1(): de.connect2x.trixnity.crypto.olm/StoredInboundMegolmSession // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.component2|component2(){}[0]
+    final fun copy(de.connect2x.trixnity.crypto.olm/StoredInboundMegolmSession = ..., kotlin/Int = ...): de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.copy|copy(de.connect2x.trixnity.crypto.olm.StoredInboundMegolmSession;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession> { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.client.store.repository.indexeddb.IndexedDBInboundMegolmSession){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
+
+    final val signedKeyId // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signedKeyId|{}signedKeyId[0]
+        final fun <get-signedKeyId>(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signedKeyId.<get-signedKeyId>|<get-signedKeyId>(){}[0]
+    final val signedKeyValue // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signedKeyValue|{}signedKeyValue[0]
+        final fun <get-signedKeyValue>(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signedKeyValue.<get-signedKeyValue>|<get-signedKeyValue>(){}[0]
+    final val signedUserId // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signedUserId|{}signedUserId[0]
+        final fun <get-signedUserId>(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signedUserId.<get-signedUserId>|<get-signedUserId>(){}[0]
+    final val signingKeyId // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signingKeyId|{}signingKeyId[0]
+        final fun <get-signingKeyId>(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signingKeyId.<get-signingKeyId>|<get-signingKeyId>(){}[0]
+    final val signingKeyValue // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signingKeyValue|{}signingKeyValue[0]
+        final fun <get-signingKeyValue>(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signingKeyValue.<get-signingKeyValue>|<get-signingKeyValue>(){}[0]
+    final val signingUserId // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signingUserId|{}signingUserId[0]
+        final fun <get-signingUserId>(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.signingUserId.<get-signingUserId>|<get-signingUserId>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.component1|component1(){}[0]
+    final fun component2(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.component2|component2(){}[0]
+    final fun component3(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.component3|component3(){}[0]
+    final fun component4(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.component4|component4(){}[0]
+    final fun component5(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.component5|component5(){}[0]
+    final fun component6(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.component6|component6(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...): de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.copy|copy(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink> { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.client.store.repository.indexeddb.IndexedDBKeyChainLink){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBKeyChainLink.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBReadTransaction : kotlin.coroutines/CoroutineContext.Element { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBReadTransaction|null[0]
+    constructor <init>(com.juul.indexeddb/Database) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBReadTransaction.<init>|<init>(com.juul.indexeddb.Database){}[0]
+
+    final val database // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBReadTransaction.database|{}database[0]
+        final fun <get-database>(): com.juul.indexeddb/Database // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBReadTransaction.database.<get-database>|<get-database>(){}[0]
+    final val key // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBReadTransaction.key|{}key[0]
+        final fun <get-key>(): kotlin.coroutines/CoroutineContext.Key<*> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBReadTransaction.key.<get-key>|<get-key>(){}[0]
+
+    final object Key : kotlin.coroutines/CoroutineContext.Key<de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBReadTransaction> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBReadTransaction.Key|null[0]
+}
+
+final class de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepositoryTransactionManager : de.connect2x.trixnity.client.store.repository/RepositoryTransactionManager { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepositoryTransactionManager|null[0]
+    constructor <init>(com.juul.indexeddb/Database, kotlin/Array<kotlin/String>, kotlin/Boolean = ...) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepositoryTransactionManager.<init>|<init>(com.juul.indexeddb.Database;kotlin.Array<kotlin.String>;kotlin.Boolean){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> readTransaction(kotlin.coroutines/SuspendFunction0<#A1>): #A1 // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepositoryTransactionManager.readTransaction|readTransaction(kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
+    final suspend fun writeTransaction(kotlin.coroutines/SuspendFunction0<kotlin/Unit>) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepositoryTransactionManager.writeTransaction|writeTransaction(kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
+}
+
+final class de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction : kotlin.coroutines/CoroutineContext.Element { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction|null[0]
+    constructor <init>(com.juul.indexeddb/Database, kotlin/Boolean) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.<init>|<init>(com.juul.indexeddb.Database;kotlin.Boolean){}[0]
+
+    final val database // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.database|{}database[0]
+        final fun <get-database>(): com.juul.indexeddb/Database // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.database.<get-database>|<get-database>(){}[0]
+    final val key // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.key|{}key[0]
+        final fun <get-key>(): kotlin.coroutines/CoroutineContext.Key<*> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.key.<get-key>|<get-key>(){}[0]
+    final val testMode // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.testMode|{}testMode[0]
+        final fun <get-testMode>(): kotlin/Boolean // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.testMode.<get-testMode>|<get-testMode>(){}[0]
+
+    final fun getOperations(): kotlin.collections/List<de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDbWriteOperation> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.getOperations|getOperations(){}[0]
+    final suspend fun addOperation(kotlin/String, kotlin.coroutines/SuspendFunction2<com.juul.indexeddb/WriteTransaction, com.juul.indexeddb/ObjectStore, kotlin/Unit>) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.addOperation|addOperation(kotlin.String;kotlin.coroutines.SuspendFunction2<com.juul.indexeddb.WriteTransaction,com.juul.indexeddb.ObjectStore,kotlin.Unit>){}[0]
+
+    final object Key : kotlin.coroutines/CoroutineContext.Key<de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBWriteTransaction.Key|null[0]
+}
+
+final class de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDbWriteOperation { // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDbWriteOperation|null[0]
+    constructor <init>(kotlin/String, kotlin.coroutines/SuspendFunction2<com.juul.indexeddb/WriteTransaction, com.juul.indexeddb/ObjectStore, kotlin/Unit>) // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDbWriteOperation.<init>|<init>(kotlin.String;kotlin.coroutines.SuspendFunction2<com.juul.indexeddb.WriteTransaction,com.juul.indexeddb.ObjectStore,kotlin.Unit>){}[0]
+
+    final val objectStoreName // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDbWriteOperation.objectStoreName|{}objectStoreName[0]
+        final fun <get-objectStoreName>(): kotlin/String // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDbWriteOperation.objectStoreName.<get-objectStoreName>|<get-objectStoreName>(){}[0]
+    final val operation // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDbWriteOperation.operation|{}operation[0]
+        final fun <get-operation>(): kotlin.coroutines/SuspendFunction2<com.juul.indexeddb/WriteTransaction, com.juul.indexeddb/ObjectStore, kotlin/Unit> // de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDbWriteOperation.operation.<get-operation>|<get-operation>(){}[0]
+}
+
+final fun (com.juul.indexeddb/VersionChangeTransaction).de.connect2x.trixnity.client.store.repository.indexeddb/createIndexedDBMinimalStoreRepository(com.juul.indexeddb/Database, kotlin/String, kotlin/Function1<com.juul.indexeddb/ObjectStore, kotlin/Unit> = ...) // de.connect2x.trixnity.client.store.repository.indexeddb/createIndexedDBMinimalStoreRepository|createIndexedDBMinimalStoreRepository@com.juul.indexeddb.VersionChangeTransaction(com.juul.indexeddb.Database;kotlin.String;kotlin.Function1<com.juul.indexeddb.ObjectStore,kotlin.Unit>){}[0]
+final fun (com.juul.indexeddb/VersionChangeTransaction).de.connect2x.trixnity.client.store.repository.indexeddb/createIndexedDBTwoDimensionsStoreRepository(com.juul.indexeddb/Database, kotlin/String, com.juul.indexeddb/KeyPath, kotlin/String, com.juul.indexeddb/KeyPath, kotlin/Function1<com.juul.indexeddb/ObjectStore, kotlin/Unit> = ...) // de.connect2x.trixnity.client.store.repository.indexeddb/createIndexedDBTwoDimensionsStoreRepository|createIndexedDBTwoDimensionsStoreRepository@com.juul.indexeddb.VersionChangeTransaction(com.juul.indexeddb.Database;kotlin.String;com.juul.indexeddb.KeyPath;kotlin.String;com.juul.indexeddb.KeyPath;kotlin.Function1<com.juul.indexeddb.ObjectStore,kotlin.Unit>){}[0]
+final fun (de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession).de.connect2x.trixnity.client.store.repository.indexeddb/toStoredInboundMegolmSession(): de.connect2x.trixnity.crypto.olm/StoredInboundMegolmSession // de.connect2x.trixnity.client.store.repository.indexeddb/toStoredInboundMegolmSession|toStoredInboundMegolmSession@de.connect2x.trixnity.client.store.repository.indexeddb.IndexedDBInboundMegolmSession(){}[0]
+final fun (de.connect2x.trixnity.client/RepositoriesModule.Companion).de.connect2x.trixnity.client.store.repository.indexeddb/indexedDB(kotlin/String = ...): de.connect2x.trixnity.client/RepositoriesModule // de.connect2x.trixnity.client.store.repository.indexeddb/indexedDB|indexedDB@de.connect2x.trixnity.client.RepositoriesModule.Companion(kotlin.String){}[0]
+final fun (de.connect2x.trixnity.crypto.olm/StoredInboundMegolmSession).de.connect2x.trixnity.client.store.repository.indexeddb/toIndexedDBInboundMegolmSession(): de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBInboundMegolmSession // de.connect2x.trixnity.client.store.repository.indexeddb/toIndexedDBInboundMegolmSession|toIndexedDBInboundMegolmSession@de.connect2x.trixnity.crypto.olm.StoredInboundMegolmSession(){}[0]
+final suspend fun (de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepository).de.connect2x.trixnity.client.store.repository.indexeddb/withIndexedDBWrite(kotlin.coroutines/SuspendFunction2<com.juul.indexeddb/WriteTransaction, com.juul.indexeddb/ObjectStore, kotlin/Unit>) // de.connect2x.trixnity.client.store.repository.indexeddb/withIndexedDBWrite|withIndexedDBWrite@de.connect2x.trixnity.client.store.repository.indexeddb.IndexedDBRepository(kotlin.coroutines.SuspendFunction2<com.juul.indexeddb.WriteTransaction,com.juul.indexeddb.ObjectStore,kotlin.Unit>){}[0]
+final suspend fun <#A: kotlin/Any?> (de.connect2x.trixnity.client.store.repository.indexeddb/IndexedDBRepository).de.connect2x.trixnity.client.store.repository.indexeddb/withIndexedDBRead(kotlin.coroutines/SuspendFunction2<com.juul.indexeddb/Transaction, com.juul.indexeddb/ObjectStore, #A>): #A // de.connect2x.trixnity.client.store.repository.indexeddb/withIndexedDBRead|withIndexedDBRead@de.connect2x.trixnity.client.store.repository.indexeddb.IndexedDBRepository(kotlin.coroutines.SuspendFunction2<com.juul.indexeddb.Transaction,com.juul.indexeddb.ObjectStore,0:0>){0§<kotlin.Any?>}[0]

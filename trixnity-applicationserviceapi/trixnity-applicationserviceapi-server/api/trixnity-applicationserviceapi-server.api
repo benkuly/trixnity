@@ -1,0 +1,30 @@
+public abstract interface class de/connect2x/trixnity/applicationserviceapi/server/ApplicationServiceApiServerHandler {
+	public abstract fun addTransaction (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun hasRoomAlias-VBKqmW0 (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun hasUser-bx7bNhU (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun ping (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/applicationserviceapi/server/MatrixApplicationServiceApiServerKt {
+	public static final fun matrixApplicationServiceApiServer (Lio/ktor/server/application/Application;Ljava/lang/String;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun matrixApplicationServiceApiServer$default (Lio/ktor/server/application/Application;Ljava/lang/String;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/applicationserviceapi/server/MatrixApplicationServiceApiServerRoutesKt {
+	public static final fun matrixApplicationServiceApiServerRoutes (Lio/ktor/server/routing/Route;Lde/connect2x/trixnity/applicationserviceapi/server/ApplicationServiceApiServerHandler;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;)V
+	public static synthetic fun matrixApplicationServiceApiServerRoutes$default (Lio/ktor/server/routing/Route;Lde/connect2x/trixnity/applicationserviceapi/server/ApplicationServiceApiServerHandler;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;ILjava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/applicationserviceapi/server/MatrixQueryParameterOrBearerAuthKt {
+	public static final fun matrixQueryParameterOrBearer (Lio/ktor/server/auth/AuthenticationConfig;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun matrixQueryParameterOrBearer$default (Lio/ktor/server/auth/AuthenticationConfig;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/applicationserviceapi/server/MatrixQueryParameterOrBearerAuthenticationProvider : io/ktor/server/auth/AuthenticationProvider {
+	public fun onAuthenticate (Lio/ktor/server/auth/AuthenticationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/applicationserviceapi/server/MatrixQueryParameterOrBearerAuthenticationProvider$Configuration : io/ktor/server/auth/AuthenticationProvider$Config {
+	public fun <init> ()V
+}
+

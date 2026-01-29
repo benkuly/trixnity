@@ -1,0 +1,15 @@
+public final class de/connect2x/trixnity/client/media/okio/OkioMediaStoreKt {
+	public static final fun okio (Lde/connect2x/trixnity/client/MediaStoreModule$Companion;Lokio/Path;Lokio/FileSystem;Lkotlin/coroutines/CoroutineContext;)Lde/connect2x/trixnity/client/MediaStoreModule;
+	public static synthetic fun okio$default (Lde/connect2x/trixnity/client/MediaStoreModule$Companion;Lokio/Path;Lokio/FileSystem;Lkotlin/coroutines/CoroutineContext;ILjava/lang/Object;)Lde/connect2x/trixnity/client/MediaStoreModule;
+}
+
+public abstract interface class de/connect2x/trixnity/client/media/okio/OkioPlatformMedia : de/connect2x/trixnity/client/media/PlatformMedia {
+	public abstract fun getTemporaryFile-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun transformByteArrayFlow (Lkotlin/jvm/functions/Function1;)Lde/connect2x/trixnity/client/media/okio/OkioPlatformMedia;
+}
+
+public abstract interface class de/connect2x/trixnity/client/media/okio/OkioPlatformMedia$TemporaryFile {
+	public abstract fun delete (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPath ()Lokio/Path;
+}
+

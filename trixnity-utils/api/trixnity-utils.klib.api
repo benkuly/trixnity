@@ -1,0 +1,119 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-utils>
+open annotation class de.connect2x.trixnity.utils/TrixnityDsl : kotlin/Annotation { // de.connect2x.trixnity.utils/TrixnityDsl|null[0]
+    constructor <init>() // de.connect2x.trixnity.utils/TrixnityDsl.<init>|<init>(){}[0]
+}
+
+open annotation class de.connect2x.trixnity.utils/TrixnityPrivateApi : kotlin/Annotation { // de.connect2x.trixnity.utils/TrixnityPrivateApi|null[0]
+    constructor <init>() // de.connect2x.trixnity.utils/TrixnityPrivateApi.<init>|<init>(){}[0]
+}
+
+abstract interface <#A: kotlin/Any?, #B: #A> de.connect2x.trixnity.utils/Concurrent { // de.connect2x.trixnity.utils/Concurrent|null[0]
+    abstract suspend fun <#A1: kotlin/Any?> read(kotlin.coroutines/SuspendFunction1<#A, #A1>): #A1 // de.connect2x.trixnity.utils/Concurrent.read|read(kotlin.coroutines.SuspendFunction1<1:0,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun <#A1: kotlin/Any?> write(kotlin.coroutines/SuspendFunction1<#B, #A1>): #A1 // de.connect2x.trixnity.utils/Concurrent.write|write(kotlin.coroutines.SuspendFunction1<1:1,0:0>){0§<kotlin.Any?>}[0]
+}
+
+final class <#A: kotlin/Any?, #B: #A> de.connect2x.trixnity.utils/ConcurrentImpl : de.connect2x.trixnity.utils/Concurrent<#A, #B> { // de.connect2x.trixnity.utils/ConcurrentImpl|null[0]
+    constructor <init>(kotlin/Function0<#B>) // de.connect2x.trixnity.utils/ConcurrentImpl.<init>|<init>(kotlin.Function0<1:1>){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> read(kotlin.coroutines/SuspendFunction1<#A, #A1>): #A1 // de.connect2x.trixnity.utils/ConcurrentImpl.read|read(kotlin.coroutines.SuspendFunction1<1:0,0:0>){0§<kotlin.Any?>}[0]
+    final suspend fun <#A1: kotlin/Any?> write(kotlin.coroutines/SuspendFunction1<#B, #A1>): #A1 // de.connect2x.trixnity.utils/ConcurrentImpl.write|write(kotlin.coroutines.SuspendFunction1<1:1,0:0>){0§<kotlin.Any?>}[0]
+
+    final object Companion // de.connect2x.trixnity.utils/ConcurrentImpl.Companion|null[0]
+}
+
+final class de.connect2x.trixnity.utils/ReentrantMutexContextElement : kotlin.coroutines/CoroutineContext.Element { // de.connect2x.trixnity.utils/ReentrantMutexContextElement|null[0]
+    constructor <init>(de.connect2x.trixnity.utils/ReentrantMutexContextKey) // de.connect2x.trixnity.utils/ReentrantMutexContextElement.<init>|<init>(de.connect2x.trixnity.utils.ReentrantMutexContextKey){}[0]
+
+    final val key // de.connect2x.trixnity.utils/ReentrantMutexContextElement.key|{}key[0]
+        final fun <get-key>(): de.connect2x.trixnity.utils/ReentrantMutexContextKey // de.connect2x.trixnity.utils/ReentrantMutexContextElement.key.<get-key>|<get-key>(){}[0]
+}
+
+final class de.connect2x.trixnity.utils/ReentrantMutexContextKey : kotlin.coroutines/CoroutineContext.Key<de.connect2x.trixnity.utils/ReentrantMutexContextElement> { // de.connect2x.trixnity.utils/ReentrantMutexContextKey|null[0]
+    constructor <init>(kotlinx.coroutines.sync/Mutex) // de.connect2x.trixnity.utils/ReentrantMutexContextKey.<init>|<init>(kotlinx.coroutines.sync.Mutex){}[0]
+
+    final val mutex // de.connect2x.trixnity.utils/ReentrantMutexContextKey.mutex|{}mutex[0]
+        final fun <get-mutex>(): kotlinx.coroutines.sync/Mutex // de.connect2x.trixnity.utils/ReentrantMutexContextKey.mutex.<get-mutex>|<get-mutex>(){}[0]
+
+    final fun component1(): kotlinx.coroutines.sync/Mutex // de.connect2x.trixnity.utils/ReentrantMutexContextKey.component1|component1(){}[0]
+    final fun copy(kotlinx.coroutines.sync/Mutex = ...): de.connect2x.trixnity.utils/ReentrantMutexContextKey // de.connect2x.trixnity.utils/ReentrantMutexContextKey.copy|copy(kotlinx.coroutines.sync.Mutex){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.utils/ReentrantMutexContextKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.utils/ReentrantMutexContextKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.utils/ReentrantMutexContextKey.toString|toString(){}[0]
+}
+
+final class de.connect2x.trixnity.utils/RetryFlowDelayConfig { // de.connect2x.trixnity.utils/RetryFlowDelayConfig|null[0]
+    constructor <init>(kotlin.time/Duration = ..., kotlin/Double = ..., kotlin.time/Duration = ..., kotlin.ranges/ClosedRange<kotlin/Double> = ...) // de.connect2x.trixnity.utils/RetryFlowDelayConfig.<init>|<init>(kotlin.time.Duration;kotlin.Double;kotlin.time.Duration;kotlin.ranges.ClosedRange<kotlin.Double>){}[0]
+
+    final val scheduleBase // de.connect2x.trixnity.utils/RetryFlowDelayConfig.scheduleBase|{}scheduleBase[0]
+        final fun <get-scheduleBase>(): kotlin.time/Duration // de.connect2x.trixnity.utils/RetryFlowDelayConfig.scheduleBase.<get-scheduleBase>|<get-scheduleBase>(){}[0]
+    final val scheduleFactor // de.connect2x.trixnity.utils/RetryFlowDelayConfig.scheduleFactor|{}scheduleFactor[0]
+        final fun <get-scheduleFactor>(): kotlin/Double // de.connect2x.trixnity.utils/RetryFlowDelayConfig.scheduleFactor.<get-scheduleFactor>|<get-scheduleFactor>(){}[0]
+    final val scheduleJitter // de.connect2x.trixnity.utils/RetryFlowDelayConfig.scheduleJitter|{}scheduleJitter[0]
+        final fun <get-scheduleJitter>(): kotlin.ranges/ClosedRange<kotlin/Double> // de.connect2x.trixnity.utils/RetryFlowDelayConfig.scheduleJitter.<get-scheduleJitter>|<get-scheduleJitter>(){}[0]
+    final val scheduleLimit // de.connect2x.trixnity.utils/RetryFlowDelayConfig.scheduleLimit|{}scheduleLimit[0]
+        final fun <get-scheduleLimit>(): kotlin.time/Duration // de.connect2x.trixnity.utils/RetryFlowDelayConfig.scheduleLimit.<get-scheduleLimit>|<get-scheduleLimit>(){}[0]
+
+    final fun component1(): kotlin.time/Duration // de.connect2x.trixnity.utils/RetryFlowDelayConfig.component1|component1(){}[0]
+    final fun component2(): kotlin/Double // de.connect2x.trixnity.utils/RetryFlowDelayConfig.component2|component2(){}[0]
+    final fun component3(): kotlin.time/Duration // de.connect2x.trixnity.utils/RetryFlowDelayConfig.component3|component3(){}[0]
+    final fun component4(): kotlin.ranges/ClosedRange<kotlin/Double> // de.connect2x.trixnity.utils/RetryFlowDelayConfig.component4|component4(){}[0]
+    final fun copy(kotlin.time/Duration = ..., kotlin/Double = ..., kotlin.time/Duration = ..., kotlin.ranges/ClosedRange<kotlin/Double> = ...): de.connect2x.trixnity.utils/RetryFlowDelayConfig // de.connect2x.trixnity.utils/RetryFlowDelayConfig.copy|copy(kotlin.time.Duration;kotlin.Double;kotlin.time.Duration;kotlin.ranges.ClosedRange<kotlin.Double>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.utils/RetryFlowDelayConfig.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.utils/RetryFlowDelayConfig.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.utils/RetryFlowDelayConfig.toString|toString(){}[0]
+
+    final object Companion { // de.connect2x.trixnity.utils/RetryFlowDelayConfig.Companion|null[0]
+        final val default // de.connect2x.trixnity.utils/RetryFlowDelayConfig.Companion.default|{}default[0]
+            final fun <get-default>(): de.connect2x.trixnity.utils/RetryFlowDelayConfig // de.connect2x.trixnity.utils/RetryFlowDelayConfig.Companion.default.<get-default>|<get-default>(){}[0]
+    }
+}
+
+open class <#A: kotlin/Any> de.connect2x.trixnity.utils/KeyedMutex { // de.connect2x.trixnity.utils/KeyedMutex|null[0]
+    constructor <init>() // de.connect2x.trixnity.utils/KeyedMutex.<init>|<init>(){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> withLock(#A, kotlin.coroutines/SuspendFunction0<#A1>): #A1 // de.connect2x.trixnity.utils/KeyedMutex.withLock|withLock(1:0;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
+}
+
+final const val de.connect2x.trixnity.utils/BYTE_ARRAY_FLOW_CHUNK_SIZE // de.connect2x.trixnity.utils/BYTE_ARRAY_FLOW_CHUNK_SIZE|{}BYTE_ARRAY_FLOW_CHUNK_SIZE[0]
+    final fun <get-BYTE_ARRAY_FLOW_CHUNK_SIZE>(): kotlin/Long // de.connect2x.trixnity.utils/BYTE_ARRAY_FLOW_CHUNK_SIZE.<get-BYTE_ARRAY_FLOW_CHUNK_SIZE>|<get-BYTE_ARRAY_FLOW_CHUNK_SIZE>(){}[0]
+
+final fun (io.ktor.utils.io/ByteReadChannel).de.connect2x.trixnity.utils/toByteArrayFlow(): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.utils/toByteArrayFlow|toByteArrayFlow@io.ktor.utils.io.ByteReadChannel(){}[0]
+final fun (kotlin.random/Random).de.connect2x.trixnity.utils/nextString(kotlin/Int, kotlin.collections/List<kotlin/Char> = ...): kotlin/String // de.connect2x.trixnity.utils/nextString|nextString@kotlin.random.Random(kotlin.Int;kotlin.collections.List<kotlin.Char>){}[0]
+final fun (kotlin/ByteArray).de.connect2x.trixnity.utils/encodeUnpaddedBase64(): kotlin/String // de.connect2x.trixnity.utils/encodeUnpaddedBase64|encodeUnpaddedBase64@kotlin.ByteArray(){}[0]
+final fun (kotlin/ByteArray).de.connect2x.trixnity.utils/toByteArrayFlow(): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.utils/toByteArrayFlow|toByteArrayFlow@kotlin.ByteArray(){}[0]
+final fun (kotlin/String).de.connect2x.trixnity.utils/decodeUnpaddedBase64Bytes(): kotlin/ByteArray // de.connect2x.trixnity.utils/decodeUnpaddedBase64Bytes|decodeUnpaddedBase64Bytes@kotlin.String(){}[0]
+final fun (okio/FileSystem).de.connect2x.trixnity.utils/readByteArrayFlow(okio/Path, kotlin.coroutines/CoroutineContext = ...): kotlinx.coroutines.flow/Flow<kotlin/ByteArray>? // de.connect2x.trixnity.utils/readByteArrayFlow|readByteArrayFlow@okio.FileSystem(okio.Path;kotlin.coroutines.CoroutineContext){}[0]
+final fun <#A: kotlin/Any?, #B: #A> de.connect2x.trixnity.utils/concurrentOf(kotlin/Function0<#B>): de.connect2x.trixnity.utils/Concurrent<#A, #B> // de.connect2x.trixnity.utils/concurrentOf|concurrentOf(kotlin.Function0<0:1>){0§<kotlin.Any?>;1§<0:0>}[0]
+final fun <#A: kotlin/Any?, #B: kotlin/Any?> de.connect2x.trixnity.utils/concurrentMutableMap(): de.connect2x.trixnity.utils/Concurrent<kotlin.collections/Map<#A, #B>, kotlin.collections/MutableMap<#A, #B>> // de.connect2x.trixnity.utils/concurrentMutableMap|concurrentMutableMap(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> de.connect2x.trixnity.utils/concurrentMutableList(): de.connect2x.trixnity.utils/Concurrent<kotlin.collections/List<#A>, kotlin.collections/MutableList<#A>> // de.connect2x.trixnity.utils/concurrentMutableList|concurrentMutableList(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> de.connect2x.trixnity.utils/concurrentMutableSet(): de.connect2x.trixnity.utils/Concurrent<kotlin.collections/Set<#A>, kotlin.collections/MutableSet<#A>> // de.connect2x.trixnity.utils/concurrentMutableSet|concurrentMutableSet(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> de.connect2x.trixnity.utils/retryFlow(kotlin.time/Duration = ..., kotlin/Double = ..., kotlin.time/Duration = ..., kotlin.ranges/ClosedRange<kotlin/Double> = ..., kotlin.coroutines/SuspendFunction2<kotlin/Throwable, kotlin.time/Duration, kotlin/Unit> = ..., kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.flow/FlowCollector<#A>, kotlin/Unit>): kotlinx.coroutines.flow/Flow<#A> // de.connect2x.trixnity.utils/retryFlow|retryFlow(kotlin.time.Duration;kotlin.Double;kotlin.time.Duration;kotlin.ranges.ClosedRange<kotlin.Double>;kotlin.coroutines.SuspendFunction2<kotlin.Throwable,kotlin.time.Duration,kotlin.Unit>;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.flow.FlowCollector<0:0>,kotlin.Unit>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> de.connect2x.trixnity.utils/retryFlow(kotlinx.coroutines.flow/Flow<de.connect2x.trixnity.utils/RetryFlowDelayConfig> = ..., kotlin.coroutines/SuspendFunction2<kotlin/Throwable, kotlin.time/Duration, kotlin/Unit> = ..., kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.flow/FlowCollector<#A>, kotlin/Unit>): kotlinx.coroutines.flow/Flow<#A> // de.connect2x.trixnity.utils/retryFlow|retryFlow(kotlinx.coroutines.flow.Flow<de.connect2x.trixnity.utils.RetryFlowDelayConfig>;kotlin.coroutines.SuspendFunction2<kotlin.Throwable,kotlin.time.Duration,kotlin.Unit>;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.flow.FlowCollector<0:0>,kotlin.Unit>){0§<kotlin.Any?>}[0]
+final fun de.connect2x.trixnity.utils/byteArrayFlowFromSource(kotlin.coroutines/CoroutineContext = ..., kotlin.coroutines/SuspendFunction0<okio/Source>): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.utils/byteArrayFlowFromSource|byteArrayFlowFromSource(kotlin.coroutines.CoroutineContext;kotlin.coroutines.SuspendFunction0<okio.Source>){}[0]
+final suspend fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.utils/toByteArray(): kotlin/ByteArray // de.connect2x.trixnity.utils/toByteArray|toByteArray@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(){}[0]
+final suspend fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.utils/toByteArray(kotlin/Long): kotlin/ByteArray? // de.connect2x.trixnity.utils/toByteArray|toByteArray@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(kotlin.Long){}[0]
+final suspend fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.utils/toByteReadChannel(): io.ktor.utils.io/ByteReadChannel // de.connect2x.trixnity.utils/toByteReadChannel|toByteReadChannel@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(){}[0]
+final suspend fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.utils/writeTo(io.ktor.utils.io/ByteWriteChannel) // de.connect2x.trixnity.utils/writeTo|writeTo@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(io.ktor.utils.io.ByteWriteChannel){}[0]
+final suspend fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.utils/writeTo(okio/BufferedSink, kotlin.coroutines/CoroutineContext = ...) // de.connect2x.trixnity.utils/writeTo|writeTo@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(okio.BufferedSink;kotlin.coroutines.CoroutineContext){}[0]
+final suspend fun (okio/BufferedSink).de.connect2x.trixnity.utils/write(kotlinx.coroutines.flow/Flow<kotlin/ByteArray>, kotlin.coroutines/CoroutineContext = ...) // de.connect2x.trixnity.utils/write|write@okio.BufferedSink(kotlinx.coroutines.flow.Flow<kotlin.ByteArray>;kotlin.coroutines.CoroutineContext){}[0]
+final suspend fun (okio/FileSystem).de.connect2x.trixnity.utils/write(okio/Path, kotlinx.coroutines.flow/Flow<kotlin/ByteArray>, kotlin.coroutines/CoroutineContext = ...) // de.connect2x.trixnity.utils/write|write@okio.FileSystem(okio.Path;kotlinx.coroutines.flow.Flow<kotlin.ByteArray>;kotlin.coroutines.CoroutineContext){}[0]
+final suspend fun <#A: kotlin/Any?> (kotlinx.coroutines.sync/Mutex).de.connect2x.trixnity.utils/withReentrantLock(kotlin.coroutines/SuspendFunction0<#A>): #A // de.connect2x.trixnity.utils/withReentrantLock|withReentrantLock@kotlinx.coroutines.sync.Mutex(kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
+final suspend fun <#A: kotlin/Any?> de.connect2x.trixnity.utils/retry(kotlin.time/Duration = ..., kotlin/Double = ..., kotlin.time/Duration = ..., kotlin.ranges/ClosedRange<kotlin/Double> = ..., kotlin.coroutines/SuspendFunction2<kotlin/Throwable, kotlin.time/Duration, kotlin/Unit> = ..., kotlin.coroutines/SuspendFunction0<#A>): #A // de.connect2x.trixnity.utils/retry|retry(kotlin.time.Duration;kotlin.Double;kotlin.time.Duration;kotlin.ranges.ClosedRange<kotlin.Double>;kotlin.coroutines.SuspendFunction2<kotlin.Throwable,kotlin.time.Duration,kotlin.Unit>;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
+final suspend fun de.connect2x.trixnity.utils/retryLoop(kotlin.time/Duration = ..., kotlin/Double = ..., kotlin.time/Duration = ..., kotlin.ranges/ClosedRange<kotlin/Double> = ..., kotlin.coroutines/SuspendFunction2<kotlin/Throwable, kotlin.time/Duration, kotlin/Unit> = ..., kotlin.coroutines/SuspendFunction0<kotlin/Unit>) // de.connect2x.trixnity.utils/retryLoop|retryLoop(kotlin.time.Duration;kotlin.Double;kotlin.time.Duration;kotlin.ranges.ClosedRange<kotlin.Double>;kotlin.coroutines.SuspendFunction2<kotlin.Throwable,kotlin.time.Duration,kotlin.Unit>;kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
+final suspend fun de.connect2x.trixnity.utils/retryLoop(kotlinx.coroutines.flow/Flow<de.connect2x.trixnity.utils/RetryFlowDelayConfig> = ..., kotlin.coroutines/SuspendFunction2<kotlin/Throwable, kotlin.time/Duration, kotlin/Unit> = ..., kotlin.coroutines/SuspendFunction0<kotlin/Unit>) // de.connect2x.trixnity.utils/retryLoop|retryLoop(kotlinx.coroutines.flow.Flow<de.connect2x.trixnity.utils.RetryFlowDelayConfig>;kotlin.coroutines.SuspendFunction2<kotlin.Throwable,kotlin.time.Duration,kotlin.Unit>;kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
+
+// Targets: [js]
+final fun de.connect2x.trixnity.utils/byteArrayFlowFromReadableStream(kotlin.coroutines/SuspendFunction0<web.streams/ReadableStream<js.typedarrays/Uint8Array<js.buffer/ArrayBuffer>>>): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.utils/byteArrayFlowFromReadableStream|byteArrayFlowFromReadableStream(kotlin.coroutines.SuspendFunction0<web.streams.ReadableStream<js.typedarrays.Uint8Array<js.buffer.ArrayBuffer>>>){}[0]
+
+// Targets: [js]
+final suspend fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.utils/writeTo(web.streams/WritableStream<js.typedarrays/Uint8Array<js.buffer/ArrayBuffer>>) // de.connect2x.trixnity.utils/writeTo|writeTo@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(web.streams.WritableStream<js.typedarrays.Uint8Array<js.buffer.ArrayBuffer>>){}[0]
+
+// Targets: [js]
+final suspend fun (web.streams/WritableStream<js.typedarrays/Uint8Array<js.buffer/ArrayBuffer>>).de.connect2x.trixnity.utils/write(kotlinx.coroutines.flow/Flow<kotlin/ByteArray>) // de.connect2x.trixnity.utils/write|write@web.streams.WritableStream<js.typedarrays.Uint8Array<js.buffer.ArrayBuffer>>(kotlinx.coroutines.flow.Flow<kotlin.ByteArray>){}[0]

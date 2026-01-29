@@ -1,0 +1,728 @@
+public final class de/connect2x/trixnity/crypto/driver/libolm/LibOlmCryptoDriver : de/connect2x/trixnity/crypto/driver/CryptoDriver {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/LibOlmCryptoDriver;
+	public synthetic fun getKey ()Lde/connect2x/trixnity/crypto/driver/keys/KeyFactories;
+	public fun getKey ()Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmKeyFactories;
+	public fun getMegolm ()Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmMegolmFactory;
+	public synthetic fun getMegolm ()Lde/connect2x/trixnity/crypto/driver/megolm/MegolmFactory;
+	public fun getOlm ()Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmOlmFactory;
+	public synthetic fun getOlm ()Lde/connect2x/trixnity/crypto/driver/olm/OlmFactory;
+	public fun getPk ()Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkFactory;
+	public synthetic fun getPk ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkFactory;
+	public fun getSas ()Lde/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmSasFactory;
+	public synthetic fun getSas ()Lde/connect2x/trixnity/crypto/driver/sas/SasFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519PublicKey : de/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519PublicKey;
+	public fun close ()V
+	public static fun close-impl (Ljava/lang/String;)V
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Ljava/lang/String;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519PublicKeyFactory : de/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519PublicKeyFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun invoke-FNW0zms (Ljava/lang/String;)Ljava/lang/String;
+	public fun invoke-FNW0zms ([B)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519SecretKey : de/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519SecretKey;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/libolm/OlmPkDecryption;Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)[B
+	public fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public static fun getPublicKey-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519SecretKeyFactory : de/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519SecretKeyFactory;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public fun invoke-mM4sJVg (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public fun invoke-mM4sJVg ([B)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public fun invoke-rVm-9ds ()Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519PublicKey : de/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519PublicKey;
+	public fun close ()V
+	public static fun close-impl (Ljava/lang/String;)V
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Ljava/lang/String;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+	public fun verify (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;)V
+	public static fun verify-impl (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;)V
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519PublicKeyFactory : de/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519PublicKeyFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public fun invoke-J0KG3ME (Ljava/lang/String;)Ljava/lang/String;
+	public fun invoke-J0KG3ME ([B)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519SecretKey : de/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;)Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519SecretKey;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;)Lde/connect2x/trixnity/libolm/OlmPkSigning;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/libolm/OlmPkSigning;Lde/connect2x/trixnity/libolm/OlmPkSigning;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;)[B
+	public fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public static fun getPublicKey-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;)I
+	public fun sign (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public static fun sign-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/libolm/OlmPkSigning;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/libolm/OlmPkSigning;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519SecretKeyFactory : de/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519SecretKeyFactory;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey;
+	public fun invoke-I5poLjk ()Lde/connect2x/trixnity/libolm/OlmPkSigning;
+	public fun invoke-YryYKVU (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkSigning;
+	public fun invoke-YryYKVU ([B)Lde/connect2x/trixnity/libolm/OlmPkSigning;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519Signature : de/connect2x/trixnity/crypto/driver/keys/Ed25519Signature {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519Signature;
+	public fun close ()V
+	public static fun close-impl (Ljava/lang/String;)V
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Ljava/lang/String;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519SignatureFactory : de/connect2x/trixnity/crypto/driver/keys/Ed25519SignatureFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519SignatureFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public fun invoke-arv3tx8 (Ljava/lang/String;)Ljava/lang/String;
+	public fun invoke-arv3tx8 ([B)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmKeyFactories : de/connect2x/trixnity/crypto/driver/keys/KeyFactories {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmKeyFactories;
+	public synthetic fun getCurve25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKeyFactory;
+	public fun getCurve25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519PublicKeyFactory;
+	public synthetic fun getCurve25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKeyFactory;
+	public fun getCurve25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmCurve25519SecretKeyFactory;
+	public synthetic fun getEd25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKeyFactory;
+	public fun getEd25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519PublicKeyFactory;
+	public synthetic fun getEd25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKeyFactory;
+	public fun getEd25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519SecretKeyFactory;
+	public synthetic fun getEd25519Signature ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SignatureFactory;
+	public fun getEd25519Signature ()Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmEd25519SignatureFactory;
+	public synthetic fun getPickleKey ()Lde/connect2x/trixnity/crypto/driver/keys/PickleKeyFactory;
+	public fun getPickleKey ()Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmPickleKeyFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmPickleKey : de/connect2x/trixnity/crypto/driver/keys/PickleKey {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmPickleKey;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmPickleKeyFactory : de/connect2x/trixnity/crypto/driver/keys/PickleKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/keys/LibOlmPickleKeyFactory;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;
+	public fun invoke-F4i2MZ0 (Ljava/lang/String;)Ljava/lang/String;
+	public fun invoke-F4i2MZ0 ([B)Ljava/lang/String;
+	public fun invoke-r3QcWHw ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmExportedSessionKey : de/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmExportedSessionKey;
+	public fun close ()V
+	public static fun close-impl (Ljava/lang/String;)V
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Ljava/lang/String;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmExportedSessionKeyFactory : de/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmExportedSessionKeyFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public fun invoke-XQ8G9wI (Ljava/lang/String;)Ljava/lang/String;
+	public fun invoke-XQ8G9wI ([B)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmGroupSession : de/connect2x/trixnity/crypto/driver/megolm/GroupSession {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;)Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmGroupSession;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;)Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;
+	public synthetic fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;
+	public static fun encrypt-3pSc-ko (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;Ljava/lang/String;)Ljava/lang/String;
+	public fun encrypt-3pSc-ko (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;)Z
+	public fun getMessageIndex ()I
+	public static fun getMessageIndex-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;)I
+	public fun getSessionId ()Ljava/lang/String;
+	public static fun getSessionId-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;)Ljava/lang/String;
+	public fun getSessionKey ()Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+	public static fun getSessionKey-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;)Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;)I
+	public fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static fun pickle-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmGroupSessionFactory : de/connect2x/trixnity/crypto/driver/megolm/GroupSessionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmGroupSessionFactory;
+	public synthetic fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;
+	public fun fromPickle-K5LEhAU (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;
+	public fun invoke-9d4FxA8 ()Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmInboundGroupSession : de/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;)Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmInboundGroupSession;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;)Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;
+	public fun decrypt (Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DecryptedMessage;
+	public static fun decrypt-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DecryptedMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;)Z
+	public synthetic fun exportAt (I)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public fun exportAt-XQ8G9wI (I)Ljava/lang/String;
+	public static fun exportAt-XQ8G9wI (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;I)Ljava/lang/String;
+	public synthetic fun exportAtFirstKnownIndex ()Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public fun exportAtFirstKnownIndex-BBrSalw ()Ljava/lang/String;
+	public static fun exportAtFirstKnownIndex-BBrSalw (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;)Ljava/lang/String;
+	public fun getFirstKnownIndex ()I
+	public static fun getFirstKnownIndex-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;)I
+	public final fun getInner ()Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;
+	public fun getSessionId ()Ljava/lang/String;
+	public static fun getSessionId-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;)Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;)I
+	public fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static fun pickle-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmInboundGroupSessionFactory : de/connect2x/trixnity/crypto/driver/megolm/InboundGroupSessionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmInboundGroupSessionFactory;
+	public synthetic fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+	public fun fromPickle-PDtTeSg (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;
+	public synthetic fun import (Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+	public fun import-uyI9r4I (Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;)Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;
+	public synthetic fun invoke (Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+	public fun invoke-uyI9r4I (Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;)Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmMegolmFactory : de/connect2x/trixnity/crypto/driver/megolm/MegolmFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmMegolmFactory;
+	public fun getExportedSessionKey ()Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmExportedSessionKeyFactory;
+	public synthetic fun getExportedSessionKey ()Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKeyFactory;
+	public fun getGroupSession ()Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmGroupSessionFactory;
+	public synthetic fun getGroupSession ()Lde/connect2x/trixnity/crypto/driver/megolm/GroupSessionFactory;
+	public fun getInboundGroupSession ()Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmInboundGroupSessionFactory;
+	public synthetic fun getInboundGroupSession ()Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSessionFactory;
+	public fun getMessage ()Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmMegolmMessageFactory;
+	public synthetic fun getMessage ()Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessageFactory;
+	public fun getSessionKey ()Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmSessionKeyFactory;
+	public synthetic fun getSessionKey ()Lde/connect2x/trixnity/crypto/driver/megolm/SessionKeyFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmMegolmMessage : de/connect2x/trixnity/crypto/driver/megolm/MegolmMessage {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmMegolmMessage;
+	public fun close ()V
+	public static fun close-impl (Ljava/lang/String;)V
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Ljava/lang/String;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmMegolmMessageFactory : de/connect2x/trixnity/crypto/driver/megolm/MegolmMessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmMegolmMessageFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;
+	public fun invoke-3pSc-ko (Ljava/lang/String;)Ljava/lang/String;
+	public fun invoke-3pSc-ko ([B)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmSessionKey : de/connect2x/trixnity/crypto/driver/megolm/SessionKey {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmSessionKey;
+	public fun close ()V
+	public static fun close-impl (Ljava/lang/String;)V
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Ljava/lang/String;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmSessionKeyFactory : de/connect2x/trixnity/crypto/driver/megolm/SessionKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/megolm/LibOlmSessionKeyFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+	public fun invoke-t7ftRaA (Ljava/lang/String;)Ljava/lang/String;
+	public fun invoke-t7ftRaA ([B)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount : de/connect2x/trixnity/crypto/driver/olm/Account {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)Lde/connect2x/trixnity/libolm/OlmAccount;
+	public fun createInboundSession (Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$InboundSessionCreationResult;
+	public synthetic fun createInboundSession (Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult;
+	public static fun createInboundSession-impl (Lde/connect2x/trixnity/libolm/OlmAccount;Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$InboundSessionCreationResult;
+	public fun createOutboundSession (Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public static fun createOutboundSession-impl (Lde/connect2x/trixnity/libolm/OlmAccount;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public fun dehydrate (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/DehydratedDevice;
+	public static fun dehydrate-impl (Lde/connect2x/trixnity/libolm/OlmAccount;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/DehydratedDevice;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/libolm/OlmAccount;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/libolm/OlmAccount;Lde/connect2x/trixnity/libolm/OlmAccount;)Z
+	public fun forgetFallbackKey ()V
+	public static fun forgetFallbackKey-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)V
+	public synthetic fun generateFallbackKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun generateFallbackKey-hT5vMx8 ()Ljava/lang/String;
+	public static fun generateFallbackKey-hT5vMx8 (Lde/connect2x/trixnity/libolm/OlmAccount;)Ljava/lang/String;
+	public fun generateOneTimeKeys (I)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$OneTimeKeyGenerationResult;
+	public synthetic fun generateOneTimeKeys (I)Lde/connect2x/trixnity/crypto/driver/olm/Account$OneTimeKeyGenerationResult;
+	public static fun generateOneTimeKeys-impl (Lde/connect2x/trixnity/libolm/OlmAccount;I)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$OneTimeKeyGenerationResult;
+	public synthetic fun getCurve25519Key ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getCurve25519Key-etsz-e8 ()Ljava/lang/String;
+	public static fun getCurve25519Key-etsz-e8 (Lde/connect2x/trixnity/libolm/OlmAccount;)Ljava/lang/String;
+	public synthetic fun getEd25519Key ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public fun getEd25519Key-_lkOIlY ()Ljava/lang/String;
+	public static fun getEd25519Key-_lkOIlY (Lde/connect2x/trixnity/libolm/OlmAccount;)Ljava/lang/String;
+	public fun getFallbackKey ()Lkotlin/Pair;
+	public static fun getFallbackKey-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)Lkotlin/Pair;
+	public fun getMaxNumberOfOneTimeKeys ()I
+	public static fun getMaxNumberOfOneTimeKeys-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)I
+	public fun getOneTimeKeys ()Ljava/util/Map;
+	public static fun getOneTimeKeys-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)Ljava/util/Map;
+	public fun getStoredOneTimeKeyCount ()I
+	public static fun getStoredOneTimeKeyCount-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)I
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)I
+	public fun markKeysAsPublished ()V
+	public static fun markKeysAsPublished-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)V
+	public fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static fun pickle-impl (Lde/connect2x/trixnity/libolm/OlmAccount;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public synthetic fun sign (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public static fun sign-arv3tx8 (Lde/connect2x/trixnity/libolm/OlmAccount;Ljava/lang/String;)Ljava/lang/String;
+	public fun sign-arv3tx8 (Ljava/lang/String;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/libolm/OlmAccount;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/libolm/OlmAccount;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$InboundSessionCreationResult : de/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult {
+	public synthetic fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/libolm/OlmSession;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public synthetic fun component2 ()Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public final fun component2-LkrRGYY ()Lde/connect2x/trixnity/libolm/OlmSession;
+	public final fun copy-bPnRuvQ (Ljava/lang/String;Lde/connect2x/trixnity/libolm/OlmSession;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$InboundSessionCreationResult;
+	public static synthetic fun copy-bPnRuvQ$default (Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$InboundSessionCreationResult;Ljava/lang/String;Lde/connect2x/trixnity/libolm/OlmSession;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$InboundSessionCreationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getPlaintext ()Ljava/lang/String;
+	public synthetic fun getSession ()Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public fun getSession-LkrRGYY ()Lde/connect2x/trixnity/libolm/OlmSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$OneTimeKeyGenerationResult : de/connect2x/trixnity/crypto/driver/olm/Account$OneTimeKeyGenerationResult {
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;Ljava/util/List;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$OneTimeKeyGenerationResult;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$OneTimeKeyGenerationResult;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccount$OneTimeKeyGenerationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCreated ()Ljava/util/List;
+	public fun getRemoved ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccountFactory : de/connect2x/trixnity/crypto/driver/olm/AccountFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccountFactory;
+	public fun fromDehydratedDevice (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/Account;
+	public synthetic fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/Account;
+	public fun fromPickle-zg8Wm4c (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/libolm/OlmAccount;
+	public fun getDehydratedDevicesSupported ()Z
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/olm/Account;
+	public fun invoke-1UQ6zEk ()Lde/connect2x/trixnity/libolm/OlmAccount;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmMessageFactory : de/connect2x/trixnity/crypto/driver/olm/MessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmMessageFactory;
+	public fun getNormal ()Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmNormalMessageFactory;
+	public synthetic fun getNormal ()Lde/connect2x/trixnity/crypto/driver/olm/NormalMessageFactory;
+	public fun getPreKey ()Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmPreKeyMessageFactory;
+	public synthetic fun getPreKey ()Lde/connect2x/trixnity/crypto/driver/olm/PreKeyMessageFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmNormalMessage : de/connect2x/trixnity/crypto/driver/olm/Message$Normal {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmNormalMessage;
+	public fun close ()V
+	public static fun close-impl (Ljava/lang/String;)V
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Ljava/lang/String;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmNormalMessageFactory : de/connect2x/trixnity/crypto/driver/olm/NormalMessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmNormalMessageFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message$Normal;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/olm/Message$Normal;
+	public fun invoke-Dz-3D-A (Ljava/lang/String;)Ljava/lang/String;
+	public fun invoke-Dz-3D-A ([B)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmOlmFactory : de/connect2x/trixnity/crypto/driver/olm/OlmFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmOlmFactory;
+	public fun getAccount ()Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmAccountFactory;
+	public synthetic fun getAccount ()Lde/connect2x/trixnity/crypto/driver/olm/AccountFactory;
+	public fun getMessage ()Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmMessageFactory;
+	public synthetic fun getMessage ()Lde/connect2x/trixnity/crypto/driver/olm/MessageFactory;
+	public fun getSession ()Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmSessionFactory;
+	public synthetic fun getSession ()Lde/connect2x/trixnity/crypto/driver/olm/SessionFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmPreKeyMessage : de/connect2x/trixnity/crypto/driver/olm/Message$PreKey {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmPreKeyMessage;
+	public fun close ()V
+	public static fun close-impl (Ljava/lang/String;)V
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Ljava/lang/String;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmPreKeyMessageFactory : de/connect2x/trixnity/crypto/driver/olm/PreKeyMessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmPreKeyMessageFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;
+	public fun invoke-Vs8vod8 (Ljava/lang/String;)Ljava/lang/String;
+	public fun invoke-Vs8vod8 ([B)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmSession : de/connect2x/trixnity/crypto/driver/olm/Session {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/libolm/OlmSession;)Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmSession;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/libolm/OlmSession;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/libolm/OlmSession;)Lde/connect2x/trixnity/libolm/OlmSession;
+	public fun decrypt (Lde/connect2x/trixnity/crypto/driver/olm/Message;)Ljava/lang/String;
+	public static fun decrypt-impl (Lde/connect2x/trixnity/libolm/OlmSession;Lde/connect2x/trixnity/crypto/driver/olm/Message;)Ljava/lang/String;
+	public fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message;
+	public static fun encrypt-impl (Lde/connect2x/trixnity/libolm/OlmSession;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/libolm/OlmSession;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/libolm/OlmSession;Lde/connect2x/trixnity/libolm/OlmSession;)Z
+	public fun getHasReceivedMessage ()Z
+	public static fun getHasReceivedMessage-impl (Lde/connect2x/trixnity/libolm/OlmSession;)Z
+	public fun getSessionId ()Ljava/lang/String;
+	public static fun getSessionId-impl (Lde/connect2x/trixnity/libolm/OlmSession;)Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/libolm/OlmSession;)I
+	public fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static fun pickle-impl (Lde/connect2x/trixnity/libolm/OlmSession;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/libolm/OlmSession;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/libolm/OlmSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmSessionFactory : de/connect2x/trixnity/crypto/driver/olm/SessionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/olm/LibOlmSessionFactory;
+	public synthetic fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public fun fromPickle-Bo7Nvp4 (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/libolm/OlmSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkDecryption : de/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkDecryption;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public fun decrypt (Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;)Ljava/lang/String;
+	public static fun decrypt-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/libolm/OlmPkDecryption;Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Z
+	public synthetic fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getPublicKey-etsz-e8 ()Ljava/lang/String;
+	public static fun getPublicKey-etsz-e8 (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Ljava/lang/String;
+	public synthetic fun getSecretKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public fun getSecretKey-rVm-9ds ()Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public static fun getSecretKey-rVm-9ds (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/libolm/OlmPkDecryption;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkDecryptionFactory : de/connect2x/trixnity/crypto/driver/pkencryption/PkDecryptionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkDecryptionFactory;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption;
+	public fun invoke-QTp1iR8 (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public fun invoke-QTp1iR8 ([B)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public fun invoke-iRqyndY ()Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkEncryption : de/connect2x/trixnity/crypto/driver/pkencryption/PkEncryption {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/libolm/OlmPkEncryption;)Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkEncryption;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/libolm/OlmPkEncryption;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/libolm/OlmPkEncryption;)Lde/connect2x/trixnity/libolm/OlmPkEncryption;
+	public synthetic fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;
+	public static fun encrypt-Crti384 (Lde/connect2x/trixnity/libolm/OlmPkEncryption;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkMessage;
+	public fun encrypt-Crti384 (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/libolm/OlmPkEncryption;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/libolm/OlmPkEncryption;Lde/connect2x/trixnity/libolm/OlmPkEncryption;)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/libolm/OlmPkEncryption;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/libolm/OlmPkEncryption;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/libolm/OlmPkEncryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkEncryptionFactory : de/connect2x/trixnity/crypto/driver/pkencryption/PkEncryptionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkEncryptionFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkEncryption;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkEncryption;
+	public fun invoke-3j0SMac (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkEncryption;
+	public fun invoke-3j0SMac ([B)Lde/connect2x/trixnity/libolm/OlmPkEncryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkFactory : de/connect2x/trixnity/crypto/driver/pkencryption/PkFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkFactory;
+	public fun getDecryption ()Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkDecryptionFactory;
+	public synthetic fun getDecryption ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryptionFactory;
+	public fun getEncryption ()Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkEncryptionFactory;
+	public synthetic fun getEncryption ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkEncryptionFactory;
+	public fun getMessage ()Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkMessageFactory;
+	public synthetic fun getMessage ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessageFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkMessage : de/connect2x/trixnity/crypto/driver/pkencryption/PkMessage {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/libolm/OlmPkMessage;)Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkMessage;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/libolm/OlmPkMessage;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/libolm/OlmPkMessage;)Lde/connect2x/trixnity/libolm/OlmPkMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/libolm/OlmPkMessage;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/libolm/OlmPkMessage;Lde/connect2x/trixnity/libolm/OlmPkMessage;)Z
+	public fun getCiphertext ()[B
+	public static fun getCiphertext-impl (Lde/connect2x/trixnity/libolm/OlmPkMessage;)[B
+	public synthetic fun getEphemeralKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getEphemeralKey-etsz-e8 ()Ljava/lang/String;
+	public static fun getEphemeralKey-etsz-e8 (Lde/connect2x/trixnity/libolm/OlmPkMessage;)Ljava/lang/String;
+	public fun getMac ()[B
+	public static fun getMac-impl (Lde/connect2x/trixnity/libolm/OlmPkMessage;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/libolm/OlmPkMessage;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/libolm/OlmPkMessage;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/libolm/OlmPkMessage;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkMessageFactory : de/connect2x/trixnity/crypto/driver/pkencryption/PkMessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/pkencryption/LibOlmPkMessageFactory;
+	public synthetic fun invoke (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;
+	public fun invoke-zS4TAtk (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkMessage;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmEstablishedSas : de/connect2x/trixnity/crypto/driver/sas/EstablishedSas {
+	public synthetic fun <init> (Lde/connect2x/trixnity/libolm/OlmSAS;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun calculateMac (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/sas/Mac;
+	public fun calculateMac-f0dfoiA (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun calculateMacInvalidBase64 (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun close ()V
+	public synthetic fun generateBytes (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes;
+	public fun generateBytes-jJ6j6r4 (Ljava/lang/String;)[B
+	public synthetic fun getOurPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getOurPublicKey-etsz-e8 ()Ljava/lang/String;
+	public synthetic fun getTheirPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getTheirPublicKey-etsz-e8 ()Ljava/lang/String;
+	public fun verifyMac (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/sas/Mac;)V
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmMac : de/connect2x/trixnity/crypto/driver/sas/Mac {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmMac;
+	public fun close ()V
+	public static fun close-impl (Ljava/lang/String;)V
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Ljava/lang/String;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmSas : de/connect2x/trixnity/crypto/driver/sas/Sas {
+	public fun <init> (Lde/connect2x/trixnity/libolm/OlmSAS;)V
+	public fun close ()V
+	public fun diffieHellman (Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmEstablishedSas;
+	public synthetic fun diffieHellman (Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/sas/EstablishedSas;
+	public synthetic fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getPublicKey-etsz-e8 ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmSasBytes : de/connect2x/trixnity/crypto/driver/sas/SasBytes {
+	public static final synthetic fun box-impl ([B)Lde/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmSasBytes;
+	public fun close ()V
+	public static fun close-impl ([B)V
+	public static fun constructor-impl ([B)[B
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl ([BLjava/lang/Object;)Z
+	public static final fun equals-impl0 ([B[B)Z
+	public fun getBytes ()[B
+	public static fun getBytes-impl ([B)[B
+	public fun getDecimals ()Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Decimals;
+	public static fun getDecimals-impl ([B)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Decimals;
+	public fun getEmojiIndices ()Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Emojis;
+	public static fun getEmojiIndices-impl ([B)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Emojis;
+	public fun hashCode ()I
+	public static fun hashCode-impl ([B)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl ([B)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()[B
+}
+
+public final class de/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmSasFactory : de/connect2x/trixnity/crypto/driver/sas/SasFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmSasFactory;
+	public fun invoke ()Lde/connect2x/trixnity/crypto/driver/libolm/sas/LibOlmSas;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/sas/Sas;
+}
+

@@ -1,0 +1,14 @@
+public class de/connect2x/trixnity/api/client/MatrixApiClient : java/lang/AutoCloseable {
+	public fun <init> ()V
+	public fun <init> (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lio/ktor/client/engine/HttpClientEngine;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lio/ktor/client/engine/HttpClientEngine;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun getBaseClient ()Lio/ktor/client/HttpClient;
+	public final fun getContentMappings ()Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;
+	public final fun getJson ()Lkotlinx/serialization/json/Json;
+}
+
+public final class de/connect2x/trixnity/api/client/PlatformUserAgentPluginKt {
+	public static final fun getPlatformUserAgentPlugin ()Lio/ktor/client/plugins/api/ClientPlugin;
+}
+

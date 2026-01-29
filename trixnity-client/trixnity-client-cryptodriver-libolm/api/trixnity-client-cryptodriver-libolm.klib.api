@@ -1,0 +1,9 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-client-cryptodriver-libolm>
+final fun (de.connect2x.trixnity.client/CryptoDriverModule.Companion).de.connect2x.trixnity.client.cryptodriver.libolm/libOlm(): de.connect2x.trixnity.client/CryptoDriverModule // de.connect2x.trixnity.client.cryptodriver.libolm/libOlm|libOlm@de.connect2x.trixnity.client.CryptoDriverModule.Companion(){}[0]

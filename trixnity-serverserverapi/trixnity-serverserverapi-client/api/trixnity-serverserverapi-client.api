@@ -1,0 +1,143 @@
+public final class de/connect2x/trixnity/serverserverapi/client/ConvertMediaPluginKt {
+	public static final fun getConvertMediaPlugin ()Lio/ktor/client/plugins/api/ClientPlugin;
+}
+
+public abstract interface class de/connect2x/trixnity/serverserverapi/client/DiscoveryApiClient {
+	public abstract fun getServerKeys-gIAlu-s (Lio/ktor/http/Url;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getServerVersion-gIAlu-s (Lio/ktor/http/Url;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getWellKnown-gIAlu-s (Lio/ktor/http/Url;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun queryKeysByServer-BWLJW6A (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun queryKeysByServer-BWLJW6A$default (Lde/connect2x/trixnity/serverserverapi/client/DiscoveryApiClient;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun queryServerKeys-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/discovery/QueryServerKeys$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/serverserverapi/client/DiscoveryApiClient$DefaultImpls {
+	public static synthetic fun queryKeysByServer-BWLJW6A$default (Lde/connect2x/trixnity/serverserverapi/client/DiscoveryApiClient;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/serverserverapi/client/DiscoveryApiClientImpl : de/connect2x/trixnity/serverserverapi/client/DiscoveryApiClient {
+	public fun <init> (Lde/connect2x/trixnity/api/client/MatrixApiClient;)V
+	public fun getServerKeys-gIAlu-s (Lio/ktor/http/Url;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getServerVersion-gIAlu-s (Lio/ktor/http/Url;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getWellKnown-gIAlu-s (Lio/ktor/http/Url;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun queryKeysByServer-BWLJW6A (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun queryServerKeys-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/discovery/QueryServerKeys$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/serverserverapi/client/FederationApiClient {
+	public abstract fun backfillRoom-XOUYScw (Lio/ktor/http/Url;Ljava/lang/String;Ljava/util/List;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun claimKeys-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/ClaimKeys$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun downloadMedia-P1ellaA (Ljava/lang/String;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun downloadMedia-P1ellaA$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Ljava/lang/String;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun downloadThumbnail-n-TEJis (Ljava/lang/String;JJLde/connect2x/trixnity/serverserverapi/model/federation/ThumbnailResizingMethod;Ljava/lang/Boolean;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun downloadThumbnail-n-TEJis$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Ljava/lang/String;JJLde/connect2x/trixnity/serverserverapi/model/federation/ThumbnailResizingMethod;Ljava/lang/Boolean;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun exchangeThirdPartyInvite-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/core/model/keys/Signed;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDevices-ImTWw6Q (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getEvent-ED8ncuw (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getEventAuthChain-1Z6OzSE (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getHierarchy-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun getHierarchy-lefIFc8$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/String;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun getKeys-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/GetKeys$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getMissingEvents-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/GetMissingEvents$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getOIDCUserInfo-0E7RQCE (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPublicRooms-hUnOzRk (Lio/ktor/http/Url;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun getPublicRooms-hUnOzRk$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun getPublicRoomsWithFilter-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/GetPublicRoomsWithFilter$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getState-1Z6OzSE (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getStateIds-1Z6OzSE (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun invite-JpxAWmY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/Invite$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun makeJoin-SA-gL1w (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun makeJoin-SA-gL1w$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun makeKnock-SA-gL1w (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun makeKnock-SA-gL1w$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun makeLeave-dXVyVjY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun onBindThirdPid-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/OnBindThirdPid$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun queryDirectory-EPhJ2Lg (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun queryProfile-Wo0uVPo (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/QueryProfile$Field;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun queryProfile-Wo0uVPo$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/QueryProfile$Field;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun sendJoin-JpxAWmY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/keys/Signed;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendKnock-JpxAWmY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/keys/Signed;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendLeave-JpxAWmY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/keys/Signed;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendTransaction-BWLJW6A (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/SendTransaction$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun timestampToEvent-9UWP1Xc (Ljava/lang/String;JLde/connect2x/trixnity/serverserverapi/model/federation/TimestampToEvent$Direction;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun timestampToEvent-9UWP1Xc$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Ljava/lang/String;JLde/connect2x/trixnity/serverserverapi/model/federation/TimestampToEvent$Direction;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/serverserverapi/client/FederationApiClient$DefaultImpls {
+	public static synthetic fun downloadMedia-P1ellaA$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Ljava/lang/String;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun downloadThumbnail-n-TEJis$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Ljava/lang/String;JJLde/connect2x/trixnity/serverserverapi/model/federation/ThumbnailResizingMethod;Ljava/lang/Boolean;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun getHierarchy-lefIFc8$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/String;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun getPublicRooms-hUnOzRk$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun makeJoin-SA-gL1w$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun makeKnock-SA-gL1w$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun queryProfile-Wo0uVPo$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/QueryProfile$Field;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun timestampToEvent-9UWP1Xc$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Ljava/lang/String;JLde/connect2x/trixnity/serverserverapi/model/federation/TimestampToEvent$Direction;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/serverserverapi/client/FederationApiClientImpl : de/connect2x/trixnity/serverserverapi/client/FederationApiClient {
+	public fun <init> (Lde/connect2x/trixnity/api/client/MatrixApiClient;)V
+	public fun backfillRoom-XOUYScw (Lio/ktor/http/Url;Ljava/lang/String;Ljava/util/List;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun claimKeys-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/ClaimKeys$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun downloadMedia-P1ellaA (Ljava/lang/String;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun downloadThumbnail-n-TEJis (Ljava/lang/String;JJLde/connect2x/trixnity/serverserverapi/model/federation/ThumbnailResizingMethod;Ljava/lang/Boolean;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun exchangeThirdPartyInvite-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/core/model/keys/Signed;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDevices-ImTWw6Q (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getEvent-ED8ncuw (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getEventAuthChain-1Z6OzSE (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getHierarchy-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getKeys-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/GetKeys$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getMissingEvents-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/GetMissingEvents$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getOIDCUserInfo-0E7RQCE (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getPublicRooms-hUnOzRk (Lio/ktor/http/Url;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getPublicRoomsWithFilter-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/GetPublicRoomsWithFilter$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getState-1Z6OzSE (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getStateIds-1Z6OzSE (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invite-JpxAWmY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/Invite$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun makeJoin-SA-gL1w (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun makeKnock-SA-gL1w (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun makeLeave-dXVyVjY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun onBindThirdPid-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/OnBindThirdPid$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun queryDirectory-EPhJ2Lg (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun queryProfile-Wo0uVPo (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/QueryProfile$Field;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun sendJoin-JpxAWmY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/keys/Signed;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun sendKnock-JpxAWmY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/keys/Signed;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun sendLeave-JpxAWmY (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/keys/Signed;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun sendTransaction-BWLJW6A (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/SendTransaction$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun timestampToEvent-9UWP1Xc (Ljava/lang/String;JLde/connect2x/trixnity/serverserverapi/model/federation/TimestampToEvent$Direction;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/serverserverapi/client/MatrixDestinationPlugin : io/ktor/client/plugins/HttpClientPlugin {
+	public fun <init> (Lkotlin/jvm/functions/Function2;)V
+	public fun getKey ()Lio/ktor/util/AttributeKey;
+	public synthetic fun install (Ljava/lang/Object;Lio/ktor/client/HttpClient;)V
+	public fun install (Lkotlin/Unit;Lio/ktor/client/HttpClient;)V
+	public synthetic fun prepare (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public fun prepare (Lkotlin/jvm/functions/Function1;)V
+}
+
+public abstract interface class de/connect2x/trixnity/serverserverapi/client/MatrixServerServerApiClient : java/lang/AutoCloseable {
+	public abstract fun getBaseClient ()Lde/connect2x/trixnity/api/client/MatrixApiClient;
+	public abstract fun getDiscovery ()Lde/connect2x/trixnity/serverserverapi/client/DiscoveryApiClient;
+	public abstract fun getFederation ()Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;
+}
+
+public final class de/connect2x/trixnity/serverserverapi/client/MatrixServerServerApiClientImpl : de/connect2x/trixnity/serverserverapi/client/MatrixServerServerApiClient {
+	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lde/connect2x/trixnity/core/serialization/events/RoomVersionStore;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lio/ktor/client/engine/HttpClientEngine;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lde/connect2x/trixnity/core/serialization/events/RoomVersionStore;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lio/ktor/client/engine/HttpClientEngine;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public fun getBaseClient ()Lde/connect2x/trixnity/api/client/MatrixApiClient;
+	public synthetic fun getDiscovery ()Lde/connect2x/trixnity/serverserverapi/client/DiscoveryApiClient;
+	public fun getDiscovery ()Lde/connect2x/trixnity/serverserverapi/client/DiscoveryApiClientImpl;
+	public synthetic fun getFederation ()Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;
+	public fun getFederation ()Lde/connect2x/trixnity/serverserverapi/client/FederationApiClientImpl;
+}
+
+public final class de/connect2x/trixnity/serverserverapi/client/MatrixSignatureAuthPlugin : io/ktor/client/plugins/HttpClientPlugin {
+	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public fun getKey ()Lio/ktor/util/AttributeKey;
+	public synthetic fun install (Ljava/lang/Object;Lio/ktor/client/HttpClient;)V
+	public fun install (Lkotlin/Unit;Lio/ktor/client/HttpClient;)V
+	public synthetic fun prepare (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public fun prepare (Lkotlin/jvm/functions/Function1;)V
+}
+

@@ -1,0 +1,21 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-client-media-okio>
+abstract interface de.connect2x.trixnity.client.media.okio/OkioPlatformMedia : de.connect2x.trixnity.client.media/PlatformMedia { // de.connect2x.trixnity.client.media.okio/OkioPlatformMedia|null[0]
+    abstract fun transformByteArrayFlow(kotlin/Function1<kotlinx.coroutines.flow/Flow<kotlin/ByteArray>, kotlinx.coroutines.flow/Flow<kotlin/ByteArray>>): de.connect2x.trixnity.client.media.okio/OkioPlatformMedia // de.connect2x.trixnity.client.media.okio/OkioPlatformMedia.transformByteArrayFlow|transformByteArrayFlow(kotlin.Function1<kotlinx.coroutines.flow.Flow<kotlin.ByteArray>,kotlinx.coroutines.flow.Flow<kotlin.ByteArray>>){}[0]
+    abstract suspend fun getTemporaryFile(): kotlin/Result<de.connect2x.trixnity.client.media.okio/OkioPlatformMedia.TemporaryFile> // de.connect2x.trixnity.client.media.okio/OkioPlatformMedia.getTemporaryFile|getTemporaryFile(){}[0]
+
+    abstract interface TemporaryFile { // de.connect2x.trixnity.client.media.okio/OkioPlatformMedia.TemporaryFile|null[0]
+        abstract val path // de.connect2x.trixnity.client.media.okio/OkioPlatformMedia.TemporaryFile.path|{}path[0]
+            abstract fun <get-path>(): okio/Path // de.connect2x.trixnity.client.media.okio/OkioPlatformMedia.TemporaryFile.path.<get-path>|<get-path>(){}[0]
+
+        abstract suspend fun delete() // de.connect2x.trixnity.client.media.okio/OkioPlatformMedia.TemporaryFile.delete|delete(){}[0]
+    }
+}
+
+final fun (de.connect2x.trixnity.client/MediaStoreModule.Companion).de.connect2x.trixnity.client.media.okio/okio(okio/Path, okio/FileSystem = ..., kotlin.coroutines/CoroutineContext = ...): de.connect2x.trixnity.client/MediaStoreModule // de.connect2x.trixnity.client.media.okio/okio|okio@de.connect2x.trixnity.client.MediaStoreModule.Companion(okio.Path;okio.FileSystem;kotlin.coroutines.CoroutineContext){}[0]

@@ -1,0 +1,4 @@
+public final class de/connect2x/trixnity/client/cryptodriver/libolm/LibOlmCryptoDriverModuleKt {
+	public static final fun libOlm (Lde/connect2x/trixnity/client/CryptoDriverModule$Companion;)Lde/connect2x/trixnity/client/CryptoDriverModule;
+}
+

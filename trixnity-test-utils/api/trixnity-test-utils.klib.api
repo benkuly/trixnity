@@ -1,0 +1,52 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-test-utils>
+abstract interface <#A: out kotlin/Any?> de.connect2x.trixnity.test.utils/LazySuspend { // de.connect2x.trixnity.test.utils/LazySuspend|null[0]
+    abstract val isCompleted // de.connect2x.trixnity.test.utils/LazySuspend.isCompleted|{}isCompleted[0]
+        abstract fun <get-isCompleted>(): kotlin/Boolean // de.connect2x.trixnity.test.utils/LazySuspend.isCompleted.<get-isCompleted>|<get-isCompleted>(){}[0]
+    abstract val value // de.connect2x.trixnity.test.utils/LazySuspend.value|{}value[0]
+        abstract fun <get-value>(): #A // de.connect2x.trixnity.test.utils/LazySuspend.value.<get-value>|<get-value>(){}[0]
+
+    abstract fun <#A1: kotlin/Any?> map(kotlin/Function1<#A, #A1>): de.connect2x.trixnity.test.utils/LazySuspend<#A1> // de.connect2x.trixnity.test.utils/LazySuspend.map|map(kotlin.Function1<1:0,0:0>){0§<kotlin.Any?>}[0]
+}
+
+abstract interface de.connect2x.trixnity.test.utils/CoroutineTest { // de.connect2x.trixnity.test.utils/CoroutineTest|null[0]
+    abstract val testScope // de.connect2x.trixnity.test.utils/CoroutineTest.testScope|{}testScope[0]
+        abstract fun <get-testScope>(): kotlinx.coroutines.test/TestScope // de.connect2x.trixnity.test.utils/CoroutineTest.testScope.<get-testScope>|<get-testScope>(){}[0]
+    open val defaultTimeout // de.connect2x.trixnity.test.utils/CoroutineTest.defaultTimeout|{}defaultTimeout[0]
+        open fun <get-defaultTimeout>(): kotlin.time/Duration? // de.connect2x.trixnity.test.utils/CoroutineTest.defaultTimeout.<get-defaultTimeout>|<get-defaultTimeout>(){}[0]
+}
+
+open class de.connect2x.trixnity.test.utils/TrixnityBaseTest : de.connect2x.trixnity.test.utils/CoroutineTest { // de.connect2x.trixnity.test.utils/TrixnityBaseTest|null[0]
+    constructor <init>() // de.connect2x.trixnity.test.utils/TrixnityBaseTest.<init>|<init>(){}[0]
+
+    open val testScope // de.connect2x.trixnity.test.utils/TrixnityBaseTest.testScope|{}testScope[0]
+        open fun <get-testScope>(): kotlinx.coroutines.test/TestScope // de.connect2x.trixnity.test.utils/TrixnityBaseTest.testScope.<get-testScope>|<get-testScope>(){}[0]
+}
+
+final val de.connect2x.trixnity.test.utils/testClock // de.connect2x.trixnity.test.utils/testClock|@kotlinx.coroutines.test.TestScope{}testClock[0]
+    final fun (kotlinx.coroutines.test/TestScope).<get-testClock>(): kotlin.time/Clock // de.connect2x.trixnity.test.utils/testClock.<get-testClock>|<get-testClock>@kotlinx.coroutines.test.TestScope(){}[0]
+
+final fun (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/scheduleSetup(kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, kotlin/Unit>) // de.connect2x.trixnity.test.utils/scheduleSetup|scheduleSetup@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,kotlin.Unit>){}[0]
+final fun (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/scheduleTeardown(kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, kotlin/Unit>) // de.connect2x.trixnity.test.utils/scheduleTeardown|scheduleTeardown@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,kotlin.Unit>){}[0]
+final fun <#A: kotlin/Any?> (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/suspendLazy(kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, #A>): de.connect2x.trixnity.test.utils/LazySuspend<#A> // de.connect2x.trixnity.test.utils/suspendLazy|suspendLazy@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (de.connect2x.trixnity.test.utils/LazySuspend<#A>).de.connect2x.trixnity.test.utils/getValue(kotlin/Any?, kotlin.reflect/KProperty<*>): #A // de.connect2x.trixnity.test.utils/getValue|getValue@de.connect2x.trixnity.test.utils.LazySuspend<0:0>(kotlin.Any?;kotlin.reflect.KProperty<*>){0§<kotlin.Any?>}[0]
+final fun de.connect2x.trixnity.test.utils/CoroutineTestScope(kotlin.coroutines/CoroutineContext = ...): kotlinx.coroutines.test/TestScope // de.connect2x.trixnity.test.utils/CoroutineTestScope|CoroutineTestScope(kotlin.coroutines.CoroutineContext){}[0]
+
+// Targets: [native]
+final fun (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/runTest(kotlin.time/Duration? = ..., kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, kotlin/Unit>) // de.connect2x.trixnity.test.utils/runTest|runTest@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.time.Duration?;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,kotlin.Unit>){}[0]
+
+// Targets: [native]
+final fun <#A: kotlin/Any?> (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/runTest(kotlin.time/Duration? = ..., kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, #A>, kotlin.coroutines/SuspendFunction2<kotlinx.coroutines.test/TestScope, #A, kotlin/Unit>) // de.connect2x.trixnity.test.utils/runTest|runTest@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.time.Duration?;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,0:0>;kotlin.coroutines.SuspendFunction2<kotlinx.coroutines.test.TestScope,0:0,kotlin.Unit>){0§<kotlin.Any?>}[0]
+
+// Targets: [js]
+final fun (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/runTest(kotlin.time/Duration? = ..., kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, kotlin/Unit>): kotlinx.coroutines.test.internal/JsPromiseInterfaceForTesting // de.connect2x.trixnity.test.utils/runTest|runTest@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.time.Duration?;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,kotlin.Unit>){}[0]
+
+// Targets: [js]
+final fun <#A: kotlin/Any?> (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/runTest(kotlin.time/Duration? = ..., kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, #A>, kotlin.coroutines/SuspendFunction2<kotlinx.coroutines.test/TestScope, #A, kotlin/Unit>): kotlinx.coroutines.test.internal/JsPromiseInterfaceForTesting // de.connect2x.trixnity.test.utils/runTest|runTest@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.time.Duration?;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,0:0>;kotlin.coroutines.SuspendFunction2<kotlinx.coroutines.test.TestScope,0:0,kotlin.Unit>){0§<kotlin.Any?>}[0]

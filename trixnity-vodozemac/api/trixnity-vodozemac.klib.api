@@ -1,0 +1,936 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-vodozemac>
+open annotation class de.connect2x.trixnity.vodozemac/ModuleImport : kotlin/Annotation { // de.connect2x.trixnity.vodozemac/ModuleImport|null[1]
+    constructor <init>(kotlin/String, kotlin/String) // de.connect2x.trixnity.vodozemac/ModuleImport.<init>|<init>(kotlin.String;kotlin.String){}[1]
+
+    final val module // de.connect2x.trixnity.vodozemac/ModuleImport.module|{}module[1]
+        final fun <get-module>(): kotlin/String // de.connect2x.trixnity.vodozemac/ModuleImport.module.<get-module>|<get-module>(){}[1]
+    final val name // de.connect2x.trixnity.vodozemac/ModuleImport.name|{}name[1]
+        final fun <get-name>(): kotlin/String // de.connect2x.trixnity.vodozemac/ModuleImport.name.<get-name>|<get-name>(){}[1]
+}
+
+sealed interface <#A: kotlin/Any?> de.connect2x.trixnity.vodozemac/MessageTag { // de.connect2x.trixnity.vodozemac/MessageTag|null[0]
+    abstract val value // de.connect2x.trixnity.vodozemac/MessageTag.value|{}value[0]
+        abstract fun <get-value>(): #A // de.connect2x.trixnity.vodozemac/MessageTag.value.<get-value>|<get-value>(){}[0]
+
+    final class Bytes : de.connect2x.trixnity.vodozemac/MessageTag<kotlin/ByteArray> { // de.connect2x.trixnity.vodozemac/MessageTag.Bytes|null[0]
+        constructor <init>(kotlin/ByteArray) // de.connect2x.trixnity.vodozemac/MessageTag.Bytes.<init>|<init>(kotlin.ByteArray){}[0]
+
+        final val value // de.connect2x.trixnity.vodozemac/MessageTag.Bytes.value|{}value[0]
+            final fun <get-value>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/MessageTag.Bytes.value.<get-value>|<get-value>(){}[0]
+    }
+
+    final class String : de.connect2x.trixnity.vodozemac/MessageTag<kotlin/String> { // de.connect2x.trixnity.vodozemac/MessageTag.String|null[0]
+        constructor <init>(kotlin/String) // de.connect2x.trixnity.vodozemac/MessageTag.String.<init>|<init>(kotlin.String){}[0]
+
+        final val value // de.connect2x.trixnity.vodozemac/MessageTag.String.value|{}value[0]
+            final fun <get-value>(): kotlin/String // de.connect2x.trixnity.vodozemac/MessageTag.String.value.<get-value>|<get-value>(){}[0]
+    }
+}
+
+sealed interface <#A: out kotlin/Any?> de.connect2x.trixnity.vodozemac/Plaintext { // de.connect2x.trixnity.vodozemac/Plaintext|null[0]
+    abstract val value // de.connect2x.trixnity.vodozemac/Plaintext.value|{}value[0]
+        abstract fun <get-value>(): #A // de.connect2x.trixnity.vodozemac/Plaintext.value.<get-value>|<get-value>(){}[0]
+
+    final class Bytes : de.connect2x.trixnity.vodozemac/Plaintext<kotlin/ByteArray> { // de.connect2x.trixnity.vodozemac/Plaintext.Bytes|null[0]
+        constructor <init>(kotlin/ByteArray) // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.<init>|<init>(kotlin.ByteArray){}[0]
+
+        final val value // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.value|{}value[0]
+            final fun <get-value>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.component1|component1(){}[0]
+        final fun copy(kotlin/ByteArray = ...): de.connect2x.trixnity.vodozemac/Plaintext.Bytes // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.copy|copy(kotlin.ByteArray){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.toString|toString(){}[0]
+
+        final object Companion { // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.Companion|null[0]
+            final fun of(de.connect2x.trixnity.vodozemac/Plaintext.Text): de.connect2x.trixnity.vodozemac/Plaintext.Bytes // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.Companion.of|of(de.connect2x.trixnity.vodozemac.Plaintext.Text){}[0]
+            final fun of(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Plaintext.Bytes // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.Companion.of|of(kotlin.ByteArray){}[0]
+            final fun of(kotlin/String): de.connect2x.trixnity.vodozemac/Plaintext.Bytes // de.connect2x.trixnity.vodozemac/Plaintext.Bytes.Companion.of|of(kotlin.String){}[0]
+        }
+    }
+
+    final class Text : de.connect2x.trixnity.vodozemac/Plaintext<kotlin/String> { // de.connect2x.trixnity.vodozemac/Plaintext.Text|null[0]
+        constructor <init>(kotlin/String) // de.connect2x.trixnity.vodozemac/Plaintext.Text.<init>|<init>(kotlin.String){}[0]
+
+        final val value // de.connect2x.trixnity.vodozemac/Plaintext.Text.value|{}value[0]
+            final fun <get-value>(): kotlin/String // de.connect2x.trixnity.vodozemac/Plaintext.Text.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.vodozemac/Plaintext.Text.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): de.connect2x.trixnity.vodozemac/Plaintext.Text // de.connect2x.trixnity.vodozemac/Plaintext.Text.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac/Plaintext.Text.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac/Plaintext.Text.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac/Plaintext.Text.toString|toString(){}[0]
+
+        final object Companion { // de.connect2x.trixnity.vodozemac/Plaintext.Text.Companion|null[0]
+            final fun of(de.connect2x.trixnity.vodozemac/Plaintext.Bytes): de.connect2x.trixnity.vodozemac/Plaintext.Text // de.connect2x.trixnity.vodozemac/Plaintext.Text.Companion.of|of(de.connect2x.trixnity.vodozemac.Plaintext.Bytes){}[0]
+            final fun of(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Plaintext.Text // de.connect2x.trixnity.vodozemac/Plaintext.Text.Companion.of|of(kotlin.ByteArray){}[0]
+            final fun of(kotlin/String): de.connect2x.trixnity.vodozemac/Plaintext.Text // de.connect2x.trixnity.vodozemac/Plaintext.Text.Companion.of|of(kotlin.String){}[0]
+        }
+    }
+
+    final object Companion { // de.connect2x.trixnity.vodozemac/Plaintext.Companion|null[0]
+        final fun of(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Plaintext.Bytes // de.connect2x.trixnity.vodozemac/Plaintext.Companion.of|of(kotlin.ByteArray){}[0]
+        final fun of(kotlin/String): de.connect2x.trixnity.vodozemac/Plaintext.Text // de.connect2x.trixnity.vodozemac/Plaintext.Companion.of|of(kotlin.String){}[0]
+    }
+}
+
+sealed interface de.connect2x.trixnity.vodozemac.olm/OlmMessage { // de.connect2x.trixnity.vodozemac.olm/OlmMessage|null[0]
+    abstract val message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.message|{}message[0]
+        abstract fun <get-message>(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.message.<get-message>|<get-message>(){}[0]
+    abstract val sessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.sessionKeys|{}sessionKeys[0]
+        abstract fun <get-sessionKeys>(): de.connect2x.trixnity.vodozemac.olm/SessionKeys? // de.connect2x.trixnity.vodozemac.olm/OlmMessage.sessionKeys.<get-sessionKeys>|<get-sessionKeys>(){}[0]
+    open val base64 // de.connect2x.trixnity.vodozemac.olm/OlmMessage.base64|{}base64[0]
+        open fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/OlmMessage.base64.<get-base64>|<get-base64>(){}[0]
+    open val bytes // de.connect2x.trixnity.vodozemac.olm/OlmMessage.bytes|{}bytes[0]
+        open fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.olm/OlmMessage.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    abstract interface <#A1: de.connect2x.trixnity.vodozemac.olm/OlmMessage> OlmMessageFactory { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.OlmMessageFactory|null[0]
+        abstract fun invoke(kotlin/ByteArray): #A1 // de.connect2x.trixnity.vodozemac.olm/OlmMessage.OlmMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+        open fun invoke(kotlin/String): #A1 // de.connect2x.trixnity.vodozemac.olm/OlmMessage.OlmMessageFactory.invoke|invoke(kotlin.String){}[0]
+    }
+
+    sealed interface Bytes : de.connect2x.trixnity.vodozemac.olm/OlmMessage { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Bytes|null[0]
+        final object Companion // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Bytes.Companion|null[0]
+    }
+
+    sealed interface Normal : de.connect2x.trixnity.vodozemac.olm/OlmMessage { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal|null[0]
+        abstract val message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.message|{}message[0]
+            abstract fun <get-message>(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.message.<get-message>|<get-message>(){}[0]
+        open val sessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.sessionKeys|{}sessionKeys[0]
+            open fun <get-sessionKeys>(): de.connect2x.trixnity.vodozemac.olm/SessionKeys? // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.sessionKeys.<get-sessionKeys>|<get-sessionKeys>(){}[0]
+
+        final class Bytes : de.connect2x.trixnity.vodozemac.olm/OlmMessage.Bytes, de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes|null[0]
+            constructor <init>(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message) // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.<init>|<init>(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Message){}[0]
+
+            final val message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.message|{}message[0]
+                final fun <get-message>(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.message.<get-message>|<get-message>(){}[0]
+
+            final fun component1(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.component1|component1(){}[0]
+            final fun copy(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message = ...): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.copy|copy(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Message){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.toString|toString(){}[0]
+
+            final object Companion : de.connect2x.trixnity.vodozemac.olm/OlmMessage.OlmMessageFactory<de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes> { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.Companion|null[0]
+                final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+                final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Bytes.Companion.invoke|invoke(kotlin.String){}[0]
+            }
+        }
+
+        final class Text : de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal, de.connect2x.trixnity.vodozemac.olm/OlmMessage.Text { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text|null[0]
+            constructor <init>(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message) // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.<init>|<init>(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Message){}[0]
+
+            final val message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.message|{}message[0]
+                final fun <get-message>(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.message.<get-message>|<get-message>(){}[0]
+
+            final fun component1(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.component1|component1(){}[0]
+            final fun copy(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message = ...): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.copy|copy(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Message){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.toString|toString(){}[0]
+
+            final object Companion : de.connect2x.trixnity.vodozemac.olm/OlmMessage.OlmMessageFactory<de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text> { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.Companion|null[0]
+                final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+                final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text.Companion.invoke|invoke(kotlin.String){}[0]
+            }
+        }
+    }
+
+    sealed interface PreKey : de.connect2x.trixnity.vodozemac.olm/OlmMessage { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey|null[0]
+        abstract val message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.message|{}message[0]
+            abstract fun <get-message>(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.message.<get-message>|<get-message>(){}[0]
+        abstract val sessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.sessionKeys|{}sessionKeys[0]
+            abstract fun <get-sessionKeys>(): de.connect2x.trixnity.vodozemac.olm/SessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.sessionKeys.<get-sessionKeys>|<get-sessionKeys>(){}[0]
+
+        final class Bytes : de.connect2x.trixnity.vodozemac.olm/OlmMessage.Bytes, de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes|null[0]
+            constructor <init>(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message, de.connect2x.trixnity.vodozemac.olm/SessionKeys) // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.<init>|<init>(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Message;de.connect2x.trixnity.vodozemac.olm.SessionKeys){}[0]
+
+            final val message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.message|{}message[0]
+                final fun <get-message>(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.message.<get-message>|<get-message>(){}[0]
+            final val sessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.sessionKeys|{}sessionKeys[0]
+                final fun <get-sessionKeys>(): de.connect2x.trixnity.vodozemac.olm/SessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.sessionKeys.<get-sessionKeys>|<get-sessionKeys>(){}[0]
+
+            final fun component1(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.component1|component1(){}[0]
+            final fun component2(): de.connect2x.trixnity.vodozemac.olm/SessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.component2|component2(){}[0]
+            final fun copy(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message = ..., de.connect2x.trixnity.vodozemac.olm/SessionKeys = ...): de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.copy|copy(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Message;de.connect2x.trixnity.vodozemac.olm.SessionKeys){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.toString|toString(){}[0]
+
+            final object Companion : de.connect2x.trixnity.vodozemac.olm/OlmMessage.OlmMessageFactory<de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes> { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.Companion|null[0]
+                final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+                final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes.Companion.invoke|invoke(kotlin.String){}[0]
+            }
+        }
+
+        final class Text : de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey, de.connect2x.trixnity.vodozemac.olm/OlmMessage.Text { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text|null[0]
+            constructor <init>(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message, de.connect2x.trixnity.vodozemac.olm/SessionKeys) // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.<init>|<init>(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Message;de.connect2x.trixnity.vodozemac.olm.SessionKeys){}[0]
+
+            final val message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.message|{}message[0]
+                final fun <get-message>(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.message.<get-message>|<get-message>(){}[0]
+            final val sessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.sessionKeys|{}sessionKeys[0]
+                final fun <get-sessionKeys>(): de.connect2x.trixnity.vodozemac.olm/SessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.sessionKeys.<get-sessionKeys>|<get-sessionKeys>(){}[0]
+
+            final fun component1(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.component1|component1(){}[0]
+            final fun component2(): de.connect2x.trixnity.vodozemac.olm/SessionKeys // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.component2|component2(){}[0]
+            final fun copy(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message = ..., de.connect2x.trixnity.vodozemac.olm/SessionKeys = ...): de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.copy|copy(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Message;de.connect2x.trixnity.vodozemac.olm.SessionKeys){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.toString|toString(){}[0]
+
+            final object Companion : de.connect2x.trixnity.vodozemac.olm/OlmMessage.OlmMessageFactory<de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text> { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.Companion|null[0]
+                final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+                final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text // de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text.Companion.invoke|invoke(kotlin.String){}[0]
+            }
+        }
+    }
+
+    sealed interface Text : de.connect2x.trixnity.vodozemac.olm/OlmMessage { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Text|null[0]
+        final object Companion // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Text.Companion|null[0]
+    }
+
+    final class Message : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message|null[0]
+        final val chainIndex // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.chainIndex|{}chainIndex[0]
+            final fun <get-chainIndex>(): kotlin/Long // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.chainIndex.<get-chainIndex>|<get-chainIndex>(){}[0]
+        final val ciphertext // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.ciphertext|{}ciphertext[0]
+            final fun <get-ciphertext>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+        final val macTruncated // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.macTruncated|{}macTruncated[0]
+            final fun <get-macTruncated>(): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.macTruncated.<get-macTruncated>|<get-macTruncated>(){}[0]
+        final val ratchetKey // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.ratchetKey|{}ratchetKey[0]
+            final fun <get-ratchetKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.ratchetKey.<get-ratchetKey>|<get-ratchetKey>(){}[0]
+        final val version // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.version|{}version[0]
+            final fun <get-version>(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Message.version.<get-version>|<get-version>(){}[0]
+    }
+
+    final object Companion // de.connect2x.trixnity.vodozemac.olm/OlmMessage.Companion|null[0]
+}
+
+sealed interface de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage { // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage|null[0]
+    abstract val ciphertext // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.ciphertext|{}ciphertext[0]
+        abstract fun <get-ciphertext>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+    abstract val ephemeralKey // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.ephemeralKey|{}ephemeralKey[0]
+        abstract fun <get-ephemeralKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.ephemeralKey.<get-ephemeralKey>|<get-ephemeralKey>(){}[0]
+    abstract val mac // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.mac|{}mac[0]
+        abstract fun <get-mac>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.mac.<get-mac>|<get-mac>(){}[0]
+
+    final class Bytes : de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage { // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes|null[0]
+        constructor <init>(kotlin/ByteArray, kotlin/ByteArray, de.connect2x.trixnity.vodozemac/Curve25519PublicKey) // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes.<init>|<init>(kotlin.ByteArray;kotlin.ByteArray;de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+
+        final val ciphertext // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes.ciphertext|{}ciphertext[0]
+            final fun <get-ciphertext>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+        final val ephemeralKey // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes.ephemeralKey|{}ephemeralKey[0]
+            final fun <get-ephemeralKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes.ephemeralKey.<get-ephemeralKey>|<get-ephemeralKey>(){}[0]
+        final val mac // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes.mac|{}mac[0]
+            final fun <get-mac>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes.mac.<get-mac>|<get-mac>(){}[0]
+
+        final object Companion // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes.Companion|null[0]
+    }
+
+    final class Text : de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage { // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text|null[0]
+        constructor <init>(kotlin/ByteArray, kotlin/ByteArray, de.connect2x.trixnity.vodozemac/Curve25519PublicKey) // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text.<init>|<init>(kotlin.ByteArray;kotlin.ByteArray;de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+
+        final val ciphertext // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text.ciphertext|{}ciphertext[0]
+            final fun <get-ciphertext>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+        final val ephemeralKey // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text.ephemeralKey|{}ephemeralKey[0]
+            final fun <get-ephemeralKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text.ephemeralKey.<get-ephemeralKey>|<get-ephemeralKey>(){}[0]
+        final val mac // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text.mac|{}mac[0]
+            final fun <get-mac>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text.mac.<get-mac>|<get-mac>(){}[0]
+
+        final object Companion // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text.Companion|null[0]
+    }
+}
+
+abstract class de.connect2x.trixnity.vodozemac.utils/Managed : de.connect2x.trixnity.vodozemac.utils/Native, kotlin/AutoCloseable { // de.connect2x.trixnity.vodozemac.utils/Managed|null[0]
+    open fun close() // de.connect2x.trixnity.vodozemac.utils/Managed.close|close(){}[0]
+
+    // Targets: [native]
+    constructor <init>(kotlin/Long, kotlin/Function1<kotlin/Long, kotlin/Unit>) // de.connect2x.trixnity.vodozemac.utils/Managed.<init>|<init>(kotlin.Long;kotlin.Function1<kotlin.Long,kotlin.Unit>){}[0]
+
+    // Targets: [js]
+    constructor <init>(kotlin/Int, kotlin/Function1<kotlin/Int, kotlin/Unit>) // de.connect2x.trixnity.vodozemac.utils/Managed.<init>|<init>(kotlin.Int;kotlin.Function1<kotlin.Int,kotlin.Unit>){}[0]
+}
+
+abstract class de.connect2x.trixnity.vodozemac.utils/Native { // de.connect2x.trixnity.vodozemac.utils/Native|null[0]
+    open fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.utils/Native.toString|toString(){}[0]
+
+    // Targets: [native]
+    constructor <init>(kotlin/Long) // de.connect2x.trixnity.vodozemac.utils/Native.<init>|<init>(kotlin.Long){}[0]
+
+    // Targets: [js]
+    constructor <init>(kotlin/Int) // de.connect2x.trixnity.vodozemac.utils/Native.<init>|<init>(kotlin.Int){}[0]
+}
+
+final class de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey.Companion|null[0]
+        final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey // de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+        final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey // de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.megolm/GroupSession : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.megolm/GroupSession|null[0]
+    final val messageIndex // de.connect2x.trixnity.vodozemac.megolm/GroupSession.messageIndex|{}messageIndex[0]
+        final fun <get-messageIndex>(): kotlin/Int // de.connect2x.trixnity.vodozemac.megolm/GroupSession.messageIndex.<get-messageIndex>|<get-messageIndex>(){}[0]
+    final val sessionConfig // de.connect2x.trixnity.vodozemac.megolm/GroupSession.sessionConfig|{}sessionConfig[0]
+        final fun <get-sessionConfig>(): de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig // de.connect2x.trixnity.vodozemac.megolm/GroupSession.sessionConfig.<get-sessionConfig>|<get-sessionConfig>(){}[0]
+    final val sessionId // de.connect2x.trixnity.vodozemac.megolm/GroupSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.vodozemac.megolm/GroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+    final val sessionKey // de.connect2x.trixnity.vodozemac.megolm/GroupSession.sessionKey|{}sessionKey[0]
+        final fun <get-sessionKey>(): de.connect2x.trixnity.vodozemac.megolm/SessionKey // de.connect2x.trixnity.vodozemac.megolm/GroupSession.sessionKey.<get-sessionKey>|<get-sessionKey>(){}[0]
+
+    final fun encrypt(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes // de.connect2x.trixnity.vodozemac.megolm/GroupSession.encrypt|encrypt(kotlin.ByteArray){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text // de.connect2x.trixnity.vodozemac.megolm/GroupSession.encrypt|encrypt(kotlin.String){}[0]
+    final fun pickle(de.connect2x.trixnity.vodozemac/PickleKey? = ...): kotlin/String // de.connect2x.trixnity.vodozemac.megolm/GroupSession.pickle|pickle(de.connect2x.trixnity.vodozemac.PickleKey?){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.megolm/GroupSession.Companion|null[0]
+        final fun fromLibolmPickle(kotlin/String, kotlin/String): de.connect2x.trixnity.vodozemac.megolm/GroupSession // de.connect2x.trixnity.vodozemac.megolm/GroupSession.Companion.fromLibolmPickle|fromLibolmPickle(kotlin.String;kotlin.String){}[0]
+        final fun fromPickle(kotlin/String, de.connect2x.trixnity.vodozemac/PickleKey? = ...): de.connect2x.trixnity.vodozemac.megolm/GroupSession // de.connect2x.trixnity.vodozemac.megolm/GroupSession.Companion.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.vodozemac.PickleKey?){}[0]
+        final fun invoke(de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig = ...): de.connect2x.trixnity.vodozemac.megolm/GroupSession // de.connect2x.trixnity.vodozemac.megolm/GroupSession.Companion.invoke|invoke(de.connect2x.trixnity.vodozemac.megolm.MegolmSessionConfig){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession|null[0]
+    final val firstKnownIndex // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.firstKnownIndex|{}firstKnownIndex[0]
+        final fun <get-firstKnownIndex>(): kotlin/Int // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.firstKnownIndex.<get-firstKnownIndex>|<get-firstKnownIndex>(){}[0]
+    final val sessionId // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+
+    final fun advanceTo(kotlin/Int): kotlin/Int // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.advanceTo|advanceTo(kotlin.Int){}[0]
+    final fun compare(de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.compare|compare(de.connect2x.trixnity.vodozemac.megolm.InboundGroupSession){}[0]
+    final fun connected(de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession): kotlin/Boolean // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.connected|connected(de.connect2x.trixnity.vodozemac.megolm.InboundGroupSession){}[0]
+    final fun decrypt(de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage<kotlin/ByteArray> // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.decrypt|decrypt(de.connect2x.trixnity.vodozemac.megolm.MegolmMessage.Bytes){}[0]
+    final fun decrypt(de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage<kotlin/String> // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.decrypt|decrypt(de.connect2x.trixnity.vodozemac.megolm.MegolmMessage.Text){}[0]
+    final fun exportAt(kotlin/Int): de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey? // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.exportAt|exportAt(kotlin.Int){}[0]
+    final fun exportAtFirstKnownIndex(): de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.exportAtFirstKnownIndex|exportAtFirstKnownIndex(){}[0]
+    final fun merge(de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession? // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.merge|merge(de.connect2x.trixnity.vodozemac.megolm.InboundGroupSession){}[0]
+    final fun pickle(de.connect2x.trixnity.vodozemac/PickleKey? = ...): kotlin/String // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.pickle|pickle(de.connect2x.trixnity.vodozemac.PickleKey?){}[0]
+
+    final enum class SessionOrdering : kotlin/Enum<de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering> { // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering|null[0]
+        enum entry BETTER // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering.BETTER|null[0]
+        enum entry EQUAL // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering.EQUAL|null[0]
+        enum entry UNCONNECTED // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering.UNCONNECTED|null[0]
+        enum entry WORSE // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering.WORSE|null[0]
+
+        final val entries // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering> // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering> // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.SessionOrdering.values|values#static(){}[0]
+    }
+
+    final class <#A1: kotlin/Any?> DecryptedMessage { // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage|null[0]
+        constructor <init>(de.connect2x.trixnity.vodozemac/Plaintext<#A1>, kotlin/Int) // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.<init>|<init>(de.connect2x.trixnity.vodozemac.Plaintext<1:0>;kotlin.Int){}[0]
+
+        final val messageIndex // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.messageIndex|{}messageIndex[0]
+            final fun <get-messageIndex>(): kotlin/Int // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.messageIndex.<get-messageIndex>|<get-messageIndex>(){}[0]
+        final val plaintext // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.plaintext|{}plaintext[0]
+            final fun <get-plaintext>(): de.connect2x.trixnity.vodozemac/Plaintext<#A1> // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.plaintext.<get-plaintext>|<get-plaintext>(){}[0]
+
+        final fun component1(): #A1 // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.component2|component2(){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.DecryptedMessage.toString|toString(){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.Companion|null[0]
+        final fun fromLibolmPickle(kotlin/String, kotlin/String): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.Companion.fromLibolmPickle|fromLibolmPickle(kotlin.String;kotlin.String){}[0]
+        final fun fromPickle(kotlin/String, de.connect2x.trixnity.vodozemac/PickleKey? = ...): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.Companion.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.vodozemac.PickleKey?){}[0]
+        final fun import(de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey, de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig = ...): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.Companion.import|import(de.connect2x.trixnity.vodozemac.megolm.ExportedSessionKey;de.connect2x.trixnity.vodozemac.megolm.MegolmSessionConfig){}[0]
+        final fun invoke(de.connect2x.trixnity.vodozemac.megolm/SessionKey, de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig = ...): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession // de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession.Companion.invoke|invoke(de.connect2x.trixnity.vodozemac.megolm.SessionKey;de.connect2x.trixnity.vodozemac.megolm.MegolmSessionConfig){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig|null[0]
+    final val version // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.version|{}version[0]
+        final fun <get-version>(): de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.version.<get-version>|<get-version>(){}[0]
+
+    final enum class Version : kotlin/Enum<de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version> { // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version|null[0]
+        enum entry VERSION_1 // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version.VERSION_1|null[0]
+        enum entry VERSION_2 // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version.VERSION_2|null[0]
+
+        final val entries // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version> // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version> // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version.values|values#static(){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Companion|null[0]
+        final fun invoke(de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Version = ...): de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Companion.invoke|invoke(de.connect2x.trixnity.vodozemac.megolm.MegolmSessionConfig.Version){}[0]
+        final fun v1(): de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Companion.v1|v1(){}[0]
+        final fun v2(): de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig // de.connect2x.trixnity.vodozemac.megolm/MegolmSessionConfig.Companion.v2|v2(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.megolm/SessionKey : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.megolm/SessionKey|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac.megolm/SessionKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac.megolm/SessionKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.vodozemac.megolm/SessionKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.megolm/SessionKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.megolm/SessionKey.Companion|null[0]
+        final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.megolm/SessionKey // de.connect2x.trixnity.vodozemac.megolm/SessionKey.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+        final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac.megolm/SessionKey // de.connect2x.trixnity.vodozemac.megolm/SessionKey.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.olm/Account : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.olm/Account|null[0]
+    final val curve25519Key // de.connect2x.trixnity.vodozemac.olm/Account.curve25519Key|{}curve25519Key[0]
+        final fun <get-curve25519Key>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.olm/Account.curve25519Key.<get-curve25519Key>|<get-curve25519Key>(){}[0]
+    final val ed25519Key // de.connect2x.trixnity.vodozemac.olm/Account.ed25519Key|{}ed25519Key[0]
+        final fun <get-ed25519Key>(): de.connect2x.trixnity.vodozemac/Ed25519PublicKey // de.connect2x.trixnity.vodozemac.olm/Account.ed25519Key.<get-ed25519Key>|<get-ed25519Key>(){}[0]
+    final val fallbackKey // de.connect2x.trixnity.vodozemac.olm/Account.fallbackKey|{}fallbackKey[0]
+        final fun <get-fallbackKey>(): kotlin/Pair<kotlin/String, de.connect2x.trixnity.vodozemac/Curve25519PublicKey>? // de.connect2x.trixnity.vodozemac.olm/Account.fallbackKey.<get-fallbackKey>|<get-fallbackKey>(){}[0]
+    final val identityKeys // de.connect2x.trixnity.vodozemac.olm/Account.identityKeys|{}identityKeys[0]
+        final fun <get-identityKeys>(): de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys // de.connect2x.trixnity.vodozemac.olm/Account.identityKeys.<get-identityKeys>|<get-identityKeys>(){}[0]
+    final val maxNumberOfOneTimeKeys // de.connect2x.trixnity.vodozemac.olm/Account.maxNumberOfOneTimeKeys|{}maxNumberOfOneTimeKeys[0]
+        final fun <get-maxNumberOfOneTimeKeys>(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/Account.maxNumberOfOneTimeKeys.<get-maxNumberOfOneTimeKeys>|<get-maxNumberOfOneTimeKeys>(){}[0]
+    final val oneTimeKeys // de.connect2x.trixnity.vodozemac.olm/Account.oneTimeKeys|{}oneTimeKeys[0]
+        final fun <get-oneTimeKeys>(): kotlin.collections/Map<kotlin/String, de.connect2x.trixnity.vodozemac/Curve25519PublicKey> // de.connect2x.trixnity.vodozemac.olm/Account.oneTimeKeys.<get-oneTimeKeys>|<get-oneTimeKeys>(){}[0]
+    final val storedOneTimeKeyCount // de.connect2x.trixnity.vodozemac.olm/Account.storedOneTimeKeyCount|{}storedOneTimeKeyCount[0]
+        final fun <get-storedOneTimeKeyCount>(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/Account.storedOneTimeKeyCount.<get-storedOneTimeKeyCount>|<get-storedOneTimeKeyCount>(){}[0]
+
+    final fun createInboundSession(de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Bytes, de.connect2x.trixnity.vodozemac/Curve25519PublicKey = ...): de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult<kotlin/ByteArray> // de.connect2x.trixnity.vodozemac.olm/Account.createInboundSession|createInboundSession(de.connect2x.trixnity.vodozemac.olm.OlmMessage.PreKey.Bytes;de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+    final fun createInboundSession(de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text, de.connect2x.trixnity.vodozemac/Curve25519PublicKey = ...): de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult<kotlin/String> // de.connect2x.trixnity.vodozemac.olm/Account.createInboundSession|createInboundSession(de.connect2x.trixnity.vodozemac.olm.OlmMessage.PreKey.Text;de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+    final fun createOutboundSession(de.connect2x.trixnity.vodozemac/Curve25519PublicKey, de.connect2x.trixnity.vodozemac/Curve25519PublicKey, de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig = ...): de.connect2x.trixnity.vodozemac.olm/Session // de.connect2x.trixnity.vodozemac.olm/Account.createOutboundSession|createOutboundSession(de.connect2x.trixnity.vodozemac.Curve25519PublicKey;de.connect2x.trixnity.vodozemac.Curve25519PublicKey;de.connect2x.trixnity.vodozemac.olm.OlmSessionConfig){}[0]
+    final fun dehydratedDevice(de.connect2x.trixnity.vodozemac/PickleKey): de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice // de.connect2x.trixnity.vodozemac.olm/Account.dehydratedDevice|dehydratedDevice(de.connect2x.trixnity.vodozemac.PickleKey){}[0]
+    final fun forgetFallbackKey(): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/Account.forgetFallbackKey|forgetFallbackKey(){}[0]
+    final fun generateFallbackKey(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey? // de.connect2x.trixnity.vodozemac.olm/Account.generateFallbackKey|generateFallbackKey(){}[0]
+    final fun generateOneTimeKeys(kotlin/Int): de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult // de.connect2x.trixnity.vodozemac.olm/Account.generateOneTimeKeys|generateOneTimeKeys(kotlin.Int){}[0]
+    final fun markKeysAsPublished() // de.connect2x.trixnity.vodozemac.olm/Account.markKeysAsPublished|markKeysAsPublished(){}[0]
+    final fun pickle(de.connect2x.trixnity.vodozemac/PickleKey? = ...): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Account.pickle|pickle(de.connect2x.trixnity.vodozemac.PickleKey?){}[0]
+    final fun sign(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Ed25519Signature // de.connect2x.trixnity.vodozemac.olm/Account.sign|sign(kotlin.ByteArray){}[0]
+    final fun sign(kotlin/String): de.connect2x.trixnity.vodozemac/Ed25519Signature // de.connect2x.trixnity.vodozemac.olm/Account.sign|sign(kotlin.String){}[0]
+
+    final class <#A1: kotlin/Any?> InboundSessionCreationResult { // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult|null[0]
+        constructor <init>(de.connect2x.trixnity.vodozemac/Plaintext<#A1>, de.connect2x.trixnity.vodozemac.olm/Session) // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.<init>|<init>(de.connect2x.trixnity.vodozemac.Plaintext<1:0>;de.connect2x.trixnity.vodozemac.olm.Session){}[0]
+
+        final val plaintext // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.plaintext|{}plaintext[0]
+            final fun <get-plaintext>(): de.connect2x.trixnity.vodozemac/Plaintext<#A1> // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.plaintext.<get-plaintext>|<get-plaintext>(){}[0]
+        final val session // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.session|{}session[0]
+            final fun <get-session>(): de.connect2x.trixnity.vodozemac.olm/Session // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.session.<get-session>|<get-session>(){}[0]
+
+        final fun component1(): #A1 // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.vodozemac.olm/Session // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.component2|component2(){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Account.InboundSessionCreationResult.toString|toString(){}[0]
+    }
+
+    final class DehydratedDevice { // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice|null[0]
+        constructor <init>(kotlin/String, kotlin/String) // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+        final val ciphertext // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.ciphertext|{}ciphertext[0]
+            final fun <get-ciphertext>(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+        final val nonce // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.nonce|{}nonce[0]
+            final fun <get-nonce>(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.nonce.<get-nonce>|<get-nonce>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.component1|component1(){}[0]
+        final fun component2(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ...): de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.copy|copy(kotlin.String;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Account.DehydratedDevice.toString|toString(){}[0]
+    }
+
+    final class IdentityKeys : kotlin/AutoCloseable { // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys|null[0]
+        constructor <init>(de.connect2x.trixnity.vodozemac/Ed25519PublicKey, de.connect2x.trixnity.vodozemac/Curve25519PublicKey) // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.<init>|<init>(de.connect2x.trixnity.vodozemac.Ed25519PublicKey;de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+
+        final val curve25519 // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.curve25519|{}curve25519[0]
+            final fun <get-curve25519>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.curve25519.<get-curve25519>|<get-curve25519>(){}[0]
+        final val ed25519 // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.ed25519|{}ed25519[0]
+            final fun <get-ed25519>(): de.connect2x.trixnity.vodozemac/Ed25519PublicKey // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.ed25519.<get-ed25519>|<get-ed25519>(){}[0]
+
+        final fun close() // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.close|close(){}[0]
+        final fun component1(): de.connect2x.trixnity.vodozemac/Ed25519PublicKey // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.component2|component2(){}[0]
+        final fun copy(de.connect2x.trixnity.vodozemac/Ed25519PublicKey = ..., de.connect2x.trixnity.vodozemac/Curve25519PublicKey = ...): de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.copy|copy(de.connect2x.trixnity.vodozemac.Ed25519PublicKey;de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Account.IdentityKeys.toString|toString(){}[0]
+    }
+
+    final class OneTimeKeyGenerationResult { // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult|null[0]
+        constructor <init>(kotlin.collections/List<de.connect2x.trixnity.vodozemac/Curve25519PublicKey>, kotlin.collections/List<de.connect2x.trixnity.vodozemac/Curve25519PublicKey>) // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.<init>|<init>(kotlin.collections.List<de.connect2x.trixnity.vodozemac.Curve25519PublicKey>;kotlin.collections.List<de.connect2x.trixnity.vodozemac.Curve25519PublicKey>){}[0]
+
+        final val created // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.created|{}created[0]
+            final fun <get-created>(): kotlin.collections/List<de.connect2x.trixnity.vodozemac/Curve25519PublicKey> // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.created.<get-created>|<get-created>(){}[0]
+        final val removed // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.removed|{}removed[0]
+            final fun <get-removed>(): kotlin.collections/List<de.connect2x.trixnity.vodozemac/Curve25519PublicKey> // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.removed.<get-removed>|<get-removed>(){}[0]
+
+        final fun component1(): kotlin.collections/List<de.connect2x.trixnity.vodozemac/Curve25519PublicKey> // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/List<de.connect2x.trixnity.vodozemac/Curve25519PublicKey> // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.component2|component2(){}[0]
+        final fun copy(kotlin.collections/List<de.connect2x.trixnity.vodozemac/Curve25519PublicKey> = ..., kotlin.collections/List<de.connect2x.trixnity.vodozemac/Curve25519PublicKey> = ...): de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.copy|copy(kotlin.collections.List<de.connect2x.trixnity.vodozemac.Curve25519PublicKey>;kotlin.collections.List<de.connect2x.trixnity.vodozemac.Curve25519PublicKey>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Account.OneTimeKeyGenerationResult.toString|toString(){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.olm/Account.Companion|null[0]
+        final fun fromDehydratedDevice(kotlin/String, kotlin/String, de.connect2x.trixnity.vodozemac/PickleKey): de.connect2x.trixnity.vodozemac.olm/Account // de.connect2x.trixnity.vodozemac.olm/Account.Companion.fromDehydratedDevice|fromDehydratedDevice(kotlin.String;kotlin.String;de.connect2x.trixnity.vodozemac.PickleKey){}[0]
+        final fun fromLibolmPickle(kotlin/String, kotlin/String): de.connect2x.trixnity.vodozemac.olm/Account // de.connect2x.trixnity.vodozemac.olm/Account.Companion.fromLibolmPickle|fromLibolmPickle(kotlin.String;kotlin.String){}[0]
+        final fun fromPickle(kotlin/String, de.connect2x.trixnity.vodozemac/PickleKey? = ...): de.connect2x.trixnity.vodozemac.olm/Account // de.connect2x.trixnity.vodozemac.olm/Account.Companion.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.vodozemac.PickleKey?){}[0]
+        final fun invoke(): de.connect2x.trixnity.vodozemac.olm/Account // de.connect2x.trixnity.vodozemac.olm/Account.Companion.invoke|invoke(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig|null[0]
+    final val version // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.version|{}version[0]
+        final fun <get-version>(): de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.version.<get-version>|<get-version>(){}[0]
+
+    final enum class Version : kotlin/Enum<de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version> { // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version|null[0]
+        enum entry VERSION_1 // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version.VERSION_1|null[0]
+        enum entry VERSION_2 // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version.VERSION_2|null[0]
+
+        final val entries // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version> // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version> // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version.values|values#static(){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Companion|null[0]
+        final fun invoke(de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Version = ...): de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Companion.invoke|invoke(de.connect2x.trixnity.vodozemac.olm.OlmSessionConfig.Version){}[0]
+        final fun v1(): de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Companion.v1|v1(){}[0]
+        final fun v2(): de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig // de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig.Companion.v2|v2(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.olm/Session : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.olm/Session|null[0]
+    final val hasReceivedMessage // de.connect2x.trixnity.vodozemac.olm/Session.hasReceivedMessage|{}hasReceivedMessage[0]
+        final fun <get-hasReceivedMessage>(): kotlin/Boolean // de.connect2x.trixnity.vodozemac.olm/Session.hasReceivedMessage.<get-hasReceivedMessage>|<get-hasReceivedMessage>(){}[0]
+    final val sessionConfig // de.connect2x.trixnity.vodozemac.olm/Session.sessionConfig|{}sessionConfig[0]
+        final fun <get-sessionConfig>(): de.connect2x.trixnity.vodozemac.olm/OlmSessionConfig // de.connect2x.trixnity.vodozemac.olm/Session.sessionConfig.<get-sessionConfig>|<get-sessionConfig>(){}[0]
+    final val sessionId // de.connect2x.trixnity.vodozemac.olm/Session.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Session.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+    final val sessionKeys // de.connect2x.trixnity.vodozemac.olm/Session.sessionKeys|{}sessionKeys[0]
+        final fun <get-sessionKeys>(): de.connect2x.trixnity.vodozemac.olm/SessionKeys // de.connect2x.trixnity.vodozemac.olm/Session.sessionKeys.<get-sessionKeys>|<get-sessionKeys>(){}[0]
+
+    final fun decrypt(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Bytes): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.olm/Session.decrypt|decrypt(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Bytes){}[0]
+    final fun decrypt(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Text): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Session.decrypt|decrypt(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Text){}[0]
+    final fun encrypt(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Bytes // de.connect2x.trixnity.vodozemac.olm/Session.encrypt|encrypt(kotlin.ByteArray){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Text // de.connect2x.trixnity.vodozemac.olm/Session.encrypt|encrypt(kotlin.String){}[0]
+    final fun pickle(de.connect2x.trixnity.vodozemac/PickleKey? = ...): kotlin/String // de.connect2x.trixnity.vodozemac.olm/Session.pickle|pickle(de.connect2x.trixnity.vodozemac.PickleKey?){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.olm/Session.Companion|null[0]
+        final fun fromLibolmPickle(kotlin/String, kotlin/String): de.connect2x.trixnity.vodozemac.olm/Session // de.connect2x.trixnity.vodozemac.olm/Session.Companion.fromLibolmPickle|fromLibolmPickle(kotlin.String;kotlin.String){}[0]
+        final fun fromPickle(kotlin/String, de.connect2x.trixnity.vodozemac/PickleKey? = ...): de.connect2x.trixnity.vodozemac.olm/Session // de.connect2x.trixnity.vodozemac.olm/Session.Companion.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.vodozemac.PickleKey?){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.olm/SessionKeys : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.olm/SessionKeys|null[0]
+    final val baseKey // de.connect2x.trixnity.vodozemac.olm/SessionKeys.baseKey|{}baseKey[0]
+        final fun <get-baseKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.olm/SessionKeys.baseKey.<get-baseKey>|<get-baseKey>(){}[0]
+    final val identityKey // de.connect2x.trixnity.vodozemac.olm/SessionKeys.identityKey|{}identityKey[0]
+        final fun <get-identityKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.olm/SessionKeys.identityKey.<get-identityKey>|<get-identityKey>(){}[0]
+    final val oneTimeKey // de.connect2x.trixnity.vodozemac.olm/SessionKeys.oneTimeKey|{}oneTimeKey[0]
+        final fun <get-oneTimeKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.olm/SessionKeys.oneTimeKey.<get-oneTimeKey>|<get-oneTimeKey>(){}[0]
+    final val sessionId // de.connect2x.trixnity.vodozemac.olm/SessionKeys.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.vodozemac.olm/SessionKeys.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+}
+
+final class de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption|null[0]
+    final val publicKey // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+    final val secretKey // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.secretKey|{}secretKey[0]
+        final fun <get-secretKey>(): de.connect2x.trixnity.vodozemac/Curve25519SecretKey // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.secretKey.<get-secretKey>|<get-secretKey>(){}[0]
+
+    final fun decrypt(de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.decrypt|decrypt(de.connect2x.trixnity.vodozemac.pkencryption.PkEncryptionMessage.Bytes){}[0]
+    final fun decrypt(de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text): kotlin/String // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.decrypt|decrypt(de.connect2x.trixnity.vodozemac.pkencryption.PkEncryptionMessage.Text){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.Companion|null[0]
+        final fun fromLibolmPickle(kotlin/String, kotlin/String): de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.Companion.fromLibolmPickle|fromLibolmPickle(kotlin.String;kotlin.String){}[0]
+        final fun invoke(): de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.Companion.invoke|invoke(){}[0]
+        final fun invoke(de.connect2x.trixnity.vodozemac/Curve25519SecretKey): de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption // de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption.Companion.invoke|invoke(de.connect2x.trixnity.vodozemac.Curve25519SecretKey){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.pkencryption/PkEncryption : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryption|null[0]
+    final fun encrypt(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Bytes // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryption.encrypt|encrypt(kotlin.ByteArray){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryption.encrypt|encrypt(kotlin.String){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryption.Companion|null[0]
+        final fun invoke(de.connect2x.trixnity.vodozemac/Curve25519PublicKey): de.connect2x.trixnity.vodozemac.pkencryption/PkEncryption // de.connect2x.trixnity.vodozemac.pkencryption/PkEncryption.Companion.invoke|invoke(de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.sas/EstablishedSas : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.sas/EstablishedSas|null[0]
+    final val ourPublicKey // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.ourPublicKey|{}ourPublicKey[0]
+        final fun <get-ourPublicKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.ourPublicKey.<get-ourPublicKey>|<get-ourPublicKey>(){}[0]
+    final val theirPublicKey // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.theirPublicKey|{}theirPublicKey[0]
+        final fun <get-theirPublicKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.theirPublicKey.<get-theirPublicKey>|<get-theirPublicKey>(){}[0]
+
+    final fun calculateMac(kotlin/ByteArray, kotlin/ByteArray): de.connect2x.trixnity.vodozemac.sas/Mac // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.calculateMac|calculateMac(kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun calculateMac(kotlin/String, kotlin/String): de.connect2x.trixnity.vodozemac.sas/Mac // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.calculateMac|calculateMac(kotlin.String;kotlin.String){}[0]
+    final fun calculateMacInvalidBase64(kotlin/ByteArray, kotlin/ByteArray): kotlin/String // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.calculateMacInvalidBase64|calculateMacInvalidBase64(kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun calculateMacInvalidBase64(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.calculateMacInvalidBase64|calculateMacInvalidBase64(kotlin.String;kotlin.String){}[0]
+    final fun generateBytes(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.sas/SasBytes // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.generateBytes|generateBytes(kotlin.ByteArray){}[0]
+    final fun generateBytes(kotlin/String): de.connect2x.trixnity.vodozemac.sas/SasBytes // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.generateBytes|generateBytes(kotlin.String){}[0]
+    final fun verifyMac(kotlin/ByteArray, kotlin/ByteArray, de.connect2x.trixnity.vodozemac.sas/Mac) // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.verifyMac|verifyMac(kotlin.ByteArray;kotlin.ByteArray;de.connect2x.trixnity.vodozemac.sas.Mac){}[0]
+    final fun verifyMac(kotlin/String, kotlin/String, de.connect2x.trixnity.vodozemac.sas/Mac) // de.connect2x.trixnity.vodozemac.sas/EstablishedSas.verifyMac|verifyMac(kotlin.String;kotlin.String;de.connect2x.trixnity.vodozemac.sas.Mac){}[0]
+}
+
+final class de.connect2x.trixnity.vodozemac.sas/Mac : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.sas/Mac|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac.sas/Mac.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac.sas/Mac.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.vodozemac.sas/Mac.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.sas/Mac.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac.sas/Mac.Companion|null[0]
+        final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.sas/Mac // de.connect2x.trixnity.vodozemac.sas/Mac.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+        final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac.sas/Mac // de.connect2x.trixnity.vodozemac.sas/Mac.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac.sas/Sas : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.sas/Sas|null[0]
+    constructor <init>() // de.connect2x.trixnity.vodozemac.sas/Sas.<init>|<init>(){}[0]
+
+    final val publicKey // de.connect2x.trixnity.vodozemac.sas/Sas.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac.sas/Sas.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun diffieHellman(de.connect2x.trixnity.vodozemac/Curve25519PublicKey): de.connect2x.trixnity.vodozemac.sas/EstablishedSas // de.connect2x.trixnity.vodozemac.sas/Sas.diffieHellman|diffieHellman(de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+}
+
+final class de.connect2x.trixnity.vodozemac.sas/SasBytes : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.sas/SasBytes|null[0]
+    final val bytes // de.connect2x.trixnity.vodozemac.sas/SasBytes.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.sas/SasBytes.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val decimals // de.connect2x.trixnity.vodozemac.sas/SasBytes.decimals|{}decimals[0]
+        final fun <get-decimals>(): de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals // de.connect2x.trixnity.vodozemac.sas/SasBytes.decimals.<get-decimals>|<get-decimals>(){}[0]
+    final val emojiIndices // de.connect2x.trixnity.vodozemac.sas/SasBytes.emojiIndices|{}emojiIndices[0]
+        final fun <get-emojiIndices>(): de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis // de.connect2x.trixnity.vodozemac.sas/SasBytes.emojiIndices.<get-emojiIndices>|<get-emojiIndices>(){}[0]
+
+    final class Decimals { // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals|null[0]
+        constructor <init>(kotlin/UShort, kotlin/UShort, kotlin/UShort) // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.<init>|<init>(kotlin.UShort;kotlin.UShort;kotlin.UShort){}[0]
+
+        final val asList // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.asList|{}asList[0]
+            final fun <get-asList>(): kotlin.collections/List<kotlin/Int> // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.asList.<get-asList>|<get-asList>(){}[0]
+        final val first // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.first|{}first[0]
+            final fun <get-first>(): kotlin/UShort // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.first.<get-first>|<get-first>(){}[0]
+        final val second // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.second|{}second[0]
+            final fun <get-second>(): kotlin/UShort // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.second.<get-second>|<get-second>(){}[0]
+        final val third // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.third|{}third[0]
+            final fun <get-third>(): kotlin/UShort // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.third.<get-third>|<get-third>(){}[0]
+
+        final fun component1(): kotlin/UShort // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.component1|component1(){}[0]
+        final fun component2(): kotlin/UShort // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.component2|component2(){}[0]
+        final fun component3(): kotlin/UShort // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.component3|component3(){}[0]
+        final fun copy(kotlin/UShort = ..., kotlin/UShort = ..., kotlin/UShort = ...): de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.copy|copy(kotlin.UShort;kotlin.UShort;kotlin.UShort){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.sas/SasBytes.Decimals.toString|toString(){}[0]
+    }
+
+    final class Emojis { // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis|null[0]
+        constructor <init>(kotlin/UByte, kotlin/UByte, kotlin/UByte, kotlin/UByte, kotlin/UByte, kotlin/UByte, kotlin/UByte) // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.<init>|<init>(kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte){}[0]
+
+        final val asList // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.asList|{}asList[0]
+            final fun <get-asList>(): kotlin.collections/List<kotlin/Int> // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.asList.<get-asList>|<get-asList>(){}[0]
+        final val emojiIndex1 // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex1|{}emojiIndex1[0]
+            final fun <get-emojiIndex1>(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex1.<get-emojiIndex1>|<get-emojiIndex1>(){}[0]
+        final val emojiIndex2 // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex2|{}emojiIndex2[0]
+            final fun <get-emojiIndex2>(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex2.<get-emojiIndex2>|<get-emojiIndex2>(){}[0]
+        final val emojiIndex3 // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex3|{}emojiIndex3[0]
+            final fun <get-emojiIndex3>(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex3.<get-emojiIndex3>|<get-emojiIndex3>(){}[0]
+        final val emojiIndex4 // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex4|{}emojiIndex4[0]
+            final fun <get-emojiIndex4>(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex4.<get-emojiIndex4>|<get-emojiIndex4>(){}[0]
+        final val emojiIndex5 // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex5|{}emojiIndex5[0]
+            final fun <get-emojiIndex5>(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex5.<get-emojiIndex5>|<get-emojiIndex5>(){}[0]
+        final val emojiIndex6 // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex6|{}emojiIndex6[0]
+            final fun <get-emojiIndex6>(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex6.<get-emojiIndex6>|<get-emojiIndex6>(){}[0]
+        final val emojiIndex7 // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex7|{}emojiIndex7[0]
+            final fun <get-emojiIndex7>(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.emojiIndex7.<get-emojiIndex7>|<get-emojiIndex7>(){}[0]
+
+        final fun component1(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.component1|component1(){}[0]
+        final fun component2(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.component2|component2(){}[0]
+        final fun component3(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.component3|component3(){}[0]
+        final fun component4(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.component4|component4(){}[0]
+        final fun component5(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.component5|component5(){}[0]
+        final fun component6(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.component6|component6(){}[0]
+        final fun component7(): kotlin/UByte // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.component7|component7(){}[0]
+        final fun copy(kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ...): de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.copy|copy(kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac.sas/SasBytes.Emojis.toString|toString(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac/Curve25519PublicKey : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac/Curve25519PublicKey|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac/Curve25519PublicKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac/Curve25519PublicKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.vodozemac/Curve25519PublicKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/Curve25519PublicKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac/Curve25519PublicKey.Companion|null[0]
+        final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac/Curve25519PublicKey.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+        final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac/Curve25519PublicKey.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac/Curve25519SecretKey : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac/Curve25519SecretKey|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val publicKey // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun diffieHellman(de.connect2x.trixnity.vodozemac/Curve25519PublicKey): de.connect2x.trixnity.vodozemac/Curve25519SecretKey.SharedSecret // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.diffieHellman|diffieHellman(de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+
+    final class SharedSecret { // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.SharedSecret|null[0]
+        constructor <init>(kotlin/ByteArray, kotlin/Boolean) // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.SharedSecret.<init>|<init>(kotlin.ByteArray;kotlin.Boolean){}[0]
+
+        final val secret // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.SharedSecret.secret|{}secret[0]
+            final fun <get-secret>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.SharedSecret.secret.<get-secret>|<get-secret>(){}[0]
+        final val wasContributory // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.SharedSecret.wasContributory|{}wasContributory[0]
+            final fun <get-wasContributory>(): kotlin/Boolean // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.SharedSecret.wasContributory.<get-wasContributory>|<get-wasContributory>(){}[0]
+
+        final fun component1(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.SharedSecret.component1|component1(){}[0]
+        final fun component2(): kotlin/Boolean // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.SharedSecret.component2|component2(){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.Companion|null[0]
+        final fun invoke(): de.connect2x.trixnity.vodozemac/Curve25519SecretKey // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.Companion.invoke|invoke(){}[0]
+        final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Curve25519SecretKey // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+        final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac/Curve25519SecretKey // de.connect2x.trixnity.vodozemac/Curve25519SecretKey.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac/Ed25519PublicKey : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac/Ed25519PublicKey|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac/Ed25519PublicKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac/Ed25519PublicKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.vodozemac/Ed25519PublicKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/Ed25519PublicKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun verify(kotlin/ByteArray, de.connect2x.trixnity.vodozemac/Ed25519Signature) // de.connect2x.trixnity.vodozemac/Ed25519PublicKey.verify|verify(kotlin.ByteArray;de.connect2x.trixnity.vodozemac.Ed25519Signature){}[0]
+    final fun verify(kotlin/String, de.connect2x.trixnity.vodozemac/Ed25519Signature) // de.connect2x.trixnity.vodozemac/Ed25519PublicKey.verify|verify(kotlin.String;de.connect2x.trixnity.vodozemac.Ed25519Signature){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac/Ed25519PublicKey.Companion|null[0]
+        final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Ed25519PublicKey // de.connect2x.trixnity.vodozemac/Ed25519PublicKey.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+        final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac/Ed25519PublicKey // de.connect2x.trixnity.vodozemac/Ed25519PublicKey.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac/Ed25519SecretKey : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac/Ed25519SecretKey|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val publicKey // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.vodozemac/Ed25519PublicKey // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun sign(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Ed25519Signature // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.sign|sign(kotlin.ByteArray){}[0]
+    final fun sign(kotlin/String): de.connect2x.trixnity.vodozemac/Ed25519Signature // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.sign|sign(kotlin.String){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.Companion|null[0]
+        final fun invoke(): de.connect2x.trixnity.vodozemac/Ed25519SecretKey // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.Companion.invoke|invoke(){}[0]
+        final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Ed25519SecretKey // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+        final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac/Ed25519SecretKey // de.connect2x.trixnity.vodozemac/Ed25519SecretKey.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac/Ed25519Signature : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac/Ed25519Signature|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac/Ed25519Signature.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac/Ed25519Signature.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.vodozemac/Ed25519Signature.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/Ed25519Signature.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac/Ed25519Signature.Companion|null[0]
+        final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/Ed25519Signature // de.connect2x.trixnity.vodozemac/Ed25519Signature.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+        final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac/Ed25519Signature // de.connect2x.trixnity.vodozemac/Ed25519Signature.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.vodozemac/VodozemacException : kotlin/Exception { // de.connect2x.trixnity.vodozemac/VodozemacException|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.vodozemac/VodozemacException.<init>|<init>(kotlin.String){}[0]
+}
+
+final value class de.connect2x.trixnity.vodozemac/PickleKey { // de.connect2x.trixnity.vodozemac/PickleKey|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac/PickleKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac/PickleKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val value // de.connect2x.trixnity.vodozemac/PickleKey.value|{}value[0]
+        final fun <get-value>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/PickleKey.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.vodozemac/PickleKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.vodozemac/PickleKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.vodozemac/PickleKey.toString|toString(){}[0]
+
+    final object Companion { // de.connect2x.trixnity.vodozemac/PickleKey.Companion|null[0]
+        final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac/PickleKey // de.connect2x.trixnity.vodozemac/PickleKey.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+        final fun invoke(kotlin/ByteArray?): de.connect2x.trixnity.vodozemac/PickleKey? // de.connect2x.trixnity.vodozemac/PickleKey.Companion.invoke|invoke(kotlin.ByteArray?){}[0]
+        final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac/PickleKey // de.connect2x.trixnity.vodozemac/PickleKey.Companion.invoke|invoke(kotlin.String){}[0]
+        final fun invoke(kotlin/String?): de.connect2x.trixnity.vodozemac/PickleKey? // de.connect2x.trixnity.vodozemac/PickleKey.Companion.invoke|invoke(kotlin.String?){}[0]
+    }
+}
+
+sealed class de.connect2x.trixnity.vodozemac.megolm/MegolmMessage : de.connect2x.trixnity.vodozemac.utils/Managed { // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage|null[0]
+    final val base64 // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val ciphertext // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.ciphertext|{}ciphertext[0]
+        final fun <get-ciphertext>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+    final val index // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.index|{}index[0]
+        final fun <get-index>(): kotlin/Int // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.index.<get-index>|<get-index>(){}[0]
+    final val mac // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.mac|{}mac[0]
+        final fun <get-mac>(): kotlin/ByteArray // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.mac.<get-mac>|<get-mac>(){}[0]
+    final val signature // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.signature|{}signature[0]
+        final fun <get-signature>(): de.connect2x.trixnity.vodozemac/Ed25519Signature // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.signature.<get-signature>|<get-signature>(){}[0]
+
+    abstract interface <#A1: de.connect2x.trixnity.vodozemac.megolm/MegolmMessage> MegolmMessageFactory { // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.MegolmMessageFactory|null[0]
+        abstract fun invoke(kotlin/ByteArray): #A1 // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.MegolmMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+        open fun invoke(kotlin/String): #A1 // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.MegolmMessageFactory.invoke|invoke(kotlin.String){}[0]
+    }
+
+    final class Bytes : de.connect2x.trixnity.vodozemac.megolm/MegolmMessage { // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes|null[0]
+        final object Companion : de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.MegolmMessageFactory<de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes> { // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes.Companion|null[0]
+            final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+            final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes.Companion.invoke|invoke(kotlin.String){}[0]
+        }
+
+        // Targets: [native]
+        constructor <init>(kotlin/Long) // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes.<init>|<init>(kotlin.Long){}[0]
+
+        // Targets: [js]
+        constructor <init>(kotlin/Int) // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes.<init>|<init>(kotlin.Int){}[0]
+    }
+
+    final class Text : de.connect2x.trixnity.vodozemac.megolm/MegolmMessage { // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text|null[0]
+        final object Companion : de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.MegolmMessageFactory<de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text> { // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text.Companion|null[0]
+            final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text.Companion.invoke|invoke(kotlin.ByteArray){}[0]
+            final fun invoke(kotlin/String): de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text.Companion.invoke|invoke(kotlin.String){}[0]
+        }
+
+        // Targets: [native]
+        constructor <init>(kotlin/Long) // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text.<init>|<init>(kotlin.Long){}[0]
+
+        // Targets: [js]
+        constructor <init>(kotlin/Int) // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text.<init>|<init>(kotlin.Int){}[0]
+    }
+
+    final object Companion // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Companion|null[0]
+}
+
+final val de.connect2x.trixnity.vodozemac.utils/nullPtr // de.connect2x.trixnity.vodozemac.utils/nullPtr|{}nullPtr[0]
+    // Targets: [native]
+    final fun <get-nullPtr>(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/nullPtr.<get-nullPtr>|<get-nullPtr>(){}[0]
+
+    // Targets: [js]
+    final fun <get-nullPtr>(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/nullPtr.<get-nullPtr>|<get-nullPtr>(){}[0]
+final val de.connect2x.trixnity.vodozemac.utils/ptrSize // de.connect2x.trixnity.vodozemac.utils/ptrSize|{}ptrSize[0]
+    final fun <get-ptrSize>(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/ptrSize.<get-ptrSize>|<get-ptrSize>(){}[0]
+final val de.connect2x.trixnity.vodozemac/value // de.connect2x.trixnity.vodozemac/value|@de.connect2x.trixnity.vodozemac.PickleKey?{}value[0]
+    final fun (de.connect2x.trixnity.vodozemac/PickleKey?).<get-value>(): kotlin/Nothing? // de.connect2x.trixnity.vodozemac/value.<get-value>|<get-value>@de.connect2x.trixnity.vodozemac.PickleKey?(){}[0]
+
+// Targets: [native]
+open annotation class de.connect2x.trixnity.vodozemac/Import : kotlin/Annotation { // de.connect2x.trixnity.vodozemac/Import|null[1]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.vodozemac/Import.<init>|<init>(kotlin.String){}[1]
+
+    final val import // de.connect2x.trixnity.vodozemac/Import.import|{}import[1]
+        final fun <get-import>(): kotlin/String // de.connect2x.trixnity.vodozemac/Import.import.<get-import>|<get-import>(){}[1]
+}
+
+// Targets: [native]
+final val de.connect2x.trixnity.vodozemac.utils/intValue // de.connect2x.trixnity.vodozemac.utils/intValue|@kotlin.Long{}intValue[0]
+    final fun (kotlin/Long).<get-intValue>(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/intValue.<get-intValue>|<get-intValue>@kotlin.Long(){}[0]
+
+// Targets: [native]
+final val de.connect2x.trixnity.vodozemac.utils/longValue // de.connect2x.trixnity.vodozemac.utils/longValue|@kotlin.Long{}longValue[0]
+    final fun (kotlin/Long).<get-longValue>(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/longValue.<get-longValue>|<get-longValue>@kotlin.Long(){}[0]
+
+// Targets: [native]
+final fun (kotlin/Long).de.connect2x.trixnity.vodozemac.utils/format(): kotlin/String // de.connect2x.trixnity.vodozemac.utils/format|format@kotlin.Long(){}[0]
+
+// Targets: [native]
+final fun (kotlin/Long).de.connect2x.trixnity.vodozemac/toByteArray(kotlin/Int): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/toByteArray|toByteArray@kotlin.Long(kotlin.Int){}[0]
+
+// Targets: [native]
+final fun (kotlin/Long).de.connect2x.trixnity.vodozemac/toNativePointerArray(kotlin/Int): kotlin/LongArray // de.connect2x.trixnity.vodozemac/toNativePointerArray|toNativePointerArray@kotlin.Long(kotlin.Int){}[0]
+
+// Targets: [native]
+final fun (kotlin/LongArray).de.connect2x.trixnity.vodozemac.utils/asPtrSequence(): kotlin.sequences/Sequence<kotlin/Long> // de.connect2x.trixnity.vodozemac.utils/asPtrSequence|asPtrSequence@kotlin.LongArray(){}[0]
+
+// Targets: [native]
+final fun (kotlin/LongArray).de.connect2x.trixnity.vodozemac.utils/component1(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/component1|component1@kotlin.LongArray(){}[0]
+
+// Targets: [native]
+final fun (kotlin/LongArray).de.connect2x.trixnity.vodozemac.utils/component2(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/component2|component2@kotlin.LongArray(){}[0]
+
+// Targets: [native]
+final fun (kotlin/LongArray).de.connect2x.trixnity.vodozemac.utils/component3(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/component3|component3@kotlin.LongArray(){}[0]
+
+// Targets: [native]
+final fun (kotlin/LongArray).de.connect2x.trixnity.vodozemac.utils/component4(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/component4|component4@kotlin.LongArray(){}[0]
+
+// Targets: [native]
+final fun (kotlin/LongArray).de.connect2x.trixnity.vodozemac.utils/component5(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/component5|component5@kotlin.LongArray(){}[0]
+
+// Targets: [native]
+final fun (kotlin/LongArray).de.connect2x.trixnity.vodozemac.utils/component6(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/component6|component6@kotlin.LongArray(){}[0]
+
+// Targets: [native]
+final fun (kotlin/Nothing?).de.connect2x.trixnity.vodozemac/toInterop(): kotlin.native.internal/NativePtr? // de.connect2x.trixnity.vodozemac/toInterop|toInterop@kotlin.Nothing?(){}[0]
+
+// Targets: [native]
+final inline fun <#A: kotlin/Any?> (kotlin/LongArray).de.connect2x.trixnity.vodozemac.utils/map(kotlin/Function1<kotlin/Long, #A>): kotlin.collections/List<#A> // de.connect2x.trixnity.vodozemac.utils/map|map@kotlin.LongArray(kotlin.Function1<kotlin.Long,0:0>){0§<kotlin.Any?>}[0]
+
+// Targets: [js]
+final val de.connect2x.trixnity.vodozemac.utils/intValue // de.connect2x.trixnity.vodozemac.utils/intValue|@kotlin.Int{}intValue[0]
+    final fun (kotlin/Int).<get-intValue>(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/intValue.<get-intValue>|<get-intValue>@kotlin.Int(){}[0]
+
+// Targets: [js]
+final val de.connect2x.trixnity.vodozemac.utils/longValue // de.connect2x.trixnity.vodozemac.utils/longValue|@kotlin.Int{}longValue[0]
+    final fun (kotlin/Int).<get-longValue>(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/longValue.<get-longValue>|<get-longValue>@kotlin.Int(){}[0]
+
+// Targets: [js]
+final val de.connect2x.trixnity.vodozemac/InitHook // de.connect2x.trixnity.vodozemac/InitHook|{}InitHook[0]
+    final fun <get-InitHook>(): kotlin/Function0<kotlin/Unit> // de.connect2x.trixnity.vodozemac/InitHook.<get-InitHook>|<get-InitHook>(){}[0]
+
+// Targets: [js]
+final fun (kotlin/Int).de.connect2x.trixnity.vodozemac.utils/format(): kotlin/String // de.connect2x.trixnity.vodozemac.utils/format|format@kotlin.Int(){}[0]
+
+// Targets: [js]
+final fun (kotlin/Int).de.connect2x.trixnity.vodozemac/toByteArray(kotlin/Int): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/toByteArray|toByteArray@kotlin.Int(kotlin.Int){}[0]
+
+// Targets: [js]
+final fun (kotlin/Int).de.connect2x.trixnity.vodozemac/toNativePointerArray(kotlin/Int): kotlin/IntArray // de.connect2x.trixnity.vodozemac/toNativePointerArray|toNativePointerArray@kotlin.Int(kotlin.Int){}[0]
+
+// Targets: [js]
+final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/asPtrSequence(): kotlin.sequences/Sequence<kotlin/Int> // de.connect2x.trixnity.vodozemac.utils/asPtrSequence|asPtrSequence@kotlin.IntArray(){}[0]
+
+// Targets: [js]
+final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component1(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component1|component1@kotlin.IntArray(){}[0]
+
+// Targets: [js]
+final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component2(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component2|component2@kotlin.IntArray(){}[0]
+
+// Targets: [js]
+final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component3(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component3|component3@kotlin.IntArray(){}[0]
+
+// Targets: [js]
+final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component4(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component4|component4@kotlin.IntArray(){}[0]
+
+// Targets: [js]
+final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component5(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component5|component5@kotlin.IntArray(){}[0]
+
+// Targets: [js]
+final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component6(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component6|component6@kotlin.IntArray(){}[0]
+
+// Targets: [js]
+final fun (kotlin/Nothing?).de.connect2x.trixnity.vodozemac/toInterop(): kotlin/Int? // de.connect2x.trixnity.vodozemac/toInterop|toInterop@kotlin.Nothing?(){}[0]
+
+// Targets: [js]
+final inline fun <#A: kotlin/Any?> (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/map(kotlin/Function1<kotlin/Int, #A>): kotlin.collections/List<#A> // de.connect2x.trixnity.vodozemac.utils/map|map@kotlin.IntArray(kotlin.Function1<kotlin.Int,0:0>){0§<kotlin.Any?>}[0]

@@ -1,0 +1,423 @@
+public abstract interface class de/connect2x/trixnity/crypto/driver/CryptoDriver {
+	public abstract fun getKey ()Lde/connect2x/trixnity/crypto/driver/keys/KeyFactories;
+	public abstract fun getMegolm ()Lde/connect2x/trixnity/crypto/driver/megolm/MegolmFactory;
+	public abstract fun getOlm ()Lde/connect2x/trixnity/crypto/driver/olm/OlmFactory;
+	public abstract fun getPk ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkFactory;
+	public abstract fun getSas ()Lde/connect2x/trixnity/crypto/driver/sas/SasFactory;
+}
+
+public class de/connect2x/trixnity/crypto/driver/CryptoDriverException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/Throwable;)V
+}
+
+public final class de/connect2x/trixnity/crypto/driver/UseAllKt {
+	public static final fun useAll (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKeyFactory {
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+	public abstract fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKeyFactory {
+	public abstract fun invoke ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+	public abstract fun verify (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;)V
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKeyFactory {
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+	public abstract fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public abstract fun sign (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKeyFactory {
+	public abstract fun invoke ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey;
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Ed25519Signature : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/Ed25519SignatureFactory {
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/KeyFactories {
+	public abstract fun getCurve25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKeyFactory;
+	public abstract fun getCurve25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKeyFactory;
+	public abstract fun getEd25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKeyFactory;
+	public abstract fun getEd25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKeyFactory;
+	public abstract fun getEd25519Signature ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SignatureFactory;
+	public abstract fun getPickleKey ()Lde/connect2x/trixnity/crypto/driver/keys/PickleKeyFactory;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/PickleKey {
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/keys/PickleKeyFactory {
+	public abstract fun invoke ()Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKeyFactory {
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/GroupSession : java/lang/AutoCloseable {
+	public abstract fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;
+	public abstract fun getMessageIndex ()I
+	public abstract fun getSessionId ()Ljava/lang/String;
+	public abstract fun getSessionKey ()Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+	public abstract fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static synthetic fun pickle$default (Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/megolm/GroupSession$DefaultImpls {
+	public static synthetic fun pickle$default (Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/GroupSessionFactory {
+	public abstract fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;
+	public static synthetic fun fromPickle$default (Lde/connect2x/trixnity/crypto/driver/megolm/GroupSessionFactory;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;
+	public abstract fun invoke ()Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/megolm/GroupSessionFactory$DefaultImpls {
+	public static synthetic fun fromPickle$default (Lde/connect2x/trixnity/crypto/driver/megolm/GroupSessionFactory;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession : java/lang/AutoCloseable {
+	public abstract fun decrypt (Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DecryptedMessage;
+	public abstract fun exportAt (I)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public abstract fun exportAtFirstKnownIndex ()Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public abstract fun getFirstKnownIndex ()I
+	public abstract fun getSessionId ()Ljava/lang/String;
+	public abstract fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static synthetic fun pickle$default (Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DecryptedMessage {
+	public fun <init> (Ljava/lang/String;I)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun copy (Ljava/lang/String;I)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DecryptedMessage;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DecryptedMessage;Ljava/lang/String;IILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DecryptedMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessageIndex ()I
+	public final fun getPlaintext ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DefaultImpls {
+	public static synthetic fun pickle$default (Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/InboundGroupSessionFactory {
+	public abstract fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+	public static synthetic fun fromPickle$default (Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSessionFactory;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+	public abstract fun import (Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+	public abstract fun invoke (Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/megolm/InboundGroupSessionFactory$DefaultImpls {
+	public static synthetic fun fromPickle$default (Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSessionFactory;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/MegolmFactory {
+	public abstract fun getExportedSessionKey ()Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKeyFactory;
+	public abstract fun getGroupSession ()Lde/connect2x/trixnity/crypto/driver/megolm/GroupSessionFactory;
+	public abstract fun getInboundGroupSession ()Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSessionFactory;
+	public abstract fun getMessage ()Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessageFactory;
+	public abstract fun getSessionKey ()Lde/connect2x/trixnity/crypto/driver/megolm/SessionKeyFactory;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/MegolmMessage : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/MegolmMessageFactory {
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/SessionKey : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/megolm/SessionKeyFactory {
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/Account : java/lang/AutoCloseable {
+	public abstract fun createInboundSession (Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult;
+	public static synthetic fun createInboundSession$default (Lde/connect2x/trixnity/crypto/driver/olm/Account;Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult;
+	public abstract fun createOutboundSession (Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public abstract fun dehydrate (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/DehydratedDevice;
+	public abstract fun forgetFallbackKey ()V
+	public abstract fun generateFallbackKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public abstract fun generateOneTimeKeys (I)Lde/connect2x/trixnity/crypto/driver/olm/Account$OneTimeKeyGenerationResult;
+	public abstract fun getCurve25519Key ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public abstract fun getEd25519Key ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public abstract fun getFallbackKey ()Lkotlin/Pair;
+	public abstract fun getMaxNumberOfOneTimeKeys ()I
+	public abstract fun getOneTimeKeys ()Ljava/util/Map;
+	public abstract fun getStoredOneTimeKeyCount ()I
+	public abstract fun markKeysAsPublished ()V
+	public abstract fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static synthetic fun pickle$default (Lde/connect2x/trixnity/crypto/driver/olm/Account;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Ljava/lang/String;
+	public abstract fun sign (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/olm/Account$DefaultImpls {
+	public static synthetic fun createInboundSession$default (Lde/connect2x/trixnity/crypto/driver/olm/Account;Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult;
+	public static synthetic fun pickle$default (Lde/connect2x/trixnity/crypto/driver/olm/Account;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult {
+	public fun component1 ()Ljava/lang/String;
+	public fun component2 ()Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public abstract fun getPlaintext ()Ljava/lang/String;
+	public abstract fun getSession ()Lde/connect2x/trixnity/crypto/driver/olm/Session;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult$DefaultImpls {
+	public static fun component1 (Lde/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult;)Ljava/lang/String;
+	public static fun component2 (Lde/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/Account$OneTimeKeyGenerationResult {
+	public fun component1 ()Ljava/util/List;
+	public fun component2 ()Ljava/util/List;
+	public abstract fun getCreated ()Ljava/util/List;
+	public abstract fun getRemoved ()Ljava/util/List;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/olm/Account$OneTimeKeyGenerationResult$DefaultImpls {
+	public static fun component1 (Lde/connect2x/trixnity/crypto/driver/olm/Account$OneTimeKeyGenerationResult;)Ljava/util/List;
+	public static fun component2 (Lde/connect2x/trixnity/crypto/driver/olm/Account$OneTimeKeyGenerationResult;)Ljava/util/List;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/AccountFactory {
+	public abstract fun fromDehydratedDevice (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/Account;
+	public abstract fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/Account;
+	public static synthetic fun fromPickle$default (Lde/connect2x/trixnity/crypto/driver/olm/AccountFactory;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/olm/Account;
+	public abstract fun getDehydratedDevicesSupported ()Z
+	public abstract fun invoke ()Lde/connect2x/trixnity/crypto/driver/olm/Account;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/olm/AccountFactory$DefaultImpls {
+	public static synthetic fun fromPickle$default (Lde/connect2x/trixnity/crypto/driver/olm/AccountFactory;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/olm/Account;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/olm/DehydratedDevice {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/DehydratedDevice;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/crypto/driver/olm/DehydratedDevice;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/olm/DehydratedDevice;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNonce ()Ljava/lang/String;
+	public final fun getPickle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/Message : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/Message$Normal : de/connect2x/trixnity/crypto/driver/olm/Message {
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/Message$PreKey : de/connect2x/trixnity/crypto/driver/olm/Message {
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/MessageFactory {
+	public abstract fun getNormal ()Lde/connect2x/trixnity/crypto/driver/olm/NormalMessageFactory;
+	public abstract fun getPreKey ()Lde/connect2x/trixnity/crypto/driver/olm/PreKeyMessageFactory;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/NormalMessageFactory {
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message$Normal;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/olm/Message$Normal;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/OlmFactory {
+	public abstract fun getAccount ()Lde/connect2x/trixnity/crypto/driver/olm/AccountFactory;
+	public abstract fun getMessage ()Lde/connect2x/trixnity/crypto/driver/olm/MessageFactory;
+	public abstract fun getSession ()Lde/connect2x/trixnity/crypto/driver/olm/SessionFactory;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/PreKeyMessageFactory {
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/Session : java/lang/AutoCloseable {
+	public abstract fun decrypt (Lde/connect2x/trixnity/crypto/driver/olm/Message;)Ljava/lang/String;
+	public abstract fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message;
+	public abstract fun getHasReceivedMessage ()Z
+	public abstract fun getSessionId ()Ljava/lang/String;
+	public abstract fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static synthetic fun pickle$default (Lde/connect2x/trixnity/crypto/driver/olm/Session;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/olm/Session$DefaultImpls {
+	public static synthetic fun pickle$default (Lde/connect2x/trixnity/crypto/driver/olm/Session;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/olm/SessionFactory {
+	public abstract fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public static synthetic fun fromPickle$default (Lde/connect2x/trixnity/crypto/driver/olm/SessionFactory;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/olm/SessionFactory$DefaultImpls {
+	public static synthetic fun fromPickle$default (Lde/connect2x/trixnity/crypto/driver/olm/SessionFactory;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption : java/lang/AutoCloseable {
+	public abstract fun decrypt (Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;)Ljava/lang/String;
+	public abstract fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public abstract fun getSecretKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/pkencryption/PkDecryptionFactory {
+	public abstract fun invoke ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption;
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/pkencryption/PkEncryption : java/lang/AutoCloseable {
+	public abstract fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/pkencryption/PkEncryptionFactory {
+	public abstract fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkEncryption;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkEncryption;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/pkencryption/PkFactory {
+	public abstract fun getDecryption ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryptionFactory;
+	public abstract fun getEncryption ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkEncryptionFactory;
+	public abstract fun getMessage ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessageFactory;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/pkencryption/PkMessage : java/lang/AutoCloseable {
+	public abstract fun getCiphertext ()[B
+	public abstract fun getEphemeralKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public abstract fun getMac ()[B
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/pkencryption/PkMessageFactory {
+	public abstract fun invoke (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/sas/EstablishedSas : java/lang/AutoCloseable {
+	public abstract fun calculateMac (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/sas/Mac;
+	public abstract fun calculateMacInvalidBase64 (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun generateBytes (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes;
+	public abstract fun getOurPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public abstract fun getTheirPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public abstract fun verifyMac (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/sas/Mac;)V
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/sas/Mac : java/lang/AutoCloseable {
+	public abstract fun getBase64 ()Ljava/lang/String;
+	public abstract fun getBytes ()[B
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/sas/Sas : java/lang/AutoCloseable {
+	public abstract fun diffieHellman (Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/sas/EstablishedSas;
+	public abstract fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/sas/SasBytes : java/lang/AutoCloseable {
+	public abstract fun getBytes ()[B
+	public abstract fun getDecimals ()Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Decimals;
+	public abstract fun getEmojiIndices ()Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Emojis;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/sas/SasBytes$Decimals {
+	public synthetic fun <init> (SSSLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-Mh2AYeg ()S
+	public final fun component2-Mh2AYeg ()S
+	public final fun component3-Mh2AYeg ()S
+	public final fun copy-Ut6C-W8 (SSS)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Decimals;
+	public static synthetic fun copy-Ut6C-W8$default (Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Decimals;SSSILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Decimals;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAsList ()Ljava/util/List;
+	public final fun getFirst-Mh2AYeg ()S
+	public final fun getSecond-Mh2AYeg ()S
+	public final fun getThird-Mh2AYeg ()S
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/sas/SasBytes$Emojis {
+	public synthetic fun <init> (BBBBBBBLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-w2LRezQ ()B
+	public final fun component2-w2LRezQ ()B
+	public final fun component3-w2LRezQ ()B
+	public final fun component4-w2LRezQ ()B
+	public final fun component5-w2LRezQ ()B
+	public final fun component6-w2LRezQ ()B
+	public final fun component7-w2LRezQ ()B
+	public final fun copy-hJv0Ai0 (BBBBBBB)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Emojis;
+	public static synthetic fun copy-hJv0Ai0$default (Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Emojis;BBBBBBBILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Emojis;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAsList ()Ljava/util/List;
+	public final fun getEmojiIndex1-w2LRezQ ()B
+	public final fun getEmojiIndex2-w2LRezQ ()B
+	public final fun getEmojiIndex3-w2LRezQ ()B
+	public final fun getEmojiIndex4-w2LRezQ ()B
+	public final fun getEmojiIndex5-w2LRezQ ()B
+	public final fun getEmojiIndex6-w2LRezQ ()B
+	public final fun getEmojiIndex7-w2LRezQ ()B
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/crypto/driver/sas/SasFactory {
+	public abstract fun invoke ()Lde/connect2x/trixnity/crypto/driver/sas/Sas;
+}
+

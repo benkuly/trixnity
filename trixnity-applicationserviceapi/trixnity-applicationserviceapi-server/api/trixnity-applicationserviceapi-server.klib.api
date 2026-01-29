@@ -1,0 +1,24 @@
+// Klib ABI Dump
+// Targets: [linuxX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-applicationserviceapi-server>
+abstract interface de.connect2x.trixnity.applicationserviceapi.server/ApplicationServiceApiServerHandler { // de.connect2x.trixnity.applicationserviceapi.server/ApplicationServiceApiServerHandler|null[0]
+    abstract suspend fun addTransaction(kotlin/String, kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>>) // de.connect2x.trixnity.applicationserviceapi.server/ApplicationServiceApiServerHandler.addTransaction|addTransaction(kotlin.String;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent<*>>){}[0]
+    abstract suspend fun hasRoomAlias(de.connect2x.trixnity.core.model/RoomAliasId) // de.connect2x.trixnity.applicationserviceapi.server/ApplicationServiceApiServerHandler.hasRoomAlias|hasRoomAlias(de.connect2x.trixnity.core.model.RoomAliasId){}[0]
+    abstract suspend fun hasUser(de.connect2x.trixnity.core.model/UserId) // de.connect2x.trixnity.applicationserviceapi.server/ApplicationServiceApiServerHandler.hasUser|hasUser(de.connect2x.trixnity.core.model.UserId){}[0]
+    abstract suspend fun ping(kotlin/String?) // de.connect2x.trixnity.applicationserviceapi.server/ApplicationServiceApiServerHandler.ping|ping(kotlin.String?){}[0]
+}
+
+final class de.connect2x.trixnity.applicationserviceapi.server/MatrixQueryParameterOrBearerAuthenticationProvider : io.ktor.server.auth/AuthenticationProvider { // de.connect2x.trixnity.applicationserviceapi.server/MatrixQueryParameterOrBearerAuthenticationProvider|null[0]
+    final suspend fun onAuthenticate(io.ktor.server.auth/AuthenticationContext) // de.connect2x.trixnity.applicationserviceapi.server/MatrixQueryParameterOrBearerAuthenticationProvider.onAuthenticate|onAuthenticate(io.ktor.server.auth.AuthenticationContext){}[0]
+
+    final class Configuration : io.ktor.server.auth/AuthenticationProvider.Config // de.connect2x.trixnity.applicationserviceapi.server/MatrixQueryParameterOrBearerAuthenticationProvider.Configuration|null[0]
+}
+
+final fun (io.ktor.server.application/Application).de.connect2x.trixnity.applicationserviceapi.server/matrixApplicationServiceApiServer(kotlin/String, de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings = ..., kotlinx.serialization.json/Json = ..., kotlin/Function1<io.ktor.server.routing/Route, kotlin/Unit>) // de.connect2x.trixnity.applicationserviceapi.server/matrixApplicationServiceApiServer|matrixApplicationServiceApiServer@io.ktor.server.application.Application(kotlin.String;de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings;kotlinx.serialization.json.Json;kotlin.Function1<io.ktor.server.routing.Route,kotlin.Unit>){}[0]
+final fun (io.ktor.server.auth/AuthenticationConfig).de.connect2x.trixnity.applicationserviceapi.server/matrixQueryParameterOrBearer(kotlin/String? = ..., kotlin/String, kotlin/String) // de.connect2x.trixnity.applicationserviceapi.server/matrixQueryParameterOrBearer|matrixQueryParameterOrBearer@io.ktor.server.auth.AuthenticationConfig(kotlin.String?;kotlin.String;kotlin.String){}[0]
+final fun (io.ktor.server.routing/Route).de.connect2x.trixnity.applicationserviceapi.server/matrixApplicationServiceApiServerRoutes(de.connect2x.trixnity.applicationserviceapi.server/ApplicationServiceApiServerHandler, de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings = ..., kotlinx.serialization.json/Json = ...) // de.connect2x.trixnity.applicationserviceapi.server/matrixApplicationServiceApiServerRoutes|matrixApplicationServiceApiServerRoutes@io.ktor.server.routing.Route(de.connect2x.trixnity.applicationserviceapi.server.ApplicationServiceApiServerHandler;de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings;kotlinx.serialization.json.Json){}[0]
