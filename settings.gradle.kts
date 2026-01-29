@@ -64,7 +64,7 @@ dependencyResolutionManagement {
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version ("1.0.0") // https://github.com/gradle/foojay-toolchains/tags
-    id("de.connect2x.conventions.c2x-settings-plugin") version "20260128.045340"
+    id("de.connect2x.conventions.c2x-settings-plugin") version "20260129.102940"
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
