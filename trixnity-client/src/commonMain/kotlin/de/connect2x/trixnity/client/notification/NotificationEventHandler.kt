@@ -1,8 +1,6 @@
 package de.connect2x.trixnity.client.notification
 
 import de.connect2x.lognity.api.logger.Logger
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.flattenValues
 import de.connect2x.trixnity.client.room.RoomService
@@ -23,6 +21,8 @@ import de.connect2x.trixnity.core.model.push.PushRule
 import de.connect2x.trixnity.core.model.push.toList
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger("de.connect2x.trixnity.client.notification.NotificationEventHandler")
@@ -89,6 +89,7 @@ class NotificationEventHandler(
             join?.filterValues {
                 it.timeline?.events.isNullOrEmpty().not()
                         || it.state?.events.isNullOrEmpty().not()
+                        || it.stateAfter?.events.isNullOrEmpty().not()
                         || it.ephemeral?.events?.any {
                     val content = it.content
                     content is ReceiptEventContent && content.events.any {
@@ -101,6 +102,7 @@ class NotificationEventHandler(
                     leave?.filterValues {
                         it.timeline?.events.isNullOrEmpty().not()
                                 || it.state?.events.isNullOrEmpty().not()
+                                || it.stateAfter?.events.isNullOrEmpty().not()
                     }?.keys.orEmpty()
         }.orEmpty().filterNot { roomId -> pushRulesCache.pushRulesDisabledByRoom.contains(roomId) }
             .toSet()

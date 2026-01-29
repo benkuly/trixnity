@@ -1,8 +1,6 @@
 package de.connect2x.trixnity.client.room
 
 import de.connect2x.lognity.api.logger.Logger
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import de.connect2x.trixnity.client.store.*
@@ -15,14 +13,19 @@ import de.connect2x.trixnity.core.EventHandler
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
-import de.connect2x.trixnity.core.model.events.*
+import de.connect2x.trixnity.core.model.events.ClientEvent
+import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.DirectEventContent
 import de.connect2x.trixnity.core.model.events.m.room.*
+import de.connect2x.trixnity.core.model.events.roomIdOrNull
+import de.connect2x.trixnity.core.model.events.stateKeyOrNull
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
 import de.connect2x.trixnity.utils.ConcurrentList
 import de.connect2x.trixnity.utils.ConcurrentMap
 import de.connect2x.trixnity.utils.concurrentMutableList
 import de.connect2x.trixnity.utils.concurrentMutableMap
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -410,18 +413,14 @@ class RoomListHandler(
             .mapValues { entry -> entry.value.map { it.second } }
 
     private inline fun <reified T : RoomEventContent> Sync.Response.Rooms.JoinedRoom.findInTimelineOrState() =
-        timeline?.events?.findLast { it.content is T }?.content as? T
+        stateAfter?.events?.findLast { it.content is T }?.content as? T
+            ?: timeline?.events?.findLast { it.content is T }?.content as? T
             ?: state?.events?.findLast { it.content is T }?.content as? T
-
-    private inline fun <reified T : RoomAccountDataEventContent> Sync.Response.Rooms.JoinedRoom.findInAccountData() =
-        accountData?.events?.findLast { it.content is T }?.content as? T
 
     private inline fun <reified T : RoomEventContent> Sync.Response.Rooms.LeftRoom.findInTimelineOrState() =
-        timeline?.events?.findLast { it.content is T }?.content as? T
+        stateAfter?.events?.findLast { it.content is T }?.content as? T
+            ?: timeline?.events?.findLast { it.content is T }?.content as? T
             ?: state?.events?.findLast { it.content is T }?.content as? T
-
-    private inline fun <reified T : RoomAccountDataEventContent> Sync.Response.Rooms.LeftRoom.findInAccountData() =
-        accountData?.events?.findLast { it.content is T }?.content as? T
 
     private inline fun <reified T : RoomEventContent> Sync.Response.Rooms.KnockedRoom.findInState() =
         strippedState?.events?.findLast { it.content is T }?.content as? T

@@ -1,10 +1,6 @@
 package de.connect2x.trixnity.client.notification
 
 import de.connect2x.lognity.api.logger.Logger
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.MatrixClientStarted
 import de.connect2x.trixnity.client.flatten
@@ -24,6 +20,10 @@ import de.connect2x.trixnity.core.model.push.PushAction
 import de.connect2x.trixnity.core.model.push.toList
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.subscribeAsFlow
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import de.connect2x.trixnity.client.notification.Notification as Notification2
@@ -169,7 +169,7 @@ class NotificationServiceImpl(
         room.join?.forEach { (roomId, roomInfo) ->
             eventsToNotificationUpdates.invoke(
                 roomId = roomId,
-                eventFlow = (roomInfo.state?.events.orEmpty() + roomInfo.timeline?.events.orEmpty()).asFlow(),
+                eventFlow = (roomInfo.state?.events.orEmpty() + roomInfo.timeline?.events.orEmpty() + roomInfo.stateAfter?.events.orEmpty()).asFlow(),
                 pushRules = pushRules,
                 existingNotifications = mapOf(),
                 removeStale = false
@@ -178,7 +178,7 @@ class NotificationServiceImpl(
         room.leave?.forEach { (roomId, roomInfo) ->
             eventsToNotificationUpdates.invoke(
                 roomId = roomId,
-                eventFlow = (roomInfo.state?.events.orEmpty() + roomInfo.timeline?.events.orEmpty()).asFlow(),
+                eventFlow = (roomInfo.state?.events.orEmpty() + roomInfo.timeline?.events.orEmpty() + roomInfo.stateAfter?.events.orEmpty()).asFlow(),
                 pushRules = pushRules,
                 existingNotifications = mapOf(),
                 removeStale = false
