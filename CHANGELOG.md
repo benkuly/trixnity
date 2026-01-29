@@ -17,9 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed usage of stateAfter in room list and notification calculations
-
 ### Security
+
+## 5.0.3
+
+### Fixed
+
+- Fixed usage of stateAfter in room list and notification calculations
 
 ## 5.0.2
 
