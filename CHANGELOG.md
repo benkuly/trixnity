@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed database migration to Matrix 1.16 profiles
+
 ### Security
 
 ## 5.0.3

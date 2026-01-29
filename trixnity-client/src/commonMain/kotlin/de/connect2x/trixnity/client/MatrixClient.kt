@@ -3,12 +3,6 @@ package de.connect2x.trixnity.client
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.error
 import de.connect2x.lognity.api.logger.warn
-import io.ktor.http.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.MatrixClient.LoginState
 import de.connect2x.trixnity.client.MatrixClient.LoginState.*
 import de.connect2x.trixnity.client.MatrixClientConfiguration.DeleteRooms
@@ -29,6 +23,12 @@ import de.connect2x.trixnity.crypto.driver.useAll
 import de.connect2x.trixnity.crypto.of
 import de.connect2x.trixnity.crypto.sign.SignService
 import de.connect2x.trixnity.utils.retry
+import io.ktor.http.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
@@ -239,15 +239,18 @@ suspend fun MatrixClient.Companion.create(
             httpClientConfig = config.httpClientConfig,
         )
         try {
-            if (isFirstInit || initialAccount.profile == null) {
-                val profile = api.user.getProfile(userId)
-                    .fold(
-                        onSuccess = { it },
-                        onFailure = {
-                            if (it is MatrixServerException && it.statusCode == HttpStatusCode.NotFound) Profile()
-                            else throw it
-                        }
-                    )
+            val newProfile =
+                if (isFirstInit || initialAccount.profile == null) {
+                    api.user.getProfile(userId)
+                        .fold(
+                            onSuccess = { it },
+                            onFailure = {
+                                if (it is MatrixServerException && it.statusCode == HttpStatusCode.NotFound) Profile()
+                                else throw it
+                            }
+                        )
+                } else null
+            if (isFirstInit) {
                 accountStore.updateAccount {
                     Account(
                         olmPickleKey = null,
@@ -256,10 +259,13 @@ suspend fun MatrixClient.Companion.create(
                         backgroundFilterId = null,
                         filterId = null,
                         syncBatchToken = null,
-                        profile = profile
+                        profile = newProfile
                     )
                 }
+            } else if (newProfile != null) { // migration path
+                accountStore.updateAccount { it?.copy(profile = newProfile) }
             }
+
 
             val userInfo = getUserInfo(userId, deviceId, di)
 
