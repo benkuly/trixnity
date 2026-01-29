@@ -11,17 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update sync filter when EventContentSerializerMappings change
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- Fixed database migration to Matrix 1.16 profiles
-
 ### Security
+
+## 5.0.4
+
+### Changed
+
+- Update sync filter when EventContentSerializerMappings change
+
+### Fixed
+
+- Fixed database migration to Matrix 1.16 profiles
 
 ## 5.0.3
 
