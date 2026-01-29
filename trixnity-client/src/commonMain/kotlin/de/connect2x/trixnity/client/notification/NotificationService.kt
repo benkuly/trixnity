@@ -315,7 +315,7 @@ class NotificationServiceImpl(
 
             if (needsSync) {
                 api.sync.startOnce(
-                    filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
+                    filter = checkNotNull(accountStore.getAccount()?.filter?.syncOnceFilterId),
                     timeout = Duration.ZERO,
                 ).getOrThrow()
             }

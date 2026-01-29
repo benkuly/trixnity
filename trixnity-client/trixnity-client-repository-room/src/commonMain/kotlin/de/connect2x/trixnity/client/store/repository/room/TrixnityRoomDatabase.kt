@@ -38,12 +38,13 @@ import androidx.room.migration.AutoMigrationSpec
         RoomNotificationUpdate::class,
         RoomMigration::class,
     ],
-    version = 7, // tick this value when any entity classes change
+    version = 8, // tick this value when any entity classes change
     autoMigrations = [
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6),
         AutoMigration(from = 6, to = 7, spec = TrixnityRoomDatabase.Delete6to7MigrationSpec::class),
+        AutoMigration(from = 7, to = 8, spec = TrixnityRoomDatabase.Delete7to8MigrationSpec::class),
     ],
     exportSchema = true,
 )
@@ -108,6 +109,16 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
         columnName = "avatarUrl"
     )
     class Delete6to7MigrationSpec : AutoMigrationSpec
+
+    @DeleteColumn(
+        tableName = "Account",
+        columnName = "filterId"
+    )
+    @DeleteColumn(
+        tableName = "Account",
+        columnName = "backgroundFilterId"
+    )
+    class Delete7to8MigrationSpec : AutoMigrationSpec
 }
 
 // The Room compiler generates the `actual` implementations.

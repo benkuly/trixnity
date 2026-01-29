@@ -59,6 +59,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         maven("https://gitlab.com/api/v4/projects/68438621/packages/maven") // c2x Conventions
+        maven("https://gitlab.com/api/v4/projects/72301746/packages/maven") // Lognity
     }
 }
 

@@ -1,16 +1,8 @@
 package de.connect2x.trixnity.client
 
 import de.connect2x.lognity.api.logger.Logger
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import io.ktor.client.engine.mock.*
-import io.ktor.http.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.TestScope
-import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.MatrixClient.LoginState.*
+import de.connect2x.trixnity.client.MatrixClientImpl.Companion.filterHash
 import de.connect2x.trixnity.client.media.inMemory
 import de.connect2x.trixnity.client.store.Account
 import de.connect2x.trixnity.client.store.AccountStore
@@ -46,6 +38,15 @@ import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.testutils.matrixJsonEndpoint
 import de.connect2x.trixnity.testutils.scopedMockEngine
 import de.connect2x.trixnity.testutils.scopedMockEngineWithEndpoints
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.ktor.client.engine.mock.*
+import io.ktor.http.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.TestScope
+import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -207,8 +208,11 @@ class MatrixClientTest : TrixnityBaseTest() {
                         userId = userId,
                         deviceId = "deviceId",
                         baseUrl = "http://localhost",
-                        filterId = "someFilter",
-                        backgroundFilterId = "someFilter",
+                        filter = Account.Filter(
+                            syncFilterId = "someFilter",
+                            syncOnceFilterId = "someFilter",
+                            eventTypesHash = with(mappings) { filterHash() },
+                        ),
                         profile = Profile(
                             ProfileField.DisplayName("bob"),
                             ProfileField.AvatarUrl("mxc://localhost/123456")
@@ -506,8 +510,11 @@ class MatrixClientTest : TrixnityBaseTest() {
                     userId = userId,
                     deviceId = "deviceId",
                     baseUrl = "http://localhost",
-                    filterId = "someFilter",
-                    backgroundFilterId = "backgroundFilter",
+                    filter = Account.Filter(
+                        syncFilterId = "someFilter",
+                        syncOnceFilterId = "backgroundFilter",
+                        eventTypesHash = with(mappings) { filterHash() },
+                    ),
                     profile = Profile(
                         ProfileField.DisplayName("bob"),
                         ProfileField.AvatarUrl("mxc://localhost/123456")
@@ -645,8 +652,11 @@ class MatrixClientTest : TrixnityBaseTest() {
                     userId = userId,
                     deviceId = "deviceId",
                     baseUrl = "http://localhost",
-                    filterId = "someFilter",
-                    backgroundFilterId = "backgroundFilter",
+                    filter = Account.Filter(
+                        syncFilterId = "someFilter",
+                        syncOnceFilterId = "backgroundFilter",
+                        eventTypesHash = with(mappings) { filterHash() },
+                    ),
                     profile = Profile(
                         ProfileField.DisplayName("bob"),
                         ProfileField.AvatarUrl("mxc://localhost/123456")

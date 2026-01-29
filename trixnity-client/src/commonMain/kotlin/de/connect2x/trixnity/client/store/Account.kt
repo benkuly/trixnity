@@ -1,8 +1,8 @@
 package de.connect2x.trixnity.client.store
 
-import kotlinx.serialization.Serializable
 import de.connect2x.trixnity.clientserverapi.model.user.Profile
 import de.connect2x.trixnity.core.model.UserId
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class Account(
@@ -16,7 +16,13 @@ data class Account(
     @Deprecated("has been moved to Authentication, will be removed after a migration period")
     val refreshToken: String? = null,
     val syncBatchToken: String?,
-    val filterId: String?,
-    val backgroundFilterId: String?,
+    val filter: Filter? = null,
     val profile: Profile? = null,
-)
+) {
+    @Serializable
+    data class Filter(
+        val syncFilterId: String,
+        val syncOnceFilterId: String,
+        val eventTypesHash: String,
+    )
+}

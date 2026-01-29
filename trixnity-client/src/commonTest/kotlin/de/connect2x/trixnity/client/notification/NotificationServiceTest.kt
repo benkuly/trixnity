@@ -1,16 +1,5 @@
 package de.connect2x.trixnity.client.notification
 
-import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.collections.shouldNotContain
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.async
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestScope
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.mocks.RoomServiceMock
 import de.connect2x.trixnity.client.store.*
@@ -34,6 +23,17 @@ import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.scheduleSetup
 import de.connect2x.trixnity.testutils.PortableMockEngineConfig
 import de.connect2x.trixnity.testutils.matrixJsonEndpoint
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -80,8 +80,11 @@ class NotificationServiceTest : TrixnityBaseTest() {
                 accessToken = "access_token",
                 refreshToken = null,
                 syncBatchToken = "sync_token",
-                filterId = "filter_id",
-                backgroundFilterId = "background_filter_id",
+                filter = Account.Filter(
+                    syncFilterId = "filter_id",
+                    syncOnceFilterId = "background_filter_id",
+                    eventTypesHash = "someHash",
+                ),
                 profile = Profile(
                     ProfileField.DisplayName("display_name"),
                     ProfileField.AvatarUrl("mxc://localhost/123456")

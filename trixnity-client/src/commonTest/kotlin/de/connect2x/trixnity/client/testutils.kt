@@ -1,15 +1,5 @@
 package de.connect2x.trixnity.client
 
-import io.kotest.assertions.nondeterministic.continuallyConfig
-import io.kotest.assertions.nondeterministic.eventuallyConfig
-import io.kotest.common.KotestInternal
-import io.kotest.common.NonDeterministicTestVirtualTimeEnabled
-import io.ktor.http.*
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.mocks.RepositoryTransactionManagerMock
 import de.connect2x.trixnity.client.store.*
 import de.connect2x.trixnity.client.store.cache.ObservableCacheStatisticCollector
@@ -30,6 +20,16 @@ import de.connect2x.trixnity.test.utils.scheduleSetup
 import de.connect2x.trixnity.test.utils.testClock
 import de.connect2x.trixnity.testutils.PortableMockEngineConfig
 import de.connect2x.trixnity.testutils.scopedMockEngineWithEndpoints
+import io.kotest.assertions.nondeterministic.continuallyConfig
+import io.kotest.assertions.nondeterministic.eventuallyConfig
+import io.kotest.common.KotestInternal
+import io.kotest.common.NonDeterministicTestVirtualTimeEnabled
+import io.ktor.http.*
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -84,8 +84,7 @@ fun TrixnityBaseTest.getInMemoryAccountStore(setup: suspend AccountStore.() -> U
                 accessToken = null,
                 refreshToken = null,
                 syncBatchToken = null,
-                filterId = null,
-                backgroundFilterId = null,
+                filter = null,
                 profile = null,
             )
         }

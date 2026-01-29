@@ -1,9 +1,9 @@
 package de.connect2x.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.store.Account
 import de.connect2x.trixnity.client.store.repository.AccountRepository
 import de.connect2x.trixnity.core.model.UserId
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
@@ -19,8 +19,7 @@ internal object ExposedAccount : LongIdTable("account") {
     val accessToken = text("access_token").nullable()
     val refreshToken = text("refresh_token").nullable()
     val syncBatchToken = text("sync_batch_token").nullable()
-    val filterId = text("filter_id").nullable()
-    val backgroundFilterId = text("background_filter_id").nullable()
+    val filter = text("filter").nullable()
     val profile = text("profile").nullable()
 }
 
@@ -36,8 +35,7 @@ internal class ExposedAccountRepository(private val json: Json) : AccountReposit
                 accessToken = it[ExposedAccount.accessToken],
                 refreshToken = it[ExposedAccount.refreshToken],
                 syncBatchToken = it[ExposedAccount.syncBatchToken],
-                filterId = it[ExposedAccount.filterId],
-                backgroundFilterId = it[ExposedAccount.backgroundFilterId],
+                filter = it[ExposedAccount.filter]?.let { json.decodeFromString(it) },
                 profile = it[ExposedAccount.profile]?.let { json.decodeFromString(it) },
             )
         }
@@ -54,8 +52,7 @@ internal class ExposedAccountRepository(private val json: Json) : AccountReposit
             it[accessToken] = value.accessToken
             it[refreshToken] = value.refreshToken
             it[syncBatchToken] = value.syncBatchToken
-            it[filterId] = value.filterId
-            it[backgroundFilterId] = value.backgroundFilterId
+            it[filter] = value.filter?.let { json.encodeToString(it) }
             it[profile] = value.profile?.let { json.encodeToString(it) }
         }
     }

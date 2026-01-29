@@ -1,10 +1,10 @@
 package de.connect2x.trixnity.client.store.repository.room
 
 import androidx.room.*
-import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.store.Account
 import de.connect2x.trixnity.client.store.repository.AccountRepository
 import de.connect2x.trixnity.core.model.UserId
+import kotlinx.serialization.json.Json
 
 @Entity(tableName = "Account")
 data class RoomAccount(
@@ -16,8 +16,7 @@ data class RoomAccount(
     val accessToken: String? = null,
     val refreshToken: String? = null,
     val syncBatchToken: String? = null,
-    val filterId: String? = null,
-    val backgroundFilterId: String? = null,
+    val filter: String? = null,
     val profile: String? = null,
     val isLocked: Boolean = false,
 )
@@ -54,8 +53,7 @@ internal class RoomAccountRepository(
                 accessToken = entity.accessToken,
                 refreshToken = entity.refreshToken,
                 syncBatchToken = entity.syncBatchToken,
-                filterId = entity.filterId,
-                backgroundFilterId = entity.backgroundFilterId,
+                filter = entity.filter?.let { json.decodeFromString(it) },
                 profile = entity.profile?.let { json.decodeFromString(it) },
             )
         }
@@ -73,8 +71,7 @@ internal class RoomAccountRepository(
                 accessToken = value.accessToken,
                 refreshToken = value.refreshToken,
                 syncBatchToken = value.syncBatchToken,
-                filterId = value.filterId,
-                backgroundFilterId = value.backgroundFilterId,
+                filter = value.filter?.let { json.encodeToString(it) },
                 profile = value.profile?.let { json.encodeToString(it) },
             )
         )

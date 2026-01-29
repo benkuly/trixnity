@@ -1,7 +1,5 @@
 package de.connect2x.trixnity.client.store
 
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
 import de.connect2x.trixnity.client.mocks.RepositoryTransactionManagerMock
 import de.connect2x.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import de.connect2x.trixnity.client.store.repository.AccountRepository
@@ -12,6 +10,8 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.testClock
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
 class AccountStoreTest : TrixnityBaseTest() {
@@ -36,8 +36,11 @@ class AccountStoreTest : TrixnityBaseTest() {
                 accessToken = "access_token",
                 refreshToken = "refresh_token",
                 syncBatchToken = "sync_token",
-                filterId = "filter_id",
-                backgroundFilterId = "background_filter_id",
+                filter = Account.Filter(
+                    syncFilterId = "filter_id",
+                    syncOnceFilterId = "background_filter_id",
+                    eventTypesHash = "someHash",
+                ),
                 profile = Profile(
                     ProfileField.DisplayName("display name"),
                     ProfileField.AvatarUrl("mxc://localhost/123456")
@@ -58,7 +61,11 @@ class AccountStoreTest : TrixnityBaseTest() {
             @Suppress("DEPRECATION")
             refreshToken shouldBe "refresh_token"
             syncBatchToken shouldBe "sync_token"
-            filterId shouldBe "filter_id"
+            filter shouldBe Account.Filter(
+                syncFilterId = "filter_id",
+                syncOnceFilterId = "background_filter_id",
+                eventTypesHash = "someHash",
+            )
             profile shouldBe Profile(
                 ProfileField.DisplayName("display name"),
                 ProfileField.AvatarUrl("mxc://localhost/123456")

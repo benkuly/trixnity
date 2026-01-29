@@ -1,19 +1,5 @@
 package de.connect2x.trixnity.client.store.repository.test
 
-import io.kotest.matchers.collections.shouldContainAll
-import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.maps.shouldHaveSize
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import io.ktor.http.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.test.TestScope
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.RepositoriesModule
 import de.connect2x.trixnity.client.createDefaultEventContentSerializerMappingsModule
@@ -56,6 +42,20 @@ import de.connect2x.trixnity.crypto.olm.StoredOlmSession
 import de.connect2x.trixnity.crypto.olm.StoredOutboundMegolmSession
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.maps.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.ktor.http.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.test.TestScope
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.koin.core.Koin
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
@@ -111,8 +111,7 @@ abstract class RepositoryTestSuite(
                 accessToken = null,
                 refreshToken = null,
                 syncBatchToken = null,
-                filterId = null,
-                backgroundFilterId = null,
+                filter = null,
                 profile = null,
             )
         )
@@ -330,8 +329,11 @@ abstract class RepositoryTestSuite(
             accessToken = "accessToken",
             refreshToken = "refreshToken",
             syncBatchToken = "syncToken",
-            filterId = "filterId",
-            backgroundFilterId = "backgroundFilterId",
+            filter = Account.Filter(
+                syncFilterId = "syncFilterId",
+                syncOnceFilterId = "syncOnceFilterId",
+                eventTypesHash = "eventTypesHash",
+            ),
             profile = Profile(
                 ProfileField.DisplayName("displayName"),
                 ProfileField.AvatarUrl("mxc://localhost/123456")

@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
+import okio.ByteString.Companion.toByteString
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
@@ -256,8 +257,6 @@ suspend fun MatrixClient.Companion.create(
                         olmPickleKey = null,
                         userId = userId,
                         deviceId = deviceId,
-                        backgroundFilterId = null,
-                        filterId = null,
                         syncBatchToken = null,
                         profile = newProfile
                     )
@@ -473,29 +472,52 @@ class MatrixClientImpl internal constructor(
                 }
             }
 
-            val filterId = accountStore.getAccount()?.filterId
-            if (filterId == null) {
-                val newFilterId = retry(
+            val filter = accountStore.getAccount()?.filter
+            val eventTypesHash = di.get<EventContentSerializerMappings>().filterHash()
+            if (filter == null || filter.eventTypesHash != eventTypesHash) {
+                log.info { "EventContentSerializerMappings changed, update filter" }
+                val newSyncFilterId = retry(
                     onError = { error, delay -> log.warn(error) { "could not set filter, retry again in $delay" } }
                 ) {
                     val filter = config.syncFilter.applyDefaultFilter()
                     api.user.setFilter(userId, filter)
                         .getOrThrow().also { log.debug { "set new filter for sync with id $it: $filter" } }
                 }
-                accountStore.updateAccount { it?.copy(filterId = newFilterId) }
-            }
-            val backgroundFilterId = accountStore.getAccount()?.backgroundFilterId
-            if (backgroundFilterId == null) {
-                val newFilterId = retry(
+                val newSyncOnceFilterId = retry(
                     onError = { error, delay -> log.warn(error) { "could not set background filter, retry again in $delay" } }
                 ) {
                     val filter = config.syncOnceFilter.applyDefaultFilter()
                     api.user.setFilter(userId, filter)
                         .getOrThrow().also { log.debug { "set new background filter for sync with id $it: $filter" } }
                 }
-                accountStore.updateAccount { it?.copy(backgroundFilterId = newFilterId) }
+                accountStore.updateAccount {
+                    it?.copy(
+                        filter = Account.Filter(
+                            syncFilterId = newSyncFilterId,
+                            syncOnceFilterId = newSyncOnceFilterId,
+                            eventTypesHash = eventTypesHash,
+                        )
+                    )
+                }
             }
             started.delegate.value = true
+        }
+    }
+
+    companion object {
+        internal fun EventContentSerializerMappings.filterHash(): String { // internal and companion for testing
+            val allTypes =
+                globalAccountData.map { it.type } +
+                        roomAccountData.map { it.type } +
+                        ephemeral.map { it.type } +
+                        state.map { it.type } +
+                        message.map { it.type }
+            return allTypes
+                .sorted()
+                .joinToString()
+                .encodeToByteArray().toByteString()
+                .sha256()
+                .hex()
         }
     }
 
@@ -560,7 +582,7 @@ class MatrixClientImpl internal constructor(
         started.first { it }
         api.sync.start(
             timeout = config.syncLoopTimeout,
-            filter = checkNotNull(accountStore.getAccount()?.filterId),
+            filter = checkNotNull(accountStore.getAccount()?.filter?.syncFilterId),
             setPresence = presence,
         )
     }
@@ -575,7 +597,7 @@ class MatrixClientImpl internal constructor(
     ): Result<T> {
         started.first { it }
         return api.sync.startOnce(
-            filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
+            filter = checkNotNull(accountStore.getAccount()?.filter?.syncOnceFilterId),
             setPresence = presence,
             timeout = timeout,
             runOnce = runOnce
