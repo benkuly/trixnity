@@ -1,12 +1,6 @@
 package de.connect2x.trixnity.client.media
 
 import de.connect2x.lognity.api.logger.Logger
-import io.ktor.http.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonPrimitive
 import de.connect2x.trixnity.client.store.MediaCacheMapping
 import de.connect2x.trixnity.client.store.MediaCacheMappingStore
 import de.connect2x.trixnity.client.store.ServerDataStore
@@ -22,6 +16,12 @@ import de.connect2x.trixnity.crypto.core.decryptAes256Ctr
 import de.connect2x.trixnity.crypto.core.encryptAes256Ctr
 import de.connect2x.trixnity.crypto.core.sha256
 import de.connect2x.trixnity.utils.*
+import io.ktor.http.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonPrimitive
 
 private val log = Logger("de.connect2x.trixnity.client.media.MediaService")
 
@@ -43,6 +43,7 @@ interface MediaService {
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod = CROP,
+        animated: Boolean = false,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         saveToCache: Boolean = true,
     ): Result<PlatformMedia>
@@ -169,13 +170,21 @@ class MediaServiceImpl(
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
+        animated: Boolean,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
     ): Result<PlatformMedia> = kotlin.runCatching {
         val thumbnailUrl = "$uri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
         val existingMedia = mediaStore.getMedia(thumbnailUrl)
         if (existingMedia == null) {
-            api.media.downloadThumbnailDependingOnServerVersion(uri, width, height, method, progress = progress) {
+            api.media.downloadThumbnailDependingOnServerVersion(
+                mxcUri = uri,
+                width = width,
+                height = height,
+                method = method,
+                animated = animated,
+                progress = progress
+            ) {
                 it.saveMedia(thumbnailUrl) { this }
             }.getOrThrow()
             requireNotNull(
@@ -190,18 +199,27 @@ class MediaServiceImpl(
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
+        animated: Boolean,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit> =
         if (serverDataStore.getServerData().versions.versions.contains(MATRIX_SPEC_1_11)) {
-            downloadThumbnail(mxcUri, width, height, method, progress = progress, downloadHandler = downloadHandler)
+            downloadThumbnail(
+                mxcUri = mxcUri,
+                width = width,
+                height = height,
+                method = method,
+                animated = animated,
+                progress = progress,
+                downloadHandler = downloadHandler
+            )
         } else {
             @Suppress("DEPRECATION")
             downloadThumbnailLegacy(
-                mxcUri,
-                width,
-                height,
-                method,
+                mxcUri = mxcUri,
+                width = width,
+                height = height,
+                method = method,
                 progress = progress,
                 downloadHandler = downloadHandler
             )

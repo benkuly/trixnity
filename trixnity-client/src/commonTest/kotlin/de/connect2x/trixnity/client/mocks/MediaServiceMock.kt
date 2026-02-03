@@ -1,14 +1,14 @@
 package de.connect2x.trixnity.client.mocks
 
-import io.ktor.http.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import de.connect2x.trixnity.client.media.MediaService
 import de.connect2x.trixnity.client.media.PlatformMedia
 import de.connect2x.trixnity.clientserverapi.model.media.FileTransferProgress
 import de.connect2x.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import de.connect2x.trixnity.core.model.events.m.room.EncryptedFile
 import de.connect2x.trixnity.utils.ByteArrayFlow
+import io.ktor.http.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class MediaServiceMock : MediaService {
     override suspend fun getMedia(
@@ -32,6 +32,7 @@ class MediaServiceMock : MediaService {
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
+        animated: Boolean,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
     ): Result<PlatformMedia> {
