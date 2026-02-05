@@ -1,17 +1,5 @@
 package de.connect2x.trixnity.client.integrationtests
 
-import de.connect2x.lognity.api.logger.Logger
-import io.kotest.matchers.collections.shouldBeIn
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldStartWith
-import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.http.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.scan
-import kotlinx.coroutines.flow.stateIn
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.notification.Notification
 import de.connect2x.trixnity.client.notification.NotificationService
@@ -35,16 +23,26 @@ import de.connect2x.trixnity.core.model.push.PushCondition
 import de.connect2x.trixnity.core.model.push.PushRuleKind
 import de.connect2x.trixnity.core.model.push.ServerDefaultPushRules
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.http.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.stateIn
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-private val log = Logger("de.connect2x.trixnity.client.integrationtests.NotificationIT")
-
 @Testcontainers
 class NotificationIT : TrixnityBaseTest() {
+
     private lateinit var startedClient1: StartedClient
     private lateinit var startedClient2: StartedClient
 
@@ -95,6 +93,7 @@ class NotificationIT : TrixnityBaseTest() {
                 val encryptedRoomWithoutNotifications = startedClient1.client.api.room.createRoom(
                     initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                 ).getOrThrow()
+
                 val currentPushRules = startedClient2.client.user.getAccountData<PushRulesEventContent>().first()
                 startedClient2.client.api.push.setPushRule(
                     "global",
@@ -292,7 +291,6 @@ class NotificationIT : TrixnityBaseTest() {
                 }
             }
         }
-        log.debug { "sent messages $notificationMessages" }
 
         withCluePrintln("receive notifications") {
             checkNotifications { it.size == roomsWithNotifications }.also {

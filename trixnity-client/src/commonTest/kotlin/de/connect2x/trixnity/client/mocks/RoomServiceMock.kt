@@ -1,13 +1,9 @@
 package de.connect2x.trixnity.client.mocks
 
-import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.flatten
 import de.connect2x.trixnity.client.room.*
 import de.connect2x.trixnity.client.room.message.MessageBuilder
-import de.connect2x.trixnity.client.store.Room
-import de.connect2x.trixnity.client.store.RoomOutboxMessage
-import de.connect2x.trixnity.client.store.TimelineEvent
-import de.connect2x.trixnity.client.store.TimelineEventRelation
+import de.connect2x.trixnity.client.store.*
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
 import de.connect2x.trixnity.core.model.EventId
@@ -19,6 +15,7 @@ import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.TypingEventContent
+import kotlinx.coroutines.flow.*
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
@@ -59,6 +56,7 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
+    var returnGetTimelineEventsDisableDrop = false
     var returnGetTimelineEvents: Flow<Flow<TimelineEvent>> = flowOf()
     var getTimelineEventConfig: GetTimelineEventsConfig? = null
 
@@ -69,7 +67,9 @@ class RoomServiceMock : RoomService {
         config: GetTimelineEventsConfig.() -> Unit
     ): Flow<Flow<TimelineEvent>> {
         getTimelineEventConfig = GetTimelineEventsConfig().apply(config)
-        return returnGetTimelineEvents
+        return if (returnGetTimelineEventsDisableDrop) returnGetTimelineEvents
+        else returnGetTimelineEvents
+            .dropWhile { it.firstOrNull()?.eventId != startFrom }
     }
 
     override fun getLastTimelineEvents(

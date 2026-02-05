@@ -1,18 +1,5 @@
 package de.connect2x.trixnity.client.verification
 
-import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.collections.shouldExist
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.maps.shouldHaveSize
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.currentTime
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.mocks.*
 import de.connect2x.trixnity.client.store.*
@@ -66,6 +53,19 @@ import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.testClock
 import de.connect2x.trixnity.testutils.PortableMockEngineConfig
 import de.connect2x.trixnity.testutils.matrixJsonEndpoint
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldExist
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.currentTime
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.days
@@ -330,6 +330,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `init » startLifecycleOfActiveVerifications » start all lifecycles of user verifications`() = runTest {
+        roomServiceMock.returnGetTimelineEventsDisableDrop = true
         val nextEventId = EventId("$1nextEventId")
         apiConfig.endpoints {
             matrixJsonEndpoint(

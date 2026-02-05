@@ -1707,7 +1707,16 @@ abstract class RepositoryTestSuite(
         val cut = di.get<NotificationStateRepository>()
         val notificationState1 = StoredNotificationState.Push(RoomId("!room1"))
         val notificationState2 =
-            StoredNotificationState.SyncWithTimeline(RoomId("!room2"), false, setOf(), EventId("\$event1"), null, null)
+            StoredNotificationState.SyncWithTimeline(
+                roomId = RoomId("!room2"),
+                needsSync = false,
+                notificationsDisabled = false,
+                readReceipts = setOf(),
+                lastEventId = EventId("\$event1"),
+                lastRelevantEventId = null,
+                lastProcessedEventId = null,
+                expectedMaxNotificationCount = null
+            )
         val notificationState2Copy = notificationState2.copy(needsSync = true)
 
         rtm.writeTransaction {

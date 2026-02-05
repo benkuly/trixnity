@@ -1,12 +1,5 @@
 package de.connect2x.trixnity.client.room
 
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.mocks.MediaServiceMock
 import de.connect2x.trixnity.client.mocks.RoomEventEncryptionServiceMock
@@ -21,7 +14,6 @@ import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.BACK
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
-import de.connect2x.trixnity.core.model.keys.MegolmMessageValue
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
@@ -32,11 +24,19 @@ import de.connect2x.trixnity.core.model.events.m.room.EncryptedMessageEventConte
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.TombstoneEventContent
 import de.connect2x.trixnity.core.model.keys.KeyValue
+import de.connect2x.trixnity.core.model.keys.MegolmMessageValue
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.testClock
 import de.connect2x.trixnity.testutils.PortableMockEngineConfig
 import de.connect2x.trixnity.testutils.matrixJsonEndpoint
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -521,8 +521,11 @@ class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
         syncBatchTokenStore.setSyncBatchToken("token1")
         roomTimelineStore.addAll(
             listOf(
-                timelineEvent1,
-                timelineEvent1.copy(event = event1.copy(id = event10.id, roomId = RoomId("!other:server")))
+                timelineEvent1.copy(content = Result.failure(TimelineEvent.TimelineEventContentError.DecryptionTimeout)),
+                timelineEvent1.copy(
+                    content = Result.failure(TimelineEvent.TimelineEventContentError.DecryptionTimeout),
+                    event = event1.copy(id = event10.id, roomId = RoomId("!other:server"))
+                )
             )
         )
         apiConfig.endpoints {
@@ -559,6 +562,7 @@ class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
         delay(100.milliseconds)
         api.sync.startOnce().getOrThrow()
         api.sync.startOnce().getOrThrow()
+        delay(100.milliseconds)
         result.await().map { it.eventId } shouldBe listOf(event1.id, event10.id)
     }
 
