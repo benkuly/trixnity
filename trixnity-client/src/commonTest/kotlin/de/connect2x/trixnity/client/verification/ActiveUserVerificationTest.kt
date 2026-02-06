@@ -1,22 +1,11 @@
 package de.connect2x.trixnity.client.verification
 
-import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.currentTime
 import de.connect2x.trixnity.client.getInMemoryKeyStore
 import de.connect2x.trixnity.client.mocks.KeyTrustServiceMock
 import de.connect2x.trixnity.client.mocks.RoomServiceMock
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.verification.ActiveVerificationState.AcceptedByOtherDevice
 import de.connect2x.trixnity.client.verification.ActiveVerificationState.Undefined
-import de.connect2x.trixnity.core.model.keys.MegolmMessageValue
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
@@ -31,12 +20,23 @@ import de.connect2x.trixnity.core.model.events.m.room.EncryptedMessageEventConte
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import de.connect2x.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import de.connect2x.trixnity.core.model.keys.MegolmMessageValue
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.crypto.driver.CryptoDriver
 import de.connect2x.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.testClock
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.currentTime
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
@@ -74,6 +74,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
 
     @Test
     fun `handle verification step`() = runTest {
+        roomServiceMock.returnGetTimelineEventsDisableDrop = true
         val cancelEvent = VerificationCancelEventContent(User, "u", relatesTo, null)
 
         roomServiceMock.returnGetTimelineEvent = MutableStateFlow(requestTimelineEvent)
@@ -128,6 +129,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
 
     @Test
     fun `handle encrypted verification step`() = runTest {
+        roomServiceMock.returnGetTimelineEventsDisableDrop = true
         val cancelEvent = VerificationCancelEventContent(User, "u", relatesTo, null)
         val cancelFlow = MutableStateFlow(
             TimelineEvent(
@@ -256,6 +258,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
 
     @Test
     fun `set state to AcceptedByOtherDevice when request accepted by other device`() = runTest {
+        roomServiceMock.returnGetTimelineEventsDisableDrop = true
         roomServiceMock.returnGetTimelineEvent = MutableStateFlow(requestTimelineEvent)
         roomServiceMock.returnGetTimelineEvents = flowOf(
             MutableStateFlow(
@@ -297,6 +300,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
 
     @Test
     fun `set state to Undefined when request accepted by own device but state does not match`() = runTest {
+        roomServiceMock.returnGetTimelineEventsDisableDrop = true
         roomServiceMock.returnGetTimelineEvent = MutableStateFlow(requestTimelineEvent)
         roomServiceMock.returnGetTimelineEvents = flowOf(
             MutableStateFlow(

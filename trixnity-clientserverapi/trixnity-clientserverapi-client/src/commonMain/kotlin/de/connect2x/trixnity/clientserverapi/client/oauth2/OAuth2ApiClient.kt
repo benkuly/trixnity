@@ -1,5 +1,9 @@
 package de.connect2x.trixnity.clientserverapi.client.oauth2
 
+import de.connect2x.trixnity.api.client.PlatformUserAgentPlugin
+import de.connect2x.trixnity.clientserverapi.model.authentication.TokenTypeHint
+import de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.GrantType
+import de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.ServerMetadata
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.*
@@ -11,10 +15,6 @@ import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import de.connect2x.trixnity.api.client.PlatformUserAgentPlugin
-import de.connect2x.trixnity.clientserverapi.model.authentication.TokenTypeHint
-import de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.GrantType
-import de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.ServerMetadata
 
 internal class OAuth2ApiClient(
     private val serverMetadata: ServerMetadata,
@@ -29,9 +29,7 @@ internal class OAuth2ApiClient(
                 explicitNulls = false
             })
         }
-        install(HttpTimeout) {
-            requestTimeoutMillis = 30000
-        }
+        install(HttpTimeout)
         expectSuccess = true
 
         install(PlatformUserAgentPlugin)

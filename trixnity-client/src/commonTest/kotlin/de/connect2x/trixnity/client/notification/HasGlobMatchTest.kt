@@ -1,8 +1,8 @@
 package de.connect2x.trixnity.client.notification
 
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
-import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
 class HasGlobMatchTest : TrixnityBaseTest() {

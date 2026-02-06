@@ -1,8 +1,5 @@
 package de.connect2x.trixnity.client.store
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.flattenNotNull
 import de.connect2x.trixnity.client.store.cache.FullRepositoryObservableCache
@@ -12,6 +9,9 @@ import de.connect2x.trixnity.client.store.repository.NotificationStateRepository
 import de.connect2x.trixnity.client.store.repository.NotificationUpdateRepository
 import de.connect2x.trixnity.client.store.repository.RepositoryTransactionManager
 import de.connect2x.trixnity.core.model.RoomId
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlin.time.Clock
 
 class NotificationStore(
@@ -97,19 +97,32 @@ class NotificationStore(
     ) = notificationUpdateCache.update(id, updater = updater)
 
     suspend fun delete(id: String) = notificationCache.set(id, null)
-    suspend fun deleteByRoomId(roomId: RoomId) {
+
+    suspend fun deleteNotificationsByRoomId(roomId: RoomId) {
         tm.writeTransaction {
             notificationRepository.deleteByRoomId(roomId)
         }
         notificationCache.readAll().flattenNotNull().first().forEach { (key, value) ->
             if (value.roomId == roomId) notificationCache.set(key, null, persistEnabled = false)
         }
+    }
+
+    suspend fun deleteNotificationUpdatesByRoomId(roomId: RoomId) {
         tm.writeTransaction {
             notificationUpdateRepository.deleteByRoomId(roomId)
         }
         notificationUpdateCache.readAll().flattenNotNull().first().forEach { (key, value) ->
             if (value.roomId == roomId) notificationUpdateCache.set(key, null, persistEnabled = false)
         }
+    }
+
+    suspend fun deleteNotificationStateByRoomId(roomId: RoomId) {
         notificationStateCache.set(roomId, null)
+    }
+
+    suspend fun deleteByRoomId(roomId: RoomId) {
+        deleteNotificationStateByRoomId(roomId)
+        deleteNotificationsByRoomId(roomId)
+        deleteNotificationUpdatesByRoomId(roomId)
     }
 }

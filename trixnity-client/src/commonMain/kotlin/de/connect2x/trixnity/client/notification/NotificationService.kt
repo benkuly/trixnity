@@ -8,6 +8,7 @@ import de.connect2x.trixnity.client.flattenValues
 import de.connect2x.trixnity.client.room.RoomService
 import de.connect2x.trixnity.client.room.firstWithContent
 import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.StoredNotificationState.SyncWithTimeline.IsRead
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.client.startOnce
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
@@ -15,6 +16,7 @@ import de.connect2x.trixnity.core.EventHandler
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.ClientEvent
+import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
 import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.push.PushAction
 import de.connect2x.trixnity.core.model.push.toList
@@ -82,6 +84,12 @@ interface NotificationService {
     fun getCount(roomId: RoomId): Flow<Int>
 
     /**
+     * Returns true if the room is considered unread. This does not mean that there is any notification for the room.
+     * A room is considered unread, when the last read event is before [Room.lastRelevantEventId] or [MarkedUnreadEventContent] is set.
+     */
+    fun isUnread(roomId: RoomId): Flow<Boolean>
+
+    /**
      * Mark the notification as dismissed.
      */
     suspend fun dismiss(id: String)
@@ -119,6 +127,7 @@ interface NotificationService {
 class NotificationServiceImpl(
     private val roomService: RoomService,
     private val roomStateStore: RoomStateStore,
+    private val roomAccountDataStore: RoomAccountDataStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val accountStore: AccountStore,
     private val notificationStore: NotificationStore,
@@ -237,6 +246,22 @@ class NotificationServiceImpl(
     override fun getCount(roomId: RoomId): Flow<Int> =
         allNotifications.map { notifications -> notifications.count { it.roomId == roomId } }
 
+    private val notificationStates =
+        notificationStore.getAllState() // we cannot use a single cache entry, because removeFromCacheOnNull is enabled
+            .shareIn(coroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun isUnread(roomId: RoomId): Flow<Boolean> =
+        roomAccountDataStore.get(roomId, MarkedUnreadEventContent::class).flatMapLatest { markedUnread ->
+            if (markedUnread?.content?.unread == true) flowOf(true)
+            else notificationStates.flatMapLatest { it[roomId] ?: flowOf(null) }
+                .map { state ->
+                    if (state is StoredNotificationState.SyncWithTimeline) {
+                        state.isRead == IsRead.FALSE || state.isRead == IsRead.FALSE_BUT_CHECK
+                    } else false
+                }
+        }
+
     override suspend fun dismiss(id: String) {
         notificationStore.update(id) { notification ->
             when (notification) {
@@ -291,7 +316,7 @@ class NotificationServiceImpl(
         notificationStore.updateState(roomId) {
             when (it) {
                 is StoredNotificationState.Push,
-                is StoredNotificationState.Remove,
+                is StoredNotificationState.Read,
                 is StoredNotificationState.SyncWithoutTimeline -> it
 
                 is StoredNotificationState.SyncWithTimeline -> it.copy(needsSync = true)

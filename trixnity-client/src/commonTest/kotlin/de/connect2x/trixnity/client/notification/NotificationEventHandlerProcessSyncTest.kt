@@ -1,18 +1,15 @@
 package de.connect2x.trixnity.client.notification
 
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.runTest
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.mocks.RoomServiceMock
 import de.connect2x.trixnity.client.mocks.TransactionManagerMock
 import de.connect2x.trixnity.client.store.RoomUserReceipts
 import de.connect2x.trixnity.client.store.StoredNotification
 import de.connect2x.trixnity.client.store.StoredNotificationState
+import de.connect2x.trixnity.client.store.StoredNotificationState.SyncWithTimeline.IsRead
 import de.connect2x.trixnity.client.store.StoredNotificationUpdate
 import de.connect2x.trixnity.clientserverapi.client.SyncEvents
+import de.connect2x.trixnity.clientserverapi.client.SyncState
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap
 import de.connect2x.trixnity.core.UserInfo
@@ -30,7 +27,13 @@ import de.connect2x.trixnity.core.model.push.ServerDefaultPushRules
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.scheduleSetup
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlin.test.Test
 
 class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
@@ -75,10 +78,13 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         roomUserStore = roomUserStore,
         globalAccountDataStore = globalAccountDataStore,
         notificationStore = notificationStore,
+        keyStore = getInMemoryKeyStore(),
         eventsToNotificationUpdates = eventsToNotificationUpdates,
+        currentSyncState = CurrentSyncState(MutableStateFlow(SyncState.RUNNING)),
         transactionManager = TransactionManagerMock(),
         eventContentSerializerMappings = EventContentSerializerMappings.default,
-        config = MatrixClientConfiguration()
+        config = MatrixClientConfiguration(),
+        coroutineScope = testScope.backgroundScope,
     )
 
     private fun pushRulesEvent(updateOverride: (List<PushRule.Override>) -> List<PushRule.Override> = { it }) =
@@ -93,8 +99,8 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
     private suspend fun processSyncWith(
         notifications: List<StoredNotification> = listOf(notification1, notification2),
         notificationStates: List<StoredNotificationState> = listOf(
-            StoredNotificationState.SyncWithoutTimeline(roomId1),
-            StoredNotificationState.SyncWithoutTimeline(roomId2)
+            StoredNotificationState.SyncWithoutTimeline(roomId1, false),
+            StoredNotificationState.SyncWithoutTimeline(roomId2, false)
         ),
         updatedRooms: Set<RoomId> = setOf(roomId1, roomId2),
         receipts: Map<RoomId, EventId> = mapOf(roomId1 to EventId("e1"), roomId2 to EventId("e1")),
@@ -163,24 +169,23 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `push rules disabled changed - schedule remove `() =
-        runTest {
-            processSyncWith(
-                updatedRooms = setOf(),
-                pushRuleOverride = {
-                    it.map { if (it.ruleId == ServerDefaultPushRules.Master.id) it.copy(enabled = true) else it }
-                }
-            )
+    fun `push rules disabled changed - schedule remove `() = runTest {
+        processSyncWith(
+            updatedRooms = setOf(),
+            pushRuleOverride = {
+                it.map { if (it.ruleId == ServerDefaultPushRules.Master.id) it.copy(enabled = true) else it }
+            }
+        )
 
-            notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
-                notification1,
-                notification2
-            )
-            notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-                StoredNotificationState.Remove(roomId1),
-                StoredNotificationState.Remove(roomId2),
-            )
-        }
+        notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
+            notification1,
+            notification2
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithoutTimeline(roomId1, true),
+            StoredNotificationState.SyncWithoutTimeline(roomId2, true),
+        )
+    }
 
     @Test
     fun `push rules disabled without change - do nothing`() =
@@ -197,58 +202,56 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
                 notification2
             )
             notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-                StoredNotificationState.SyncWithoutTimeline(roomId1),
-                StoredNotificationState.SyncWithoutTimeline(roomId2),
+                StoredNotificationState.SyncWithoutTimeline(roomId1, false),
+                StoredNotificationState.SyncWithoutTimeline(roomId2, false),
             )
         }
 
     @Test
-    fun `push rules disabled for room changed - schedule remove`() =
-        runTest {
-            processSyncWith(
-                updatedRooms = setOf(roomId1),
-                pushRuleOverride = {
-                    it + PushRule.Override(
-                        roomId1.full, false, true, conditions = setOf(
-                            PushCondition.EventMatch("room_id", roomId1.full)
-                        )
+    fun `push rules disabled for room changed - schedule remove`() = runTest {
+        processSyncWith(
+            updatedRooms = setOf(roomId1),
+            pushRuleOverride = {
+                it + PushRule.Override(
+                    roomId1.full, false, true, conditions = setOf(
+                        PushCondition.EventMatch("room_id", roomId1.full)
                     )
-                }
-            )
-            notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
-                notification1,
-                notification2
-            )
-            notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-                StoredNotificationState.Remove(roomId1),
-                StoredNotificationState.SyncWithoutTimeline(roomId2),
-            )
-        }
+                )
+            }
+        )
+        notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
+            notification1,
+            notification2
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithoutTimeline(roomId1, true),
+            StoredNotificationState.SyncWithoutTimeline(roomId2, false),
+        )
+    }
 
     @Test
-    fun `push rules disabled for room without change - do nothing`() =
-        runTest {
-            processSyncWith(
-                updatedRooms = setOf(roomId1),
-                pushRuleChange = false,
-                pushRuleOverride = {
-                    it + PushRule.Override(
-                        roomId1.full, false, true, conditions = setOf(
-                            PushCondition.EventMatch("room_id", roomId1.full)
-                        )
+    fun `push rules disabled for room without change - schedule remove`() = runTest {
+        roomStore.update(roomId1) { simpleRoom.copy(roomId = roomId1, lastEventId = null) }
+        processSyncWith(
+            updatedRooms = setOf(roomId1),
+            pushRuleChange = false,
+            pushRuleOverride = {
+                it + PushRule.Override(
+                    roomId1.full, false, true, conditions = setOf(
+                        PushCondition.EventMatch("room_id", roomId1.full)
                     )
-                }
-            )
-
-            notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
-                notification1,
-                notification2
-            )
-            notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-                StoredNotificationState.SyncWithoutTimeline(roomId1),
-                StoredNotificationState.SyncWithoutTimeline(roomId2),
-            )
-        }
+                )
+            }
+        )
+        notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
+            notification1,
+            notification2
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithoutTimeline(roomId1, true),
+            StoredNotificationState.SyncWithoutTimeline(roomId2, false),
+        )
+    }
 
     @Test
     fun `no receipts for room - no timeline - set state`() = runTest {
@@ -260,13 +263,13 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             notification2
         )
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-            StoredNotificationState.SyncWithoutTimeline(roomId1),
-            StoredNotificationState.SyncWithoutTimeline(roomId2),
+            StoredNotificationState.SyncWithoutTimeline(roomId1, false),
+            StoredNotificationState.SyncWithoutTimeline(roomId2, false),
         )
     }
 
     @Test
-    fun `room is read - schedule remove`() = runTest {
+    fun `room is read`() = runTest {
         roomStore.update(roomId1) { simpleRoom.copy(roomId = roomId1, lastEventId = EventId("e1")) }
         processSyncWith(updatedRooms = setOf(roomId1))
 
@@ -275,8 +278,8 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             notification2
         )
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-            StoredNotificationState.Remove(roomId1),
-            StoredNotificationState.SyncWithoutTimeline(roomId2),
+            StoredNotificationState.Read(roomId1),
+            StoredNotificationState.SyncWithoutTimeline(roomId2, false),
         )
     }
 
@@ -289,10 +292,13 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
                 StoredNotificationState.SyncWithTimeline(
                     roomId = roomId1,
                     needsSync = true,
+                    notificationsDisabled = false,
                     readReceipts = setOf(EventId("e0")),
                     lastEventId = EventId("e24"),
+                    lastRelevantEventId = null,
                     lastProcessedEventId = EventId("e23"),
                     expectedMaxNotificationCount = 1,
+                    isRead = IsRead.CHECK,
                 )
             ),
         )
@@ -305,10 +311,13 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
                 needsSync = false,
+                notificationsDisabled = false,
                 readReceipts = setOf(EventId("e1")),
                 lastEventId = EventId("e24"),
+                lastRelevantEventId = null,
                 lastProcessedEventId = null,
                 expectedMaxNotificationCount = 1,
+                isRead = IsRead.CHECK,
             )
         )
     }
@@ -322,10 +331,13 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
                 StoredNotificationState.SyncWithTimeline(
                     roomId = roomId1,
                     needsSync = true,
+                    notificationsDisabled = false,
                     readReceipts = setOf(EventId("e1")),
                     lastEventId = EventId("e24"),
+                    lastRelevantEventId = null,
                     lastProcessedEventId = EventId("e23"),
                     expectedMaxNotificationCount = 1,
+                    isRead = IsRead.CHECK,
                 )
             ),
         )
@@ -338,10 +350,248 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
                 needsSync = false,
+                notificationsDisabled = false,
                 readReceipts = setOf(EventId("e1")),
                 lastEventId = EventId("e24"),
+                lastRelevantEventId = null,
                 lastProcessedEventId = EventId("e23"),
                 expectedMaxNotificationCount = 1,
+                isRead = IsRead.CHECK,
+            )
+        )
+    }
+
+    @Test
+    fun `with timeline - encrypted - ignore notification count`() = runTest {
+        roomStore.update(roomId1) { simpleRoom.copy(roomId = roomId1, lastEventId = EventId("e24"), encrypted = true) }
+        processSyncWith(
+            updatedRooms = setOf(roomId1),
+            notificationStates = listOf(
+                StoredNotificationState.SyncWithTimeline(
+                    roomId = roomId1,
+                    needsSync = true,
+                    notificationsDisabled = false,
+                    readReceipts = setOf(EventId("e1")),
+                    lastEventId = EventId("e24"),
+                    lastRelevantEventId = null,
+                    lastProcessedEventId = EventId("e23"),
+                    expectedMaxNotificationCount = 1,
+                    isRead = IsRead.CHECK,
+                )
+            ),
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = false,
+                notificationsDisabled = false,
+                readReceipts = setOf(EventId("e1")),
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = null,
+                lastProcessedEventId = EventId("e23"),
+                expectedMaxNotificationCount = null,
+                isRead = IsRead.CHECK,
+            )
+        )
+    }
+
+    @Test
+    fun `with timeline - isRead - lastRelevant receipt - true`() = runTest {
+        roomStore.update(roomId1) {
+            simpleRoom.copy(
+                roomId = roomId1,
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e1")
+            )
+        }
+        processSyncWith(
+            updatedRooms = setOf(roomId1),
+            notificationStates = listOf(
+                StoredNotificationState.SyncWithTimeline(
+                    roomId = roomId1,
+                    needsSync = true,
+                    notificationsDisabled = false,
+                    readReceipts = setOf(EventId("e1")),
+                    lastEventId = EventId("e24"),
+                    lastRelevantEventId = EventId("e0"),
+                    lastProcessedEventId = EventId("e23"),
+                    expectedMaxNotificationCount = 1,
+                    isRead = IsRead.CHECK,
+                )
+            ),
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = false,
+                notificationsDisabled = false,
+                readReceipts = setOf(EventId("e1")),
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e1"),
+                lastProcessedEventId = EventId("e23"),
+                expectedMaxNotificationCount = 1,
+                isRead = IsRead.TRUE,
+            )
+        )
+    }
+
+    @Test
+    fun `with timeline - isRead - TRUE and relevant not changed - TRUE`() = runTest {
+        roomStore.update(roomId1) {
+            simpleRoom.copy(
+                roomId = roomId1,
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e1")
+            )
+        }
+        processSyncWith(
+            updatedRooms = setOf(roomId1),
+            notificationStates = listOf(
+                StoredNotificationState.SyncWithTimeline(
+                    roomId = roomId1,
+                    needsSync = true,
+                    notificationsDisabled = false,
+                    readReceipts = setOf(EventId("e1")),
+                    lastEventId = EventId("e24"),
+                    lastRelevantEventId = EventId("e1"),
+                    lastProcessedEventId = EventId("e23"),
+                    expectedMaxNotificationCount = 1,
+                    isRead = IsRead.TRUE,
+                )
+            ),
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = false,
+                notificationsDisabled = false,
+                readReceipts = setOf(EventId("e1")),
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e1"),
+                lastProcessedEventId = EventId("e23"),
+                expectedMaxNotificationCount = 1,
+                isRead = IsRead.TRUE,
+            )
+        )
+    }
+
+    @Test
+    fun `with timeline - isRead - FALSE and receipts not changed - FALSE`() = runTest {
+        roomStore.update(roomId1) {
+            simpleRoom.copy(
+                roomId = roomId1,
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e0")
+            )
+        }
+        processSyncWith(
+            updatedRooms = setOf(roomId1),
+            notificationStates = listOf(
+                StoredNotificationState.SyncWithTimeline(
+                    roomId = roomId1,
+                    needsSync = true,
+                    notificationsDisabled = false,
+                    readReceipts = setOf(EventId("e1")),
+                    lastEventId = EventId("e24"),
+                    lastRelevantEventId = EventId("e0"),
+                    lastProcessedEventId = EventId("e23"),
+                    expectedMaxNotificationCount = 1,
+                    isRead = IsRead.FALSE,
+                )
+            ),
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = false,
+                notificationsDisabled = false,
+                readReceipts = setOf(EventId("e1")),
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e0"),
+                lastProcessedEventId = EventId("e23"),
+                expectedMaxNotificationCount = 1,
+                isRead = IsRead.FALSE,
+            )
+        )
+    }
+
+    @Test
+    fun `with timeline - isRead - TRUE and lastRelevant changed - TRUE_BUT_CHECK`() = runTest {
+        roomStore.update(roomId1) {
+            simpleRoom.copy(
+                roomId = roomId1,
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e12")
+            )
+        }
+        processSyncWith(
+            updatedRooms = setOf(roomId1),
+            notificationStates = listOf(
+                StoredNotificationState.SyncWithTimeline(
+                    roomId = roomId1,
+                    needsSync = true,
+                    notificationsDisabled = false,
+                    readReceipts = setOf(EventId("e1")),
+                    lastEventId = EventId("e24"),
+                    lastRelevantEventId = EventId("e1"),
+                    lastProcessedEventId = EventId("e23"),
+                    expectedMaxNotificationCount = 1,
+                    isRead = IsRead.TRUE,
+                )
+            ),
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = false,
+                notificationsDisabled = false,
+                readReceipts = setOf(EventId("e1")),
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e12"),
+                lastProcessedEventId = EventId("e23"),
+                expectedMaxNotificationCount = 1,
+                isRead = IsRead.TRUE_BUT_CHECK,
+            )
+        )
+    }
+
+    @Test
+    fun `with timeline - isRead - FALSE and receipts changed - FALSE_BUT_CHECK`() = runTest {
+        roomStore.update(roomId1) {
+            simpleRoom.copy(
+                roomId = roomId1,
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e12")
+            )
+        }
+        processSyncWith(
+            updatedRooms = setOf(roomId1),
+            receipts = mapOf(roomId1 to EventId("e2")),
+            notificationStates = listOf(
+                StoredNotificationState.SyncWithTimeline(
+                    roomId = roomId1,
+                    needsSync = true,
+                    notificationsDisabled = false,
+                    readReceipts = setOf(EventId("e1")),
+                    lastEventId = EventId("e24"),
+                    lastRelevantEventId = EventId("e12"),
+                    lastProcessedEventId = EventId("e23"),
+                    expectedMaxNotificationCount = 1,
+                    isRead = IsRead.FALSE,
+                )
+            ),
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = false,
+                notificationsDisabled = false,
+                readReceipts = setOf(EventId("e2")),
+                lastEventId = EventId("e24"),
+                lastRelevantEventId = EventId("e12"),
+                lastProcessedEventId = null,
+                expectedMaxNotificationCount = 1,
+                isRead = IsRead.FALSE_BUT_CHECK,
             )
         )
     }
@@ -355,10 +605,13 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
                 StoredNotificationState.SyncWithTimeline(
                     roomId = roomId1,
                     needsSync = true,
+                    notificationsDisabled = false,
                     readReceipts = setOf(EventId("e1")),
                     lastEventId = EventId("e24"),
+                    lastRelevantEventId = null,
                     lastProcessedEventId = EventId("e23"),
                     expectedMaxNotificationCount = 1,
+                    isRead = IsRead.CHECK,
                 )
             ),
             notificationCounts = mapOf(roomId1 to 0)
@@ -372,10 +625,13 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
                 needsSync = false,
+                notificationsDisabled = false,
                 readReceipts = setOf(EventId("e1")),
                 lastEventId = EventId("e24"),
+                lastRelevantEventId = null,
                 lastProcessedEventId = EventId("e23"),
                 expectedMaxNotificationCount = 0,
+                isRead = IsRead.CHECK,
             )
         )
     }
@@ -397,10 +653,13 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
                 needsSync = false,
+                notificationsDisabled = false,
                 readReceipts = setOf(EventId("e1")),
                 lastEventId = EventId("e24"),
+                lastRelevantEventId = null,
                 lastProcessedEventId = null,
                 expectedMaxNotificationCount = 1,
+                isRead = IsRead.CHECK,
             )
         )
     }
@@ -418,7 +677,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             notification2
         )
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-            StoredNotificationState.SyncWithoutTimeline(roomId = roomId1)
+            StoredNotificationState.SyncWithoutTimeline(roomId = roomId1, false)
         )
     }
 

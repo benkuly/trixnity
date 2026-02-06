@@ -1,12 +1,12 @@
 package de.connect2x.trixnity.client
 
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.previousRoomId
+import de.connect2x.trixnity.core.model.RoomId
 import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
-import de.connect2x.trixnity.client.store.Room
-import de.connect2x.trixnity.client.store.previousRoomId
-import de.connect2x.trixnity.core.model.RoomId
 import org.koin.core.module.Module
 import kotlin.Result.Companion.failure
 import kotlin.jvm.JvmName
@@ -128,3 +128,14 @@ fun Flow<Map<RoomId, Flow<Room?>>>.flattenValues(
 internal inline fun <A, B> Result<A>.flatMap(transform: (value: A) -> Result<B>): Result<B> {
     return map(transform).fold({ it }, ::failure)
 }
+
+internal fun <T> Flow<T>.takeWhileInclusive(pred: suspend (T) -> Boolean): Flow<T> =
+    transformWhile { value ->
+        if (pred(value)) {
+            emit(value)
+            true
+        } else {
+            emit(value)
+            false
+        }
+    }

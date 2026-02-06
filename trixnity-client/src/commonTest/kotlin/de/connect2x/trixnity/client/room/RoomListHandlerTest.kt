@@ -1,11 +1,5 @@
 package de.connect2x.trixnity.client.room
 
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.TestScope
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import de.connect2x.trixnity.client.mocks.RoomServiceMock
@@ -29,6 +23,12 @@ import de.connect2x.trixnity.core.model.events.m.DirectEventContent
 import de.connect2x.trixnity.core.model.events.m.room.*
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.TestScope
 import kotlin.test.Test
 
 class RoomListHandlerTest : TrixnityBaseTest() {
@@ -772,7 +772,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     TimelineEvent(
                         event = MessageEvent(
                             content = RoomMessageEventContent.TextBased.Text(body = "hey"),
-                            id = EventId("2"),
+                            id = checkNotNull(room.lastEventId),
                             sender = user1,
                             roomId = roomId,
                             originTimestamp = 1L,
@@ -811,7 +811,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     TimelineEvent(
                         event = StateEvent(
                             MemberEventContent(membership = Membership.JOIN),
-                            id = EventId("1"),
+                            id = checkNotNull(room.lastEventId),
                             sender = user1,
                             roomId = roomId,
                             originTimestamp = 0L,
@@ -852,7 +852,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     TimelineEvent(
                         event = StateEvent(
                             AvatarEventContent(url = "mxc://server.local"),
-                            id = EventId("1"),
+                            id = checkNotNull(room.lastEventId),
                             sender = user1,
                             roomId = roomId,
                             originTimestamp = 0L,

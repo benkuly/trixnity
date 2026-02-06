@@ -1,8 +1,5 @@
 package de.connect2x.trixnity.client.room
 
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import de.connect2x.trixnity.client.mocks.RoomServiceMock
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.eventId
@@ -17,6 +14,9 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.TombstoneEventContent
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlin.test.Test
 
 class TimelineTest : TrixnityBaseTest() {
@@ -27,6 +27,7 @@ class TimelineTest : TrixnityBaseTest() {
 
     @Test
     fun `init » add events`() = runTest {
+        roomServiceMock.returnGetTimelineEventsDisableDrop = true
         roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
         roomServiceMock.returnGetTimelineEvents =
             flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
@@ -51,6 +52,7 @@ class TimelineTest : TrixnityBaseTest() {
 
     @Test
     fun `init » re-use events`() = runTest {
+        roomServiceMock.returnGetTimelineEventsDisableDrop = true
         roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
         roomServiceMock.returnGetTimelineEvents =
             flowOf(

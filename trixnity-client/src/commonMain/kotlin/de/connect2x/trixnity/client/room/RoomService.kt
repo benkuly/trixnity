@@ -2,8 +2,6 @@ package de.connect2x.trixnity.client.room
 
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.warn
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.CurrentSyncState
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.media.MediaService
@@ -33,6 +31,8 @@ import de.connect2x.trixnity.core.subscribeAsFlow
 import de.connect2x.trixnity.crypto.core.SecureRandom
 import de.connect2x.trixnity.utils.KeyedMutex
 import de.connect2x.trixnity.utils.nextString
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlin.reflect.KClass
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -577,22 +577,14 @@ class RoomServiceImpl(
 
         return flow {
             coroutineScope {
-                val deferredTimelineEvents = timelineEvents.map {
+                timelineEvents.map {
                     async {
                         getTimelineEvent(it.roomId, it.id) {
                             this.decryptionTimeout = decryptionTimeout
                         }
                     }
-                }
-
-                deferredTimelineEvents.forEach { deferredTimelineEvent ->
-                    // we must wait until TimelineEvent is saved into store
-                    val notNullTimelineEvent = deferredTimelineEvent.await().filterNotNull().first()
-                    val timelineEvent = withTimeoutOrNull(decryptionTimeout) {
-                        deferredTimelineEvent.await().filterNotNull().first { it.content != null }
-                    } ?: notNullTimelineEvent
-
-                    emit(timelineEvent)
+                }.forEach { deferredTimelineEvent ->
+                    emit(deferredTimelineEvent.await().filterNotNull().first { it.content != null })
                 }
             }
         }
