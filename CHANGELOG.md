@@ -9,11 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added missing animated parameter in MediaService.getThumbnail
-
 ### Changed
-
-- Updated notification calculation including unread marker based on lastRelevantEventId
 
 ### Deprecated
 
@@ -22,6 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## 5.1.0
+
+### Added
+
+- Added missing animated parameter in MediaService.getThumbnail
+- Added NotificationService::isUnread calculation
+
+### Changed
+
+- Updated notification calculation
 
 ## 5.0.4
 
