@@ -405,7 +405,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 lastRelevantEventId = null,
                 lastProcessedEventId = eventId(12),
                 expectedMaxNotificationCount = 3,
-                isRead = IsRead.TRUE,
+                isRead = IsRead.FALSE,
             )
         )
 
@@ -420,13 +420,33 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 lastRelevantEventId = null,
                 lastProcessedEventId = eventId(3),
                 expectedMaxNotificationCount = 3,
-                isRead = IsRead.TRUE,
+                isRead = IsRead.FALSE,
             )
         )
     }
 
     @Test
-    fun `SyncWithTimeline - notificationsDisabled - isRead needsCheck - TRUE`() = runTest {
+    fun `SyncWithTimeline - notificationsDisabled - isRead - delete notifications and remove state`() = runTest {
+        processNotificationStateWith(
+            notificationState = StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = true,
+                notificationsDisabled = true,
+                readReceipts = setOf(),
+                lastEventId = eventId(3),
+                lastRelevantEventId = null,
+                lastProcessedEventId = eventId(12),
+                expectedMaxNotificationCount = 3,
+                isRead = IsRead.TRUE,
+            )
+        )
+
+        notificationStore.getAll().first().values.map { it.first() } shouldBe listOf(notification2)
+        notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf()
+    }
+
+    @Test
+    fun `SyncWithTimeline - notificationsDisabled - isRead needsCheck - remove state`() = runTest {
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
@@ -440,19 +460,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 isRead = IsRead.FALSE_BUT_CHECK,
             )
         )
-        notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf(
-            StoredNotificationState.SyncWithTimeline(
-                roomId = roomId1,
-                needsSync = true,
-                notificationsDisabled = true,
-                readReceipts = setOf(),
-                lastEventId = eventId(3),
-                lastRelevantEventId = eventId(1),
-                lastProcessedEventId = eventId(3),
-                expectedMaxNotificationCount = 3,
-                isRead = IsRead.TRUE,
-            )
-        )
+        notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf()
     }
 
     @Test

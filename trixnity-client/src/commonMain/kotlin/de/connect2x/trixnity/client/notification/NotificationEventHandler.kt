@@ -321,12 +321,18 @@ class NotificationEventHandler(
                                 }
                             }.let { if (it == null || it.sender == userInfo.userId) IsRead.TRUE else IsRead.FALSE }
                         } else notificationState.isRead
-                    notificationStore.updateState(roomId) {
-                        if (it is StoredNotificationState.SyncWithTimeline) it.copy(
-                            lastProcessedEventId = notificationState.lastEventId,
-                            isRead = isRead,
-                        )
-                        else it
+                    notificationStore.updateState(roomId) { oldState ->
+                        when (oldState) {
+                            notificationState if isRead == IsRead.TRUE -> null
+                            is StoredNotificationState.SyncWithTimeline if oldState.lastProcessedEventId != null -> {
+                                oldState.copy(
+                                    lastProcessedEventId = notificationState.lastEventId,
+                                    isRead = isRead
+                                )
+                            }
+
+                            else -> oldState
+                        }
                     }
                 } else if (notificationState.needsProcess) {
                     log.debug { "notification processing with $notificationState" }
