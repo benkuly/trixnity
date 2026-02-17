@@ -1,0 +1,647 @@
+public final class de/connect2x/trixnity/libolm/MutableWrapper {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lde/connect2x/trixnity/libolm/MutableWrapper;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/libolm/MutableWrapper;Ljava/lang/Object;ILjava/lang/Object;)Lde/connect2x/trixnity/libolm/MutableWrapper;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public final fun setValue (Ljava/lang/Object;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/NativeSize : com/sun/jna/IntegerType {
+	public static final field Companion Lde/connect2x/trixnity/libolm/NativeSize$Companion;
+	public fun <init> ()V
+	public fun <init> (I)V
+	public synthetic fun <init> (JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun byteValue ()B
+	public final fun doubleValue ()D
+	public final fun floatValue ()F
+	public final fun intValue ()I
+	public final fun longValue ()J
+	public final fun shortValue ()S
+	public fun toByte ()B
+	public fun toDouble ()D
+	public fun toFloat ()F
+	public fun toInt ()I
+	public fun toLong ()J
+	public fun toShort ()S
+	public final fun toULong-s-VKNKU ()J
+}
+
+public final class de/connect2x/trixnity/libolm/NativeSize$Companion {
+	public final fun getZERO ()Lde/connect2x/trixnity/libolm/NativeSize;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmAccount : de/connect2x/trixnity/libolm/WantsToBeFree {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmAccount$Companion;
+	public final fun forgetOldFallbackKey ()V
+	public fun free ()V
+	public final fun generateFallbackKey ()V
+	public final fun generateOneTimeKeys (J)V
+	public final fun getIdentityKeys ()Lde/connect2x/trixnity/libolm/OlmIdentityKeys;
+	public final fun getMaxNumberOfOneTimeKeys ()J
+	public final fun getOneTimeKeys ()Lde/connect2x/trixnity/libolm/OlmOneTimeKeys;
+	public final fun getUnpublishedFallbackKey ()Lde/connect2x/trixnity/libolm/OlmOneTimeKeys;
+	public final fun markKeysAsPublished ()V
+	public final fun pickle (Ljava/lang/String;)Ljava/lang/String;
+	public final fun removeOneTimeKeys (Lde/connect2x/trixnity/libolm/OlmSession;)V
+	public final fun sign (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmAccount$Companion {
+	public final fun create ()Lde/connect2x/trixnity/libolm/OlmAccount;
+	public final fun unpickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmAccount;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmAccountPointer : com/sun/jna/PointerType {
+	public fun <init> ()V
+	public fun <init> (Lcom/sun/jna/Pointer;)V
+	public final fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmIdentityKeys {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmIdentityKeys$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmIdentityKeys;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/libolm/OlmIdentityKeys;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/libolm/OlmIdentityKeys;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurve25519 ()Ljava/lang/String;
+	public final fun getEd25519 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/libolm/OlmIdentityKeys$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/libolm/OlmIdentityKeys$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/libolm/OlmIdentityKeys;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/libolm/OlmIdentityKeys;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmIdentityKeys$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmInboundGroupMessage {
+	public fun <init> (Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun copy (Ljava/lang/String;J)Lde/connect2x/trixnity/libolm/OlmInboundGroupMessage;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/libolm/OlmInboundGroupMessage;Ljava/lang/String;JILjava/lang/Object;)Lde/connect2x/trixnity/libolm/OlmInboundGroupMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIndex ()J
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmInboundGroupSession : de/connect2x/trixnity/libolm/WantsToBeFree {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmInboundGroupSession$Companion;
+	public final fun decrypt (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmInboundGroupMessage;
+	public final fun export (J)Ljava/lang/String;
+	public fun free ()V
+	public final fun getFirstKnownIndex ()J
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun pickle (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmInboundGroupSession$Companion {
+	public final fun create (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;
+	public final fun import (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;
+	public final fun unpickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmInboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer : com/sun/jna/PointerType {
+	public fun <init> ()V
+	public fun <init> (Lcom/sun/jna/Pointer;)V
+	public final fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmLibrary {
+	public static final field INSTANCE Lde/connect2x/trixnity/libolm/OlmLibrary;
+	public final fun account ()Lde/connect2x/trixnity/libolm/OlmAccountPointer;
+	public final fun account_forget_old_fallback_key (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)V
+	public final fun account_generate_fallback_key-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B)J
+	public final fun account_generate_fallback_key_random_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun account_generate_one_time_keys-gWbjjBU (Lde/connect2x/trixnity/libolm/OlmAccountPointer;J[B)J
+	public final fun account_generate_one_time_keys_random_length-pml5SS0 (Lde/connect2x/trixnity/libolm/OlmAccountPointer;J)J
+	public final fun account_identity_keys-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B)J
+	public final fun account_identity_keys_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun account_last_error (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Ljava/lang/String;
+	public final fun account_mark_keys_as_published-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun account_max_number_of_one_time_keys-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun account_one_time_keys-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B)J
+	public final fun account_one_time_keys_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun account_sign-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B[B)J
+	public final fun account_signature_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun account_unpublished_fallback_key-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B)J
+	public final fun account_unpublished_fallback_key_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun clear_account-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun clear_inbound_group_session-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)J
+	public final fun clear_outbound_group_session-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)J
+	public final fun clear_pk_decryption-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;)J
+	public final fun clear_pk_encryption-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;)J
+	public final fun clear_pk_signing-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;)J
+	public final fun clear_sas-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSASPointer;)J
+	public final fun clear_session-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)J
+	public final fun clear_utility-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;)J
+	public final fun create_account-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B)J
+	public final fun create_account_random_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun create_inbound_session-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B)J
+	public final fun create_inbound_session_from-lY-8dp8 (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B[B)J
+	public final fun create_outbound_session-zW1G1bI (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B[B[B)J
+	public final fun create_outbound_session_random_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)J
+	public final fun create_sas-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmSASPointer;[B)J
+	public final fun create_sas_random_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSASPointer;)J
+	public final fun decrypt-jYgCChY (Lde/connect2x/trixnity/libolm/OlmSessionPointer;J[B[B)J
+	public final fun decrypt_max_plaintext_length-gWbjjBU (Lde/connect2x/trixnity/libolm/OlmSessionPointer;J[B)J
+	public final fun ed25519_verify-lY-8dp8 (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;[B[B[B)J
+	public final fun encrypt-lY-8dp8 (Lde/connect2x/trixnity/libolm/OlmSessionPointer;[B[B[B)J
+	public final fun encrypt_message_length-pml5SS0 (Lde/connect2x/trixnity/libolm/OlmSessionPointer;J)J
+	public final fun encrypt_message_type-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)J
+	public final fun encrypt_random_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)J
+	public final fun error-s-VKNKU ()J
+	public final fun export_inbound_group_session-bjDiAwQ (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;[BI)J
+	public final fun export_inbound_group_session_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)J
+	public final fun get_library_version (Lde/connect2x/trixnity/libolm/MutableWrapper;Lde/connect2x/trixnity/libolm/MutableWrapper;Lde/connect2x/trixnity/libolm/MutableWrapper;)V
+	public final fun group_decrypt-lY-8dp8 (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;[B[BLde/connect2x/trixnity/libolm/MutableWrapper;)J
+	public final fun group_decrypt_max_plaintext_length-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;[B)J
+	public final fun group_encrypt-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;[B[B)J
+	public final fun group_encrypt_message_length-pml5SS0 (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;J)J
+	public final fun import_inbound_group_session-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;[B)J
+	public final fun inbound_group_session ()Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;
+	public final fun inbound_group_session_first_known_index-OGnWXxg (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)I
+	public final fun inbound_group_session_id-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;[B)J
+	public final fun inbound_group_session_id_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)J
+	public final fun inbound_group_session_is_verified (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)I
+	public final fun inbound_group_session_last_error (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)Ljava/lang/String;
+	public final fun init_inbound_group_session-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;[B)J
+	public final fun init_outbound_group_session-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;[B)J
+	public final fun init_outbound_group_session_random_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)J
+	public final fun matches_inbound_session-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmSessionPointer;[B)J
+	public final fun matches_inbound_session_from-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmSessionPointer;[B[B)J
+	public final fun outbound_group_session ()Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;
+	public final fun outbound_group_session_id-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;[B)J
+	public final fun outbound_group_session_id_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)J
+	public final fun outbound_group_session_key-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;[B)J
+	public final fun outbound_group_session_key_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)J
+	public final fun outbound_group_session_last_error (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)Ljava/lang/String;
+	public final fun outbound_group_session_message_index-OGnWXxg (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)I
+	public final fun pickle_account-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B[B)J
+	public final fun pickle_account_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)J
+	public final fun pickle_inbound_group_session-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;[B[B)J
+	public final fun pickle_inbound_group_session_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)J
+	public final fun pickle_outbound_group_session-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;[B[B)J
+	public final fun pickle_outbound_group_session_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)J
+	public final fun pickle_pk_decryption-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;[B[B)J
+	public final fun pickle_pk_decryption_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;)J
+	public final fun pickle_session-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmSessionPointer;[B[B)J
+	public final fun pickle_session_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)J
+	public final fun pk_ciphertext_length-pml5SS0 (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;J)J
+	public final fun pk_decrypt-zW1G1bI (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;[B[B[B[B)J
+	public final fun pk_decryption ()Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;
+	public final fun pk_decryption_last_error (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;)Ljava/lang/String;
+	public final fun pk_encrypt-xlqwkPw (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;[B[B[B[B[B)J
+	public final fun pk_encrypt_random_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;)J
+	public final fun pk_encryption ()Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;
+	public final fun pk_encryption_last_error (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;)Ljava/lang/String;
+	public final fun pk_encryption_set_recipient_key-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;[B)J
+	public final fun pk_get_private_key-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;[B)J
+	public final fun pk_key_from_private-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;[B[B)J
+	public final fun pk_key_length-s-VKNKU ()J
+	public final fun pk_mac_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;)J
+	public final fun pk_max_plaintext_length-pml5SS0 (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;J)J
+	public final fun pk_private_key_length-s-VKNKU ()J
+	public final fun pk_sign-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;[B[B)J
+	public final fun pk_signature_length-s-VKNKU ()J
+	public final fun pk_signing ()Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;
+	public final fun pk_signing_key_from_seed-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;[B[B)J
+	public final fun pk_signing_last_error (Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;)Ljava/lang/String;
+	public final fun pk_signing_public_key_length-s-VKNKU ()J
+	public final fun pk_signing_seed_length-s-VKNKU ()J
+	public final fun remove_one_time_keys-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lde/connect2x/trixnity/libolm/OlmSessionPointer;)J
+	public final fun sas ()Lde/connect2x/trixnity/libolm/OlmSASPointer;
+	public final fun sas_calculate_mac-lY-8dp8 (Lde/connect2x/trixnity/libolm/OlmSASPointer;[B[B[B)J
+	public final fun sas_calculate_mac_ULong_kdf-lY-8dp8 (Lde/connect2x/trixnity/libolm/OlmSASPointer;[B[B[B)J
+	public final fun sas_calculate_mac_fixed_base64-lY-8dp8 (Lde/connect2x/trixnity/libolm/OlmSASPointer;[B[B[B)J
+	public final fun sas_generate_bytes-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmSASPointer;[B[B)J
+	public final fun sas_get_pubkey-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmSASPointer;[B)J
+	public final fun sas_is_their_key_set (Lde/connect2x/trixnity/libolm/OlmSASPointer;)I
+	public final fun sas_last_error (Lde/connect2x/trixnity/libolm/OlmSASPointer;)Ljava/lang/String;
+	public final fun sas_mac_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSASPointer;)J
+	public final fun sas_pubkey_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSASPointer;)J
+	public final fun sas_set_their_key-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmSASPointer;[B)J
+	public final fun session ()Lde/connect2x/trixnity/libolm/OlmSessionPointer;
+	public final fun session_describe (Lde/connect2x/trixnity/libolm/OlmSessionPointer;[B)V
+	public final fun session_has_received_message (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)I
+	public final fun session_id-ZIaKswc (Lde/connect2x/trixnity/libolm/OlmSessionPointer;[B)J
+	public final fun session_id_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)J
+	public final fun session_last_error (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)Ljava/lang/String;
+	public final fun sha256-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;[B[B)J
+	public final fun sha256_length-I7RO_PI (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;)J
+	public final fun unpickle_account-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmAccountPointer;[B[B)J
+	public final fun unpickle_inbound_group_session-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;[B[B)J
+	public final fun unpickle_outbound_group_session-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;[B[B)J
+	public final fun unpickle_pk_decryption-lY-8dp8 (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;[B[B[B)J
+	public final fun unpickle_session-qJGtvoU (Lde/connect2x/trixnity/libolm/OlmSessionPointer;[B[B)J
+	public final fun utility ()Lde/connect2x/trixnity/libolm/OlmUtilityPointer;
+	public final fun utility_last_error (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmLibraryException : java/lang/IllegalStateException {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmLibraryWrapper : com/sun/jna/Library {
+	public static final field INSTANCE Lde/connect2x/trixnity/libolm/OlmLibraryWrapper;
+	public final fun olm_account (Lcom/sun/jna/Pointer;)Lde/connect2x/trixnity/libolm/OlmAccountPointer;
+	public final fun olm_account_forget_old_fallback_key (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)V
+	public final fun olm_account_generate_fallback_key (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_generate_fallback_key_random_length (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_generate_one_time_keys (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_generate_one_time_keys_random_length (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_identity_keys (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_identity_keys_length (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_last_error (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Ljava/lang/String;
+	public final fun olm_account_mark_keys_as_published (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_max_number_of_one_time_keys (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_one_time_keys (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_one_time_keys_length (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_sign (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_signature_length (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_size ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_unpublished_fallback_key (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_account_unpublished_fallback_key_length (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_clear_account (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_clear_inbound_group_session (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_clear_outbound_group_session (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_clear_pk_decryption (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_clear_pk_encryption (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_clear_pk_signing (Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_clear_sas (Lde/connect2x/trixnity/libolm/OlmSASPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_clear_session (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_clear_utility (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_create_account (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_create_account_random_length (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_create_inbound_session (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_create_inbound_session_from (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_create_outbound_session (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_create_outbound_session_random_length (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_create_sas (Lde/connect2x/trixnity/libolm/OlmSASPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_create_sas_random_length (Lde/connect2x/trixnity/libolm/OlmSASPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_decrypt (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_decrypt_max_plaintext_length (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_ed25519_verify (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_encrypt (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_encrypt_message_length (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_encrypt_message_type (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_encrypt_random_length (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_error ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_export_inbound_group_session (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;I)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_export_inbound_group_session_length (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_get_library_version (Lcom/sun/jna/ptr/IntByReference;Lcom/sun/jna/ptr/IntByReference;Lcom/sun/jna/ptr/IntByReference;)V
+	public final fun olm_group_decrypt (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/ptr/IntByReference;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_group_decrypt_max_plaintext_length (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_group_encrypt (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_group_encrypt_message_length (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_import_inbound_group_session (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_inbound_group_session (Lcom/sun/jna/Pointer;)Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;
+	public final fun olm_inbound_group_session_first_known_index (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)I
+	public final fun olm_inbound_group_session_id (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_inbound_group_session_id_length (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_inbound_group_session_is_verified (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)I
+	public final fun olm_inbound_group_session_last_error (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)Ljava/lang/String;
+	public final fun olm_inbound_group_session_size ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_init_inbound_group_session (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_init_outbound_group_session (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_init_outbound_group_session_random_length (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_matches_inbound_session (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_matches_inbound_session_from (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_outbound_group_session (Lcom/sun/jna/Pointer;)Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;
+	public final fun olm_outbound_group_session_id (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_outbound_group_session_id_length (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_outbound_group_session_key (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_outbound_group_session_key_length (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_outbound_group_session_last_error (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)Ljava/lang/String;
+	public final fun olm_outbound_group_session_message_index (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)I
+	public final fun olm_outbound_group_session_size ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_account (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_account_length (Lde/connect2x/trixnity/libolm/OlmAccountPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_inbound_group_session (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_inbound_group_session_length (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_outbound_group_session (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_outbound_group_session_length (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_pk_decryption (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_pk_decryption_length (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_session (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pickle_session_length (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_ciphertext_length (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_decrypt (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_decryption (Lcom/sun/jna/Pointer;)Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;
+	public final fun olm_pk_decryption_last_error (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;)Ljava/lang/String;
+	public final fun olm_pk_decryption_size ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_encrypt (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_encrypt_random_length (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_encryption (Lcom/sun/jna/Pointer;)Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;
+	public final fun olm_pk_encryption_last_error (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;)Ljava/lang/String;
+	public final fun olm_pk_encryption_set_recipient_key (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_encryption_size ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_get_private_key (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_key_from_private (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_key_length ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_mac_length (Lde/connect2x/trixnity/libolm/OlmPkEncryptionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_max_plaintext_length (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_private_key_length ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_sign (Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_signature_length ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_signing (Lcom/sun/jna/Pointer;)Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;
+	public final fun olm_pk_signing_key_from_seed (Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_signing_last_error (Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;)Ljava/lang/String;
+	public final fun olm_pk_signing_public_key_length ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_signing_seed_length ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_pk_signing_size ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_remove_one_time_keys (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lde/connect2x/trixnity/libolm/OlmSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sas (Lcom/sun/jna/Pointer;)Lde/connect2x/trixnity/libolm/OlmSASPointer;
+	public final fun olm_sas_calculate_mac (Lde/connect2x/trixnity/libolm/OlmSASPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sas_calculate_mac_fixed_base64 (Lde/connect2x/trixnity/libolm/OlmSASPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sas_calculate_mac_long_kdf (Lde/connect2x/trixnity/libolm/OlmSASPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sas_generate_bytes (Lde/connect2x/trixnity/libolm/OlmSASPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sas_get_pubkey (Lde/connect2x/trixnity/libolm/OlmSASPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sas_is_their_key_set (Lde/connect2x/trixnity/libolm/OlmSASPointer;)I
+	public final fun olm_sas_last_error (Lde/connect2x/trixnity/libolm/OlmSASPointer;)Ljava/lang/String;
+	public final fun olm_sas_mac_length (Lde/connect2x/trixnity/libolm/OlmSASPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sas_pubkey_length (Lde/connect2x/trixnity/libolm/OlmSASPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sas_set_their_key (Lde/connect2x/trixnity/libolm/OlmSASPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sas_size ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_session (Lcom/sun/jna/Pointer;)Lde/connect2x/trixnity/libolm/OlmSessionPointer;
+	public final fun olm_session_describe (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)V
+	public final fun olm_session_has_received_message (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)I
+	public final fun olm_session_id (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_session_id_length (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_session_last_error (Lde/connect2x/trixnity/libolm/OlmSessionPointer;)Ljava/lang/String;
+	public final fun olm_session_size ()Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sha256 (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_sha256_length (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_unpickle_account (Lde/connect2x/trixnity/libolm/OlmAccountPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_unpickle_inbound_group_session (Lde/connect2x/trixnity/libolm/OlmInboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_unpickle_outbound_group_session (Lde/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_unpickle_pk_decryption (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_unpickle_session (Lde/connect2x/trixnity/libolm/OlmSessionPointer;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;Lcom/sun/jna/Pointer;Lde/connect2x/trixnity/libolm/NativeSize;)Lde/connect2x/trixnity/libolm/NativeSize;
+	public final fun olm_utility (Lcom/sun/jna/Pointer;)Lde/connect2x/trixnity/libolm/OlmUtilityPointer;
+	public final fun olm_utility_last_error (Lde/connect2x/trixnity/libolm/OlmUtilityPointer;)Ljava/lang/String;
+	public final fun olm_utility_size ()Lde/connect2x/trixnity/libolm/NativeSize;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmMessage {
+	public fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;
+	public final fun copy (Ljava/lang/String;Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;)Lde/connect2x/trixnity/libolm/OlmMessage;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/libolm/OlmMessage;Ljava/lang/String;Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;ILjava/lang/Object;)Lde/connect2x/trixnity/libolm/OlmMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCipherText ()Ljava/lang/String;
+	public final fun getType ()Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmMessage$OlmMessageType : java/lang/Enum {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType$Companion;
+	public static final field INITIAL_PRE_KEY Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;
+	public static final field ORDINARY Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()I
+	public static fun valueOf (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;
+	public static fun values ()[Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmMessage$OlmMessageType$Companion {
+	public final fun of (I)Lde/connect2x/trixnity/libolm/OlmMessage$OlmMessageType;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmOneTimeKeys {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmOneTimeKeys$Companion;
+	public fun <init> (Ljava/util/Map;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lde/connect2x/trixnity/libolm/OlmOneTimeKeys;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/libolm/OlmOneTimeKeys;Ljava/util/Map;ILjava/lang/Object;)Lde/connect2x/trixnity/libolm/OlmOneTimeKeys;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurve25519 ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/libolm/OlmOneTimeKeys$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/libolm/OlmOneTimeKeys$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/libolm/OlmOneTimeKeys;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/libolm/OlmOneTimeKeys;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmOneTimeKeys$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmOutboundGroupSession : de/connect2x/trixnity/libolm/WantsToBeFree {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession$Companion;
+	public final fun encrypt (Ljava/lang/String;)Ljava/lang/String;
+	public fun free ()V
+	public final fun getMessageIndex ()J
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getSessionKey ()Ljava/lang/String;
+	public final fun pickle (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmOutboundGroupSession$Companion {
+	public final fun create ()Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;
+	public final fun unpickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmOutboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmOutboundGroupSessionPointer : com/sun/jna/PointerType {
+	public fun <init> ()V
+	public fun <init> (Lcom/sun/jna/Pointer;)V
+	public final fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkDecryption : de/connect2x/trixnity/libolm/WantsToBeFree {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmPkDecryption$Companion;
+	public synthetic fun <init> (Lde/connect2x/trixnity/libolm/OlmPkDecryptionPointer;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun decrypt (Lde/connect2x/trixnity/libolm/OlmPkMessage;)Ljava/lang/String;
+	public fun free ()V
+	public final fun getPrivateKey ()Ljava/lang/String;
+	public final fun getPublicKey ()Ljava/lang/String;
+	public final fun pickle (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkDecryption$Companion {
+	public final fun create (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public static synthetic fun create$default (Lde/connect2x/trixnity/libolm/OlmPkDecryption$Companion;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+	public final fun unpickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkDecryption;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkDecryptionPointer : com/sun/jna/PointerType {
+	public fun <init> ()V
+	public fun <init> (Lcom/sun/jna/Pointer;)V
+	public final fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkEncryption : de/connect2x/trixnity/libolm/WantsToBeFree {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmPkEncryption$Companion;
+	public final fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkMessage;
+	public fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkEncryption$Companion {
+	public final fun create (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkEncryption;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkEncryptionPointer : com/sun/jna/PointerType {
+	public fun <init> ()V
+	public fun <init> (Lcom/sun/jna/Pointer;)V
+	public final fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkMessage {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkMessage;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/libolm/OlmPkMessage;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/libolm/OlmPkMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCipherText ()Ljava/lang/String;
+	public final fun getEphemeralKey ()Ljava/lang/String;
+	public final fun getMac ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkSigning : de/connect2x/trixnity/libolm/WantsToBeFree {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmPkSigning$Companion;
+	public synthetic fun <init> (Lde/connect2x/trixnity/libolm/OlmPkSigningPointer;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun free ()V
+	public final fun getPrivateKey ()Ljava/lang/String;
+	public final fun getPublicKey ()Ljava/lang/String;
+	public final fun sign (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkSigning$Companion {
+	public final fun create (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmPkSigning;
+	public static synthetic fun create$default (Lde/connect2x/trixnity/libolm/OlmPkSigning$Companion;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/libolm/OlmPkSigning;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmPkSigningPointer : com/sun/jna/PointerType {
+	public fun <init> ()V
+	public fun <init> (Lcom/sun/jna/Pointer;)V
+	public final fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmSAS : de/connect2x/trixnity/libolm/WantsToBeFree {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmSAS$Companion;
+	public final fun calculateMac (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public final fun calculateMacFixedBase64 (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun free ()V
+	public final fun generateShortCode (Ljava/lang/String;I)[B
+	public final fun getPublicKey ()Ljava/lang/String;
+	public final fun setTheirPublicKey (Ljava/lang/String;)V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmSAS$Companion {
+	public final fun create ()Lde/connect2x/trixnity/libolm/OlmSAS;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmSASPointer : com/sun/jna/PointerType {
+	public fun <init> ()V
+	public fun <init> (Lcom/sun/jna/Pointer;)V
+	public final fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmSession : de/connect2x/trixnity/libolm/WantsToBeFree {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmSession$Companion;
+	public final fun decrypt (Lde/connect2x/trixnity/libolm/OlmMessage;)Ljava/lang/String;
+	public final fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmMessage;
+	public fun free ()V
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getHasReceivedMessage ()Z
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun matchesInboundSession (Ljava/lang/String;)Z
+	public final fun matchesInboundSessionFrom (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun pickle (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmSession$Companion {
+	public final fun createInbound (Lde/connect2x/trixnity/libolm/OlmAccount;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmSession;
+	public final fun createInboundFrom (Lde/connect2x/trixnity/libolm/OlmAccount;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmSession;
+	public final fun createOutbound (Lde/connect2x/trixnity/libolm/OlmAccount;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmSession;
+	public final fun unpickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/libolm/OlmSession;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmSessionPointer : com/sun/jna/PointerType {
+	public fun <init> ()V
+	public fun <init> (Lcom/sun/jna/Pointer;)V
+	public final fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmUtility : de/connect2x/trixnity/libolm/WantsToBeFree {
+	public static final field Companion Lde/connect2x/trixnity/libolm/OlmUtility$Companion;
+	public fun free ()V
+	public final fun sha256 (Ljava/lang/String;)Ljava/lang/String;
+	public final fun sha256 ([B)Ljava/lang/String;
+	public final fun verifyEd25519 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmUtility$Companion {
+	public final fun create ()Lde/connect2x/trixnity/libolm/OlmUtility;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmUtilityPointer : com/sun/jna/PointerType {
+	public fun <init> ()V
+	public fun <init> (Lcom/sun/jna/Pointer;)V
+	public final fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/OlmVersion {
+	public fun <init> (III)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun copy (III)Lde/connect2x/trixnity/libolm/OlmVersion;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/libolm/OlmVersion;IIIILjava/lang/Object;)Lde/connect2x/trixnity/libolm/OlmVersion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMajor ()I
+	public final fun getMinor ()I
+	public final fun getPatch ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/libolm/OlmVersion_olmLibraryKt {
+	public static final fun getOlmVersion ()Lde/connect2x/trixnity/libolm/OlmVersion;
+}
+
+public abstract interface class de/connect2x/trixnity/libolm/WantsToBeFree {
+	public abstract fun free ()V
+}
+
+public final class de/connect2x/trixnity/libolm/WantsToBeFreeKt {
+	public static final fun freeAfter (Lde/connect2x/trixnity/libolm/WantsToBeFree;Lde/connect2x/trixnity/libolm/WantsToBeFree;Lde/connect2x/trixnity/libolm/WantsToBeFree;Lde/connect2x/trixnity/libolm/WantsToBeFree;Lkotlin/jvm/functions/Function4;)Ljava/lang/Object;
+	public static final fun freeAfter (Lde/connect2x/trixnity/libolm/WantsToBeFree;Lde/connect2x/trixnity/libolm/WantsToBeFree;Lde/connect2x/trixnity/libolm/WantsToBeFree;Lkotlin/jvm/functions/Function3;)Ljava/lang/Object;
+	public static final fun freeAfter (Lde/connect2x/trixnity/libolm/WantsToBeFree;Lde/connect2x/trixnity/libolm/WantsToBeFree;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public static final fun freeAfter (Lde/connect2x/trixnity/libolm/WantsToBeFree;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+

@@ -1,0 +1,769 @@
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/VodozemacCryptoDriver : de/connect2x/trixnity/crypto/driver/CryptoDriver {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/VodozemacCryptoDriver;
+	public synthetic fun getKey ()Lde/connect2x/trixnity/crypto/driver/keys/KeyFactories;
+	public fun getKey ()Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacKeyFactory;
+	public synthetic fun getMegolm ()Lde/connect2x/trixnity/crypto/driver/megolm/MegolmFactory;
+	public fun getMegolm ()Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacMegolmFactory;
+	public synthetic fun getOlm ()Lde/connect2x/trixnity/crypto/driver/olm/OlmFactory;
+	public fun getOlm ()Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacOlmFactory;
+	public synthetic fun getPk ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkFactory;
+	public fun getPk ()Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkFactory;
+	public synthetic fun getSas ()Lde/connect2x/trixnity/crypto/driver/sas/SasFactory;
+	public fun getSas ()Lde/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacSasFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519PublicKey : de/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519PublicKey;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519PublicKeyFactory : de/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519PublicKeyFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun invoke-75EsvXA (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public fun invoke-75EsvXA ([B)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519SecretKey : de/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519SecretKey;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+	public synthetic fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getPublicKey-XdylcFo ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public static fun getPublicKey-XdylcFo (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519SecretKeyFactory : de/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519SecretKeyFactory;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public fun invoke-UqXB8ZM ()Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+	public fun invoke-s73LKrc (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+	public fun invoke-s73LKrc ([B)Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519PublicKey : de/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519PublicKey;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;)Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public fun verify (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;)V
+	public static fun verify-impl (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;)V
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519PublicKeyFactory : de/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519PublicKeyFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public fun invoke-s883uWs (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public fun invoke-s883uWs ([B)Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519SecretKey : de/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;)Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519SecretKey;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;)Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;
+	public synthetic fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public fun getPublicKey-Q9d91wk ()Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public static fun getPublicKey-Q9d91wk (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;)Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;)I
+	public synthetic fun sign (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public static fun sign-ijQ4GSQ (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public fun sign-ijQ4GSQ (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519SecretKeyFactory : de/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519SecretKeyFactory;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKey;
+	public fun invoke-POJ8arE (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;
+	public fun invoke-POJ8arE ([B)Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;
+	public fun invoke-dWojnWk ()Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519Signature : de/connect2x/trixnity/crypto/driver/keys/Ed25519Signature {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/Ed25519Signature;)Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519Signature;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/Ed25519Signature;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/Ed25519Signature;)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/Ed25519Signature;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/Ed25519Signature;Lde/connect2x/trixnity/vodozemac/Ed25519Signature;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/Ed25519Signature;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/Ed25519Signature;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/Ed25519Signature;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/Ed25519Signature;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519SignatureFactory : de/connect2x/trixnity/crypto/driver/keys/Ed25519SignatureFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519SignatureFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public fun invoke-ijQ4GSQ (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public fun invoke-ijQ4GSQ ([B)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacKeyFactory : de/connect2x/trixnity/crypto/driver/keys/KeyFactories {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacKeyFactory;
+	public synthetic fun getCurve25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKeyFactory;
+	public fun getCurve25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519PublicKeyFactory;
+	public synthetic fun getCurve25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKeyFactory;
+	public fun getCurve25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacCurve25519SecretKeyFactory;
+	public synthetic fun getEd25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKeyFactory;
+	public fun getEd25519PublicKey ()Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519PublicKeyFactory;
+	public synthetic fun getEd25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SecretKeyFactory;
+	public fun getEd25519SecretKey ()Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519SecretKeyFactory;
+	public synthetic fun getEd25519Signature ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519SignatureFactory;
+	public fun getEd25519Signature ()Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacEd25519SignatureFactory;
+	public synthetic fun getPickleKey ()Lde/connect2x/trixnity/crypto/driver/keys/PickleKeyFactory;
+	public fun getPickleKey ()Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacPickleKeyFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacPickleKey : de/connect2x/trixnity/crypto/driver/keys/PickleKey {
+	public static final synthetic fun box-impl ([B)Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacPickleKey;
+	public static fun constructor-impl ([B)[B
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl ([BLjava/lang/Object;)Z
+	public static final fun equals-impl0 ([B[B)Z
+	public final fun getInner-E_bwHFE ()[B
+	public fun hashCode ()I
+	public static fun hashCode-impl ([B)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl ([B)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()[B
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacPickleKeyFactory : de/connect2x/trixnity/crypto/driver/keys/PickleKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/keys/VodozemacPickleKeyFactory;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;
+	public fun invoke-2TM1NzM ()[B
+	public fun invoke-plzsH-k (Ljava/lang/String;)[B
+	public fun invoke-plzsH-k ([B)[B
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacExportedSessionKey : de/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;)Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacExportedSessionKey;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;)Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacExportedSessionKeyFactory : de/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacExportedSessionKeyFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public fun invoke-4T064gk (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+	public fun invoke-4T064gk ([B)Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacGroupSession : de/connect2x/trixnity/crypto/driver/megolm/GroupSession {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;)Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacGroupSession;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;)Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+	public synthetic fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;
+	public static fun encrypt-Id7C5iU (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+	public fun encrypt-Id7C5iU (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;)Z
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+	public fun getMessageIndex ()I
+	public static fun getMessageIndex-impl (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;)I
+	public fun getSessionId ()Ljava/lang/String;
+	public static fun getSessionId-impl (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;)Ljava/lang/String;
+	public synthetic fun getSessionKey ()Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+	public fun getSessionKey-7Dka_kA ()Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+	public static fun getSessionKey-7Dka_kA (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;)Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;)I
+	public fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static fun pickle-impl (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacGroupSessionFactory : de/connect2x/trixnity/crypto/driver/megolm/GroupSessionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacGroupSessionFactory;
+	public synthetic fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;
+	public fun fromPickle-xXmz3fI (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/megolm/GroupSession;
+	public fun invoke-JXGT18A ()Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacInboundGroupSession : de/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacInboundGroupSession;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public fun decrypt (Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DecryptedMessage;
+	public static fun decrypt-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession$DecryptedMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)Z
+	public synthetic fun exportAt (I)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public fun exportAt-h97E8Mk (I)Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+	public static fun exportAt-h97E8Mk (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;I)Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+	public fun exportAtFirstKnownIndex ()Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public static fun exportAtFirstKnownIndex-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;
+	public fun getFirstKnownIndex ()I
+	public static fun getFirstKnownIndex-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)I
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public fun getSessionId ()Ljava/lang/String;
+	public static fun getSessionId-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)I
+	public fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static fun pickle-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacInboundGroupSessionFactory : de/connect2x/trixnity/crypto/driver/megolm/InboundGroupSessionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacInboundGroupSessionFactory;
+	public synthetic fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+	public fun fromPickle-ghFDDxE (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public synthetic fun import (Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+	public fun import-vlltKm0 (Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKey;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public synthetic fun invoke (Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;)Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSession;
+	public fun invoke-vlltKm0 (Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacMegolmFactory : de/connect2x/trixnity/crypto/driver/megolm/MegolmFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacMegolmFactory;
+	public synthetic fun getExportedSessionKey ()Lde/connect2x/trixnity/crypto/driver/megolm/ExportedSessionKeyFactory;
+	public fun getExportedSessionKey ()Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacExportedSessionKeyFactory;
+	public synthetic fun getGroupSession ()Lde/connect2x/trixnity/crypto/driver/megolm/GroupSessionFactory;
+	public fun getGroupSession ()Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacGroupSessionFactory;
+	public synthetic fun getInboundGroupSession ()Lde/connect2x/trixnity/crypto/driver/megolm/InboundGroupSessionFactory;
+	public fun getInboundGroupSession ()Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacInboundGroupSessionFactory;
+	public synthetic fun getMessage ()Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessageFactory;
+	public fun getMessage ()Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacMegolmMessageFactory;
+	public synthetic fun getSessionKey ()Lde/connect2x/trixnity/crypto/driver/megolm/SessionKeyFactory;
+	public fun getSessionKey ()Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacSessionKeyFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacMegolmMessage : de/connect2x/trixnity/crypto/driver/megolm/MegolmMessage {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;)Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacMegolmMessage;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacMegolmMessageFactory : de/connect2x/trixnity/crypto/driver/megolm/MegolmMessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacMegolmMessageFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/megolm/MegolmMessage;
+	public fun invoke-Id7C5iU (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+	public fun invoke-Id7C5iU ([B)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacSessionKey : de/connect2x/trixnity/crypto/driver/megolm/SessionKey {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;)Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacSessionKey;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;)Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacSessionKeyFactory : de/connect2x/trixnity/crypto/driver/megolm/SessionKeyFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/megolm/VodozemacSessionKeyFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/megolm/SessionKey;
+	public fun invoke-wKfsuh4 (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+	public fun invoke-wKfsuh4 ([B)Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount : de/connect2x/trixnity/crypto/driver/olm/Account {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)Lde/connect2x/trixnity/vodozemac/olm/Account;
+	public synthetic fun createInboundSession (Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult;
+	public fun createInboundSession (Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$InboundSessionCreationResult;
+	public static fun createInboundSession-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$InboundSessionCreationResult;
+	public fun createOutboundSession (Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public static fun createOutboundSession-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public fun dehydrate (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/DehydratedDevice;
+	public static fun dehydrate-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/DehydratedDevice;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/olm/Account;Lde/connect2x/trixnity/vodozemac/olm/Account;)Z
+	public fun forgetFallbackKey ()V
+	public static fun forgetFallbackKey-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)V
+	public synthetic fun generateFallbackKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun generateFallbackKey-u1dE_8A ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public static fun generateFallbackKey-u1dE_8A (Lde/connect2x/trixnity/vodozemac/olm/Account;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public synthetic fun generateOneTimeKeys (I)Lde/connect2x/trixnity/crypto/driver/olm/Account$OneTimeKeyGenerationResult;
+	public fun generateOneTimeKeys (I)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$OneTimeKeyGenerationResult;
+	public static fun generateOneTimeKeys-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;I)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$OneTimeKeyGenerationResult;
+	public synthetic fun getCurve25519Key ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getCurve25519Key-XdylcFo ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public static fun getCurve25519Key-XdylcFo (Lde/connect2x/trixnity/vodozemac/olm/Account;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public synthetic fun getEd25519Key ()Lde/connect2x/trixnity/crypto/driver/keys/Ed25519PublicKey;
+	public fun getEd25519Key-Q9d91wk ()Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public static fun getEd25519Key-Q9d91wk (Lde/connect2x/trixnity/vodozemac/olm/Account;)Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public fun getFallbackKey ()Lkotlin/Pair;
+	public static fun getFallbackKey-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)Lkotlin/Pair;
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/olm/Account;
+	public fun getMaxNumberOfOneTimeKeys ()I
+	public static fun getMaxNumberOfOneTimeKeys-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)I
+	public fun getOneTimeKeys ()Ljava/util/Map;
+	public static fun getOneTimeKeys-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)Ljava/util/Map;
+	public fun getStoredOneTimeKeyCount ()I
+	public static fun getStoredOneTimeKeyCount-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)I
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)I
+	public fun markKeysAsPublished ()V
+	public static fun markKeysAsPublished-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)V
+	public fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static fun pickle-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public synthetic fun sign (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/keys/Ed25519Signature;
+	public static fun sign-ijQ4GSQ (Lde/connect2x/trixnity/vodozemac/olm/Account;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public fun sign-ijQ4GSQ (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/olm/Account;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/olm/Account;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$InboundSessionCreationResult : de/connect2x/trixnity/crypto/driver/olm/Account$InboundSessionCreationResult {
+	public synthetic fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/vodozemac/olm/Session;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public synthetic fun component2 ()Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public final fun component2-jTR5RvU ()Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public final fun copy-0V_Qdy4 (Ljava/lang/String;Lde/connect2x/trixnity/vodozemac/olm/Session;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$InboundSessionCreationResult;
+	public static synthetic fun copy-0V_Qdy4$default (Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$InboundSessionCreationResult;Ljava/lang/String;Lde/connect2x/trixnity/vodozemac/olm/Session;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$InboundSessionCreationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getPlaintext ()Ljava/lang/String;
+	public synthetic fun getSession ()Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public fun getSession-jTR5RvU ()Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$OneTimeKeyGenerationResult : de/connect2x/trixnity/crypto/driver/olm/Account$OneTimeKeyGenerationResult {
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;Ljava/util/List;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$OneTimeKeyGenerationResult;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$OneTimeKeyGenerationResult;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccount$OneTimeKeyGenerationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCreated ()Ljava/util/List;
+	public fun getRemoved ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccountFactory : de/connect2x/trixnity/crypto/driver/olm/AccountFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccountFactory;
+	public synthetic fun fromDehydratedDevice (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/Account;
+	public fun fromDehydratedDevice-g0QnPCw (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/vodozemac/olm/Account;
+	public synthetic fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/Account;
+	public fun fromPickle-PSz18uw (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/vodozemac/olm/Account;
+	public fun getDehydratedDevicesSupported ()Z
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/olm/Account;
+	public fun invoke-e1DTegA ()Lde/connect2x/trixnity/vodozemac/olm/Account;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacMessageFactory : de/connect2x/trixnity/crypto/driver/olm/MessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacMessageFactory;
+	public synthetic fun getNormal ()Lde/connect2x/trixnity/crypto/driver/olm/NormalMessageFactory;
+	public fun getNormal ()Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacNormalMessageFactory;
+	public synthetic fun getPreKey ()Lde/connect2x/trixnity/crypto/driver/olm/PreKeyMessageFactory;
+	public fun getPreKey ()Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacPreKeyMessageFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacNormalMessage : de/connect2x/trixnity/crypto/driver/olm/Message$Normal {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacNormalMessage;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacNormalMessageFactory : de/connect2x/trixnity/crypto/driver/olm/NormalMessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacNormalMessageFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message$Normal;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/olm/Message$Normal;
+	public fun invoke-O1z6NI8 (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;
+	public fun invoke-O1z6NI8 ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacOlmFactory : de/connect2x/trixnity/crypto/driver/olm/OlmFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacOlmFactory;
+	public synthetic fun getAccount ()Lde/connect2x/trixnity/crypto/driver/olm/AccountFactory;
+	public fun getAccount ()Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacAccountFactory;
+	public synthetic fun getMessage ()Lde/connect2x/trixnity/crypto/driver/olm/MessageFactory;
+	public fun getMessage ()Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacMessageFactory;
+	public synthetic fun getSession ()Lde/connect2x/trixnity/crypto/driver/olm/SessionFactory;
+	public fun getSession ()Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacSessionFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacPreKeyMessage : de/connect2x/trixnity/crypto/driver/olm/Message$PreKey {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacPreKeyMessage;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacPreKeyMessageFactory : de/connect2x/trixnity/crypto/driver/olm/PreKeyMessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacPreKeyMessageFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/olm/Message$PreKey;
+	public fun invoke-ygv3o3o (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;
+	public fun invoke-ygv3o3o ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacSession : de/connect2x/trixnity/crypto/driver/olm/Session {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;)Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacSession;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;)Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public fun decrypt (Lde/connect2x/trixnity/crypto/driver/olm/Message;)Ljava/lang/String;
+	public static fun decrypt-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;Lde/connect2x/trixnity/crypto/driver/olm/Message;)Ljava/lang/String;
+	public fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message;
+	public static fun encrypt-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/olm/Message;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/olm/Session;Lde/connect2x/trixnity/vodozemac/olm/Session;)Z
+	public fun getHasReceivedMessage ()Z
+	public static fun getHasReceivedMessage-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;)Z
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public fun getSessionId ()Ljava/lang/String;
+	public static fun getSessionId-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;)Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;)I
+	public fun pickle (Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public static fun pickle-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/olm/Session;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/olm/Session;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacSessionFactory : de/connect2x/trixnity/crypto/driver/olm/SessionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/olm/VodozemacSessionFactory;
+	public synthetic fun fromPickle (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/crypto/driver/olm/Session;
+	public fun fromPickle-maxIfw8 (Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/keys/PickleKey;)Lde/connect2x/trixnity/vodozemac/olm/Session;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkDecryption : de/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;)Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkDecryption;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;
+	public fun decrypt (Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;)Ljava/lang/String;
+	public static fun decrypt-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;)Z
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;
+	public synthetic fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getPublicKey-XdylcFo ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public static fun getPublicKey-XdylcFo (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public synthetic fun getSecretKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519SecretKey;
+	public fun getSecretKey-UqXB8ZM ()Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+	public static fun getSecretKey-UqXB8ZM (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;)Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkDecryptionFactory : de/connect2x/trixnity/crypto/driver/pkencryption/PkDecryptionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkDecryptionFactory;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryption;
+	public fun invoke-ZlRdzZE (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;
+	public fun invoke-ZlRdzZE ([B)Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;
+	public fun invoke-u7BkLdw ()Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkEncryption : de/connect2x/trixnity/crypto/driver/pkencryption/PkEncryption {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;)Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkEncryption;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;
+	public synthetic fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;
+	public static fun encrypt-YglT0tk (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;
+	public fun encrypt-YglT0tk (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;)Z
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkEncryptionFactory : de/connect2x/trixnity/crypto/driver/pkencryption/PkEncryptionFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkEncryptionFactory;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkEncryption;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkEncryption;
+	public fun invoke-zPsiouo (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;
+	public fun invoke-zPsiouo ([B)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkFactory : de/connect2x/trixnity/crypto/driver/pkencryption/PkFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkFactory;
+	public synthetic fun getDecryption ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkDecryptionFactory;
+	public fun getDecryption ()Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkDecryptionFactory;
+	public synthetic fun getEncryption ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkEncryptionFactory;
+	public fun getEncryption ()Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkEncryptionFactory;
+	public synthetic fun getMessage ()Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessageFactory;
+	public fun getMessage ()Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkMessageFactory;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkMessage : de/connect2x/trixnity/crypto/driver/pkencryption/PkMessage {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkMessage;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)Z
+	public fun getCiphertext ()[B
+	public static fun getCiphertext-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)[B
+	public synthetic fun getEphemeralKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getEphemeralKey-XdylcFo ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public static fun getEphemeralKey-XdylcFo (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;
+	public fun getMac ()[B
+	public static fun getMac-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkMessageFactory : de/connect2x/trixnity/crypto/driver/pkencryption/PkMessageFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/pkencryption/VodozemacPkMessageFactory;
+	public synthetic fun invoke (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/pkencryption/PkMessage;
+	public fun invoke-xeThDnY (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacEstablishedSas : de/connect2x/trixnity/crypto/driver/sas/EstablishedSas {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;)Lde/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacEstablishedSas;
+	public synthetic fun calculateMac (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/sas/Mac;
+	public static fun calculateMac-OlH4Umg (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/sas/Mac;
+	public fun calculateMac-OlH4Umg (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/sas/Mac;
+	public fun calculateMacInvalidBase64 (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static fun calculateMacInvalidBase64-impl (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;)Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;)Z
+	public synthetic fun generateBytes (Ljava/lang/String;)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes;
+	public static fun generateBytes-zWrxQOg (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/sas/SasBytes;
+	public fun generateBytes-zWrxQOg (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/sas/SasBytes;
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;
+	public synthetic fun getOurPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getOurPublicKey-XdylcFo ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public static fun getOurPublicKey-XdylcFo (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public synthetic fun getTheirPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getTheirPublicKey-XdylcFo ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public static fun getTheirPublicKey-XdylcFo (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;
+	public fun verifyMac (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/sas/Mac;)V
+	public static fun verifyMac-impl (Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/crypto/driver/sas/Mac;)V
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacMac : de/connect2x/trixnity/crypto/driver/sas/Mac {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/sas/Mac;)Lde/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacMac;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/sas/Mac;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/sas/Mac;)Lde/connect2x/trixnity/vodozemac/sas/Mac;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/sas/Mac;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/sas/Mac;Lde/connect2x/trixnity/vodozemac/sas/Mac;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public static fun getBase64-impl (Lde/connect2x/trixnity/vodozemac/sas/Mac;)Ljava/lang/String;
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/sas/Mac;)[B
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/sas/Mac;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/sas/Mac;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/sas/Mac;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/sas/Mac;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacSas : de/connect2x/trixnity/crypto/driver/sas/Sas {
+	public fun <init> (Lde/connect2x/trixnity/vodozemac/sas/Sas;)V
+	public fun close ()V
+	public synthetic fun diffieHellman (Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/crypto/driver/sas/EstablishedSas;
+	public fun diffieHellman-TCL4HX0 (Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;)Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/sas/Sas;
+	public synthetic fun getPublicKey ()Lde/connect2x/trixnity/crypto/driver/keys/Curve25519PublicKey;
+	public fun getPublicKey-XdylcFo ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacSasBytes : de/connect2x/trixnity/crypto/driver/sas/SasBytes {
+	public static final synthetic fun box-impl (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;)Lde/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacSasBytes;
+	public fun close ()V
+	public static fun close-impl (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;)V
+	public static fun constructor-impl (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;)Lde/connect2x/trixnity/vodozemac/sas/SasBytes;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;Lde/connect2x/trixnity/vodozemac/sas/SasBytes;)Z
+	public fun getBytes ()[B
+	public static fun getBytes-impl (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;)[B
+	public fun getDecimals ()Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Decimals;
+	public static fun getDecimals-impl (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Decimals;
+	public fun getEmojiIndices ()Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Emojis;
+	public static fun getEmojiIndices-impl (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;)Lde/connect2x/trixnity/crypto/driver/sas/SasBytes$Emojis;
+	public final fun getInner ()Lde/connect2x/trixnity/vodozemac/sas/SasBytes;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lde/connect2x/trixnity/vodozemac/sas/SasBytes;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lde/connect2x/trixnity/vodozemac/sas/SasBytes;
+}
+
+public final class de/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacSasFactory : de/connect2x/trixnity/crypto/driver/sas/SasFactory {
+	public static final field INSTANCE Lde/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacSasFactory;
+	public synthetic fun invoke ()Lde/connect2x/trixnity/crypto/driver/sas/Sas;
+	public fun invoke ()Lde/connect2x/trixnity/crypto/driver/vodozemac/sas/VodozemacSas;
+}
+

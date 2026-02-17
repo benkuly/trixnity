@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Delete old notification state when everything is processed and read
+- Added the kotlin abi checker to the CI
 
 ### Deprecated
 

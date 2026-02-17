@@ -1,0 +1,252 @@
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/AccessTokenAuthenticationFunction {
+	public abstract fun invoke (Lde/connect2x/trixnity/clientserverapi/server/UserAccessTokenCredentials;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/server/AccessTokenAuthenticationFunctionResult {
+	public fun <init> (Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;Lio/ktor/server/auth/AuthenticationFailedCause;Z)V
+	public synthetic fun <init> (Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;Lio/ktor/server/auth/AuthenticationFailedCause;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;
+	public final fun component2 ()Lio/ktor/server/auth/AuthenticationFailedCause;
+	public final fun component3 ()Z
+	public final fun copy (Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;Lio/ktor/server/auth/AuthenticationFailedCause;Z)Lde/connect2x/trixnity/clientserverapi/server/AccessTokenAuthenticationFunctionResult;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/server/AccessTokenAuthenticationFunctionResult;Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;Lio/ktor/server/auth/AuthenticationFailedCause;ZILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/server/AccessTokenAuthenticationFunctionResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Lio/ktor/server/auth/AuthenticationFailedCause;
+	public final fun getPrincipal ()Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;
+	public final fun getSoftLogout ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/AppserviceApiHandler {
+	public abstract fun ping (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/AuthenticationApiHandler {
+	public abstract fun addThirdPartyIdentifiers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun bindThirdPartyIdentifiers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun changePassword (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deactivateAccount (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteThirdPartyIdentifiers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getEmailRequestTokenForPassword (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getEmailRequestTokenForRegistration (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getLoginTypes (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getMsisdnRequestTokenForPassword (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getMsisdnRequestTokenForRegistration (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getOAuth2ServerMetadata (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getOIDCRequestToken (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getThirdPartyIdentifiers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getToken (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun isRegistrationTokenValid (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun isUsernameAvailable (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun login (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun logout (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun logoutAll (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun refresh (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun register (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun unbindThirdPartyIdentifiers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun whoAmI (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/server/ConvertMediaPluginKt {
+	public static final fun getConvertMediaPlugin ()Lio/ktor/server/application/RouteScopedPlugin;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/DeviceApiHandler {
+	public abstract fun deleteDehydratedDevice (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteDevice (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteDevices (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDehydratedDevice (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDehydratedDeviceEvents (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDevice (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDevices (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setDehydratedDevice (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun updateDevice (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/DiscoveryApiHandler {
+	public abstract fun getSupport (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getWellKnown (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/KeyApiHandler {
+	public abstract fun addSignatures (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun claimKeys (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteRoomKeyBackup (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteRoomKeyBackupData (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteRoomKeyBackupVersion (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteRoomsKeyBackup (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getKeyChanges (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getKeys (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRoomKeyBackup (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRoomKeyBackupData (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRoomKeyBackupVersion (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRoomKeyBackupVersionByVersion (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRoomsKeyBackup (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setCrossSigningKeys (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setKeys (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setRoomKeyBackup (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setRoomKeyBackupData (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setRoomKeyBackupVersion (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setRoomKeyBackupVersionByVersion (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setRoomsKeyBackup (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/server/MatrixAccessTokenAuth : io/ktor/server/auth/AuthenticationProvider {
+	public fun onAuthenticate (Lio/ktor/server/auth/AuthenticationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/server/MatrixAccessTokenAuth$Config : io/ktor/server/auth/AuthenticationProvider$Config {
+	public fun <init> ()V
+	public final fun getAuthenticationFunction ()Lde/connect2x/trixnity/clientserverapi/server/AccessTokenAuthenticationFunction;
+	public final fun setAuthenticationFunction (Lde/connect2x/trixnity/clientserverapi/server/AccessTokenAuthenticationFunction;)V
+}
+
+public final class de/connect2x/trixnity/clientserverapi/server/MatrixAccessTokenAuthKt {
+	public static final fun installMatrixAccessTokenAuth (Lio/ktor/server/application/Application;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun installMatrixAccessTokenAuth$default (Lio/ktor/server/application/Application;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun matrixAccessTokenAuth (Lio/ktor/server/auth/AuthenticationConfig;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun matrixAccessTokenAuth$default (Lio/ktor/server/auth/AuthenticationConfig;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun matrixClientPrincipal (Lio/ktor/server/application/ApplicationCall;)Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-hu1aZbM ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy-bx7bNhU (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;
+	public static synthetic fun copy-bx7bNhU$default (Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/server/MatrixClientPrincipal;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDevice ()Ljava/lang/String;
+	public final fun getUserId-hu1aZbM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/server/MatrixClientServerApiServerKt {
+	public static final fun installMatrixClientServerApiServer (Lio/ktor/server/routing/Route;)V
+	public static final fun matrixClientServerApiServer (Lio/ktor/server/application/Application;Lde/connect2x/trixnity/clientserverapi/server/AccessTokenAuthenticationFunction;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun matrixClientServerApiServer$default (Lio/ktor/server/application/Application;Lde/connect2x/trixnity/clientserverapi/server/AccessTokenAuthenticationFunction;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/clientserverapi/server/MatrixClientServerApiServerRoutesKt {
+	public static final fun matrixClientServerApiServerRoutes (Lio/ktor/server/routing/Route;Lde/connect2x/trixnity/clientserverapi/server/AppserviceApiHandler;Lde/connect2x/trixnity/clientserverapi/server/AuthenticationApiHandler;Lde/connect2x/trixnity/clientserverapi/server/DeviceApiHandler;Lde/connect2x/trixnity/clientserverapi/server/DiscoveryApiHandler;Lde/connect2x/trixnity/clientserverapi/server/KeyApiHandler;Lde/connect2x/trixnity/clientserverapi/server/MediaApiHandler;Lde/connect2x/trixnity/clientserverapi/server/PushApiHandler;Lde/connect2x/trixnity/clientserverapi/server/RoomApiHandler;Lde/connect2x/trixnity/clientserverapi/server/ServerApiHandler;Lde/connect2x/trixnity/clientserverapi/server/SyncApiHandler;Lde/connect2x/trixnity/clientserverapi/server/UserApiHandler;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;)V
+	public static synthetic fun matrixClientServerApiServerRoutes$default (Lio/ktor/server/routing/Route;Lde/connect2x/trixnity/clientserverapi/server/AppserviceApiHandler;Lde/connect2x/trixnity/clientserverapi/server/AuthenticationApiHandler;Lde/connect2x/trixnity/clientserverapi/server/DeviceApiHandler;Lde/connect2x/trixnity/clientserverapi/server/DiscoveryApiHandler;Lde/connect2x/trixnity/clientserverapi/server/KeyApiHandler;Lde/connect2x/trixnity/clientserverapi/server/MediaApiHandler;Lde/connect2x/trixnity/clientserverapi/server/PushApiHandler;Lde/connect2x/trixnity/clientserverapi/server/RoomApiHandler;Lde/connect2x/trixnity/clientserverapi/server/ServerApiHandler;Lde/connect2x/trixnity/clientserverapi/server/SyncApiHandler;Lde/connect2x/trixnity/clientserverapi/server/UserApiHandler;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;ILjava/lang/Object;)V
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/MediaApiHandler {
+	public abstract fun createMedia (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun downloadMedia (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun downloadMediaLegacy (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun downloadMediaWithFileName (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun downloadThumbnail (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun downloadThumbnailLegacy (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getMediaConfig (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getMediaConfigLegacy (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getUrlPreview (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getUrlPreviewLegacy (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun uploadMedia (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun uploadMediaByContentUri (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/PushApiHandler {
+	public abstract fun deletePushRule (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getNotifications (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPushRule (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPushRuleActions (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPushRuleEnabled (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPushRules (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPushers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setPushRule (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setPushRuleActions (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setPushRuleEnabled (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setPushers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/RoomApiHandler {
+	public abstract fun banUser (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun createRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteRoomAlias (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteTag (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun forgetRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getAccountData (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDirectoryVisibility (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getEventContext (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getEvents (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getHierarchy (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getJoinedMembers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getJoinedRooms (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getMembers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPublicRooms (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPublicRoomsWithFilter (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRelations (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRelationsByRelationType (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRelationsByRelationTypeAndEventType (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRoomAlias (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getRoomAliases (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getState (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getStateEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getSummary (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getTags (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getThreads (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun inviteUser (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun joinRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun kickUser (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun knockRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun leaveRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun redactEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun reportEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun reportRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendMessageEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendStateEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setAccountData (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setDirectoryVisibility (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setReadMarkers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setReceipt (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setRoomAlias (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setTag (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setTyping (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun timestampToEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun unbanUser (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun upgradeRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/ServerApiHandler {
+	public abstract fun getCapabilities (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getVersions (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun search (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun whoIs (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/SyncApiHandler {
+	public abstract fun sync (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/server/UserAccessTokenCredentials {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lde/connect2x/trixnity/clientserverapi/server/UserAccessTokenCredentials;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/server/UserAccessTokenCredentials;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/server/UserAccessTokenCredentials;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccessToken ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/server/UserApiHandler {
+	public abstract fun deleteProfileField (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getAccountData (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getFilter (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPresence (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getProfile-C9VfqlY (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getProfileField (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun reportUser (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun searchUsers (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendToDevice (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setAccountData (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setFilter (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setPresence (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setProfileField (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

@@ -1,0 +1,480 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-crypto-driver>
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKeyFactory { // de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKeyFactory|null[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    abstract val publicKey // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey.publicKey|{}publicKey[0]
+        abstract fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKeyFactory { // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKeyFactory|null[0]
+    abstract fun invoke(): de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKeyFactory.invoke|invoke(){}[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey // de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    abstract fun verify(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature) // de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey.verify|verify(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.Ed25519Signature){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKeyFactory { // de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKeyFactory|null[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey // de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey // de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    abstract val publicKey // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey.publicKey|{}publicKey[0]
+        abstract fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    abstract fun sign(kotlin/String): de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey.sign|sign(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKeyFactory { // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKeyFactory|null[0]
+    abstract fun invoke(): de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKeyFactory.invoke|invoke(){}[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey // de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature.bytes.<get-bytes>|<get-bytes>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/Ed25519SignatureFactory { // de.connect2x.trixnity.crypto.driver.keys/Ed25519SignatureFactory|null[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature // de.connect2x.trixnity.crypto.driver.keys/Ed25519SignatureFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature // de.connect2x.trixnity.crypto.driver.keys/Ed25519SignatureFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/KeyFactories { // de.connect2x.trixnity.crypto.driver.keys/KeyFactories|null[0]
+    abstract val curve25519PublicKey // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.curve25519PublicKey|{}curve25519PublicKey[0]
+        abstract fun <get-curve25519PublicKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKeyFactory // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.curve25519PublicKey.<get-curve25519PublicKey>|<get-curve25519PublicKey>(){}[0]
+    abstract val curve25519SecretKey // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.curve25519SecretKey|{}curve25519SecretKey[0]
+        abstract fun <get-curve25519SecretKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKeyFactory // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.curve25519SecretKey.<get-curve25519SecretKey>|<get-curve25519SecretKey>(){}[0]
+    abstract val ed25519PublicKey // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.ed25519PublicKey|{}ed25519PublicKey[0]
+        abstract fun <get-ed25519PublicKey>(): de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKeyFactory // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.ed25519PublicKey.<get-ed25519PublicKey>|<get-ed25519PublicKey>(){}[0]
+    abstract val ed25519SecretKey // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.ed25519SecretKey|{}ed25519SecretKey[0]
+        abstract fun <get-ed25519SecretKey>(): de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKeyFactory // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.ed25519SecretKey.<get-ed25519SecretKey>|<get-ed25519SecretKey>(){}[0]
+    abstract val ed25519Signature // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.ed25519Signature|{}ed25519Signature[0]
+        abstract fun <get-ed25519Signature>(): de.connect2x.trixnity.crypto.driver.keys/Ed25519SignatureFactory // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.ed25519Signature.<get-ed25519Signature>|<get-ed25519Signature>(){}[0]
+    abstract val pickleKey // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.pickleKey|{}pickleKey[0]
+        abstract fun <get-pickleKey>(): de.connect2x.trixnity.crypto.driver.keys/PickleKeyFactory // de.connect2x.trixnity.crypto.driver.keys/KeyFactories.pickleKey.<get-pickleKey>|<get-pickleKey>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/PickleKey // de.connect2x.trixnity.crypto.driver.keys/PickleKey|null[0]
+
+abstract interface de.connect2x.trixnity.crypto.driver.keys/PickleKeyFactory { // de.connect2x.trixnity.crypto.driver.keys/PickleKeyFactory|null[0]
+    abstract fun invoke(): de.connect2x.trixnity.crypto.driver.keys/PickleKey? // de.connect2x.trixnity.crypto.driver.keys/PickleKeyFactory.invoke|invoke(){}[0]
+    abstract fun invoke(kotlin/ByteArray?): de.connect2x.trixnity.crypto.driver.keys/PickleKey? // de.connect2x.trixnity.crypto.driver.keys/PickleKeyFactory.invoke|invoke(kotlin.ByteArray?){}[0]
+    abstract fun invoke(kotlin/String?): de.connect2x.trixnity.crypto.driver.keys/PickleKey? // de.connect2x.trixnity.crypto.driver.keys/PickleKeyFactory.invoke|invoke(kotlin.String?){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKeyFactory { // de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKeyFactory|null[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey // de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey // de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/GroupSession : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.megolm/GroupSession|null[0]
+    abstract val messageIndex // de.connect2x.trixnity.crypto.driver.megolm/GroupSession.messageIndex|{}messageIndex[0]
+        abstract fun <get-messageIndex>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.megolm/GroupSession.messageIndex.<get-messageIndex>|<get-messageIndex>(){}[0]
+    abstract val sessionId // de.connect2x.trixnity.crypto.driver.megolm/GroupSession.sessionId|{}sessionId[0]
+        abstract fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/GroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+    abstract val sessionKey // de.connect2x.trixnity.crypto.driver.megolm/GroupSession.sessionKey|{}sessionKey[0]
+        abstract fun <get-sessionKey>(): de.connect2x.trixnity.crypto.driver.megolm/SessionKey // de.connect2x.trixnity.crypto.driver.megolm/GroupSession.sessionKey.<get-sessionKey>|<get-sessionKey>(){}[0]
+
+    abstract fun encrypt(kotlin/String): de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage // de.connect2x.trixnity.crypto.driver.megolm/GroupSession.encrypt|encrypt(kotlin.String){}[0]
+    abstract fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey? = ...): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/GroupSession.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/GroupSessionFactory { // de.connect2x.trixnity.crypto.driver.megolm/GroupSessionFactory|null[0]
+    abstract fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey? = ...): de.connect2x.trixnity.crypto.driver.megolm/GroupSession // de.connect2x.trixnity.crypto.driver.megolm/GroupSessionFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    abstract fun invoke(): de.connect2x.trixnity.crypto.driver.megolm/GroupSession // de.connect2x.trixnity.crypto.driver.megolm/GroupSessionFactory.invoke|invoke(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession|null[0]
+    abstract val firstKnownIndex // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.firstKnownIndex|{}firstKnownIndex[0]
+        abstract fun <get-firstKnownIndex>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.firstKnownIndex.<get-firstKnownIndex>|<get-firstKnownIndex>(){}[0]
+    abstract val sessionId // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.sessionId|{}sessionId[0]
+        abstract fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+
+    abstract fun decrypt(de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage): de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.decrypt|decrypt(de.connect2x.trixnity.crypto.driver.megolm.MegolmMessage){}[0]
+    abstract fun exportAt(kotlin/Int): de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey? // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.exportAt|exportAt(kotlin.Int){}[0]
+    abstract fun exportAtFirstKnownIndex(): de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.exportAtFirstKnownIndex|exportAtFirstKnownIndex(){}[0]
+    abstract fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey? = ...): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+
+    final class DecryptedMessage { // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage|null[0]
+        constructor <init>(kotlin/String, kotlin/Int) // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.<init>|<init>(kotlin.String;kotlin.Int){}[0]
+
+        final val messageIndex // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.messageIndex|{}messageIndex[0]
+            final fun <get-messageIndex>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.messageIndex.<get-messageIndex>|<get-messageIndex>(){}[0]
+        final val plaintext // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.plaintext|{}plaintext[0]
+            final fun <get-plaintext>(): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.plaintext.<get-plaintext>|<get-plaintext>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/Int = ...): de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.copy|copy(kotlin.String;kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage.toString|toString(){}[0]
+    }
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSessionFactory { // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSessionFactory|null[0]
+    abstract fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey? = ...): de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSessionFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    abstract fun import(de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey): de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSessionFactory.import|import(de.connect2x.trixnity.crypto.driver.megolm.ExportedSessionKey){}[0]
+    abstract fun invoke(de.connect2x.trixnity.crypto.driver.megolm/SessionKey): de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession // de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSessionFactory.invoke|invoke(de.connect2x.trixnity.crypto.driver.megolm.SessionKey){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory { // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory|null[0]
+    abstract val exportedSessionKey // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.exportedSessionKey|{}exportedSessionKey[0]
+        abstract fun <get-exportedSessionKey>(): de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKeyFactory // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.exportedSessionKey.<get-exportedSessionKey>|<get-exportedSessionKey>(){}[0]
+    abstract val groupSession // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.groupSession|{}groupSession[0]
+        abstract fun <get-groupSession>(): de.connect2x.trixnity.crypto.driver.megolm/GroupSessionFactory // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.groupSession.<get-groupSession>|<get-groupSession>(){}[0]
+    abstract val inboundGroupSession // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.inboundGroupSession|{}inboundGroupSession[0]
+        abstract fun <get-inboundGroupSession>(): de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSessionFactory // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.inboundGroupSession.<get-inboundGroupSession>|<get-inboundGroupSession>(){}[0]
+    abstract val message // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.message|{}message[0]
+        abstract fun <get-message>(): de.connect2x.trixnity.crypto.driver.megolm/MegolmMessageFactory // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.message.<get-message>|<get-message>(){}[0]
+    abstract val sessionKey // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.sessionKey|{}sessionKey[0]
+        abstract fun <get-sessionKey>(): de.connect2x.trixnity.crypto.driver.megolm/SessionKeyFactory // de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory.sessionKey.<get-sessionKey>|<get-sessionKey>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage.bytes.<get-bytes>|<get-bytes>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/MegolmMessageFactory { // de.connect2x.trixnity.crypto.driver.megolm/MegolmMessageFactory|null[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage // de.connect2x.trixnity.crypto.driver.megolm/MegolmMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage // de.connect2x.trixnity.crypto.driver.megolm/MegolmMessageFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/SessionKey : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.megolm/SessionKey|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.megolm/SessionKey.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.megolm/SessionKey.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.megolm/SessionKey.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.megolm/SessionKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.megolm/SessionKeyFactory { // de.connect2x.trixnity.crypto.driver.megolm/SessionKeyFactory|null[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.megolm/SessionKey // de.connect2x.trixnity.crypto.driver.megolm/SessionKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.megolm/SessionKey // de.connect2x.trixnity.crypto.driver.megolm/SessionKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.olm/Account : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.olm/Account|null[0]
+    abstract val curve25519Key // de.connect2x.trixnity.crypto.driver.olm/Account.curve25519Key|{}curve25519Key[0]
+        abstract fun <get-curve25519Key>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.olm/Account.curve25519Key.<get-curve25519Key>|<get-curve25519Key>(){}[0]
+    abstract val ed25519Key // de.connect2x.trixnity.crypto.driver.olm/Account.ed25519Key|{}ed25519Key[0]
+        abstract fun <get-ed25519Key>(): de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey // de.connect2x.trixnity.crypto.driver.olm/Account.ed25519Key.<get-ed25519Key>|<get-ed25519Key>(){}[0]
+    abstract val fallbackKey // de.connect2x.trixnity.crypto.driver.olm/Account.fallbackKey|{}fallbackKey[0]
+        abstract fun <get-fallbackKey>(): kotlin/Pair<kotlin/String, de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey>? // de.connect2x.trixnity.crypto.driver.olm/Account.fallbackKey.<get-fallbackKey>|<get-fallbackKey>(){}[0]
+    abstract val maxNumberOfOneTimeKeys // de.connect2x.trixnity.crypto.driver.olm/Account.maxNumberOfOneTimeKeys|{}maxNumberOfOneTimeKeys[0]
+        abstract fun <get-maxNumberOfOneTimeKeys>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.olm/Account.maxNumberOfOneTimeKeys.<get-maxNumberOfOneTimeKeys>|<get-maxNumberOfOneTimeKeys>(){}[0]
+    abstract val oneTimeKeys // de.connect2x.trixnity.crypto.driver.olm/Account.oneTimeKeys|{}oneTimeKeys[0]
+        abstract fun <get-oneTimeKeys>(): kotlin.collections/Map<kotlin/String, de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey> // de.connect2x.trixnity.crypto.driver.olm/Account.oneTimeKeys.<get-oneTimeKeys>|<get-oneTimeKeys>(){}[0]
+    abstract val storedOneTimeKeyCount // de.connect2x.trixnity.crypto.driver.olm/Account.storedOneTimeKeyCount|{}storedOneTimeKeyCount[0]
+        abstract fun <get-storedOneTimeKeyCount>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.olm/Account.storedOneTimeKeyCount.<get-storedOneTimeKeyCount>|<get-storedOneTimeKeyCount>(){}[0]
+
+    abstract fun createInboundSession(de.connect2x.trixnity.crypto.driver.olm/Message.PreKey, de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey? = ...): de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult // de.connect2x.trixnity.crypto.driver.olm/Account.createInboundSession|createInboundSession(de.connect2x.trixnity.crypto.driver.olm.Message.PreKey;de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey?){}[0]
+    abstract fun createOutboundSession(de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey, de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey): de.connect2x.trixnity.crypto.driver.olm/Session // de.connect2x.trixnity.crypto.driver.olm/Account.createOutboundSession|createOutboundSession(de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey;de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey){}[0]
+    abstract fun dehydrate(de.connect2x.trixnity.crypto.driver.keys/PickleKey): de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice // de.connect2x.trixnity.crypto.driver.olm/Account.dehydrate|dehydrate(de.connect2x.trixnity.crypto.driver.keys.PickleKey){}[0]
+    abstract fun forgetFallbackKey() // de.connect2x.trixnity.crypto.driver.olm/Account.forgetFallbackKey|forgetFallbackKey(){}[0]
+    abstract fun generateFallbackKey(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey? // de.connect2x.trixnity.crypto.driver.olm/Account.generateFallbackKey|generateFallbackKey(){}[0]
+    abstract fun generateOneTimeKeys(kotlin/Int): de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult // de.connect2x.trixnity.crypto.driver.olm/Account.generateOneTimeKeys|generateOneTimeKeys(kotlin.Int){}[0]
+    abstract fun markKeysAsPublished() // de.connect2x.trixnity.crypto.driver.olm/Account.markKeysAsPublished|markKeysAsPublished(){}[0]
+    abstract fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey? = ...): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/Account.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    abstract fun sign(kotlin/String): de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature // de.connect2x.trixnity.crypto.driver.olm/Account.sign|sign(kotlin.String){}[0]
+
+    abstract interface InboundSessionCreationResult { // de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult|null[0]
+        abstract val plaintext // de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult.plaintext|{}plaintext[0]
+            abstract fun <get-plaintext>(): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult.plaintext.<get-plaintext>|<get-plaintext>(){}[0]
+        abstract val session // de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult.session|{}session[0]
+            abstract fun <get-session>(): de.connect2x.trixnity.crypto.driver.olm/Session // de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult.session.<get-session>|<get-session>(){}[0]
+
+        open fun component1(): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult.component1|component1(){}[0]
+        open fun component2(): de.connect2x.trixnity.crypto.driver.olm/Session // de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult.component2|component2(){}[0]
+    }
+
+    abstract interface OneTimeKeyGenerationResult { // de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult|null[0]
+        abstract val created // de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult.created|{}created[0]
+            abstract fun <get-created>(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey> // de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult.created.<get-created>|<get-created>(){}[0]
+        abstract val removed // de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult.removed|{}removed[0]
+            abstract fun <get-removed>(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey> // de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult.removed.<get-removed>|<get-removed>(){}[0]
+
+        open fun component1(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey> // de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult.component1|component1(){}[0]
+        open fun component2(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey> // de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult.component2|component2(){}[0]
+    }
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.olm/AccountFactory { // de.connect2x.trixnity.crypto.driver.olm/AccountFactory|null[0]
+    abstract val dehydratedDevicesSupported // de.connect2x.trixnity.crypto.driver.olm/AccountFactory.dehydratedDevicesSupported|{}dehydratedDevicesSupported[0]
+        abstract fun <get-dehydratedDevicesSupported>(): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.olm/AccountFactory.dehydratedDevicesSupported.<get-dehydratedDevicesSupported>|<get-dehydratedDevicesSupported>(){}[0]
+
+    abstract fun fromDehydratedDevice(kotlin/String, kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey): de.connect2x.trixnity.crypto.driver.olm/Account // de.connect2x.trixnity.crypto.driver.olm/AccountFactory.fromDehydratedDevice|fromDehydratedDevice(kotlin.String;kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey){}[0]
+    abstract fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey? = ...): de.connect2x.trixnity.crypto.driver.olm/Account // de.connect2x.trixnity.crypto.driver.olm/AccountFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    abstract fun invoke(): de.connect2x.trixnity.crypto.driver.olm/Account // de.connect2x.trixnity.crypto.driver.olm/AccountFactory.invoke|invoke(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.olm/MessageFactory { // de.connect2x.trixnity.crypto.driver.olm/MessageFactory|null[0]
+    abstract val normal // de.connect2x.trixnity.crypto.driver.olm/MessageFactory.normal|{}normal[0]
+        abstract fun <get-normal>(): de.connect2x.trixnity.crypto.driver.olm/NormalMessageFactory // de.connect2x.trixnity.crypto.driver.olm/MessageFactory.normal.<get-normal>|<get-normal>(){}[0]
+    abstract val preKey // de.connect2x.trixnity.crypto.driver.olm/MessageFactory.preKey|{}preKey[0]
+        abstract fun <get-preKey>(): de.connect2x.trixnity.crypto.driver.olm/PreKeyMessageFactory // de.connect2x.trixnity.crypto.driver.olm/MessageFactory.preKey.<get-preKey>|<get-preKey>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.olm/NormalMessageFactory { // de.connect2x.trixnity.crypto.driver.olm/NormalMessageFactory|null[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.olm/Message.Normal // de.connect2x.trixnity.crypto.driver.olm/NormalMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.olm/Message.Normal // de.connect2x.trixnity.crypto.driver.olm/NormalMessageFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.olm/OlmFactory { // de.connect2x.trixnity.crypto.driver.olm/OlmFactory|null[0]
+    abstract val account // de.connect2x.trixnity.crypto.driver.olm/OlmFactory.account|{}account[0]
+        abstract fun <get-account>(): de.connect2x.trixnity.crypto.driver.olm/AccountFactory // de.connect2x.trixnity.crypto.driver.olm/OlmFactory.account.<get-account>|<get-account>(){}[0]
+    abstract val message // de.connect2x.trixnity.crypto.driver.olm/OlmFactory.message|{}message[0]
+        abstract fun <get-message>(): de.connect2x.trixnity.crypto.driver.olm/MessageFactory // de.connect2x.trixnity.crypto.driver.olm/OlmFactory.message.<get-message>|<get-message>(){}[0]
+    abstract val session // de.connect2x.trixnity.crypto.driver.olm/OlmFactory.session|{}session[0]
+        abstract fun <get-session>(): de.connect2x.trixnity.crypto.driver.olm/SessionFactory // de.connect2x.trixnity.crypto.driver.olm/OlmFactory.session.<get-session>|<get-session>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.olm/PreKeyMessageFactory { // de.connect2x.trixnity.crypto.driver.olm/PreKeyMessageFactory|null[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.olm/Message.PreKey // de.connect2x.trixnity.crypto.driver.olm/PreKeyMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.olm/Message.PreKey // de.connect2x.trixnity.crypto.driver.olm/PreKeyMessageFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.olm/Session : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.olm/Session|null[0]
+    abstract val hasReceivedMessage // de.connect2x.trixnity.crypto.driver.olm/Session.hasReceivedMessage|{}hasReceivedMessage[0]
+        abstract fun <get-hasReceivedMessage>(): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.olm/Session.hasReceivedMessage.<get-hasReceivedMessage>|<get-hasReceivedMessage>(){}[0]
+    abstract val sessionId // de.connect2x.trixnity.crypto.driver.olm/Session.sessionId|{}sessionId[0]
+        abstract fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/Session.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+
+    abstract fun decrypt(de.connect2x.trixnity.crypto.driver.olm/Message): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/Session.decrypt|decrypt(de.connect2x.trixnity.crypto.driver.olm.Message){}[0]
+    abstract fun encrypt(kotlin/String): de.connect2x.trixnity.crypto.driver.olm/Message // de.connect2x.trixnity.crypto.driver.olm/Session.encrypt|encrypt(kotlin.String){}[0]
+    abstract fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey? = ...): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/Session.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.olm/SessionFactory { // de.connect2x.trixnity.crypto.driver.olm/SessionFactory|null[0]
+    abstract fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey? = ...): de.connect2x.trixnity.crypto.driver.olm/Session // de.connect2x.trixnity.crypto.driver.olm/SessionFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption|null[0]
+    abstract val publicKey // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption.publicKey|{}publicKey[0]
+        abstract fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+    abstract val secretKey // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption.secretKey|{}secretKey[0]
+        abstract fun <get-secretKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption.secretKey.<get-secretKey>|<get-secretKey>(){}[0]
+
+    abstract fun decrypt(de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage): kotlin/String // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption.decrypt|decrypt(de.connect2x.trixnity.crypto.driver.pkencryption.PkMessage){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryptionFactory { // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryptionFactory|null[0]
+    abstract fun invoke(): de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryptionFactory.invoke|invoke(){}[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryptionFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption // de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryptionFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryption : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryption|null[0]
+    abstract fun encrypt(kotlin/String): de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage // de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryption.encrypt|encrypt(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryptionFactory { // de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryptionFactory|null[0]
+    abstract fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryption // de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryptionFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    abstract fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryption // de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryptionFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory { // de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory|null[0]
+    abstract val decryption // de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory.decryption|{}decryption[0]
+        abstract fun <get-decryption>(): de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryptionFactory // de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory.decryption.<get-decryption>|<get-decryption>(){}[0]
+    abstract val encryption // de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory.encryption|{}encryption[0]
+        abstract fun <get-encryption>(): de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryptionFactory // de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory.encryption.<get-encryption>|<get-encryption>(){}[0]
+    abstract val message // de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory.message|{}message[0]
+        abstract fun <get-message>(): de.connect2x.trixnity.crypto.driver.pkencryption/PkMessageFactory // de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory.message.<get-message>|<get-message>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage|null[0]
+    abstract val ciphertext // de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage.ciphertext|{}ciphertext[0]
+        abstract fun <get-ciphertext>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+    abstract val ephemeralKey // de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage.ephemeralKey|{}ephemeralKey[0]
+        abstract fun <get-ephemeralKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage.ephemeralKey.<get-ephemeralKey>|<get-ephemeralKey>(){}[0]
+    abstract val mac // de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage.mac|{}mac[0]
+        abstract fun <get-mac>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage.mac.<get-mac>|<get-mac>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.pkencryption/PkMessageFactory { // de.connect2x.trixnity.crypto.driver.pkencryption/PkMessageFactory|null[0]
+    abstract fun invoke(kotlin/String, kotlin/String, kotlin/String): de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage // de.connect2x.trixnity.crypto.driver.pkencryption/PkMessageFactory.invoke|invoke(kotlin.String;kotlin.String;kotlin.String){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.sas/EstablishedSas : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.sas/EstablishedSas|null[0]
+    abstract val ourPublicKey // de.connect2x.trixnity.crypto.driver.sas/EstablishedSas.ourPublicKey|{}ourPublicKey[0]
+        abstract fun <get-ourPublicKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.sas/EstablishedSas.ourPublicKey.<get-ourPublicKey>|<get-ourPublicKey>(){}[0]
+    abstract val theirPublicKey // de.connect2x.trixnity.crypto.driver.sas/EstablishedSas.theirPublicKey|{}theirPublicKey[0]
+        abstract fun <get-theirPublicKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.sas/EstablishedSas.theirPublicKey.<get-theirPublicKey>|<get-theirPublicKey>(){}[0]
+
+    abstract fun calculateMac(kotlin/String, kotlin/String): de.connect2x.trixnity.crypto.driver.sas/Mac // de.connect2x.trixnity.crypto.driver.sas/EstablishedSas.calculateMac|calculateMac(kotlin.String;kotlin.String){}[0]
+    abstract fun calculateMacInvalidBase64(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.crypto.driver.sas/EstablishedSas.calculateMacInvalidBase64|calculateMacInvalidBase64(kotlin.String;kotlin.String){}[0]
+    abstract fun generateBytes(kotlin/String): de.connect2x.trixnity.crypto.driver.sas/SasBytes // de.connect2x.trixnity.crypto.driver.sas/EstablishedSas.generateBytes|generateBytes(kotlin.String){}[0]
+    abstract fun verifyMac(kotlin/String, kotlin/String, de.connect2x.trixnity.crypto.driver.sas/Mac) // de.connect2x.trixnity.crypto.driver.sas/EstablishedSas.verifyMac|verifyMac(kotlin.String;kotlin.String;de.connect2x.trixnity.crypto.driver.sas.Mac){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.sas/Mac : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.sas/Mac|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.sas/Mac.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.sas/Mac.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.sas/Mac.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.sas/Mac.bytes.<get-bytes>|<get-bytes>(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.sas/Sas : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.sas/Sas|null[0]
+    abstract val publicKey // de.connect2x.trixnity.crypto.driver.sas/Sas.publicKey|{}publicKey[0]
+        abstract fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.sas/Sas.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    abstract fun diffieHellman(de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey): de.connect2x.trixnity.crypto.driver.sas/EstablishedSas // de.connect2x.trixnity.crypto.driver.sas/Sas.diffieHellman|diffieHellman(de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.sas/SasBytes : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.sas/SasBytes|null[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.sas/SasBytes.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.sas/SasBytes.bytes.<get-bytes>|<get-bytes>(){}[0]
+    abstract val decimals // de.connect2x.trixnity.crypto.driver.sas/SasBytes.decimals|{}decimals[0]
+        abstract fun <get-decimals>(): de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals // de.connect2x.trixnity.crypto.driver.sas/SasBytes.decimals.<get-decimals>|<get-decimals>(){}[0]
+    abstract val emojiIndices // de.connect2x.trixnity.crypto.driver.sas/SasBytes.emojiIndices|{}emojiIndices[0]
+        abstract fun <get-emojiIndices>(): de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis // de.connect2x.trixnity.crypto.driver.sas/SasBytes.emojiIndices.<get-emojiIndices>|<get-emojiIndices>(){}[0]
+
+    final class Decimals { // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals|null[0]
+        constructor <init>(kotlin/UShort, kotlin/UShort, kotlin/UShort) // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.<init>|<init>(kotlin.UShort;kotlin.UShort;kotlin.UShort){}[0]
+
+        final val asList // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.asList|{}asList[0]
+            final fun <get-asList>(): kotlin.collections/List<kotlin/Int> // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.asList.<get-asList>|<get-asList>(){}[0]
+        final val first // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.first|{}first[0]
+            final fun <get-first>(): kotlin/UShort // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.first.<get-first>|<get-first>(){}[0]
+        final val second // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.second|{}second[0]
+            final fun <get-second>(): kotlin/UShort // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.second.<get-second>|<get-second>(){}[0]
+        final val third // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.third|{}third[0]
+            final fun <get-third>(): kotlin/UShort // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.third.<get-third>|<get-third>(){}[0]
+
+        final fun component1(): kotlin/UShort // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.component1|component1(){}[0]
+        final fun component2(): kotlin/UShort // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.component2|component2(){}[0]
+        final fun component3(): kotlin/UShort // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.component3|component3(){}[0]
+        final fun copy(kotlin/UShort = ..., kotlin/UShort = ..., kotlin/UShort = ...): de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.copy|copy(kotlin.UShort;kotlin.UShort;kotlin.UShort){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals.toString|toString(){}[0]
+    }
+
+    final class Emojis { // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis|null[0]
+        constructor <init>(kotlin/UByte, kotlin/UByte, kotlin/UByte, kotlin/UByte, kotlin/UByte, kotlin/UByte, kotlin/UByte) // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.<init>|<init>(kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte){}[0]
+
+        final val asList // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.asList|{}asList[0]
+            final fun <get-asList>(): kotlin.collections/List<kotlin/Int> // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.asList.<get-asList>|<get-asList>(){}[0]
+        final val emojiIndex1 // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex1|{}emojiIndex1[0]
+            final fun <get-emojiIndex1>(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex1.<get-emojiIndex1>|<get-emojiIndex1>(){}[0]
+        final val emojiIndex2 // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex2|{}emojiIndex2[0]
+            final fun <get-emojiIndex2>(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex2.<get-emojiIndex2>|<get-emojiIndex2>(){}[0]
+        final val emojiIndex3 // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex3|{}emojiIndex3[0]
+            final fun <get-emojiIndex3>(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex3.<get-emojiIndex3>|<get-emojiIndex3>(){}[0]
+        final val emojiIndex4 // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex4|{}emojiIndex4[0]
+            final fun <get-emojiIndex4>(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex4.<get-emojiIndex4>|<get-emojiIndex4>(){}[0]
+        final val emojiIndex5 // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex5|{}emojiIndex5[0]
+            final fun <get-emojiIndex5>(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex5.<get-emojiIndex5>|<get-emojiIndex5>(){}[0]
+        final val emojiIndex6 // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex6|{}emojiIndex6[0]
+            final fun <get-emojiIndex6>(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex6.<get-emojiIndex6>|<get-emojiIndex6>(){}[0]
+        final val emojiIndex7 // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex7|{}emojiIndex7[0]
+            final fun <get-emojiIndex7>(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.emojiIndex7.<get-emojiIndex7>|<get-emojiIndex7>(){}[0]
+
+        final fun component1(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.component1|component1(){}[0]
+        final fun component2(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.component2|component2(){}[0]
+        final fun component3(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.component3|component3(){}[0]
+        final fun component4(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.component4|component4(){}[0]
+        final fun component5(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.component5|component5(){}[0]
+        final fun component6(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.component6|component6(){}[0]
+        final fun component7(): kotlin/UByte // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.component7|component7(){}[0]
+        final fun copy(kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ..., kotlin/UByte = ...): de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.copy|copy(kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte;kotlin.UByte){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis.toString|toString(){}[0]
+    }
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver.sas/SasFactory { // de.connect2x.trixnity.crypto.driver.sas/SasFactory|null[0]
+    abstract fun invoke(): de.connect2x.trixnity.crypto.driver.sas/Sas // de.connect2x.trixnity.crypto.driver.sas/SasFactory.invoke|invoke(){}[0]
+}
+
+abstract interface de.connect2x.trixnity.crypto.driver/CryptoDriver { // de.connect2x.trixnity.crypto.driver/CryptoDriver|null[0]
+    abstract val key // de.connect2x.trixnity.crypto.driver/CryptoDriver.key|{}key[0]
+        abstract fun <get-key>(): de.connect2x.trixnity.crypto.driver.keys/KeyFactories // de.connect2x.trixnity.crypto.driver/CryptoDriver.key.<get-key>|<get-key>(){}[0]
+    abstract val megolm // de.connect2x.trixnity.crypto.driver/CryptoDriver.megolm|{}megolm[0]
+        abstract fun <get-megolm>(): de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory // de.connect2x.trixnity.crypto.driver/CryptoDriver.megolm.<get-megolm>|<get-megolm>(){}[0]
+    abstract val olm // de.connect2x.trixnity.crypto.driver/CryptoDriver.olm|{}olm[0]
+        abstract fun <get-olm>(): de.connect2x.trixnity.crypto.driver.olm/OlmFactory // de.connect2x.trixnity.crypto.driver/CryptoDriver.olm.<get-olm>|<get-olm>(){}[0]
+    abstract val pk // de.connect2x.trixnity.crypto.driver/CryptoDriver.pk|{}pk[0]
+        abstract fun <get-pk>(): de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory // de.connect2x.trixnity.crypto.driver/CryptoDriver.pk.<get-pk>|<get-pk>(){}[0]
+    abstract val sas // de.connect2x.trixnity.crypto.driver/CryptoDriver.sas|{}sas[0]
+        abstract fun <get-sas>(): de.connect2x.trixnity.crypto.driver.sas/SasFactory // de.connect2x.trixnity.crypto.driver/CryptoDriver.sas.<get-sas>|<get-sas>(){}[0]
+}
+
+sealed interface de.connect2x.trixnity.crypto.driver.olm/Message : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.driver.olm/Message|null[0]
+    abstract val base64 // de.connect2x.trixnity.crypto.driver.olm/Message.base64|{}base64[0]
+        abstract fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/Message.base64.<get-base64>|<get-base64>(){}[0]
+    abstract val bytes // de.connect2x.trixnity.crypto.driver.olm/Message.bytes|{}bytes[0]
+        abstract fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.olm/Message.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    abstract interface Normal : de.connect2x.trixnity.crypto.driver.olm/Message // de.connect2x.trixnity.crypto.driver.olm/Message.Normal|null[0]
+
+    abstract interface PreKey : de.connect2x.trixnity.crypto.driver.olm/Message // de.connect2x.trixnity.crypto.driver.olm/Message.PreKey|null[0]
+}
+
+final class de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice { // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice|null[0]
+    constructor <init>(kotlin/String, kotlin/String) // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val nonce // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.nonce|{}nonce[0]
+        final fun <get-nonce>(): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.nonce.<get-nonce>|<get-nonce>(){}[0]
+    final val pickle // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.pickle|{}pickle[0]
+        final fun <get-pickle>(): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.pickle.<get-pickle>|<get-pickle>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.component1|component1(){}[0]
+    final fun component2(): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ...): de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.copy|copy(kotlin.String;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice.toString|toString(){}[0]
+}
+
+open class de.connect2x.trixnity.crypto.driver/CryptoDriverException : kotlin/RuntimeException { // de.connect2x.trixnity.crypto.driver/CryptoDriverException|null[0]
+    constructor <init>(kotlin/Throwable) // de.connect2x.trixnity.crypto.driver/CryptoDriverException.<init>|<init>(kotlin.Throwable){}[0]
+}
+
+final inline fun <#A: kotlin/AutoCloseable, #B: kotlin/AutoCloseable, #C: kotlin/Any?> de.connect2x.trixnity.crypto.driver/useAll(kotlin/Function0<#A>, kotlin/Function1<#A, #B>, kotlin/Function2<#A, #B, #C>): #C // de.connect2x.trixnity.crypto.driver/useAll|useAll(kotlin.Function0<0:0>;kotlin.Function1<0:0,0:1>;kotlin.Function2<0:0,0:1,0:2>){0§<kotlin.AutoCloseable>;1§<kotlin.AutoCloseable>;2§<kotlin.Any?>}[0]

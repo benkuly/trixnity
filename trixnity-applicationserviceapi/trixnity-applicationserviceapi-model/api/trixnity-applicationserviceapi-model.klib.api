@@ -1,0 +1,253 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-applicationserviceapi-model>
+final class de.connect2x.trixnity.applicationserviceapi.model/AddTransaction : de.connect2x.trixnity.core/MatrixEndpoint<de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request, kotlin/Unit> { // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.<init>|<init>(kotlin.String){}[0]
+
+    final val txnId // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.txnId|{}txnId[0]
+        final fun <get-txnId>(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.txnId.<get-txnId>|<get-txnId>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.component1|component1(){}[0]
+    final fun copy(kotlin/String = ...): de.connect2x.trixnity.applicationserviceapi.model/AddTransaction // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.copy|copy(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.toString|toString(){}[0]
+
+    final class Request { // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request|null[0]
+        constructor <init>(kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>>, kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.EphemeralEvent<*>>? = ...) // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.<init>|<init>(kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent<*>>;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.EphemeralEvent<*>>?){}[0]
+
+        final val ephemeral // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.ephemeral|{}ephemeral[0]
+            final fun <get-ephemeral>(): kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.EphemeralEvent<*>>? // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.ephemeral.<get-ephemeral>|<get-ephemeral>(){}[0]
+        final val events // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.events|{}events[0]
+            final fun <get-events>(): kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>> // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.events.<get-events>|<get-events>(){}[0]
+
+        final fun component1(): kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>> // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.EphemeralEvent<*>>? // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.component2|component2(){}[0]
+        final fun copy(kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>> = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.EphemeralEvent<*>>? = ...): de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.copy|copy(kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent<*>>;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.EphemeralEvent<*>>?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request> { // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request) // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.applicationserviceapi.model.AddTransaction.Request){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.Companion|null[0]
+            final val $childSerializers // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.Companion.$childSerializers|{}$childSerializers[0]
+
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request> // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Request.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.applicationserviceapi.model/AddTransaction> { // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.applicationserviceapi.model/AddTransaction // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.applicationserviceapi.model/AddTransaction) // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.applicationserviceapi.model.AddTransaction){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/AddTransaction> // de.connect2x.trixnity.applicationserviceapi.model/AddTransaction.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy : de.connect2x.trixnity.core/MatrixEndpoint<de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request, kotlin/Unit> { // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.<init>|<init>(kotlin.String){}[0]
+
+    final val txnId // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.txnId|{}txnId[0]
+        final fun <get-txnId>(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.txnId.<get-txnId>|<get-txnId>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.component1|component1(){}[0]
+    final fun copy(kotlin/String = ...): de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.copy|copy(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.toString|toString(){}[0]
+
+    final class Request { // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request|null[0]
+        constructor <init>(kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>>) // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.<init>|<init>(kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent<*>>){}[0]
+
+        final val events // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.events|{}events[0]
+            final fun <get-events>(): kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>> // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.events.<get-events>|<get-events>(){}[0]
+
+        final fun component1(): kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>> // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.component1|component1(){}[0]
+        final fun copy(kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>> = ...): de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.copy|copy(kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent<*>>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request> { // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request) // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.applicationserviceapi.model.AddTransactionLegacy.Request){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.Companion|null[0]
+            final val $childSerializers // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.Companion.$childSerializers|{}$childSerializers[0]
+
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request> // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Request.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy> { // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy) // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.applicationserviceapi.model.AddTransactionLegacy){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy> // de.connect2x.trixnity.applicationserviceapi.model/AddTransactionLegacy.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.applicationserviceapi.model/HasRoom : de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, kotlin/Unit> { // de.connect2x.trixnity.applicationserviceapi.model/HasRoom|null[0]
+    constructor <init>(de.connect2x.trixnity.core.model/RoomAliasId) // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.<init>|<init>(de.connect2x.trixnity.core.model.RoomAliasId){}[0]
+
+    final val roomAlias // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.roomAlias|{}roomAlias[0]
+        final fun <get-roomAlias>(): de.connect2x.trixnity.core.model/RoomAliasId // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.roomAlias.<get-roomAlias>|<get-roomAlias>(){}[0]
+
+    final fun component1(): de.connect2x.trixnity.core.model/RoomAliasId // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.component1|component1(){}[0]
+    final fun copy(de.connect2x.trixnity.core.model/RoomAliasId = ...): de.connect2x.trixnity.applicationserviceapi.model/HasRoom // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.copy|copy(de.connect2x.trixnity.core.model.RoomAliasId){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.applicationserviceapi.model/HasRoom> { // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.applicationserviceapi.model/HasRoom // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.applicationserviceapi.model/HasRoom) // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.applicationserviceapi.model.HasRoom){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/HasRoom> // de.connect2x.trixnity.applicationserviceapi.model/HasRoom.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy : de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, kotlin/Unit> { // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy|null[0]
+    constructor <init>(de.connect2x.trixnity.core.model/RoomAliasId) // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.<init>|<init>(de.connect2x.trixnity.core.model.RoomAliasId){}[0]
+
+    final val roomAlias // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.roomAlias|{}roomAlias[0]
+        final fun <get-roomAlias>(): de.connect2x.trixnity.core.model/RoomAliasId // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.roomAlias.<get-roomAlias>|<get-roomAlias>(){}[0]
+
+    final fun component1(): de.connect2x.trixnity.core.model/RoomAliasId // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.component1|component1(){}[0]
+    final fun copy(de.connect2x.trixnity.core.model/RoomAliasId = ...): de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.copy|copy(de.connect2x.trixnity.core.model.RoomAliasId){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy> { // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy) // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.applicationserviceapi.model.HasRoomLegacy){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy> // de.connect2x.trixnity.applicationserviceapi.model/HasRoomLegacy.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.applicationserviceapi.model/HasUser : de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, kotlin/Unit> { // de.connect2x.trixnity.applicationserviceapi.model/HasUser|null[0]
+    constructor <init>(de.connect2x.trixnity.core.model/UserId) // de.connect2x.trixnity.applicationserviceapi.model/HasUser.<init>|<init>(de.connect2x.trixnity.core.model.UserId){}[0]
+
+    final val userId // de.connect2x.trixnity.applicationserviceapi.model/HasUser.userId|{}userId[0]
+        final fun <get-userId>(): de.connect2x.trixnity.core.model/UserId // de.connect2x.trixnity.applicationserviceapi.model/HasUser.userId.<get-userId>|<get-userId>(){}[0]
+
+    final fun component1(): de.connect2x.trixnity.core.model/UserId // de.connect2x.trixnity.applicationserviceapi.model/HasUser.component1|component1(){}[0]
+    final fun copy(de.connect2x.trixnity.core.model/UserId = ...): de.connect2x.trixnity.applicationserviceapi.model/HasUser // de.connect2x.trixnity.applicationserviceapi.model/HasUser.copy|copy(de.connect2x.trixnity.core.model.UserId){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.applicationserviceapi.model/HasUser.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.applicationserviceapi.model/HasUser.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/HasUser.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.applicationserviceapi.model/HasUser> { // de.connect2x.trixnity.applicationserviceapi.model/HasUser.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.applicationserviceapi.model/HasUser.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.applicationserviceapi.model/HasUser.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.applicationserviceapi.model/HasUser.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.applicationserviceapi.model/HasUser // de.connect2x.trixnity.applicationserviceapi.model/HasUser.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.applicationserviceapi.model/HasUser) // de.connect2x.trixnity.applicationserviceapi.model/HasUser.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.applicationserviceapi.model.HasUser){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.applicationserviceapi.model/HasUser.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/HasUser> // de.connect2x.trixnity.applicationserviceapi.model/HasUser.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy : de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, kotlin/Unit> { // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy|null[0]
+    constructor <init>(de.connect2x.trixnity.core.model/UserId) // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.<init>|<init>(de.connect2x.trixnity.core.model.UserId){}[0]
+
+    final val userId // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.userId|{}userId[0]
+        final fun <get-userId>(): de.connect2x.trixnity.core.model/UserId // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.userId.<get-userId>|<get-userId>(){}[0]
+
+    final fun component1(): de.connect2x.trixnity.core.model/UserId // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.component1|component1(){}[0]
+    final fun copy(de.connect2x.trixnity.core.model/UserId = ...): de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.copy|copy(de.connect2x.trixnity.core.model.UserId){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy> { // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy) // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.applicationserviceapi.model.HasUserLegacy){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy> // de.connect2x.trixnity.applicationserviceapi.model/HasUserLegacy.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final object de.connect2x.trixnity.applicationserviceapi.model/Ping : de.connect2x.trixnity.core/MatrixEndpoint<de.connect2x.trixnity.applicationserviceapi.model/Ping.Request, kotlin/Unit>, kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.applicationserviceapi.model/Ping|null[0]
+    final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/Ping> // de.connect2x.trixnity.applicationserviceapi.model/Ping.serializer|serializer(){}[0]
+    final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.applicationserviceapi.model/Ping.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+
+    final class Request { // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request|null[0]
+        constructor <init>(kotlin/String? = ...) // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.<init>|<init>(kotlin.String?){}[0]
+
+        final val txnId // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.txnId|{}txnId[0]
+            final fun <get-txnId>(): kotlin/String? // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.txnId.<get-txnId>|<get-txnId>(){}[0]
+
+        final fun component1(): kotlin/String? // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.component1|component1(){}[0]
+        final fun copy(kotlin/String? = ...): de.connect2x.trixnity.applicationserviceapi.model/Ping.Request // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.copy|copy(kotlin.String?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.applicationserviceapi.model/Ping.Request> { // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.applicationserviceapi.model/Ping.Request // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.applicationserviceapi.model/Ping.Request) // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.applicationserviceapi.model.Ping.Request){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.applicationserviceapi.model/Ping.Request> // de.connect2x.trixnity.applicationserviceapi.model/Ping.Request.Companion.serializer|serializer(){}[0]
+        }
+    }
+}

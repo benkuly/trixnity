@@ -1,0 +1,589 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-crypto-driver-vodozemac>
+final class de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas : de.connect2x.trixnity.crypto.driver.sas/Sas { // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.sas/Sas) // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas.<init>|<init>(de.connect2x.trixnity.vodozemac.sas.Sas){}[0]
+
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.sas/Sas // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas.inner.<get-inner>|<get-inner>(){}[0]
+    final val publicKey // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas.close|close(){}[0]
+    final fun diffieHellman(de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey): de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas.diffieHellman|diffieHellman(de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey : de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac/Curve25519PublicKey) // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.<init>|<init>(de.connect2x.trixnity.vodozemac.Curve25519PublicKey){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey : de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac/Curve25519SecretKey) // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.<init>|<init>(de.connect2x.trixnity.vodozemac.Curve25519SecretKey){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac/Curve25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.inner.<get-inner>|<get-inner>(){}[0]
+    final val publicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey : de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac/Ed25519PublicKey) // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.<init>|<init>(de.connect2x.trixnity.vodozemac.Ed25519PublicKey){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac/Ed25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.toString|toString(){}[0]
+    final fun verify(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature) // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey.verify|verify(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.Ed25519Signature){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey : de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac/Ed25519SecretKey) // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.<init>|<init>(de.connect2x.trixnity.vodozemac.Ed25519SecretKey){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac/Ed25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.inner.<get-inner>|<get-inner>(){}[0]
+    final val publicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.hashCode|hashCode(){}[0]
+    final fun sign(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.sign|sign(kotlin.String){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature : de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac/Ed25519Signature) // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.<init>|<init>(de.connect2x.trixnity.vodozemac.Ed25519Signature){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac/Ed25519Signature // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey : de.connect2x.trixnity.crypto.driver.keys/PickleKey { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac/PickleKey) // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey.<init>|<init>(de.connect2x.trixnity.vodozemac.PickleKey){}[0]
+
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac/PickleKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey : de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey) // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.<init>|<init>(de.connect2x.trixnity.vodozemac.megolm.ExportedSessionKey){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.megolm/ExportedSessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession : de.connect2x.trixnity.crypto.driver.megolm/GroupSession { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.megolm/GroupSession) // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.<init>|<init>(de.connect2x.trixnity.vodozemac.megolm.GroupSession){}[0]
+
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.megolm/GroupSession // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.inner.<get-inner>|<get-inner>(){}[0]
+    final val messageIndex // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.messageIndex|{}messageIndex[0]
+        final fun <get-messageIndex>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.messageIndex.<get-messageIndex>|<get-messageIndex>(){}[0]
+    final val sessionId // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+    final val sessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.sessionKey|{}sessionKey[0]
+        final fun <get-sessionKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.sessionKey.<get-sessionKey>|<get-sessionKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.close|close(){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.encrypt|encrypt(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.hashCode|hashCode(){}[0]
+    final fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey?): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession : de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession) // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.<init>|<init>(de.connect2x.trixnity.vodozemac.megolm.InboundGroupSession){}[0]
+
+    final val firstKnownIndex // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.firstKnownIndex|{}firstKnownIndex[0]
+        final fun <get-firstKnownIndex>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.firstKnownIndex.<get-firstKnownIndex>|<get-firstKnownIndex>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.megolm/InboundGroupSession // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.inner.<get-inner>|<get-inner>(){}[0]
+    final val sessionId // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.close|close(){}[0]
+    final fun decrypt(de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage): de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.decrypt|decrypt(de.connect2x.trixnity.crypto.driver.megolm.MegolmMessage){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.equals|equals(kotlin.Any?){}[0]
+    final fun exportAt(kotlin/Int): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey? // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.exportAt|exportAt(kotlin.Int){}[0]
+    final fun exportAtFirstKnownIndex(): de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.exportAtFirstKnownIndex|exportAtFirstKnownIndex(){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.hashCode|hashCode(){}[0]
+    final fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey?): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage : de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text) // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.<init>|<init>(de.connect2x.trixnity.vodozemac.megolm.MegolmMessage.Text){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey : de.connect2x.trixnity.crypto.driver.megolm/SessionKey { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.megolm/SessionKey) // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.<init>|<init>(de.connect2x.trixnity.vodozemac.megolm.SessionKey){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.megolm/SessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount : de.connect2x.trixnity.crypto.driver.olm/Account { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.olm/Account) // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.<init>|<init>(de.connect2x.trixnity.vodozemac.olm.Account){}[0]
+
+    final val curve25519Key // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.curve25519Key|{}curve25519Key[0]
+        final fun <get-curve25519Key>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.curve25519Key.<get-curve25519Key>|<get-curve25519Key>(){}[0]
+    final val ed25519Key // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.ed25519Key|{}ed25519Key[0]
+        final fun <get-ed25519Key>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.ed25519Key.<get-ed25519Key>|<get-ed25519Key>(){}[0]
+    final val fallbackKey // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.fallbackKey|{}fallbackKey[0]
+        final fun <get-fallbackKey>(): kotlin/Pair<kotlin/String, de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey>? // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.fallbackKey.<get-fallbackKey>|<get-fallbackKey>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.olm/Account // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.inner.<get-inner>|<get-inner>(){}[0]
+    final val maxNumberOfOneTimeKeys // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.maxNumberOfOneTimeKeys|{}maxNumberOfOneTimeKeys[0]
+        final fun <get-maxNumberOfOneTimeKeys>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.maxNumberOfOneTimeKeys.<get-maxNumberOfOneTimeKeys>|<get-maxNumberOfOneTimeKeys>(){}[0]
+    final val oneTimeKeys // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.oneTimeKeys|{}oneTimeKeys[0]
+        final fun <get-oneTimeKeys>(): kotlin.collections/Map<kotlin/String, de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.oneTimeKeys.<get-oneTimeKeys>|<get-oneTimeKeys>(){}[0]
+    final val storedOneTimeKeyCount // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.storedOneTimeKeyCount|{}storedOneTimeKeyCount[0]
+        final fun <get-storedOneTimeKeyCount>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.storedOneTimeKeyCount.<get-storedOneTimeKeyCount>|<get-storedOneTimeKeyCount>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.close|close(){}[0]
+    final fun createInboundSession(de.connect2x.trixnity.crypto.driver.olm/Message.PreKey, de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey?): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.createInboundSession|createInboundSession(de.connect2x.trixnity.crypto.driver.olm.Message.PreKey;de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey?){}[0]
+    final fun createOutboundSession(de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey, de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey): de.connect2x.trixnity.crypto.driver.olm/Session // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.createOutboundSession|createOutboundSession(de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey;de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey){}[0]
+    final fun dehydrate(de.connect2x.trixnity.crypto.driver.keys/PickleKey): de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.dehydrate|dehydrate(de.connect2x.trixnity.crypto.driver.keys.PickleKey){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.equals|equals(kotlin.Any?){}[0]
+    final fun forgetFallbackKey() // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.forgetFallbackKey|forgetFallbackKey(){}[0]
+    final fun generateFallbackKey(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey? // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.generateFallbackKey|generateFallbackKey(){}[0]
+    final fun generateOneTimeKeys(kotlin/Int): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.generateOneTimeKeys|generateOneTimeKeys(kotlin.Int){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.hashCode|hashCode(){}[0]
+    final fun markKeysAsPublished() // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.markKeysAsPublished|markKeysAsPublished(){}[0]
+    final fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey?): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun sign(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.sign|sign(kotlin.String){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.toString|toString(){}[0]
+
+    final class InboundSessionCreationResult : de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult|null[0]
+        constructor <init>(kotlin/String, de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession) // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.<init>|<init>(kotlin.String;de.connect2x.trixnity.crypto.driver.vodozemac.olm.VodozemacSession){}[0]
+
+        final val plaintext // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.plaintext|{}plaintext[0]
+            final fun <get-plaintext>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.plaintext.<get-plaintext>|<get-plaintext>(){}[0]
+        final val session // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.session|{}session[0]
+            final fun <get-session>(): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.session.<get-session>|<get-session>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession = ...): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.copy|copy(kotlin.String;de.connect2x.trixnity.crypto.driver.vodozemac.olm.VodozemacSession){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.InboundSessionCreationResult.toString|toString(){}[0]
+    }
+
+    final class OneTimeKeyGenerationResult : de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult|null[0]
+        constructor <init>(kotlin.collections/List<de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey>, kotlin.collections/List<de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey>) // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.<init>|<init>(kotlin.collections.List<de.connect2x.trixnity.crypto.driver.vodozemac.keys.VodozemacCurve25519PublicKey>;kotlin.collections.List<de.connect2x.trixnity.crypto.driver.vodozemac.keys.VodozemacCurve25519PublicKey>){}[0]
+
+        final val created // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.created|{}created[0]
+            final fun <get-created>(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.created.<get-created>|<get-created>(){}[0]
+        final val removed // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.removed|{}removed[0]
+            final fun <get-removed>(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.removed.<get-removed>|<get-removed>(){}[0]
+
+        final fun component1(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.component2|component2(){}[0]
+        final fun copy(kotlin.collections/List<de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey> = ..., kotlin.collections/List<de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey> = ...): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.copy|copy(kotlin.collections.List<de.connect2x.trixnity.crypto.driver.vodozemac.keys.VodozemacCurve25519PublicKey>;kotlin.collections.List<de.connect2x.trixnity.crypto.driver.vodozemac.keys.VodozemacCurve25519PublicKey>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount.OneTimeKeyGenerationResult.toString|toString(){}[0]
+    }
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage : de.connect2x.trixnity.crypto.driver.olm/Message.Normal { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text) // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.<init>|<init>(de.connect2x.trixnity.vodozemac.olm.OlmMessage.Normal.Text){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.Normal.Text // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage : de.connect2x.trixnity.crypto.driver.olm/Message.PreKey { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text) // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.<init>|<init>(de.connect2x.trixnity.vodozemac.olm.OlmMessage.PreKey.Text){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.olm/OlmMessage.PreKey.Text // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession : de.connect2x.trixnity.crypto.driver.olm/Session { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.olm/Session) // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.<init>|<init>(de.connect2x.trixnity.vodozemac.olm.Session){}[0]
+
+    final val hasReceivedMessage // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.hasReceivedMessage|{}hasReceivedMessage[0]
+        final fun <get-hasReceivedMessage>(): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.hasReceivedMessage.<get-hasReceivedMessage>|<get-hasReceivedMessage>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.olm/Session // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.inner.<get-inner>|<get-inner>(){}[0]
+    final val sessionId // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.close|close(){}[0]
+    final fun decrypt(de.connect2x.trixnity.crypto.driver.olm/Message): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.decrypt|decrypt(de.connect2x.trixnity.crypto.driver.olm.Message){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.crypto.driver.olm/Message // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.encrypt|encrypt(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.hashCode|hashCode(){}[0]
+    final fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey?): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption : de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption { // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption) // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.<init>|<init>(de.connect2x.trixnity.vodozemac.pkencryption.PkDecryption){}[0]
+
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.pkencryption/PkDecryption // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.inner.<get-inner>|<get-inner>(){}[0]
+    final val publicKey // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+    final val secretKey // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.secretKey|{}secretKey[0]
+        final fun <get-secretKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.secretKey.<get-secretKey>|<get-secretKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.close|close(){}[0]
+    final fun decrypt(de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.decrypt|decrypt(de.connect2x.trixnity.crypto.driver.pkencryption.PkMessage){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption : de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryption { // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.pkencryption/PkEncryption) // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption.<init>|<init>(de.connect2x.trixnity.vodozemac.pkencryption.PkEncryption){}[0]
+
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.pkencryption/PkEncryption // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption.close|close(){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption.encrypt|encrypt(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage : de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage { // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text) // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.<init>|<init>(de.connect2x.trixnity.vodozemac.pkencryption.PkEncryptionMessage.Text){}[0]
+
+    final val ciphertext // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.ciphertext|{}ciphertext[0]
+        final fun <get-ciphertext>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+    final val ephemeralKey // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.ephemeralKey|{}ephemeralKey[0]
+        final fun <get-ephemeralKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.ephemeralKey.<get-ephemeralKey>|<get-ephemeralKey>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.pkencryption/PkEncryptionMessage.Text // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.inner.<get-inner>|<get-inner>(){}[0]
+    final val mac // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.mac|{}mac[0]
+        final fun <get-mac>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.mac.<get-mac>|<get-mac>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas : de.connect2x.trixnity.crypto.driver.sas/EstablishedSas { // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.sas/EstablishedSas) // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.<init>|<init>(de.connect2x.trixnity.vodozemac.sas.EstablishedSas){}[0]
+
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.sas/EstablishedSas // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.inner.<get-inner>|<get-inner>(){}[0]
+    final val ourPublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.ourPublicKey|{}ourPublicKey[0]
+        final fun <get-ourPublicKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.ourPublicKey.<get-ourPublicKey>|<get-ourPublicKey>(){}[0]
+    final val theirPublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.theirPublicKey|{}theirPublicKey[0]
+        final fun <get-theirPublicKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.theirPublicKey.<get-theirPublicKey>|<get-theirPublicKey>(){}[0]
+
+    final fun calculateMac(kotlin/String, kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.calculateMac|calculateMac(kotlin.String;kotlin.String){}[0]
+    final fun calculateMacInvalidBase64(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.calculateMacInvalidBase64|calculateMacInvalidBase64(kotlin.String;kotlin.String){}[0]
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.equals|equals(kotlin.Any?){}[0]
+    final fun generateBytes(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.generateBytes|generateBytes(kotlin.String){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.toString|toString(){}[0]
+    final fun verifyMac(kotlin/String, kotlin/String, de.connect2x.trixnity.crypto.driver.sas/Mac) // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacEstablishedSas.verifyMac|verifyMac(kotlin.String;kotlin.String;de.connect2x.trixnity.crypto.driver.sas.Mac){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac : de.connect2x.trixnity.crypto.driver.sas/Mac { // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.sas/Mac) // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.<init>|<init>(de.connect2x.trixnity.vodozemac.sas.Mac){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.sas/Mac // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacMac.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes : de.connect2x.trixnity.crypto.driver.sas/SasBytes { // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes|null[0]
+    constructor <init>(de.connect2x.trixnity.vodozemac.sas/SasBytes) // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.<init>|<init>(de.connect2x.trixnity.vodozemac.sas.SasBytes){}[0]
+
+    final val bytes // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val decimals // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.decimals|{}decimals[0]
+        final fun <get-decimals>(): de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.decimals.<get-decimals>|<get-decimals>(){}[0]
+    final val emojiIndices // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.emojiIndices|{}emojiIndices[0]
+        final fun <get-emojiIndices>(): de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.emojiIndices.<get-emojiIndices>|<get-emojiIndices>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.vodozemac.sas/SasBytes // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.inner.<get-inner>|<get-inner>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasBytes.toString|toString(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKeyFactory : de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKeyFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKeyFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKeyFactory : de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKeyFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKeyFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKeyFactory.invoke|invoke(){}[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKeyFactory : de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKeyFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKeyFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKeyFactory : de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKeyFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKeyFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKeyFactory.invoke|invoke(){}[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SignatureFactory : de.connect2x.trixnity.crypto.driver.keys/Ed25519SignatureFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SignatureFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SignatureFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519Signature // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SignatureFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory : de.connect2x.trixnity.crypto.driver.keys/KeyFactories { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory|null[0]
+    final val curve25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.curve25519PublicKey|{}curve25519PublicKey[0]
+        final fun <get-curve25519PublicKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519PublicKeyFactory // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.curve25519PublicKey.<get-curve25519PublicKey>|<get-curve25519PublicKey>(){}[0]
+    final val curve25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.curve25519SecretKey|{}curve25519SecretKey[0]
+        final fun <get-curve25519SecretKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacCurve25519SecretKeyFactory // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.curve25519SecretKey.<get-curve25519SecretKey>|<get-curve25519SecretKey>(){}[0]
+    final val ed25519PublicKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.ed25519PublicKey|{}ed25519PublicKey[0]
+        final fun <get-ed25519PublicKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519PublicKeyFactory // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.ed25519PublicKey.<get-ed25519PublicKey>|<get-ed25519PublicKey>(){}[0]
+    final val ed25519SecretKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.ed25519SecretKey|{}ed25519SecretKey[0]
+        final fun <get-ed25519SecretKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SecretKeyFactory // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.ed25519SecretKey.<get-ed25519SecretKey>|<get-ed25519SecretKey>(){}[0]
+    final val ed25519Signature // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.ed25519Signature|{}ed25519Signature[0]
+        final fun <get-ed25519Signature>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacEd25519SignatureFactory // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.ed25519Signature.<get-ed25519Signature>|<get-ed25519Signature>(){}[0]
+    final val pickleKey // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.pickleKey|{}pickleKey[0]
+        final fun <get-pickleKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKeyFactory // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory.pickleKey.<get-pickleKey>|<get-pickleKey>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKeyFactory : de.connect2x.trixnity.crypto.driver.keys/PickleKeyFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKeyFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey? // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKeyFactory.invoke|invoke(){}[0]
+    final fun invoke(kotlin/ByteArray?): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey? // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKeyFactory.invoke|invoke(kotlin.ByteArray?){}[0]
+    final fun invoke(kotlin/String?): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKey? // de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacPickleKeyFactory.invoke|invoke(kotlin.String?){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKeyFactory : de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKeyFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKeyFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSessionFactory : de.connect2x.trixnity.crypto.driver.megolm/GroupSessionFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSessionFactory|null[0]
+    final fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey?): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSessionFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSession // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSessionFactory.invoke|invoke(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSessionFactory : de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSessionFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSessionFactory|null[0]
+    final fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey?): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSessionFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun import(de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSessionFactory.import|import(de.connect2x.trixnity.crypto.driver.megolm.ExportedSessionKey){}[0]
+    final fun invoke(de.connect2x.trixnity.crypto.driver.megolm/SessionKey): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSession // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSessionFactory.invoke|invoke(de.connect2x.trixnity.crypto.driver.megolm.SessionKey){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory : de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory|null[0]
+    final val exportedSessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.exportedSessionKey|{}exportedSessionKey[0]
+        final fun <get-exportedSessionKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacExportedSessionKeyFactory // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.exportedSessionKey.<get-exportedSessionKey>|<get-exportedSessionKey>(){}[0]
+    final val groupSession // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.groupSession|{}groupSession[0]
+        final fun <get-groupSession>(): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacGroupSessionFactory // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.groupSession.<get-groupSession>|<get-groupSession>(){}[0]
+    final val inboundGroupSession // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.inboundGroupSession|{}inboundGroupSession[0]
+        final fun <get-inboundGroupSession>(): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacInboundGroupSessionFactory // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.inboundGroupSession.<get-inboundGroupSession>|<get-inboundGroupSession>(){}[0]
+    final val message // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.message|{}message[0]
+        final fun <get-message>(): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessageFactory // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.message.<get-message>|<get-message>(){}[0]
+    final val sessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.sessionKey|{}sessionKey[0]
+        final fun <get-sessionKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKeyFactory // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory.sessionKey.<get-sessionKey>|<get-sessionKey>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessageFactory : de.connect2x.trixnity.crypto.driver.megolm/MegolmMessageFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessageFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessage // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmMessageFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKeyFactory : de.connect2x.trixnity.crypto.driver.megolm/SessionKeyFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKeyFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKey // de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacSessionKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccountFactory : de.connect2x.trixnity.crypto.driver.olm/AccountFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccountFactory|null[0]
+    final val dehydratedDevicesSupported // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccountFactory.dehydratedDevicesSupported|{}dehydratedDevicesSupported[0]
+        final fun <get-dehydratedDevicesSupported>(): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccountFactory.dehydratedDevicesSupported.<get-dehydratedDevicesSupported>|<get-dehydratedDevicesSupported>(){}[0]
+
+    final fun fromDehydratedDevice(kotlin/String, kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccountFactory.fromDehydratedDevice|fromDehydratedDevice(kotlin.String;kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey){}[0]
+    final fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey?): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccountFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccount // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccountFactory.invoke|invoke(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacMessageFactory : de.connect2x.trixnity.crypto.driver.olm/MessageFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacMessageFactory|null[0]
+    final val normal // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacMessageFactory.normal|{}normal[0]
+        final fun <get-normal>(): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessageFactory // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacMessageFactory.normal.<get-normal>|<get-normal>(){}[0]
+    final val preKey // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacMessageFactory.preKey|{}preKey[0]
+        final fun <get-preKey>(): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessageFactory // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacMessageFactory.preKey.<get-preKey>|<get-preKey>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessageFactory : de.connect2x.trixnity.crypto.driver.olm/NormalMessageFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessageFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessage // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacNormalMessageFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacOlmFactory : de.connect2x.trixnity.crypto.driver.olm/OlmFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacOlmFactory|null[0]
+    final val account // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacOlmFactory.account|{}account[0]
+        final fun <get-account>(): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacAccountFactory // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacOlmFactory.account.<get-account>|<get-account>(){}[0]
+    final val message // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacOlmFactory.message|{}message[0]
+        final fun <get-message>(): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacMessageFactory // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacOlmFactory.message.<get-message>|<get-message>(){}[0]
+    final val session // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacOlmFactory.session|{}session[0]
+        final fun <get-session>(): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSessionFactory // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacOlmFactory.session.<get-session>|<get-session>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessageFactory : de.connect2x.trixnity.crypto.driver.olm/PreKeyMessageFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessageFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessage // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacPreKeyMessageFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSessionFactory : de.connect2x.trixnity.crypto.driver.olm/SessionFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSessionFactory|null[0]
+    final fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey?): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSession // de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacSessionFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryptionFactory : de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryptionFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryptionFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryptionFactory.invoke|invoke(){}[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryptionFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryption // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryptionFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryptionFactory : de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryptionFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryptionFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryptionFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryption // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryptionFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkFactory : de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkFactory|null[0]
+    final val decryption // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkFactory.decryption|{}decryption[0]
+        final fun <get-decryption>(): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkDecryptionFactory // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkFactory.decryption.<get-decryption>|<get-decryption>(){}[0]
+    final val encryption // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkFactory.encryption|{}encryption[0]
+        final fun <get-encryption>(): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkEncryptionFactory // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkFactory.encryption.<get-encryption>|<get-encryption>(){}[0]
+    final val message // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkFactory.message|{}message[0]
+        final fun <get-message>(): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessageFactory // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkFactory.message.<get-message>|<get-message>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessageFactory : de.connect2x.trixnity.crypto.driver.pkencryption/PkMessageFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessageFactory|null[0]
+    final fun invoke(kotlin/String, kotlin/String, kotlin/String): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessage // de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkMessageFactory.invoke|invoke(kotlin.String;kotlin.String;kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasFactory : de.connect2x.trixnity.crypto.driver.sas/SasFactory { // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSas // de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasFactory.invoke|invoke(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver : de.connect2x.trixnity.crypto.driver/CryptoDriver { // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver|null[0]
+    final val key // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.key|{}key[0]
+        final fun <get-key>(): de.connect2x.trixnity.crypto.driver.vodozemac.keys/VodozemacKeyFactory // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.key.<get-key>|<get-key>(){}[0]
+    final val megolm // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.megolm|{}megolm[0]
+        final fun <get-megolm>(): de.connect2x.trixnity.crypto.driver.vodozemac.megolm/VodozemacMegolmFactory // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.megolm.<get-megolm>|<get-megolm>(){}[0]
+    final val olm // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.olm|{}olm[0]
+        final fun <get-olm>(): de.connect2x.trixnity.crypto.driver.vodozemac.olm/VodozemacOlmFactory // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.olm.<get-olm>|<get-olm>(){}[0]
+    final val pk // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.pk|{}pk[0]
+        final fun <get-pk>(): de.connect2x.trixnity.crypto.driver.vodozemac.pkencryption/VodozemacPkFactory // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.pk.<get-pk>|<get-pk>(){}[0]
+    final val sas // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.sas|{}sas[0]
+        final fun <get-sas>(): de.connect2x.trixnity.crypto.driver.vodozemac.sas/VodozemacSasFactory // de.connect2x.trixnity.crypto.driver.vodozemac/VodozemacCryptoDriver.sas.<get-sas>|<get-sas>(){}[0]
+}

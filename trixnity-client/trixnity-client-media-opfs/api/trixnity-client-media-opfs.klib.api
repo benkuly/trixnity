@@ -1,0 +1,21 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-client-media-opfs>
+abstract interface de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia : de.connect2x.trixnity.client.media/PlatformMedia { // de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia|null[0]
+    abstract fun transformByteArrayFlow(kotlin/Function1<kotlinx.coroutines.flow/Flow<kotlin/ByteArray>, kotlinx.coroutines.flow/Flow<kotlin/ByteArray>>): de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia // de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia.transformByteArrayFlow|transformByteArrayFlow(kotlin.Function1<kotlinx.coroutines.flow.Flow<kotlin.ByteArray>,kotlinx.coroutines.flow.Flow<kotlin.ByteArray>>){}[0]
+    abstract suspend fun getTemporaryFile(): kotlin/Result<de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia.TemporaryFile> // de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia.getTemporaryFile|getTemporaryFile(){}[0]
+
+    abstract interface TemporaryFile { // de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia.TemporaryFile|null[0]
+        abstract val file // de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia.TemporaryFile.file|{}file[0]
+            abstract fun <get-file>(): web.file/File // de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia.TemporaryFile.file.<get-file>|<get-file>(){}[0]
+
+        abstract suspend fun delete() // de.connect2x.trixnity.client.media.opfs/OpfsPlatformMedia.TemporaryFile.delete|delete(){}[0]
+    }
+}
+
+final fun (de.connect2x.trixnity.client/MediaStoreModule.Companion).de.connect2x.trixnity.client.media.opfs/opfs(web.fs/FileSystemDirectoryHandle): de.connect2x.trixnity.client/MediaStoreModule // de.connect2x.trixnity.client.media.opfs/opfs|opfs@de.connect2x.trixnity.client.MediaStoreModule.Companion(web.fs.FileSystemDirectoryHandle){}[0]

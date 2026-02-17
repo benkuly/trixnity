@@ -1,0 +1,27 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-api-client>
+open class de.connect2x.trixnity.api.client/MatrixApiClient : kotlin/AutoCloseable { // de.connect2x.trixnity.api.client/MatrixApiClient|null[0]
+    constructor <init>(de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings = ..., kotlinx.serialization.json/Json = ..., io.ktor.client.engine/HttpClientEngine? = ..., kotlin/Function1<io.ktor.client/HttpClientConfig<*>, kotlin/Unit>? = ...) // de.connect2x.trixnity.api.client/MatrixApiClient.<init>|<init>(de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings;kotlinx.serialization.json.Json;io.ktor.client.engine.HttpClientEngine?;kotlin.Function1<io.ktor.client.HttpClientConfig<*>,kotlin.Unit>?){}[0]
+
+    final val baseClient // de.connect2x.trixnity.api.client/MatrixApiClient.baseClient|{}baseClient[0]
+        final fun <get-baseClient>(): io.ktor.client/HttpClient // de.connect2x.trixnity.api.client/MatrixApiClient.baseClient.<get-baseClient>|<get-baseClient>(){}[0]
+    final val contentMappings // de.connect2x.trixnity.api.client/MatrixApiClient.contentMappings|{}contentMappings[0]
+        final fun <get-contentMappings>(): de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings // de.connect2x.trixnity.api.client/MatrixApiClient.contentMappings.<get-contentMappings>|<get-contentMappings>(){}[0]
+    final val json // de.connect2x.trixnity.api.client/MatrixApiClient.json|{}json[0]
+        final fun <get-json>(): kotlinx.serialization.json/Json // de.connect2x.trixnity.api.client/MatrixApiClient.json.<get-json>|<get-json>(){}[0]
+
+    final suspend inline fun <#A1: reified de.connect2x.trixnity.core/MatrixEndpoint<#B1, #C1>, #B1: reified kotlin/Any?, #C1: reified kotlin/Any?, #D1: kotlin/Any?> withRequest(#A1, #B1, kotlin/Function1<io.ktor.client.request/HttpRequestBuilder, kotlin/Unit> = ..., noinline kotlin.coroutines/SuspendFunction1<#C1, #D1>): kotlin/Result<#D1> // de.connect2x.trixnity.api.client/MatrixApiClient.withRequest|withRequest(0:0;0:1;kotlin.Function1<io.ktor.client.request.HttpRequestBuilder,kotlin.Unit>;kotlin.coroutines.SuspendFunction1<0:2,0:3>){0§<de.connect2x.trixnity.core.MatrixEndpoint<0:1,0:2>>;1§<kotlin.Any?>;2§<kotlin.Any?>;3§<kotlin.Any?>}[0]
+    final suspend inline fun <#A1: reified de.connect2x.trixnity.core/MatrixEndpoint<#B1, #C1>, #B1: reified kotlin/Any?, #C1: reified kotlin/Any?> request(#A1, #B1, kotlin/Function1<io.ktor.client.request/HttpRequestBuilder, kotlin/Unit> = ...): kotlin/Result<#C1> // de.connect2x.trixnity.api.client/MatrixApiClient.request|request(0:0;0:1;kotlin.Function1<io.ktor.client.request.HttpRequestBuilder,kotlin.Unit>){0§<de.connect2x.trixnity.core.MatrixEndpoint<0:1,0:2>>;1§<kotlin.Any?>;2§<kotlin.Any?>}[0]
+    final suspend inline fun <#A1: reified de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, #B1>, #B1: reified kotlin/Any?, #C1: kotlin/Any?> withRequest(#A1, kotlin/Function1<io.ktor.client.request/HttpRequestBuilder, kotlin/Unit> = ..., noinline kotlin.coroutines/SuspendFunction1<#B1, #C1>): kotlin/Result<#C1> // de.connect2x.trixnity.api.client/MatrixApiClient.withRequest|withRequest(0:0;kotlin.Function1<io.ktor.client.request.HttpRequestBuilder,kotlin.Unit>;kotlin.coroutines.SuspendFunction1<0:1,0:2>){0§<de.connect2x.trixnity.core.MatrixEndpoint<kotlin.Unit,0:1>>;1§<kotlin.Any?>;2§<kotlin.Any?>}[0]
+    final suspend inline fun <#A1: reified de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, #B1>, #B1: reified kotlin/Any?> request(#A1, kotlin/Function1<io.ktor.client.request/HttpRequestBuilder, kotlin/Unit> = ...): kotlin/Result<#B1> // de.connect2x.trixnity.api.client/MatrixApiClient.request|request(0:0;kotlin.Function1<io.ktor.client.request.HttpRequestBuilder,kotlin.Unit>){0§<de.connect2x.trixnity.core.MatrixEndpoint<kotlin.Unit,0:1>>;1§<kotlin.Any?>}[0]
+    open fun close() // de.connect2x.trixnity.api.client/MatrixApiClient.close|close(){}[0]
+}
+
+final val de.connect2x.trixnity.api.client/PlatformUserAgentPlugin // de.connect2x.trixnity.api.client/PlatformUserAgentPlugin|{}PlatformUserAgentPlugin[0]
+    final fun <get-PlatformUserAgentPlugin>(): io.ktor.client.plugins.api/ClientPlugin<kotlin/Unit> // de.connect2x.trixnity.api.client/PlatformUserAgentPlugin.<get-PlatformUserAgentPlugin>|<get-PlatformUserAgentPlugin>(){}[0]

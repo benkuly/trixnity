@@ -44,7 +44,7 @@ variables:
 .artifact-reports: &artifact-reports
   name: reports
   when: always
-  paths: [ "**/build/reports", "**/build/**/yarn.lock" ]
+  paths: [ "**/build/reports", "**/build/**/yarn.lock", "**/build/kotlin/abi-legacy" ]
   reports:
     junit: "**/build/test-results/**/TEST-*.xml"
     coverage_report:
@@ -152,6 +152,20 @@ test:integration-test:
       :trixnity-client:integration-tests:jvmTest
       -Dkotlinx.coroutines.debug
       --stacktrace
+
+# requires macOS since it can build/emulate all other targets
+checkAbi:
+  stage: test
+  interruptible: true
+  timeout: 1h
+  needs: [ "build:mac" ]
+  tags: [ "connect2x-mac" ]
+  artifacts: *artifact-reports
+  rules:
+    - *if-merge-request
+  script:
+    - ./gradlew dumpLegacyAbi --stacktrace
+    - ./gradlew checkLegacyAbi --stacktrace
 
 security:dependencies:
   stage: security

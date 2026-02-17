@@ -1,0 +1,123 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Alias: apple => [iosArm64, iosSimulatorArm64, iosX64, macosArm64, macosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-crypto-core>
+abstract interface de.connect2x.trixnity.crypto.core/Hasher : kotlin/AutoCloseable { // de.connect2x.trixnity.crypto.core/Hasher|null[0]
+    abstract fun close() // de.connect2x.trixnity.crypto.core/Hasher.close|close(){}[0]
+    abstract fun digest(): kotlin/ByteArray // de.connect2x.trixnity.crypto.core/Hasher.digest|digest(){}[0]
+    abstract fun update(kotlin/ByteArray) // de.connect2x.trixnity.crypto.core/Hasher.update|update(kotlin.ByteArray){}[0]
+}
+
+final class de.connect2x.trixnity.crypto.core/AesDecryptionException : kotlin/Exception { // de.connect2x.trixnity.crypto.core/AesDecryptionException|null[0]
+    constructor <init>(kotlin/Throwable) // de.connect2x.trixnity.crypto.core/AesDecryptionException.<init>|<init>(kotlin.Throwable){}[0]
+}
+
+final class de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData { // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String) // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.<init>|<init>(kotlin.String;kotlin.String;kotlin.String){}[0]
+
+    final val ciphertext // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.ciphertext|{}ciphertext[0]
+        final fun <get-ciphertext>(): kotlin/String // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+    final val iv // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.iv|{}iv[0]
+        final fun <get-iv>(): kotlin/String // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.iv.<get-iv>|<get-iv>(){}[0]
+    final val mac // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.mac|{}mac[0]
+        final fun <get-mac>(): kotlin/String // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.mac.<get-mac>|<get-mac>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.component1|component1(){}[0]
+    final fun component2(): kotlin/String // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.component2|component2(){}[0]
+    final fun component3(): kotlin/String // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ...): de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.copy|copy(kotlin.String;kotlin.String;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData.toString|toString(){}[0]
+}
+
+final class de.connect2x.trixnity.crypto.core/DerivedKeys { // de.connect2x.trixnity.crypto.core/DerivedKeys|null[0]
+    constructor <init>(kotlin/ByteArray, kotlin/ByteArray) // de.connect2x.trixnity.crypto.core/DerivedKeys.<init>|<init>(kotlin.ByteArray;kotlin.ByteArray){}[0]
+
+    final val aesKey // de.connect2x.trixnity.crypto.core/DerivedKeys.aesKey|{}aesKey[0]
+        final fun <get-aesKey>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.core/DerivedKeys.aesKey.<get-aesKey>|<get-aesKey>(){}[0]
+    final val hmacKey // de.connect2x.trixnity.crypto.core/DerivedKeys.hmacKey|{}hmacKey[0]
+        final fun <get-hmacKey>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.core/DerivedKeys.hmacKey.<get-hmacKey>|<get-hmacKey>(){}[0]
+}
+
+final class de.connect2x.trixnity.crypto.core/Sha256ByteFlow : kotlinx.coroutines.flow/Flow<kotlin/ByteArray> { // de.connect2x.trixnity.crypto.core/Sha256ByteFlow|null[0]
+    constructor <init>(kotlinx.coroutines.flow/Flow<kotlin/ByteArray>, kotlinx.coroutines.flow/StateFlow<kotlin/String?>) // de.connect2x.trixnity.crypto.core/Sha256ByteFlow.<init>|<init>(kotlinx.coroutines.flow.Flow<kotlin.ByteArray>;kotlinx.coroutines.flow.StateFlow<kotlin.String?>){}[0]
+
+    final val hash // de.connect2x.trixnity.crypto.core/Sha256ByteFlow.hash|{}hash[0]
+        final fun <get-hash>(): kotlinx.coroutines.flow/StateFlow<kotlin/String?> // de.connect2x.trixnity.crypto.core/Sha256ByteFlow.hash.<get-hash>|<get-hash>(){}[0]
+
+    final suspend fun collect(kotlinx.coroutines.flow/FlowCollector<kotlin/ByteArray>) // de.connect2x.trixnity.crypto.core/Sha256ByteFlow.collect|collect(kotlinx.coroutines.flow.FlowCollector<kotlin.ByteArray>){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.core/SecureRandom : kotlin.random/Random { // de.connect2x.trixnity.crypto.core/SecureRandom|null[0]
+    final fun nextBits(kotlin/Int): kotlin/Int // de.connect2x.trixnity.crypto.core/SecureRandom.nextBits|nextBits(kotlin.Int){}[0]
+    final fun nextBytes(kotlin/ByteArray, kotlin/Int, kotlin/Int): kotlin/ByteArray // de.connect2x.trixnity.crypto.core/SecureRandom.nextBytes|nextBytes(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+}
+
+final const val de.connect2x.trixnity.crypto.core/BASE58_ALPHABET // de.connect2x.trixnity.crypto.core/BASE58_ALPHABET|{}BASE58_ALPHABET[0]
+    final fun <get-BASE58_ALPHABET>(): kotlin/String // de.connect2x.trixnity.crypto.core/BASE58_ALPHABET.<get-BASE58_ALPHABET>|<get-BASE58_ALPHABET>(){}[0]
+
+final fun (kotlin/ByteArray).de.connect2x.trixnity.crypto.core/encodeBase58(): kotlin/String // de.connect2x.trixnity.crypto.core/encodeBase58|encodeBase58@kotlin.ByteArray(){}[0]
+final fun (kotlin/String).de.connect2x.trixnity.crypto.core/decodeBase58(): kotlin/ByteArray // de.connect2x.trixnity.crypto.core/decodeBase58|decodeBase58@kotlin.String(){}[0]
+final fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.crypto.core/decryptAes256Ctr(kotlin/ByteArray, kotlin/ByteArray): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.crypto.core/decryptAes256Ctr|decryptAes256Ctr@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(kotlin.ByteArray;kotlin.ByteArray){}[0]
+final fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.crypto.core/encryptAes256Ctr(kotlin/ByteArray, kotlin/ByteArray): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.crypto.core/encryptAes256Ctr|encryptAes256Ctr@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(kotlin.ByteArray;kotlin.ByteArray){}[0]
+final fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.crypto.core/filterNotEmpty(): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.crypto.core/filterNotEmpty|filterNotEmpty@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(){}[0]
+final fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.crypto.core/sha256(): de.connect2x.trixnity.crypto.core/Sha256ByteFlow // de.connect2x.trixnity.crypto.core/sha256|sha256@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(){}[0]
+final fun de.connect2x.trixnity.crypto.core/Sha256(): de.connect2x.trixnity.crypto.core/Hasher // de.connect2x.trixnity.crypto.core/Sha256|Sha256(){}[0]
+final fun de.connect2x.trixnity.crypto.core/fillRandomBytes(kotlin/ByteArray) // de.connect2x.trixnity.crypto.core/fillRandomBytes|fillRandomBytes(kotlin.ByteArray){}[0]
+final suspend fun de.connect2x.trixnity.crypto.core/createAesHmacSha2MacFromKey(kotlin/ByteArray, kotlin/ByteArray): kotlin/String // de.connect2x.trixnity.crypto.core/createAesHmacSha2MacFromKey|createAesHmacSha2MacFromKey(kotlin.ByteArray;kotlin.ByteArray){}[0]
+final suspend fun de.connect2x.trixnity.crypto.core/decryptAesHmacSha2(de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData, kotlin/ByteArray, kotlin/String): kotlin/ByteArray // de.connect2x.trixnity.crypto.core/decryptAesHmacSha2|decryptAesHmacSha2(de.connect2x.trixnity.crypto.core.AesHmacSha2EncryptedData;kotlin.ByteArray;kotlin.String){}[0]
+final suspend fun de.connect2x.trixnity.crypto.core/deriveKeys(kotlin/ByteArray, kotlin/String): de.connect2x.trixnity.crypto.core/DerivedKeys // de.connect2x.trixnity.crypto.core/deriveKeys|deriveKeys(kotlin.ByteArray;kotlin.String){}[0]
+final suspend fun de.connect2x.trixnity.crypto.core/encryptAesHmacSha2(kotlin/ByteArray, kotlin/ByteArray, kotlin/String, kotlin/ByteArray = ...): de.connect2x.trixnity.crypto.core/AesHmacSha2EncryptedData // de.connect2x.trixnity.crypto.core/encryptAesHmacSha2|encryptAesHmacSha2(kotlin.ByteArray;kotlin.ByteArray;kotlin.String;kotlin.ByteArray){}[0]
+final suspend fun de.connect2x.trixnity.crypto.core/generatePbkdf2Sha512(kotlin/String, kotlin/ByteArray, kotlin/Int, kotlin/Int): kotlin/ByteArray // de.connect2x.trixnity.crypto.core/generatePbkdf2Sha512|generatePbkdf2Sha512(kotlin.String;kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+final suspend fun de.connect2x.trixnity.crypto.core/hmacSha256(kotlin/ByteArray, kotlin/ByteArray): kotlin/ByteArray // de.connect2x.trixnity.crypto.core/hmacSha256|hmacSha256(kotlin.ByteArray;kotlin.ByteArray){}[0]
+
+// Targets: [apple]
+final fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.crypto.core/withCCCryptor(kotlin/UInt, kotlin/ByteArray, kotlin/ByteArray): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.crypto.core/withCCCryptor|withCCCryptor@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(kotlin.UInt;kotlin.ByteArray;kotlin.ByteArray){}[0]
+
+// Targets: [js]
+abstract interface /Cipher { // /Cipher|null[0]
+    abstract fun final(): js.buffer/ArrayBuffer // /Cipher.final|final(){}[0]
+    abstract fun update(js.typedarrays/Uint8Array<*>): js.buffer/ArrayBuffer // /Cipher.update|update(js.typedarrays.Uint8Array<*>){}[0]
+}
+
+// Targets: [js]
+abstract interface /Decipher { // /Decipher|null[0]
+    abstract fun final(): js.buffer/ArrayBuffer // /Decipher.final|final(){}[0]
+    abstract fun update(js.typedarrays/Uint8Array<*>): js.buffer/ArrayBuffer // /Decipher.update|update(js.typedarrays.Uint8Array<*>){}[0]
+}
+
+// Targets: [js]
+abstract interface /HMAC { // /HMAC|null[0]
+    abstract fun digest(): js.buffer/ArrayBuffer // /HMAC.digest|digest(){}[0]
+    abstract fun update(js.typedarrays/Uint8Array<*>) // /HMAC.update|update(js.typedarrays.Uint8Array<*>){}[0]
+}
+
+// Targets: [js]
+abstract interface /Hash { // /Hash|null[0]
+    abstract fun digest(): js.buffer/ArrayBuffer // /Hash.digest|digest(){}[0]
+    abstract fun update(js.typedarrays/Uint8Array<*>) // /Hash.update|update(js.typedarrays.Uint8Array<*>){}[0]
+}
+
+// Targets: [js]
+final fun /createCipheriv(kotlin/String, js.typedarrays/Uint8Array<*>, js.typedarrays/Uint8Array<*>): /Cipher // /createCipheriv|createCipheriv(kotlin.String;js.typedarrays.Uint8Array<*>;js.typedarrays.Uint8Array<*>){}[0]
+
+// Targets: [js]
+final fun /createDecipheriv(kotlin/String, js.typedarrays/Uint8Array<*>, js.typedarrays/Uint8Array<*>): /Decipher // /createDecipheriv|createDecipheriv(kotlin.String;js.typedarrays.Uint8Array<*>;js.typedarrays.Uint8Array<*>){}[0]
+
+// Targets: [js]
+final fun /createHash(kotlin/String): /Hash // /createHash|createHash(kotlin.String){}[0]
+
+// Targets: [js]
+final fun /createHmac(kotlin/String, js.typedarrays/Uint8Array<*>): /HMAC // /createHmac|createHmac(kotlin.String;js.typedarrays.Uint8Array<*>){}[0]
+
+// Targets: [js]
+final fun /pbkdf2(kotlin/String, js.typedarrays/Uint8Array<*>, kotlin/Number, kotlin/Number, kotlin/String, kotlin/Function2<kotlin/Error?, js.typedarrays/Uint8Array<*>, kotlin/Unit>) // /pbkdf2|pbkdf2(kotlin.String;js.typedarrays.Uint8Array<*>;kotlin.Number;kotlin.Number;kotlin.String;kotlin.Function2<kotlin.Error?,js.typedarrays.Uint8Array<*>,kotlin.Unit>){}[0]
+
+// Targets: [js]
+final fun /randomFillSync(js.typedarrays/Int8Array<*>): js.typedarrays/Uint8Array<*> // /randomFillSync|randomFillSync(js.typedarrays.Int8Array<*>){}[0]

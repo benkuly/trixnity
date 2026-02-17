@@ -1,0 +1,542 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-crypto-driver-libolm>
+final class de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas : de.connect2x.trixnity.crypto.driver.sas/EstablishedSas { // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmSAS, de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey) // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.<init>|<init>(de.connect2x.trixnity.libolm.OlmSAS;de.connect2x.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519PublicKey){}[0]
+
+    final val ourPublicKey // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.ourPublicKey|{}ourPublicKey[0]
+        final fun <get-ourPublicKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.ourPublicKey.<get-ourPublicKey>|<get-ourPublicKey>(){}[0]
+    final val theirPublicKey // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.theirPublicKey|{}theirPublicKey[0]
+        final fun <get-theirPublicKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.theirPublicKey.<get-theirPublicKey>|<get-theirPublicKey>(){}[0]
+
+    final fun calculateMac(kotlin/String, kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.calculateMac|calculateMac(kotlin.String;kotlin.String){}[0]
+    final fun calculateMacInvalidBase64(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.calculateMacInvalidBase64|calculateMacInvalidBase64(kotlin.String;kotlin.String){}[0]
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.close|close(){}[0]
+    final fun generateBytes(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.generateBytes|generateBytes(kotlin.String){}[0]
+    final fun verifyMac(kotlin/String, kotlin/String, de.connect2x.trixnity.crypto.driver.sas/Mac) // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas.verifyMac|verifyMac(kotlin.String;kotlin.String;de.connect2x.trixnity.crypto.driver.sas.Mac){}[0]
+}
+
+final class de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSas : de.connect2x.trixnity.crypto.driver.sas/Sas { // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSas|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmSAS) // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSas.<init>|<init>(de.connect2x.trixnity.libolm.OlmSAS){}[0]
+
+    final val publicKey // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSas.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSas.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSas.close|close(){}[0]
+    final fun diffieHellman(de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey): de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmEstablishedSas // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSas.diffieHellman|diffieHellman(de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey : de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey.<init>|<init>(kotlin.String){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey : de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKey { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmPkDecryption) // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.<init>|<init>(de.connect2x.trixnity.libolm.OlmPkDecryption){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val publicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey : de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.<init>|<init>(kotlin.String){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.toString|toString(){}[0]
+    final fun verify(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature) // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey.verify|verify(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.Ed25519Signature){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey : de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKey { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmPkSigning) // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.<init>|<init>(de.connect2x.trixnity.libolm.OlmPkSigning){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val publicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.hashCode|hashCode(){}[0]
+    final fun sign(kotlin/String): de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.sign|sign(kotlin.String){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature : de.connect2x.trixnity.crypto.driver.keys/Ed25519Signature { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature.<init>|<init>(kotlin.String){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKey : de.connect2x.trixnity.crypto.driver.keys/PickleKey { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKey|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKey.<init>|<init>(kotlin.String){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey : de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey.<init>|<init>(kotlin.String){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession : de.connect2x.trixnity.crypto.driver.megolm/GroupSession { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmOutboundGroupSession) // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.<init>|<init>(de.connect2x.trixnity.libolm.OlmOutboundGroupSession){}[0]
+
+    final val messageIndex // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.messageIndex|{}messageIndex[0]
+        final fun <get-messageIndex>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.messageIndex.<get-messageIndex>|<get-messageIndex>(){}[0]
+    final val sessionId // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+    final val sessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.sessionKey|{}sessionKey[0]
+        final fun <get-sessionKey>(): de.connect2x.trixnity.crypto.driver.megolm/SessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.sessionKey.<get-sessionKey>|<get-sessionKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.close|close(){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.encrypt|encrypt(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.hashCode|hashCode(){}[0]
+    final fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey?): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession : de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmInboundGroupSession) // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.<init>|<init>(de.connect2x.trixnity.libolm.OlmInboundGroupSession){}[0]
+
+    final val firstKnownIndex // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.firstKnownIndex|{}firstKnownIndex[0]
+        final fun <get-firstKnownIndex>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.firstKnownIndex.<get-firstKnownIndex>|<get-firstKnownIndex>(){}[0]
+    final val inner // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.inner|{}inner[0]
+        final fun <get-inner>(): de.connect2x.trixnity.libolm/OlmInboundGroupSession // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.inner.<get-inner>|<get-inner>(){}[0]
+    final val sessionId // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.close|close(){}[0]
+    final fun decrypt(de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage): de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSession.DecryptedMessage // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.decrypt|decrypt(de.connect2x.trixnity.crypto.driver.megolm.MegolmMessage){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.equals|equals(kotlin.Any?){}[0]
+    final fun exportAt(kotlin/Int): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.exportAt|exportAt(kotlin.Int){}[0]
+    final fun exportAtFirstKnownIndex(): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.exportAtFirstKnownIndex|exportAtFirstKnownIndex(){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.hashCode|hashCode(){}[0]
+    final fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey?): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage : de.connect2x.trixnity.crypto.driver.megolm/MegolmMessage { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage.<init>|<init>(kotlin.String){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey : de.connect2x.trixnity.crypto.driver.megolm/SessionKey { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey.<init>|<init>(kotlin.String){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount : de.connect2x.trixnity.crypto.driver.olm/Account { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmAccount) // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.<init>|<init>(de.connect2x.trixnity.libolm.OlmAccount){}[0]
+
+    final val curve25519Key // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.curve25519Key|{}curve25519Key[0]
+        final fun <get-curve25519Key>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.curve25519Key.<get-curve25519Key>|<get-curve25519Key>(){}[0]
+    final val ed25519Key // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.ed25519Key|{}ed25519Key[0]
+        final fun <get-ed25519Key>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.ed25519Key.<get-ed25519Key>|<get-ed25519Key>(){}[0]
+    final val fallbackKey // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.fallbackKey|{}fallbackKey[0]
+        final fun <get-fallbackKey>(): kotlin/Pair<kotlin/String, de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey>? // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.fallbackKey.<get-fallbackKey>|<get-fallbackKey>(){}[0]
+    final val maxNumberOfOneTimeKeys // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.maxNumberOfOneTimeKeys|{}maxNumberOfOneTimeKeys[0]
+        final fun <get-maxNumberOfOneTimeKeys>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.maxNumberOfOneTimeKeys.<get-maxNumberOfOneTimeKeys>|<get-maxNumberOfOneTimeKeys>(){}[0]
+    final val oneTimeKeys // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.oneTimeKeys|{}oneTimeKeys[0]
+        final fun <get-oneTimeKeys>(): kotlin.collections/Map<kotlin/String, de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.oneTimeKeys.<get-oneTimeKeys>|<get-oneTimeKeys>(){}[0]
+    final val storedOneTimeKeyCount // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.storedOneTimeKeyCount|{}storedOneTimeKeyCount[0]
+        final fun <get-storedOneTimeKeyCount>(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.storedOneTimeKeyCount.<get-storedOneTimeKeyCount>|<get-storedOneTimeKeyCount>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.close|close(){}[0]
+    final fun createInboundSession(de.connect2x.trixnity.crypto.driver.olm/Message.PreKey, de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey?): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.createInboundSession|createInboundSession(de.connect2x.trixnity.crypto.driver.olm.Message.PreKey;de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey?){}[0]
+    final fun createOutboundSession(de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey, de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKey): de.connect2x.trixnity.crypto.driver.olm/Session // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.createOutboundSession|createOutboundSession(de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey;de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey){}[0]
+    final fun dehydrate(de.connect2x.trixnity.crypto.driver.keys/PickleKey): de.connect2x.trixnity.crypto.driver.olm/DehydratedDevice // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.dehydrate|dehydrate(de.connect2x.trixnity.crypto.driver.keys.PickleKey){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.equals|equals(kotlin.Any?){}[0]
+    final fun forgetFallbackKey() // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.forgetFallbackKey|forgetFallbackKey(){}[0]
+    final fun generateFallbackKey(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey? // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.generateFallbackKey|generateFallbackKey(){}[0]
+    final fun generateOneTimeKeys(kotlin/Int): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.generateOneTimeKeys|generateOneTimeKeys(kotlin.Int){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.hashCode|hashCode(){}[0]
+    final fun markKeysAsPublished() // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.markKeysAsPublished|markKeysAsPublished(){}[0]
+    final fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey?): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun sign(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.sign|sign(kotlin.String){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.toString|toString(){}[0]
+
+    final class InboundSessionCreationResult : de.connect2x.trixnity.crypto.driver.olm/Account.InboundSessionCreationResult { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult|null[0]
+        constructor <init>(kotlin/String, de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession) // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.<init>|<init>(kotlin.String;de.connect2x.trixnity.crypto.driver.libolm.olm.LibOlmSession){}[0]
+
+        final val plaintext // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.plaintext|{}plaintext[0]
+            final fun <get-plaintext>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.plaintext.<get-plaintext>|<get-plaintext>(){}[0]
+        final val session // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.session|{}session[0]
+            final fun <get-session>(): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.session.<get-session>|<get-session>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession = ...): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.copy|copy(kotlin.String;de.connect2x.trixnity.crypto.driver.libolm.olm.LibOlmSession){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.InboundSessionCreationResult.toString|toString(){}[0]
+    }
+
+    final class OneTimeKeyGenerationResult : de.connect2x.trixnity.crypto.driver.olm/Account.OneTimeKeyGenerationResult { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult|null[0]
+        constructor <init>(kotlin.collections/List<de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey>, kotlin.collections/List<de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey>) // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.<init>|<init>(kotlin.collections.List<de.connect2x.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519PublicKey>;kotlin.collections.List<de.connect2x.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519PublicKey>){}[0]
+
+        final val created // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.created|{}created[0]
+            final fun <get-created>(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.created.<get-created>|<get-created>(){}[0]
+        final val removed // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.removed|{}removed[0]
+            final fun <get-removed>(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.removed.<get-removed>|<get-removed>(){}[0]
+
+        final fun component1(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/List<de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey> // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.component2|component2(){}[0]
+        final fun copy(kotlin.collections/List<de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey> = ..., kotlin.collections/List<de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey> = ...): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.copy|copy(kotlin.collections.List<de.connect2x.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519PublicKey>;kotlin.collections.List<de.connect2x.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519PublicKey>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount.OneTimeKeyGenerationResult.toString|toString(){}[0]
+    }
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage : de.connect2x.trixnity.crypto.driver.olm/Message.Normal { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage.<init>|<init>(kotlin.String){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage : de.connect2x.trixnity.crypto.driver.olm/Message.PreKey { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage.<init>|<init>(kotlin.String){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession : de.connect2x.trixnity.crypto.driver.olm/Session { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmSession) // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.<init>|<init>(de.connect2x.trixnity.libolm.OlmSession){}[0]
+
+    final val hasReceivedMessage // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.hasReceivedMessage|{}hasReceivedMessage[0]
+        final fun <get-hasReceivedMessage>(): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.hasReceivedMessage.<get-hasReceivedMessage>|<get-hasReceivedMessage>(){}[0]
+    final val sessionId // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.close|close(){}[0]
+    final fun decrypt(de.connect2x.trixnity.crypto.driver.olm/Message): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.decrypt|decrypt(de.connect2x.trixnity.crypto.driver.olm.Message){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.crypto.driver.olm/Message // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.encrypt|encrypt(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.hashCode|hashCode(){}[0]
+    final fun pickle(de.connect2x.trixnity.crypto.driver.keys/PickleKey?): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.pickle|pickle(de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption : de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryption { // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmPkDecryption) // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.<init>|<init>(de.connect2x.trixnity.libolm.OlmPkDecryption){}[0]
+
+    final val publicKey // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.publicKey|{}publicKey[0]
+        final fun <get-publicKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.publicKey.<get-publicKey>|<get-publicKey>(){}[0]
+    final val secretKey // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.secretKey|{}secretKey[0]
+        final fun <get-secretKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.secretKey.<get-secretKey>|<get-secretKey>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.close|close(){}[0]
+    final fun decrypt(de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.decrypt|decrypt(de.connect2x.trixnity.crypto.driver.pkencryption.PkMessage){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption : de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryption { // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmPkEncryption) // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption.<init>|<init>(de.connect2x.trixnity.libolm.OlmPkEncryption){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption.close|close(){}[0]
+    final fun encrypt(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption.encrypt|encrypt(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage : de.connect2x.trixnity.crypto.driver.pkencryption/PkMessage { // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage|null[0]
+    constructor <init>(de.connect2x.trixnity.libolm/OlmPkMessage) // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.<init>|<init>(de.connect2x.trixnity.libolm.OlmPkMessage){}[0]
+
+    final val ciphertext // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.ciphertext|{}ciphertext[0]
+        final fun <get-ciphertext>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.ciphertext.<get-ciphertext>|<get-ciphertext>(){}[0]
+    final val ephemeralKey // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.ephemeralKey|{}ephemeralKey[0]
+        final fun <get-ephemeralKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.ephemeralKey.<get-ephemeralKey>|<get-ephemeralKey>(){}[0]
+    final val mac // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.mac|{}mac[0]
+        final fun <get-mac>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.mac.<get-mac>|<get-mac>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac : de.connect2x.trixnity.crypto.driver.sas/Mac { // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac.<init>|<init>(kotlin.String){}[0]
+
+    final val base64 // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac.base64|{}base64[0]
+        final fun <get-base64>(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac.base64.<get-base64>|<get-base64>(){}[0]
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac.bytes.<get-bytes>|<get-bytes>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmMac.toString|toString(){}[0]
+}
+
+final value class de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes : de.connect2x.trixnity.crypto.driver.sas/SasBytes { // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes|null[0]
+    constructor <init>(kotlin/ByteArray) // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.<init>|<init>(kotlin.ByteArray){}[0]
+
+    final val bytes // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/ByteArray // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val decimals // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.decimals|{}decimals[0]
+        final fun <get-decimals>(): de.connect2x.trixnity.crypto.driver.sas/SasBytes.Decimals // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.decimals.<get-decimals>|<get-decimals>(){}[0]
+    final val emojiIndices // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.emojiIndices|{}emojiIndices[0]
+        final fun <get-emojiIndices>(): de.connect2x.trixnity.crypto.driver.sas/SasBytes.Emojis // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.emojiIndices.<get-emojiIndices>|<get-emojiIndices>(){}[0]
+
+    final fun close() // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.close|close(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasBytes.toString|toString(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKeyFactory : de.connect2x.trixnity.crypto.driver.keys/Curve25519PublicKeyFactory { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKeyFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKeyFactory : de.connect2x.trixnity.crypto.driver.keys/Curve25519SecretKeyFactory { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKeyFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKeyFactory.invoke|invoke(){}[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKeyFactory : de.connect2x.trixnity.crypto.driver.keys/Ed25519PublicKeyFactory { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKeyFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKeyFactory : de.connect2x.trixnity.crypto.driver.keys/Ed25519SecretKeyFactory { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKeyFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKeyFactory.invoke|invoke(){}[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SignatureFactory : de.connect2x.trixnity.crypto.driver.keys/Ed25519SignatureFactory { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SignatureFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SignatureFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519Signature // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SignatureFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories : de.connect2x.trixnity.crypto.driver.keys/KeyFactories { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories|null[0]
+    final val curve25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.curve25519PublicKey|{}curve25519PublicKey[0]
+        final fun <get-curve25519PublicKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519PublicKeyFactory // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.curve25519PublicKey.<get-curve25519PublicKey>|<get-curve25519PublicKey>(){}[0]
+    final val curve25519SecretKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.curve25519SecretKey|{}curve25519SecretKey[0]
+        final fun <get-curve25519SecretKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmCurve25519SecretKeyFactory // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.curve25519SecretKey.<get-curve25519SecretKey>|<get-curve25519SecretKey>(){}[0]
+    final val ed25519PublicKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.ed25519PublicKey|{}ed25519PublicKey[0]
+        final fun <get-ed25519PublicKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519PublicKeyFactory // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.ed25519PublicKey.<get-ed25519PublicKey>|<get-ed25519PublicKey>(){}[0]
+    final val ed25519SecretKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.ed25519SecretKey|{}ed25519SecretKey[0]
+        final fun <get-ed25519SecretKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SecretKeyFactory // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.ed25519SecretKey.<get-ed25519SecretKey>|<get-ed25519SecretKey>(){}[0]
+    final val ed25519Signature // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.ed25519Signature|{}ed25519Signature[0]
+        final fun <get-ed25519Signature>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmEd25519SignatureFactory // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.ed25519Signature.<get-ed25519Signature>|<get-ed25519Signature>(){}[0]
+    final val pickleKey // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.pickleKey|{}pickleKey[0]
+        final fun <get-pickleKey>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKeyFactory // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories.pickleKey.<get-pickleKey>|<get-pickleKey>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKeyFactory : de.connect2x.trixnity.crypto.driver.keys/PickleKeyFactory { // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKeyFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKey? // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKeyFactory.invoke|invoke(){}[0]
+    final fun invoke(kotlin/ByteArray?): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKey? // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKeyFactory.invoke|invoke(kotlin.ByteArray?){}[0]
+    final fun invoke(kotlin/String?): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKey? // de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmPickleKeyFactory.invoke|invoke(kotlin.String?){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKeyFactory : de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKeyFactory { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKeyFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSessionFactory : de.connect2x.trixnity.crypto.driver.megolm/GroupSessionFactory { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSessionFactory|null[0]
+    final fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey?): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSessionFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSession // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSessionFactory.invoke|invoke(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSessionFactory : de.connect2x.trixnity.crypto.driver.megolm/InboundGroupSessionFactory { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSessionFactory|null[0]
+    final fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey?): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSessionFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun import(de.connect2x.trixnity.crypto.driver.megolm/ExportedSessionKey): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSessionFactory.import|import(de.connect2x.trixnity.crypto.driver.megolm.ExportedSessionKey){}[0]
+    final fun invoke(de.connect2x.trixnity.crypto.driver.megolm/SessionKey): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSession // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSessionFactory.invoke|invoke(de.connect2x.trixnity.crypto.driver.megolm.SessionKey){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory : de.connect2x.trixnity.crypto.driver.megolm/MegolmFactory { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory|null[0]
+    final val exportedSessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.exportedSessionKey|{}exportedSessionKey[0]
+        final fun <get-exportedSessionKey>(): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmExportedSessionKeyFactory // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.exportedSessionKey.<get-exportedSessionKey>|<get-exportedSessionKey>(){}[0]
+    final val groupSession // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.groupSession|{}groupSession[0]
+        final fun <get-groupSession>(): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmGroupSessionFactory // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.groupSession.<get-groupSession>|<get-groupSession>(){}[0]
+    final val inboundGroupSession // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.inboundGroupSession|{}inboundGroupSession[0]
+        final fun <get-inboundGroupSession>(): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmInboundGroupSessionFactory // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.inboundGroupSession.<get-inboundGroupSession>|<get-inboundGroupSession>(){}[0]
+    final val message // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.message|{}message[0]
+        final fun <get-message>(): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessageFactory // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.message.<get-message>|<get-message>(){}[0]
+    final val sessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.sessionKey|{}sessionKey[0]
+        final fun <get-sessionKey>(): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKeyFactory // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory.sessionKey.<get-sessionKey>|<get-sessionKey>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessageFactory : de.connect2x.trixnity.crypto.driver.megolm/MegolmMessageFactory { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessageFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessage // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmMessageFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKeyFactory : de.connect2x.trixnity.crypto.driver.megolm/SessionKeyFactory { // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKeyFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKeyFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKey // de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmSessionKeyFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccountFactory : de.connect2x.trixnity.crypto.driver.olm/AccountFactory { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccountFactory|null[0]
+    final val dehydratedDevicesSupported // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccountFactory.dehydratedDevicesSupported|{}dehydratedDevicesSupported[0]
+        final fun <get-dehydratedDevicesSupported>(): kotlin/Boolean // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccountFactory.dehydratedDevicesSupported.<get-dehydratedDevicesSupported>|<get-dehydratedDevicesSupported>(){}[0]
+
+    final fun fromDehydratedDevice(kotlin/String, kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey): de.connect2x.trixnity.crypto.driver.olm/Account // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccountFactory.fromDehydratedDevice|fromDehydratedDevice(kotlin.String;kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey){}[0]
+    final fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey?): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccountFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccount // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccountFactory.invoke|invoke(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmMessageFactory : de.connect2x.trixnity.crypto.driver.olm/MessageFactory { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmMessageFactory|null[0]
+    final val normal // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmMessageFactory.normal|{}normal[0]
+        final fun <get-normal>(): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessageFactory // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmMessageFactory.normal.<get-normal>|<get-normal>(){}[0]
+    final val preKey // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmMessageFactory.preKey|{}preKey[0]
+        final fun <get-preKey>(): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessageFactory // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmMessageFactory.preKey.<get-preKey>|<get-preKey>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessageFactory : de.connect2x.trixnity.crypto.driver.olm/NormalMessageFactory { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessageFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessage // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmNormalMessageFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmOlmFactory : de.connect2x.trixnity.crypto.driver.olm/OlmFactory { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmOlmFactory|null[0]
+    final val account // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmOlmFactory.account|{}account[0]
+        final fun <get-account>(): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmAccountFactory // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmOlmFactory.account.<get-account>|<get-account>(){}[0]
+    final val message // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmOlmFactory.message|{}message[0]
+        final fun <get-message>(): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmMessageFactory // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmOlmFactory.message.<get-message>|<get-message>(){}[0]
+    final val session // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmOlmFactory.session|{}session[0]
+        final fun <get-session>(): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSessionFactory // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmOlmFactory.session.<get-session>|<get-session>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessageFactory : de.connect2x.trixnity.crypto.driver.olm/PreKeyMessageFactory { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessageFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessageFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessage // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmPreKeyMessageFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSessionFactory : de.connect2x.trixnity.crypto.driver.olm/SessionFactory { // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSessionFactory|null[0]
+    final fun fromPickle(kotlin/String, de.connect2x.trixnity.crypto.driver.keys/PickleKey?): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSession // de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmSessionFactory.fromPickle|fromPickle(kotlin.String;de.connect2x.trixnity.crypto.driver.keys.PickleKey?){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryptionFactory : de.connect2x.trixnity.crypto.driver.pkencryption/PkDecryptionFactory { // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryptionFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryptionFactory.invoke|invoke(){}[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryptionFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryption // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryptionFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryptionFactory : de.connect2x.trixnity.crypto.driver.pkencryption/PkEncryptionFactory { // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryptionFactory|null[0]
+    final fun invoke(kotlin/ByteArray): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryptionFactory.invoke|invoke(kotlin.ByteArray){}[0]
+    final fun invoke(kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryption // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryptionFactory.invoke|invoke(kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkFactory : de.connect2x.trixnity.crypto.driver.pkencryption/PkFactory { // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkFactory|null[0]
+    final val decryption // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkFactory.decryption|{}decryption[0]
+        final fun <get-decryption>(): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkDecryptionFactory // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkFactory.decryption.<get-decryption>|<get-decryption>(){}[0]
+    final val encryption // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkFactory.encryption|{}encryption[0]
+        final fun <get-encryption>(): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkEncryptionFactory // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkFactory.encryption.<get-encryption>|<get-encryption>(){}[0]
+    final val message // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkFactory.message|{}message[0]
+        final fun <get-message>(): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessageFactory // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkFactory.message.<get-message>|<get-message>(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessageFactory : de.connect2x.trixnity.crypto.driver.pkencryption/PkMessageFactory { // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessageFactory|null[0]
+    final fun invoke(kotlin/String, kotlin/String, kotlin/String): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessage // de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkMessageFactory.invoke|invoke(kotlin.String;kotlin.String;kotlin.String){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasFactory : de.connect2x.trixnity.crypto.driver.sas/SasFactory { // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasFactory|null[0]
+    final fun invoke(): de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSas // de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasFactory.invoke|invoke(){}[0]
+}
+
+final object de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver : de.connect2x.trixnity.crypto.driver/CryptoDriver { // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver|null[0]
+    final val key // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.key|{}key[0]
+        final fun <get-key>(): de.connect2x.trixnity.crypto.driver.libolm.keys/LibOlmKeyFactories // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.key.<get-key>|<get-key>(){}[0]
+    final val megolm // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.megolm|{}megolm[0]
+        final fun <get-megolm>(): de.connect2x.trixnity.crypto.driver.libolm.megolm/LibOlmMegolmFactory // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.megolm.<get-megolm>|<get-megolm>(){}[0]
+    final val olm // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.olm|{}olm[0]
+        final fun <get-olm>(): de.connect2x.trixnity.crypto.driver.libolm.olm/LibOlmOlmFactory // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.olm.<get-olm>|<get-olm>(){}[0]
+    final val pk // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.pk|{}pk[0]
+        final fun <get-pk>(): de.connect2x.trixnity.crypto.driver.libolm.pkencryption/LibOlmPkFactory // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.pk.<get-pk>|<get-pk>(){}[0]
+    final val sas // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.sas|{}sas[0]
+        final fun <get-sas>(): de.connect2x.trixnity.crypto.driver.libolm.sas/LibOlmSasFactory // de.connect2x.trixnity.crypto.driver.libolm/LibOlmCryptoDriver.sas.<get-sas>|<get-sas>(){}[0]
+}

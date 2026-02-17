@@ -1,0 +1,798 @@
+public final class de/connect2x/trixnity/vodozemac/Curve25519PublicKey : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey$Companion;
+	public final fun getBase64 ()Ljava/lang/String;
+	public final fun getBytes ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/Curve25519PublicKey$Companion {
+	public final fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun invoke ([B)Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Curve25519SecretKey : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey$Companion;
+	public final fun diffieHellman (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey$SharedSecret;
+	public final fun getBase64 ()Ljava/lang/String;
+	public final fun getBytes ()[B
+	public final fun getPublicKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Curve25519SecretKey$Companion {
+	public final fun invoke ()Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+	public final fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+	public final fun invoke ([B)Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Curve25519SecretKey$SharedSecret {
+	public fun <init> ([BZ)V
+	public final fun component1 ()[B
+	public final fun component2 ()Z
+	public final fun getSecret ()[B
+	public final fun getWasContributory ()Z
+}
+
+public final class de/connect2x/trixnity/vodozemac/Ed25519PublicKey : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey$Companion;
+	public final fun getBase64 ()Ljava/lang/String;
+	public final fun getBytes ()[B
+	public final fun verify (Ljava/lang/String;Lde/connect2x/trixnity/vodozemac/Ed25519Signature;)V
+	public final fun verify ([BLde/connect2x/trixnity/vodozemac/Ed25519Signature;)V
+}
+
+public final class de/connect2x/trixnity/vodozemac/Ed25519PublicKey$Companion {
+	public final fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public final fun invoke ([B)Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Ed25519SecretKey : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey$Companion;
+	public final fun getBase64 ()Ljava/lang/String;
+	public final fun getBytes ()[B
+	public final fun getPublicKey ()Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public final fun sign (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public final fun sign ([B)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Ed25519SecretKey$Companion {
+	public final fun invoke ()Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;
+	public final fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;
+	public final fun invoke ([B)Lde/connect2x/trixnity/vodozemac/Ed25519SecretKey;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Ed25519Signature : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/Ed25519Signature$Companion;
+	public final fun getBase64 ()Ljava/lang/String;
+	public final fun getBytes ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/Ed25519Signature$Companion {
+	public final fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public final fun invoke ([B)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+}
+
+public final class de/connect2x/trixnity/vodozemac/KeysKt {
+	public static final fun getValue-IZ_uHoA ([B)Ljava/lang/Void;
+	public static final fun toInterop (Ljava/lang/Void;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Library_jvmKt {
+	public static final fun getInitHook ()Lkotlin/jvm/functions/Function0;
+}
+
+public final class de/connect2x/trixnity/vodozemac/ManagedBytesKt {
+	public static final fun toByteArray (JI)[B
+	public static final fun toNativePointerArray (JI)[J
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/MessageTag {
+	public abstract fun getValue ()Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/vodozemac/MessageTag$Bytes : de/connect2x/trixnity/vodozemac/MessageTag {
+	public fun <init> ([B)V
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/MessageTag$String : de/connect2x/trixnity/vodozemac/MessageTag {
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/PickleKey {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/PickleKey$Companion;
+	public static final synthetic fun box-impl ([B)Lde/connect2x/trixnity/vodozemac/PickleKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl ([BLjava/lang/Object;)Z
+	public static final fun equals-impl0 ([B[B)Z
+	public static final fun getBase64-impl ([B)Ljava/lang/String;
+	public final fun getValue ()[B
+	public fun hashCode ()I
+	public static fun hashCode-impl ([B)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl ([B)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/PickleKey$Companion {
+	public final fun invoke-9mVqcCQ (Ljava/lang/String;)[B
+	public final fun invoke-9mVqcCQ ([B)[B
+	public final fun invoke-lXk96OU (Ljava/lang/String;)[B
+	public final fun invoke-lXk96OU ([B)[B
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/Plaintext {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/Plaintext$Companion;
+	public abstract fun getValue ()Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Plaintext$Bytes : de/connect2x/trixnity/vodozemac/Plaintext {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/Plaintext$Bytes$Companion;
+	public fun <init> ([B)V
+	public final fun component1 ()[B
+	public final fun copy ([B)Lde/connect2x/trixnity/vodozemac/Plaintext$Bytes;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/vodozemac/Plaintext$Bytes;[BILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/Plaintext$Bytes;
+	public fun equals (Ljava/lang/Object;)Z
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()[B
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Plaintext$Bytes$Companion {
+	public final fun of (Lde/connect2x/trixnity/vodozemac/Plaintext$Text;)Lde/connect2x/trixnity/vodozemac/Plaintext$Bytes;
+	public final fun of (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Plaintext$Bytes;
+	public final fun of ([B)Lde/connect2x/trixnity/vodozemac/Plaintext$Bytes;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Plaintext$Companion {
+	public final fun of (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Plaintext$Text;
+	public final fun of ([B)Lde/connect2x/trixnity/vodozemac/Plaintext$Bytes;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Plaintext$Text : de/connect2x/trixnity/vodozemac/Plaintext {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/Plaintext$Text$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Plaintext$Text;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/vodozemac/Plaintext$Text;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/Plaintext$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/Plaintext$Text$Companion {
+	public final fun of (Lde/connect2x/trixnity/vodozemac/Plaintext$Bytes;)Lde/connect2x/trixnity/vodozemac/Plaintext$Text;
+	public final fun of (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Plaintext$Text;
+	public final fun of ([B)Lde/connect2x/trixnity/vodozemac/Plaintext$Text;
+}
+
+public final class de/connect2x/trixnity/vodozemac/VodozemacException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey$Companion;
+	public final fun getBase64 ()Ljava/lang/String;
+	public final fun getBytes ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey$Companion {
+	public final fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+	public final fun invoke ([B)Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/GroupSession : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/megolm/GroupSession$Companion;
+	public final fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+	public final fun encrypt ([B)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Bytes;
+	public final fun getMessageIndex ()I
+	public final fun getSessionConfig ()Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getSessionKey ()Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+	public final fun pickle-IZ_uHoA ([B)Ljava/lang/String;
+	public static synthetic fun pickle-IZ_uHoA$default (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;[BILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/GroupSession$Companion {
+	public final fun fromLibolmPickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+	public final fun fromPickle-mXAMHs8 (Ljava/lang/String;[B)Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+	public static synthetic fun fromPickle-mXAMHs8$default (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession$Companion;Ljava/lang/String;[BILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+	public final fun invoke (Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;)Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+	public static synthetic fun invoke$default (Lde/connect2x/trixnity/vodozemac/megolm/GroupSession$Companion;Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/megolm/GroupSession;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/InboundGroupSession : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$Companion;
+	public final fun advanceTo (I)I
+	public final fun compare (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$SessionOrdering;
+	public final fun connected (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)Z
+	public final fun decrypt (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Bytes;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$DecryptedMessage;
+	public final fun decrypt (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$DecryptedMessage;
+	public final fun exportAt (I)Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+	public final fun exportAtFirstKnownIndex ()Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;
+	public final fun getFirstKnownIndex ()I
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun merge (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public final fun pickle-IZ_uHoA ([B)Ljava/lang/String;
+	public static synthetic fun pickle-IZ_uHoA$default (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;[BILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$Companion {
+	public final fun fromLibolmPickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public final fun fromPickle-mXAMHs8 (Ljava/lang/String;[B)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public static synthetic fun fromPickle-mXAMHs8$default (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$Companion;Ljava/lang/String;[BILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public final fun import (Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public static synthetic fun import$default (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$Companion;Lde/connect2x/trixnity/vodozemac/megolm/ExportedSessionKey;Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public final fun invoke (Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+	public static synthetic fun invoke$default (Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$Companion;Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$DecryptedMessage {
+	public fun <init> (Lde/connect2x/trixnity/vodozemac/Plaintext;I)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessageIndex ()I
+	public final fun getPlaintext ()Lde/connect2x/trixnity/vodozemac/Plaintext;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$SessionOrdering : java/lang/Enum {
+	public static final field BETTER Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$SessionOrdering;
+	public static final field EQUAL Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$SessionOrdering;
+	public static final field UNCONNECTED Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$SessionOrdering;
+	public static final field WORSE Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$SessionOrdering;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$SessionOrdering;
+	public static fun values ()[Lde/connect2x/trixnity/vodozemac/megolm/InboundGroupSession$SessionOrdering;
+}
+
+public abstract class de/connect2x/trixnity/vodozemac/megolm/MegolmMessage : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Companion;
+	public synthetic fun <init> (JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBase64 ()Ljava/lang/String;
+	public final fun getBytes ()[B
+	public final fun getCiphertext ()[B
+	public final fun getIndex ()I
+	public final fun getMac ()[B
+	public final fun getSignature ()Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Bytes : de/connect2x/trixnity/vodozemac/megolm/MegolmMessage {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Bytes$Companion;
+	public fun <init> (J)V
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Bytes$Companion : de/connect2x/trixnity/vodozemac/megolm/MegolmMessage$MegolmMessageFactory {
+	public fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Bytes;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage;
+	public fun invoke ([B)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Bytes;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Companion {
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/megolm/MegolmMessage$MegolmMessageFactory {
+	public fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/MegolmMessage$MegolmMessageFactory$DefaultImpls {
+	public static fun invoke (Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$MegolmMessageFactory;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text : de/connect2x/trixnity/vodozemac/megolm/MegolmMessage {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text$Companion;
+	public fun <init> (J)V
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text$Companion : de/connect2x/trixnity/vodozemac/megolm/MegolmMessage$MegolmMessageFactory {
+	public fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage;
+	public fun invoke ([B)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage$Text;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/vodozemac/megolm/MegolmMessage;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Companion;
+	public final fun getVersion ()Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Version;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Companion {
+	public final fun invoke (Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Version;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;
+	public static synthetic fun invoke$default (Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Companion;Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Version;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;
+	public final fun v1 ()Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;
+	public final fun v2 ()Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Version : java/lang/Enum {
+	public static final field VERSION_1 Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Version;
+	public static final field VERSION_2 Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Version;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Version;
+	public static fun values ()[Lde/connect2x/trixnity/vodozemac/megolm/MegolmSessionConfig$Version;
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/SessionKey : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/megolm/SessionKey$Companion;
+	public final fun getBase64 ()Ljava/lang/String;
+	public final fun getBytes ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/megolm/SessionKey$Companion {
+	public final fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+	public final fun invoke ([B)Lde/connect2x/trixnity/vodozemac/megolm/SessionKey;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/Account : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/Account$Companion;
+	public final fun createInboundSession (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Lde/connect2x/trixnity/vodozemac/olm/Account$InboundSessionCreationResult;
+	public final fun createInboundSession (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Lde/connect2x/trixnity/vodozemac/olm/Account$InboundSessionCreationResult;
+	public static synthetic fun createInboundSession$default (Lde/connect2x/trixnity/vodozemac/olm/Account;Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/Account$InboundSessionCreationResult;
+	public static synthetic fun createInboundSession$default (Lde/connect2x/trixnity/vodozemac/olm/Account;Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/Account$InboundSessionCreationResult;
+	public final fun createOutboundSession (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig;)Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public static synthetic fun createOutboundSession$default (Lde/connect2x/trixnity/vodozemac/olm/Account;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public final fun dehydratedDevice-ibfdiGg ([B)Lde/connect2x/trixnity/vodozemac/olm/Account$DehydratedDevice;
+	public final fun forgetFallbackKey ()Z
+	public final fun generateFallbackKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun generateOneTimeKeys (I)Lde/connect2x/trixnity/vodozemac/olm/Account$OneTimeKeyGenerationResult;
+	public final fun getCurve25519Key ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun getEd25519Key ()Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public final fun getFallbackKey ()Lkotlin/Pair;
+	public final fun getIdentityKeys ()Lde/connect2x/trixnity/vodozemac/olm/Account$IdentityKeys;
+	public final fun getMaxNumberOfOneTimeKeys ()I
+	public final fun getOneTimeKeys ()Ljava/util/Map;
+	public final fun getStoredOneTimeKeyCount ()I
+	public final fun markKeysAsPublished ()V
+	public final fun pickle-IZ_uHoA ([B)Ljava/lang/String;
+	public static synthetic fun pickle-IZ_uHoA$default (Lde/connect2x/trixnity/vodozemac/olm/Account;[BILjava/lang/Object;)Ljava/lang/String;
+	public final fun sign (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+	public final fun sign ([B)Lde/connect2x/trixnity/vodozemac/Ed25519Signature;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/Account$Companion {
+	public final fun fromDehydratedDevice-KSYLw7Y (Ljava/lang/String;Ljava/lang/String;[B)Lde/connect2x/trixnity/vodozemac/olm/Account;
+	public final fun fromLibolmPickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/Account;
+	public final fun fromPickle-mXAMHs8 (Ljava/lang/String;[B)Lde/connect2x/trixnity/vodozemac/olm/Account;
+	public static synthetic fun fromPickle-mXAMHs8$default (Lde/connect2x/trixnity/vodozemac/olm/Account$Companion;Ljava/lang/String;[BILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/Account;
+	public final fun invoke ()Lde/connect2x/trixnity/vodozemac/olm/Account;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/Account$DehydratedDevice {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/Account$DehydratedDevice;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/vodozemac/olm/Account$DehydratedDevice;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/Account$DehydratedDevice;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCiphertext ()Ljava/lang/String;
+	public final fun getNonce ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/Account$IdentityKeys : java/lang/AutoCloseable {
+	public fun <init> (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)V
+	public fun close ()V
+	public final fun component1 ()Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public final fun component2 ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun copy (Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Lde/connect2x/trixnity/vodozemac/olm/Account$IdentityKeys;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/vodozemac/olm/Account$IdentityKeys;Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/Account$IdentityKeys;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurve25519 ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun getEd25519 ()Lde/connect2x/trixnity/vodozemac/Ed25519PublicKey;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/Account$InboundSessionCreationResult {
+	public fun <init> (Lde/connect2x/trixnity/vodozemac/Plaintext;Lde/connect2x/trixnity/vodozemac/olm/Session;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPlaintext ()Lde/connect2x/trixnity/vodozemac/Plaintext;
+	public final fun getSession ()Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/Account$OneTimeKeyGenerationResult {
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;Ljava/util/List;)Lde/connect2x/trixnity/vodozemac/olm/Account$OneTimeKeyGenerationResult;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/vodozemac/olm/Account$OneTimeKeyGenerationResult;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/Account$OneTimeKeyGenerationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreated ()Ljava/util/List;
+	public final fun getRemoved ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/olm/OlmMessage {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Companion;
+	public fun getBase64 ()Ljava/lang/String;
+	public fun getBytes ()[B
+	public abstract fun getMessage ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public abstract fun getSessionKeys ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes : de/connect2x/trixnity/vodozemac/olm/OlmMessage {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes$Companion;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes$Companion {
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes$DefaultImpls {
+	public static fun getBase64 (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes;)Ljava/lang/String;
+	public static fun getBytes (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes;)[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Companion {
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$DefaultImpls {
+	public static fun getBase64 (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;)Ljava/lang/String;
+	public static fun getBytes (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;)[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Message : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public final fun getChainIndex ()J
+	public final fun getCiphertext ()[B
+	public final fun getMacTruncated ()Z
+	public final fun getRatchetKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun getVersion ()I
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal : de/connect2x/trixnity/vodozemac/olm/OlmMessage {
+	public abstract fun getMessage ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public fun getSessionKeys ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Bytes : de/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes, de/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Bytes$Companion;
+	public fun <init> (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;)V
+	public final fun component1 ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public final fun copy (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Bytes;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Bytes;Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Bytes;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public fun getBytes ()[B
+	public fun getMessage ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public fun getSessionKeys ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Bytes$Companion : de/connect2x/trixnity/vodozemac/olm/OlmMessage$OlmMessageFactory {
+	public fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Bytes;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+	public fun invoke ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Bytes;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$DefaultImpls {
+	public static fun getBase64 (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal;)Ljava/lang/String;
+	public static fun getBytes (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal;)[B
+	public static fun getSessionKeys (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal;)Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text : de/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal, de/connect2x/trixnity/vodozemac/olm/OlmMessage$Text {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text$Companion;
+	public fun <init> (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;)V
+	public final fun component1 ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public final fun copy (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public fun getBytes ()[B
+	public fun getMessage ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public fun getSessionKeys ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text$Companion : de/connect2x/trixnity/vodozemac/olm/OlmMessage$OlmMessageFactory {
+	public fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+	public fun invoke ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Normal$Text;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/olm/OlmMessage$OlmMessageFactory {
+	public fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+	public abstract fun invoke ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$OlmMessageFactory$DefaultImpls {
+	public static fun invoke (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$OlmMessageFactory;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey : de/connect2x/trixnity/vodozemac/olm/OlmMessage {
+	public abstract fun getMessage ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public abstract fun getSessionKeys ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes : de/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes, de/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes$Companion;
+	public fun <init> (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;)V
+	public final fun component1 ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public final fun component2 ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+	public final fun copy (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes;Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public fun getBytes ()[B
+	public fun getMessage ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public fun getSessionKeys ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes$Companion : de/connect2x/trixnity/vodozemac/olm/OlmMessage$OlmMessageFactory {
+	public fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+	public fun invoke ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Bytes;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$DefaultImpls {
+	public static fun getBase64 (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey;)Ljava/lang/String;
+	public static fun getBytes (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey;)[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text : de/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey, de/connect2x/trixnity/vodozemac/olm/OlmMessage$Text {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text$Companion;
+	public fun <init> (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;)V
+	public final fun component1 ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public final fun component2 ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+	public final fun copy (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getBase64 ()Ljava/lang/String;
+	public fun getBytes ()[B
+	public fun getMessage ()Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Message;
+	public fun getSessionKeys ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text$Companion : de/connect2x/trixnity/vodozemac/olm/OlmMessage$OlmMessageFactory {
+	public fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;
+	public synthetic fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+	public fun invoke ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$PreKey$Text;
+	public synthetic fun invoke ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage;
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Text : de/connect2x/trixnity/vodozemac/olm/OlmMessage {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Text$Companion;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Text$Companion {
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmMessage$Text$DefaultImpls {
+	public static fun getBase64 (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Text;)Ljava/lang/String;
+	public static fun getBytes (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Text;)[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmSessionConfig : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Companion;
+	public final fun getVersion ()Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Version;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Companion {
+	public final fun invoke (Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Version;)Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig;
+	public static synthetic fun invoke$default (Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Companion;Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Version;ILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig;
+	public final fun v1 ()Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig;
+	public final fun v2 ()Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Version : java/lang/Enum {
+	public static final field VERSION_1 Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Version;
+	public static final field VERSION_2 Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Version;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Version;
+	public static fun values ()[Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig$Version;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/Session : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/olm/Session$Companion;
+	public final fun decrypt (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes;)[B
+	public final fun decrypt (Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Text;)Ljava/lang/String;
+	public final fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Text;
+	public final fun encrypt ([B)Lde/connect2x/trixnity/vodozemac/olm/OlmMessage$Bytes;
+	public final fun getHasReceivedMessage ()Z
+	public final fun getSessionConfig ()Lde/connect2x/trixnity/vodozemac/olm/OlmSessionConfig;
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getSessionKeys ()Lde/connect2x/trixnity/vodozemac/olm/SessionKeys;
+	public final fun pickle-IZ_uHoA ([B)Ljava/lang/String;
+	public static synthetic fun pickle-IZ_uHoA$default (Lde/connect2x/trixnity/vodozemac/olm/Session;[BILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/Session$Companion {
+	public final fun fromLibolmPickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public final fun fromPickle-mXAMHs8 (Ljava/lang/String;[B)Lde/connect2x/trixnity/vodozemac/olm/Session;
+	public static synthetic fun fromPickle-mXAMHs8$default (Lde/connect2x/trixnity/vodozemac/olm/Session$Companion;Ljava/lang/String;[BILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/olm/Session;
+}
+
+public final class de/connect2x/trixnity/vodozemac/olm/SessionKeys : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public final fun getBaseKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun getIdentityKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun getOneTimeKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun getSessionId ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/pkencryption/PkDecryption : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption$Companion;
+	public final fun decrypt (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Bytes;)[B
+	public final fun decrypt (Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;)Ljava/lang/String;
+	public final fun getPublicKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun getSecretKey ()Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;
+}
+
+public final class de/connect2x/trixnity/vodozemac/pkencryption/PkDecryption$Companion {
+	public final fun fromLibolmPickle (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;
+	public final fun invoke ()Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;
+	public final fun invoke (Lde/connect2x/trixnity/vodozemac/Curve25519SecretKey;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkDecryption;
+}
+
+public final class de/connect2x/trixnity/vodozemac/pkencryption/PkEncryption : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption$Companion;
+	public final fun encrypt (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text;
+	public final fun encrypt ([B)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Bytes;
+}
+
+public final class de/connect2x/trixnity/vodozemac/pkencryption/PkEncryption$Companion {
+	public final fun invoke (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryption;
+}
+
+public abstract interface class de/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage {
+	public abstract fun getCiphertext ()[B
+	public abstract fun getEphemeralKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public abstract fun getMac ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Bytes : de/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Bytes$Companion;
+	public fun <init> ([B[BLde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)V
+	public fun getCiphertext ()[B
+	public fun getEphemeralKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public fun getMac ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Bytes$Companion {
+}
+
+public final class de/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text : de/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text$Companion;
+	public fun <init> ([B[BLde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)V
+	public fun getCiphertext ()[B
+	public fun getEphemeralKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public fun getMac ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/pkencryption/PkEncryptionMessage$Text$Companion {
+}
+
+public final class de/connect2x/trixnity/vodozemac/sas/EstablishedSas : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public final fun calculateMac (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/sas/Mac;
+	public final fun calculateMac ([B[B)Lde/connect2x/trixnity/vodozemac/sas/Mac;
+	public final fun calculateMacInvalidBase64 (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public final fun calculateMacInvalidBase64 ([B[B)Ljava/lang/String;
+	public final fun generateBytes (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/sas/SasBytes;
+	public final fun generateBytes ([B)Lde/connect2x/trixnity/vodozemac/sas/SasBytes;
+	public final fun getOurPublicKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun getTheirPublicKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+	public final fun verifyMac (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/vodozemac/sas/Mac;)V
+	public final fun verifyMac ([B[BLde/connect2x/trixnity/vodozemac/sas/Mac;)V
+}
+
+public final class de/connect2x/trixnity/vodozemac/sas/Mac : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/sas/Mac$Companion;
+	public final fun getBase64 ()Ljava/lang/String;
+	public final fun getBytes ()[B
+}
+
+public final class de/connect2x/trixnity/vodozemac/sas/Mac$Companion {
+	public final fun invoke (Ljava/lang/String;)Lde/connect2x/trixnity/vodozemac/sas/Mac;
+	public final fun invoke ([B)Lde/connect2x/trixnity/vodozemac/sas/Mac;
+}
+
+public final class de/connect2x/trixnity/vodozemac/sas/Sas : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public fun <init> ()V
+	public final fun diffieHellman (Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;)Lde/connect2x/trixnity/vodozemac/sas/EstablishedSas;
+	public final fun getPublicKey ()Lde/connect2x/trixnity/vodozemac/Curve25519PublicKey;
+}
+
+public final class de/connect2x/trixnity/vodozemac/sas/SasBytes : de/connect2x/trixnity/vodozemac/utils/Managed {
+	public final fun getBytes ()[B
+	public final fun getDecimals ()Lde/connect2x/trixnity/vodozemac/sas/SasBytes$Decimals;
+	public final fun getEmojiIndices ()Lde/connect2x/trixnity/vodozemac/sas/SasBytes$Emojis;
+}
+
+public final class de/connect2x/trixnity/vodozemac/sas/SasBytes$Decimals {
+	public synthetic fun <init> (SSSLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-Mh2AYeg ()S
+	public final fun component2-Mh2AYeg ()S
+	public final fun component3-Mh2AYeg ()S
+	public final fun copy-Ut6C-W8 (SSS)Lde/connect2x/trixnity/vodozemac/sas/SasBytes$Decimals;
+	public static synthetic fun copy-Ut6C-W8$default (Lde/connect2x/trixnity/vodozemac/sas/SasBytes$Decimals;SSSILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/sas/SasBytes$Decimals;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAsList ()Ljava/util/List;
+	public final fun getFirst-Mh2AYeg ()S
+	public final fun getSecond-Mh2AYeg ()S
+	public final fun getThird-Mh2AYeg ()S
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/sas/SasBytes$Emojis {
+	public synthetic fun <init> (BBBBBBBLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-w2LRezQ ()B
+	public final fun component2-w2LRezQ ()B
+	public final fun component3-w2LRezQ ()B
+	public final fun component4-w2LRezQ ()B
+	public final fun component5-w2LRezQ ()B
+	public final fun component6-w2LRezQ ()B
+	public final fun component7-w2LRezQ ()B
+	public final fun copy-hJv0Ai0 (BBBBBBB)Lde/connect2x/trixnity/vodozemac/sas/SasBytes$Emojis;
+	public static synthetic fun copy-hJv0Ai0$default (Lde/connect2x/trixnity/vodozemac/sas/SasBytes$Emojis;BBBBBBBILjava/lang/Object;)Lde/connect2x/trixnity/vodozemac/sas/SasBytes$Emojis;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAsList ()Ljava/util/List;
+	public final fun getEmojiIndex1-w2LRezQ ()B
+	public final fun getEmojiIndex2-w2LRezQ ()B
+	public final fun getEmojiIndex3-w2LRezQ ()B
+	public final fun getEmojiIndex4-w2LRezQ ()B
+	public final fun getEmojiIndex5-w2LRezQ ()B
+	public final fun getEmojiIndex6-w2LRezQ ()B
+	public final fun getEmojiIndex7-w2LRezQ ()B
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class de/connect2x/trixnity/vodozemac/utils/Managed : de/connect2x/trixnity/vodozemac/utils/Native, java/lang/AutoCloseable {
+	public static final field Companion Lde/connect2x/trixnity/vodozemac/utils/Managed$Companion;
+	public fun <init> (JLkotlin/jvm/functions/Function1;)V
+	public fun close ()V
+}
+
+public final class de/connect2x/trixnity/vodozemac/utils/Managed$CleanerThunk : java/lang/Runnable {
+	public fun <init> (JLkotlin/jvm/functions/Function1;)V
+	public fun run ()V
+}
+
+public final class de/connect2x/trixnity/vodozemac/utils/Managed$Companion {
+}
+
+public abstract class de/connect2x/trixnity/vodozemac/utils/Native {
+	public fun <init> (J)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/vodozemac/utils/NativeKt {
+	public static final fun component1 ([J)J
+	public static final fun component2 ([J)J
+	public static final fun component3 ([J)J
+	public static final fun component4 ([J)J
+	public static final fun component5 ([J)J
+	public static final fun component6 ([J)J
+	public static final fun map ([JLkotlin/jvm/functions/Function1;)Ljava/util/List;
+}
+
+public final class de/connect2x/trixnity/vodozemac/utils/Native_jniKt {
+	public static final fun asPtrSequence ([J)Lkotlin/sequences/Sequence;
+	public static final fun format (J)Ljava/lang/String;
+	public static final fun getIntValue (J)I
+	public static final fun getLongValue (J)J
+	public static final fun getNullPtr ()J
+	public static final fun getPtrSize ()I
+}
+

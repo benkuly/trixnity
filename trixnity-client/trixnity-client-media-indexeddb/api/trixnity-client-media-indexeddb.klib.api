@@ -1,0 +1,21 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <de.connect2x.trixnity:trixnity-client-media-indexeddb>
+abstract interface de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia : de.connect2x.trixnity.client.media/PlatformMedia { // de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia|null[0]
+    abstract fun transformByteArrayFlow(kotlin/Function1<kotlinx.coroutines.flow/Flow<kotlin/ByteArray>, kotlinx.coroutines.flow/Flow<kotlin/ByteArray>>): de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia // de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia.transformByteArrayFlow|transformByteArrayFlow(kotlin.Function1<kotlinx.coroutines.flow.Flow<kotlin.ByteArray>,kotlinx.coroutines.flow.Flow<kotlin.ByteArray>>){}[0]
+    abstract suspend fun getTemporaryFile(): kotlin/Result<de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia.TemporaryFile> // de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia.getTemporaryFile|getTemporaryFile(){}[0]
+
+    abstract interface TemporaryFile { // de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia.TemporaryFile|null[0]
+        abstract val file // de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia.TemporaryFile.file|{}file[0]
+            abstract fun <get-file>(): web.blob/Blob // de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia.TemporaryFile.file.<get-file>|<get-file>(){}[0]
+
+        abstract suspend fun delete() // de.connect2x.trixnity.client.media.indexeddb/IndexeddbPlatformMedia.TemporaryFile.delete|delete(){}[0]
+    }
+}
+
+final fun (de.connect2x.trixnity.client/MediaStoreModule.Companion).de.connect2x.trixnity.client.media.indexeddb/indexedDB(kotlin/String = ...): de.connect2x.trixnity.client/MediaStoreModule // de.connect2x.trixnity.client.media.indexeddb/indexedDB|indexedDB@de.connect2x.trixnity.client.MediaStoreModule.Companion(kotlin.String){}[0]

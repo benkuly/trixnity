@@ -1,0 +1,41 @@
+public abstract interface class de/connect2x/trixnity/test/utils/CoroutineTest {
+	public fun getDefaultTimeout-FghU774 ()Lkotlin/time/Duration;
+	public abstract fun getTestScope ()Lkotlinx/coroutines/test/TestScope;
+}
+
+public final class de/connect2x/trixnity/test/utils/CoroutineTest$DefaultImpls {
+	public static fun getDefaultTimeout-FghU774 (Lde/connect2x/trixnity/test/utils/CoroutineTest;)Lkotlin/time/Duration;
+}
+
+public final class de/connect2x/trixnity/test/utils/CoroutineTestKt {
+	public static final fun CoroutineTestScope (Lkotlin/coroutines/CoroutineContext;)Lkotlinx/coroutines/test/TestScope;
+	public static synthetic fun CoroutineTestScope$default (Lkotlin/coroutines/CoroutineContext;ILjava/lang/Object;)Lkotlinx/coroutines/test/TestScope;
+	public static final fun runTest-Kx4hsE0 (Lde/connect2x/trixnity/test/utils/CoroutineTest;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;)V
+	public static synthetic fun runTest-Kx4hsE0$default (Lde/connect2x/trixnity/test/utils/CoroutineTest;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+	public static final fun runTest-hhJSO8g (Lde/connect2x/trixnity/test/utils/CoroutineTest;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;)V
+	public static synthetic fun runTest-hhJSO8g$default (Lde/connect2x/trixnity/test/utils/CoroutineTest;Lkotlin/time/Duration;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static final fun scheduleSetup (Lde/connect2x/trixnity/test/utils/CoroutineTest;Lkotlin/jvm/functions/Function2;)V
+	public static final fun scheduleTeardown (Lde/connect2x/trixnity/test/utils/CoroutineTest;Lkotlin/jvm/functions/Function2;)V
+	public static final fun suspendLazy (Lde/connect2x/trixnity/test/utils/CoroutineTest;Lkotlin/jvm/functions/Function2;)Lde/connect2x/trixnity/test/utils/LazySuspend;
+}
+
+public abstract interface class de/connect2x/trixnity/test/utils/LazySuspend {
+	public abstract fun getValue ()Ljava/lang/Object;
+	public abstract fun isCompleted ()Z
+	public abstract fun map (Lkotlin/jvm/functions/Function1;)Lde/connect2x/trixnity/test/utils/LazySuspend;
+}
+
+public final class de/connect2x/trixnity/test/utils/LazySuspendKt {
+	public static final fun getValue (Lde/connect2x/trixnity/test/utils/LazySuspend;Ljava/lang/Object;Lkotlin/reflect/KProperty;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/test/utils/TestScopeExtKt {
+	public static final fun getTestClock (Lkotlinx/coroutines/test/TestScope;)Lkotlin/time/Clock;
+}
+
+public class de/connect2x/trixnity/test/utils/TrixnityBaseTest : de/connect2x/trixnity/test/utils/CoroutineTest {
+	public fun <init> ()V
+	public fun getDefaultTimeout-FghU774 ()Lkotlin/time/Duration;
+	public fun getTestScope ()Lkotlinx/coroutines/test/TestScope;
+}
+

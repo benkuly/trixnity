@@ -1,0 +1,73 @@
+public final class de/connect2x/trixnity/client/store/repository/exposed/ExposedReadTransaction : kotlin/coroutines/CoroutineContext$Element {
+	public static final field Key Lde/connect2x/trixnity/client/store/repository/exposed/ExposedReadTransaction$Key;
+	public fun <init> (Lorg/jetbrains/exposed/sql/Transaction;Lkotlinx/coroutines/sync/Mutex;)V
+	public fun fold (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public fun get (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext$Element;
+	public fun getKey ()Lkotlin/coroutines/CoroutineContext$Key;
+	public final fun getMutex ()Lkotlinx/coroutines/sync/Mutex;
+	public final fun getTransaction ()Lorg/jetbrains/exposed/sql/Transaction;
+	public fun minusKey (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext;
+	public fun plus (Lkotlin/coroutines/CoroutineContext;)Lkotlin/coroutines/CoroutineContext;
+}
+
+public final class de/connect2x/trixnity/client/store/repository/exposed/ExposedReadTransaction$Key : kotlin/coroutines/CoroutineContext$Key {
+}
+
+public final class de/connect2x/trixnity/client/store/repository/exposed/ExposedRepositoriesModuleKt {
+	public static final fun exposed (Lde/connect2x/trixnity/client/RepositoriesModule$Companion;Lorg/jetbrains/exposed/sql/Database;)Lde/connect2x/trixnity/client/RepositoriesModule;
+}
+
+public final class de/connect2x/trixnity/client/store/repository/exposed/ExposedRepositoryTransactionManager : de/connect2x/trixnity/client/store/repository/RepositoryTransactionManager {
+	public fun <init> (Lorg/jetbrains/exposed/sql/Database;)V
+	public fun readTransaction (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun writeTransaction (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/client/store/repository/exposed/ExposedRepositoryTransactionManagerKt {
+	public static final fun withExposedRead (Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun withExposedWrite (Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/client/store/repository/exposed/ExposedRoomKeyRequestRepository : de/connect2x/trixnity/client/store/repository/RoomKeyRequestRepository {
+	public fun <init> (Lkotlinx/serialization/json/Json;)V
+	public synthetic fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun delete (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public synthetic fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public synthetic fun save (Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun save (Ljava/lang/String;Lde/connect2x/trixnity/client/store/StoredRoomKeyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public synthetic fun serializeKey (Ljava/lang/Object;)Ljava/lang/String;
+	public fun serializeKey (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/client/store/repository/exposed/ExposedSecretKeyRequestRepository : de/connect2x/trixnity/client/store/repository/SecretKeyRequestRepository {
+	public fun <init> (Lkotlinx/serialization/json/Json;)V
+	public synthetic fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun delete (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public synthetic fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public synthetic fun save (Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun save (Ljava/lang/String;Lde/connect2x/trixnity/client/store/StoredSecretKeyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public synthetic fun serializeKey (Ljava/lang/Object;)Ljava/lang/String;
+	public fun serializeKey (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/client/store/repository/exposed/ExposedWriteTransaction : kotlin/coroutines/CoroutineContext$Element {
+	public static final field Key Lde/connect2x/trixnity/client/store/repository/exposed/ExposedWriteTransaction$Key;
+	public fun <init> (Lorg/jetbrains/exposed/sql/Transaction;Lkotlinx/coroutines/sync/Mutex;)V
+	public fun fold (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public fun get (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext$Element;
+	public fun getKey ()Lkotlin/coroutines/CoroutineContext$Key;
+	public final fun getMutex ()Lkotlinx/coroutines/sync/Mutex;
+	public final fun getTransaction ()Lorg/jetbrains/exposed/sql/Transaction;
+	public fun minusKey (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext;
+	public fun plus (Lkotlin/coroutines/CoroutineContext;)Lkotlin/coroutines/CoroutineContext;
+}
+
+public final class de/connect2x/trixnity/client/store/repository/exposed/ExposedWriteTransaction$Key : kotlin/coroutines/CoroutineContext$Key {
+}
+
