@@ -243,7 +243,7 @@ abstract class WriteDefFile @Inject constructor(
 
     @TaskAction
     fun run() {
-        val input = nativeLibDir.get()
+        val input = nativeLibDir.get().asFile.canonicalPath.replace("\\", "/")
         val output = defFile.get().asFile
 
         val targetNames = targets.get().map { it.name }
