@@ -17,24 +17,8 @@ stages:
 
 variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Xmx1g
-  GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
-  KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
-  KOTLIN_DATA_DIR: $CI_PROJECT_DIR/.kotlin
   BUILD_LINUX_IMAGE_NAME: registry.gitlab.com/connect2x/build-infrastructure/kmp-dockerfiles/kmp-dockerfiles-base:latest
   TRIVY_LINUX_IMAGE_NAME: registry.gitlab.com/connect2x/build-infrastructure/kmp-dockerfiles/kmp-dockerfiles-trivy:latest
-
-.cache: &cache
-  - key:
-      files:
-        - gradle/wrapper/gradle-wrapper.properties
-        - gradle/libs.versions.toml
-    paths:
-      - $GRADLE_USER_HOME/wrapper
-      - $GRADLE_USER_HOME/nodejs
-      - $GRADLE_USER_HOME/yarn
-      - $GRADLE_USER_HOME/native
-      - $KONAN_DATA_DIR
-      - $KOTLIN_DATA_DIR
 
 .docker-variables: &docker-variables
   DOCKER_HOST: tcp://docker:2375
@@ -69,8 +53,6 @@ build:mac:
   stage: build
   interruptible: true
   tags: [ "connect2x-mac" ]
-  cache:
-    - *cache
   rules:
     - *if-merge-request
   script:
@@ -84,8 +66,6 @@ build:linux:
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME
-  cache:
-    - *cache
   rules:
     - *if-merge-request
   script:
@@ -102,8 +82,6 @@ test:mac:
   timeout: 1h
   needs: [ "build:mac" ]
   tags: [ "connect2x-mac" ]
-  cache:
-    - *cache
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
@@ -119,8 +97,6 @@ test:linux:
   needs: [ "build:linux" ]
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME
-  cache:
-    - *cache
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
@@ -141,8 +117,6 @@ test:integration-test:
   services:
     - name: docker:dind
       command: [ "--tls=false" ]
-  cache:
-    - *cache
   variables: *docker-variables
   artifacts: *artifact-reports
   rules:
@@ -177,14 +151,6 @@ security:dependencies:
   variables:
     TRIVY_CACHE_DIR: ".trivycache/"
     WITH_LOCK: true
-  cache:
-    - *cache
-    - key:
-        files:
-          - gradle/wrapper/gradle-wrapper.properties
-          - gradle/libs.versions.toml
-      paths:
-        - .trivycache/
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       allow_failure: true
@@ -226,8 +192,6 @@ publish:mac-dev:
   stage: publish
   tags: [ "connect2x-mac" ]
   timeout: 2h
-  cache:
-    - *cache
   rules:
     - *if-dev-release
   script:
@@ -240,8 +204,6 @@ publish:linux-dev:
   tags: [ "connect2x-linux" ]
   timeout: 2h
   image: $BUILD_LINUX_IMAGE_NAME
-  cache:
-    - *cache
   rules:
     - *if-dev-release
   artifacts:
@@ -257,8 +219,6 @@ publish:release:
   stage: publish
   tags: [ "connect2x-mac" ]
   timeout: 2h
-  cache:
-    - *cache
   rules:
     - *if-release
   script:
