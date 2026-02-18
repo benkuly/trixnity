@@ -11,10 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Delete old notification state when everything is processed and read
-- Added the kotlin abi checker to the CI
-- SDK: update to 2.3.10
-
 ### Deprecated
 
 ### Removed
@@ -22,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## 5.1.1
+
+### Added
+
+### Changed
+
+- Delete old notification state when everything is processed and read
+- Internal: Added the Kotlin abi checker to the CI
+- Update Kotlin to 2.3.10
 
 ## 5.1.0
 
