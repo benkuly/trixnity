@@ -10,6 +10,7 @@ import js.objects.unsafeJso
 import kotlinx.coroutines.suspendCancellableCoroutine
 import web.events.EventHandler
 import web.idb.IDBDatabase
+import web.idb.IDBIndexParameters
 import web.idb.IDBRequest
 import web.idb.IDBTransaction
 import web.idb.IDBValidKey
@@ -39,6 +40,26 @@ value class WrappedTransaction(val tx: IDBTransaction) {
     }))
 
     fun objectStore(name: String): WrappedObjectStore = WrappedObjectStore(tx.objectStore(name))
+
+    fun WrappedObjectStore.createIndex(
+        name: String, keyPath: KeyPath, unique: Boolean? = null, multiEntry: Boolean? = null
+    ): WrappedIndex {
+        val options = unsafeJso<IDBIndexParameters> {
+            this.unique = unique
+            this.multiEntry = multiEntry
+        }
+
+        return WrappedIndex(
+            when (keyPath) {
+                is KeyPath.Single -> store.createIndex(name, keyPath.value, options)
+                is KeyPath.Multiple -> store.createIndex(
+                    name, keyPath.values.map(String::toJsString).toJsArray(), options
+                )
+            }
+        )
+    }
+
+    fun WrappedObjectStore.index(name: String): WrappedIndex = WrappedIndex(store.index(name))
 
     suspend fun <T : JsAny> WrappedObjectStore.get(key: IDBValidKey): T? =
         suspendCancellableCoroutine { continuation ->

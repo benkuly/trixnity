@@ -66,6 +66,19 @@ final class de.connect2x.trixnity.idb.utils/IDBException : kotlin/IllegalStateEx
     }
 }
 
+final value class de.connect2x.trixnity.idb.utils/WrappedIndex { // de.connect2x.trixnity.idb.utils/WrappedIndex|null[0]
+    constructor <init>(web.idb/IDBIndex) // de.connect2x.trixnity.idb.utils/WrappedIndex.<init>|<init>(web.idb.IDBIndex){}[0]
+
+    final val index // de.connect2x.trixnity.idb.utils/WrappedIndex.index|{}index[0]
+        final fun <get-index>(): web.idb/IDBIndex // de.connect2x.trixnity.idb.utils/WrappedIndex.index.<get-index>|<get-index>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.idb.utils/WrappedIndex.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.idb.utils/WrappedIndex.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.idb.utils/WrappedIndex.toString|toString(){}[0]
+
+    final object Companion // de.connect2x.trixnity.idb.utils/WrappedIndex.Companion|null[0]
+}
+
 final value class de.connect2x.trixnity.idb.utils/WrappedObjectStore { // de.connect2x.trixnity.idb.utils/WrappedObjectStore|null[0]
     constructor <init>(web.idb/IDBObjectStore) // de.connect2x.trixnity.idb.utils/WrappedObjectStore.<init>|<init>(web.idb.IDBObjectStore){}[0]
 
@@ -85,6 +98,8 @@ final value class de.connect2x.trixnity.idb.utils/WrappedTransaction { // de.con
     final val tx // de.connect2x.trixnity.idb.utils/WrappedTransaction.tx|{}tx[0]
         final fun <get-tx>(): web.idb/IDBTransaction // de.connect2x.trixnity.idb.utils/WrappedTransaction.tx.<get-tx>|<get-tx>(){}[0]
 
+    final fun (de.connect2x.trixnity.idb.utils/WrappedObjectStore).createIndex(kotlin/String, de.connect2x.trixnity.idb.utils/KeyPath, kotlin/Boolean? = ..., kotlin/Boolean? = ...): de.connect2x.trixnity.idb.utils/WrappedIndex // de.connect2x.trixnity.idb.utils/WrappedTransaction.createIndex|createIndex@de.connect2x.trixnity.idb.utils.WrappedObjectStore(kotlin.String;de.connect2x.trixnity.idb.utils.KeyPath;kotlin.Boolean?;kotlin.Boolean?){}[0]
+    final fun (de.connect2x.trixnity.idb.utils/WrappedObjectStore).index(kotlin/String): de.connect2x.trixnity.idb.utils/WrappedIndex // de.connect2x.trixnity.idb.utils/WrappedTransaction.index|index@de.connect2x.trixnity.idb.utils.WrappedObjectStore(kotlin.String){}[0]
     final fun createObjectStore(web.idb/IDBDatabase, kotlin/String, de.connect2x.trixnity.idb.utils/KeyPath? = ..., kotlin/Boolean? = ...): de.connect2x.trixnity.idb.utils/WrappedObjectStore // de.connect2x.trixnity.idb.utils/WrappedTransaction.createObjectStore|createObjectStore(web.idb.IDBDatabase;kotlin.String;de.connect2x.trixnity.idb.utils.KeyPath?;kotlin.Boolean?){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.idb.utils/WrappedTransaction.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // de.connect2x.trixnity.idb.utils/WrappedTransaction.hashCode|hashCode(){}[0]
