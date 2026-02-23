@@ -41,14 +41,14 @@ class ByteArrayFlowStreamExtensionsTest : TrixnityBaseTest() {
         val input = listOf("he".toByteArray(), "llo".toByteArray())
         val result = mutableListOf<ByteArray>()
         WritableStream(
-            UnderlyingSink<Uint8Array<ArrayBuffer>>(
+            unsafeJso<UnderlyingSink<Uint8Array<ArrayBuffer>>> {
                 write = { chunk, _ ->
                     Promise { resolve, _ ->
                         result.add(chunk.toByteArray())
                         resolve(null)
                     }
                 }
-            )).write(input.asFlow())
+            }).write(input.asFlow())
         result shouldBe input
     }
 }

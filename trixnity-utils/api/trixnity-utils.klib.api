@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -109,11 +109,11 @@ final suspend fun <#A: kotlin/Any?> de.connect2x.trixnity.utils/retry(kotlin.tim
 final suspend fun de.connect2x.trixnity.utils/retryLoop(kotlin.time/Duration = ..., kotlin/Double = ..., kotlin.time/Duration = ..., kotlin.ranges/ClosedRange<kotlin/Double> = ..., kotlin.coroutines/SuspendFunction2<kotlin/Throwable, kotlin.time/Duration, kotlin/Unit> = ..., kotlin.coroutines/SuspendFunction0<kotlin/Unit>) // de.connect2x.trixnity.utils/retryLoop|retryLoop(kotlin.time.Duration;kotlin.Double;kotlin.time.Duration;kotlin.ranges.ClosedRange<kotlin.Double>;kotlin.coroutines.SuspendFunction2<kotlin.Throwable,kotlin.time.Duration,kotlin.Unit>;kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
 final suspend fun de.connect2x.trixnity.utils/retryLoop(kotlinx.coroutines.flow/Flow<de.connect2x.trixnity.utils/RetryFlowDelayConfig> = ..., kotlin.coroutines/SuspendFunction2<kotlin/Throwable, kotlin.time/Duration, kotlin/Unit> = ..., kotlin.coroutines/SuspendFunction0<kotlin/Unit>) // de.connect2x.trixnity.utils/retryLoop|retryLoop(kotlinx.coroutines.flow.Flow<de.connect2x.trixnity.utils.RetryFlowDelayConfig>;kotlin.coroutines.SuspendFunction2<kotlin.Throwable,kotlin.time.Duration,kotlin.Unit>;kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun de.connect2x.trixnity.utils/byteArrayFlowFromReadableStream(kotlin.coroutines/SuspendFunction0<web.streams/ReadableStream<js.typedarrays/Uint8Array<js.buffer/ArrayBuffer>>>): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.utils/byteArrayFlowFromReadableStream|byteArrayFlowFromReadableStream(kotlin.coroutines.SuspendFunction0<web.streams.ReadableStream<js.typedarrays.Uint8Array<js.buffer.ArrayBuffer>>>){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final suspend fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.utils/writeTo(web.streams/WritableStream<js.typedarrays/Uint8Array<js.buffer/ArrayBuffer>>) // de.connect2x.trixnity.utils/writeTo|writeTo@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(web.streams.WritableStream<js.typedarrays.Uint8Array<js.buffer.ArrayBuffer>>){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final suspend fun (web.streams/WritableStream<js.typedarrays/Uint8Array<js.buffer/ArrayBuffer>>).de.connect2x.trixnity.utils/write(kotlinx.coroutines.flow/Flow<kotlin/ByteArray>) // de.connect2x.trixnity.utils/write|write@web.streams.WritableStream<js.typedarrays.Uint8Array<js.buffer.ArrayBuffer>>(kotlinx.coroutines.flow.Flow<kotlin.ByteArray>){}[0]

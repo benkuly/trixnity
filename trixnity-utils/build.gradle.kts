@@ -4,7 +4,7 @@ plugins {
 
 kotlin {
     addJvmTarget()
-    addJsTarget(rootDir)
+    addWebTarget(rootDir)
     addNativeTargets()
 
     sourceSets {
@@ -19,7 +19,7 @@ kotlin {
                 api(sharedLibs.lognity.api)
             }
         }
-        jsMain {
+        webMain {
             dependencies {
                 api(project.dependencies.platform(sharedLibs.kotlin.wrappers.bom))
                 api(sharedLibs.kotlin.browser)
