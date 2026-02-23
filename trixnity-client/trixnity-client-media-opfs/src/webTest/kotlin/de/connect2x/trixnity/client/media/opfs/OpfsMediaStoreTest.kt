@@ -2,9 +2,6 @@ package de.connect2x.trixnity.client.media.opfs
 
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import js.iterable.AsyncIterator
-import js.iterable.asFlow
-import js.iterable.iterator
 import js.typedarrays.Uint8Array
 import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
@@ -15,11 +12,18 @@ import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.utils.toByteArrayFlow
+import js.iterable.AsyncIterator
+import js.promise.Promise
+import js.promise.await
 import web.blob.arrayBuffer
 import web.fs.*
 import web.navigator.navigator
 import web.storage.getDirectory
 import web.streams.close
+import kotlin.js.JsAny
+import kotlin.js.JsArray
+import kotlin.js.js
+import kotlin.js.toList
 import kotlin.test.Test
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
@@ -44,7 +48,7 @@ class OpfsMediaStoreTest : TrixnityBaseTest() {
             throwable.printStackTrace()
             throw throwable
         } finally {
-            basePath.values().asFlow().collect { entry ->
+            basePath.values().toList().forEach { entry ->
                 basePath.removeEntry(entry.name, FileSystemRemoveOptions(recursive = true))
             }
         }
@@ -207,12 +211,7 @@ class OpfsMediaStoreTest : TrixnityBaseTest() {
         tmpFile.delete()
         tmpPath.values().toList().size shouldBe 0
     }
-
-    private suspend fun <V> AsyncIterator<V>.toList(): List<V> {
-        val list = mutableListOf<V>()
-        asFlow().collect { entry ->
-            list.add(entry)
-        }
-        return list.toList()
-    }
 }
+
+private suspend fun <V: JsAny?> AsyncIterator<V>.toList(): List<V> = toJsArray(this).await().toList()
+private fun <V: JsAny?> toJsArray(self: AsyncIterator<V>): Promise<JsArray<V>> = js("""Array.fromAsync(self)""")

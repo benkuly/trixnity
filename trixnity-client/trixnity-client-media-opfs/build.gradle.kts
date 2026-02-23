@@ -4,14 +4,15 @@ plugins {
 }
 
 kotlin {
-    addJsTarget(rootDir, nodeJsEnabled = false)
+    addWebTarget(rootDir, nodeJsEnabled = false)
 
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
             languageSettings.optIn("kotlin.time.ExperimentalTime")
+            languageSettings.optIn("kotlin.js.ExperimentalWasmJsInterop")
         }
-        jsMain {
+        webMain {
             dependencies {
                 implementation(projects.trixnityClient)
 
@@ -20,7 +21,7 @@ kotlin {
                 implementation(sharedLibs.lognity.api)
             }
         }
-        jsTest {
+        webTest {
             dependencies {
                 implementation(projects.trixnityTestUtils)
             }

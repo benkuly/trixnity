@@ -3,7 +3,6 @@ package de.connect2x.trixnity.client.media.opfs
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.error
 import js.buffer.ArrayBuffer
-import js.iterable.asFlow
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
@@ -12,6 +11,7 @@ import de.connect2x.trixnity.client.MediaStoreModule
 import de.connect2x.trixnity.client.media.CachedMediaStore
 import de.connect2x.trixnity.client.media.MediaStore
 import de.connect2x.trixnity.utils.*
+import js.objects.unsafeJso
 import okio.ByteString.Companion.toByteString
 import org.koin.dsl.module
 import web.events.EventType
@@ -21,6 +21,7 @@ import web.fs.*
 import web.streams.WritableStream
 import web.streams.close
 import web.window.window
+import kotlin.js.unsafeCast
 import kotlin.random.Random
 import kotlin.time.Clock
 
@@ -47,19 +48,17 @@ internal class OpfsMediaStore(
 
         coroutineScope.coroutineContext.job.invokeOnCompletion {
             @OptIn(DelicateCoroutinesApi::class)
-            GlobalScope.promise {
-                delTmp()
-            }
+            GlobalScope.launch { delTmp() }
         }
 
         window.addEventHandler(EventType("unload")) {
             @OptIn(DelicateCoroutinesApi::class)
-            GlobalScope.promise { delTmp() }
+            GlobalScope.launch { delTmp() }
         }
     }
 
     override suspend fun deleteAllFromStore() {
-        basePath.values().asFlow().collect { entry ->
+        basePath.values().unsafeCast<AsyncIterableFixed<FileSystemHandle>>().asFlow().collect { entry ->
             basePath.removeEntry(entry.name, FileSystemRemoveOptions(recursive = true))
         }
     }
@@ -213,4 +212,22 @@ fun MediaStoreModule.Companion.opfs(basePath: FileSystemDirectoryHandle) = Media
             )
         }
     }
+}
+
+internal fun FileSystemRemoveOptions(
+    recursive: Boolean? = null,
+): FileSystemRemoveOptions = unsafeJso {
+    recursive?.also { this.recursive = it }
+}
+
+internal fun FileSystemGetFileOptions(
+    create: Boolean? = null,
+): FileSystemGetFileOptions = unsafeJso {
+    create?.also { this.create = it }
+}
+
+internal fun FileSystemGetDirectoryOptions(
+    create: Boolean? = null,
+): FileSystemGetDirectoryOptions = unsafeJso {
+    create?.also { this.create = it }
 }
