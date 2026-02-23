@@ -7,6 +7,8 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import web.console.console
 import web.events.EventHandler
 import web.idb.IDBDatabase
 import web.idb.IDBTransaction
@@ -50,11 +52,26 @@ private suspend fun <T> IDBDatabase.transaction(
     coroutineScope {
         val tx = transaction(names.map { it.toJsString() }.toJsArray(), mode)
 
+        var blockDone = false
+
         launch(start = CoroutineStart.UNDISPATCHED) {
             suspendCancellableCoroutine { continuation ->
 
                 continuation.invokeOnCancellation {
-                    tx.abort()
+                    try {
+                        tx.abort()
+                    } catch (e: Throwable) {
+                        // The only way we get here is if the transaction has finished
+                        // This should only happen in two cases:
+                        // 1. The transaction was already aborted
+                        // 2. The transaction has no more requests scheduled, e.g. `block` is done
+                        // If for some other reason we still get here, we cannot really do anything
+                        // besides logging the exception
+                        if (!blockDone) console.error(
+                            "could not abort transaction",
+                            e.stackTraceToString()
+                        )
+                    }
                 }
 
                 tx.onerror = EventHandler {
@@ -66,12 +83,17 @@ private suspend fun <T> IDBDatabase.transaction(
                     continuation.resume(Unit)
                 }
                 tx.onabort = EventHandler {
-                    continuation.resumeWithException(
+                    if (!continuation.isCancelled) continuation.resumeWithException(
                         IDBException.fromDom(TRANSACTION, tx.error),
                     )
                 }
             }
         }
 
-        WrappedTransaction(tx).block()
+        withContext(IDBDispatcher()) {
+            WrappedTransaction(tx).block().also {
+                blockDone = true
+                tx.commit()
+            }
+        }
     }
