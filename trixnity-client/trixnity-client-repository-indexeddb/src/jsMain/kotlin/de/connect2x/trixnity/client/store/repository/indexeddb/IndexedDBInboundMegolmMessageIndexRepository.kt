@@ -1,12 +1,12 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import de.connect2x.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
 import de.connect2x.trixnity.client.store.repository.InboundMegolmMessageIndexRepositoryKey
 import de.connect2x.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 internal class IndexedDBInboundMegolmMessageIndexRepository(
     json: Json,
@@ -19,7 +19,7 @@ internal class IndexedDBInboundMegolmMessageIndexRepository(
     ) {
     companion object {
         const val objectStoreName = "inbound_megolm_message_index"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 1) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }

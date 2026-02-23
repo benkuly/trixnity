@@ -1,9 +1,5 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.Key
-import com.juul.indexeddb.KeyPath
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -11,6 +7,9 @@ import de.connect2x.trixnity.client.store.repository.RoomAccountDataRepository
 import de.connect2x.trixnity.client.store.repository.RoomAccountDataRepositoryKey
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
+import de.connect2x.trixnity.idb.utils.KeyPath
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 @Serializable
 internal class IndexedDBRoomAccountData(
@@ -37,24 +36,24 @@ internal class IndexedDBRoomAccountDataRepository(
     ) {
     companion object {
         const val objectStoreName = "room_account_data"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 1)
                 createIndexedDBTwoDimensionsStoreRepository(
                     database = database,
                     objectStoreName = objectStoreName,
-                    keyPath = KeyPath("roomId", "type", "key"),
+                    keyPath = KeyPath.Multiple("roomId", "type", "key"),
                     firstKeyIndexName = "roomId|type",
-                    firstKeyIndexKeyPath = KeyPath("roomId", "type"),
-                ) {
-                    createIndex("roomId", KeyPath("roomId"), unique = false)
+                    firstKeyIndexKeyPath = KeyPath.Multiple("roomId", "type"),
+                ) { store ->
+                    store.createIndex("roomId", KeyPath.Single("roomId"), unique = false)
                 }
         }
     }
 
     override suspend fun deleteByRoomId(roomId: RoomId) = withIndexedDBWrite { store ->
-        store.index("roomId").openCursor(Key(roomId.full), autoContinue = true)
+        store.index("roomId").openCursor(keyOf(roomId.full))
             .collect {
-                store.delete(Key(it.primaryKey))
+                store.delete(it.primaryKey)
             }
     }
 }

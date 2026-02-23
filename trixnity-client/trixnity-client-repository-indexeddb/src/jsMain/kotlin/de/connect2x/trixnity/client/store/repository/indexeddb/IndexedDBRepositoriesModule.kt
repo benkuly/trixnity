@@ -1,11 +1,11 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.openDatabase
 import de.connect2x.lognity.api.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 import de.connect2x.trixnity.client.RepositoriesModule
 import de.connect2x.trixnity.client.store.repository.*
+import de.connect2x.trixnity.idb.utils.IDBUtils
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
@@ -96,7 +96,7 @@ internal val allStoreNames = arrayOf(
 )
 
 internal suspend fun createDatabase(databaseName: String) =
-    openDatabase(databaseName, 9) { database, oldVersion, _ ->
+    IDBUtils.openDatabase(databaseName, 9) { database, oldVersion, _ ->
         IndexedDBAccountRepository.apply { migrate(database, oldVersion) }
         IndexedDBAuthenticationRepository.apply { migrate(database, oldVersion) }
         IndexedServerDataRepository.apply { migrate(database, oldVersion) }

@@ -1,15 +1,14 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.Key
-import com.juul.indexeddb.KeyPath
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.store.RoomUserReceipts
 import de.connect2x.trixnity.client.store.repository.RoomUserReceiptsRepository
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.idb.utils.KeyPath
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 @Serializable
 internal class IndexedDBRoomUserReceipts(
@@ -34,22 +33,22 @@ internal class IndexedDBRoomUserReceiptsRepository(
     ) {
     companion object {
         const val objectStoreName = "room_user_receipts"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 2)
                 createIndexedDBTwoDimensionsStoreRepository(
                     database = database,
                     objectStoreName = objectStoreName,
-                    keyPath = KeyPath("roomId", "userId"),
+                    keyPath = KeyPath.Multiple("roomId", "userId"),
                     firstKeyIndexName = "roomId",
-                    firstKeyIndexKeyPath = KeyPath("roomId"),
+                    firstKeyIndexKeyPath = KeyPath.Single("roomId"),
                 )
         }
     }
 
     override suspend fun deleteByRoomId(roomId: RoomId): Unit = withIndexedDBWrite { store ->
-        store.index(firstKeyIndexName).openCursor(Key(roomId.full), autoContinue = true)
+        store.index(firstKeyIndexName).openCursor(keyOf(roomId.full))
             .collect {
-                store.delete(Key(it.primaryKey))
+                store.delete(it.primaryKey)
             }
     }
 }

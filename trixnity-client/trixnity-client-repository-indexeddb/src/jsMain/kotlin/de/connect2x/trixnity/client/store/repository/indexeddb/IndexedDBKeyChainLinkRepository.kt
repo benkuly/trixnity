@@ -1,8 +1,7 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.KeyPath
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toSet
@@ -14,6 +13,9 @@ import de.connect2x.trixnity.client.store.KeyChainLink
 import de.connect2x.trixnity.client.store.repository.KeyChainLinkRepository
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.keys.Key
+import de.connect2x.trixnity.idb.utils.KeyPath
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 @Serializable
 data class IndexedDBKeyChainLink(
@@ -31,11 +33,12 @@ internal class IndexedDBKeyChainLinkRepository(
 ) : KeyChainLinkRepository, IndexedDBRepository(objectStoreName) {
     companion object {
         const val objectStoreName = "key_chain_link"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 1) {
-                database.createObjectStore(
+                createObjectStore(
+                    database,
                     objectStoreName,
-                    KeyPath(
+                    KeyPath.Multiple(
                         "signingUserId",
                         "signingKeyId",
                         "signingKeyValue",
@@ -44,8 +47,16 @@ internal class IndexedDBKeyChainLinkRepository(
                         "signedKeyValue"
                     )
                 ).apply {
-                    createIndex("signing", KeyPath("signingUserId", "signingKeyId", "signingKeyValue"), false)
-                    createIndex("signed", KeyPath("signedUserId", "signedKeyId", "signedKeyValue"), false)
+                    createIndex(
+                        "signing",
+                        KeyPath.Multiple("signingUserId", "signingKeyId", "signingKeyValue"),
+                        false
+                    )
+                    createIndex(
+                        "signed",
+                        KeyPath.Multiple("signedUserId", "signedKeyId", "signedKeyValue"),
+                        false
+                    )
                 }
             }
         }
@@ -64,15 +75,13 @@ internal class IndexedDBKeyChainLinkRepository(
                 )
             )
         )
-        Unit
     }
 
     override suspend fun getBySigningKey(signingUserId: UserId, signingKey: Key.Ed25519Key): Set<KeyChainLink> =
         withIndexedDBRead { store ->
             store.index("signing")
                 .openCursor(
-                    com.juul.indexeddb.Key(signingUserId.full, signingKey.id, signingKey.value.value),
-                    autoContinue = true
+                    keyOf(signingUserId.full, signingKey.id, signingKey.value.value),
                 )
                 .mapNotNull { json.decodeFromDynamicNullable<IndexedDBKeyChainLink>(it.value) }
                 .map {
@@ -90,10 +99,9 @@ internal class IndexedDBKeyChainLinkRepository(
         withIndexedDBWrite { store ->
             store.index("signed")
                 .openKeyCursor(
-                    com.juul.indexeddb.Key(signedUserId.full, signedKey.id, signedKey.value.value),
-                    autoContinue = true
+                    keyOf(signedUserId.full, signedKey.id, signedKey.value.value),
                 )
-                .collect { store.delete(com.juul.indexeddb.Key(it.primaryKey)) }
+                .collect { store.delete(it) }
         }
 
     override suspend fun deleteAll(): Unit = withIndexedDBWrite { store ->

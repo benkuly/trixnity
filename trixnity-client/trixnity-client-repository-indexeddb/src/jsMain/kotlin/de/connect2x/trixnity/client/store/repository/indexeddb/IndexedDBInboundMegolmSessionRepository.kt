@@ -1,9 +1,7 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.Key
-import com.juul.indexeddb.KeyPath
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toSet
@@ -13,6 +11,10 @@ import kotlinx.serialization.serializer
 import de.connect2x.trixnity.client.store.repository.InboundMegolmSessionRepository
 import de.connect2x.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
 import de.connect2x.trixnity.crypto.olm.StoredInboundMegolmSession
+import de.connect2x.trixnity.idb.utils.KeyPath
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
+import web.idb.IDBValidKey
 
 @Serializable
 data class IndexedDBInboundMegolmSession(
@@ -46,17 +48,21 @@ internal class IndexedDBInboundMegolmSessionRepository(
 
     companion object {
         const val objectStoreName = "inbound_megolm_session"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 1) {
-                database.createObjectStore(objectStoreName).apply {
-                    createIndex("hasBeenBackedUp", KeyPath("hasBeenBackedUp"), unique = false)
+                createObjectStore(database, objectStoreName).apply {
+                    createIndex(
+                        "hasBeenBackedUp",
+                        KeyPath.Single("hasBeenBackedUp"),
+                        unique = false
+                    )
                 }
             }
         }
     }
 
     override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> = withIndexedDBRead { store ->
-        store.index("hasBeenBackedUp").openCursor(Key(0), autoContinue = true)
+        store.index("hasBeenBackedUp").openCursor(IDBValidKey(0))
             .mapNotNull { json.decodeFromDynamicNullable(internalRepository.valueSerializer, it.value) }
             .map { it.toStoredInboundMegolmSession() }
             .toSet()
