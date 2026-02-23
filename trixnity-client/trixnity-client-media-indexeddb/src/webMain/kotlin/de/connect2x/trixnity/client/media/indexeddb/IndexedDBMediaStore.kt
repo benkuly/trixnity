@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalWasmJsInterop::class)
-
 package de.connect2x.trixnity.client.media.indexeddb
 
 import js.buffer.ArrayBuffer
@@ -11,7 +9,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.promise
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.MediaStoreModule
 import de.connect2x.trixnity.client.media.CachedMediaStore
@@ -68,11 +65,11 @@ internal class IndexedDBMediaStore(
         clearTmp()
         coroutineScope.coroutineContext.job.invokeOnCompletion {
             @OptIn(DelicateCoroutinesApi::class)
-            GlobalScope.promise { clearTmp() }
+            GlobalScope.launch { clearTmp() }
         }
         window.addEventHandler(EventType("unload")) {
             @OptIn(DelicateCoroutinesApi::class)
-            GlobalScope.promise { clearTmp() }
+            GlobalScope.launch { clearTmp() }
         }
     }
     

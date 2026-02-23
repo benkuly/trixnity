@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalWasmJsInterop::class)
-
 package de.connect2x.trixnity.client.media.indexeddb
 
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -8,8 +6,6 @@ import io.ktor.utils.io.core.toByteArray
 import js.errors.toThrowable
 import js.typedarrays.Int8Array
 import js.typedarrays.Uint8Array
-import js.typedarrays.asByteArray
-import js.typedarrays.asInt8Array
 import js.typedarrays.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +25,9 @@ import de.connect2x.trixnity.idb.utils.readTransaction
 import de.connect2x.trixnity.idb.utils.writeTransaction
 import de.connect2x.trixnity.utils.nextString
 import de.connect2x.trixnity.utils.toByteArrayFlow
+import js.array.jsArrayOf
+import js.buffer.ArrayBuffer
+import js.typedarrays.toInt8Array
 import web.blob.Blob
 import web.blob.arrayBuffer
 import web.events.EventHandler
@@ -37,6 +36,7 @@ import web.idb.IDBValidKey
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlin.js.length
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.time.Clock
@@ -89,7 +89,7 @@ class IndexedDBMediaStoreTest {
             val request = store.getAll()
 
             request.onsuccess = EventHandler { event ->
-                continuation.resume(event.target.result.size)
+                continuation.resume(event.target.result.length)
             }
 
             request.onerror = EventHandler { event ->
@@ -109,11 +109,11 @@ class IndexedDBMediaStoreTest {
     fun shouldDeleteAll() = test {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME, TMP_MEDIA_OBJECT_STORE_NAME) {
             val mediaStore = objectStore(MEDIA_OBJECT_STORE_NAME)
-            mediaStore.put(ByteArray(0).asInt8Array(), IDBValidKey(file1))
-            mediaStore.put(ByteArray(0).asInt8Array(), IDBValidKey(file2))
+            mediaStore.put(ByteArray(0).toInt8Array(), IDBValidKey(file1))
+            mediaStore.put(ByteArray(0).toInt8Array(), IDBValidKey(file2))
             val tmpStore = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)
-            tmpStore.put(ByteArray(0).asInt8Array(), IDBValidKey(file1))
-            tmpStore.put(ByteArray(0).asInt8Array(), IDBValidKey(file2))
+            tmpStore.put(ByteArray(0).toInt8Array(), IDBValidKey(file1))
+            tmpStore.put(ByteArray(0).toInt8Array(), IDBValidKey(file2))
         }
         database.readTransaction(MEDIA_OBJECT_STORE_NAME, TMP_MEDIA_OBJECT_STORE_NAME) {
             val mediaStore = objectStore(MEDIA_OBJECT_STORE_NAME)
@@ -138,7 +138,7 @@ class IndexedDBMediaStoreTest {
             store shouldBeSize 1
             checkNotNull(store.get<Blob>(IDBValidKey(file1)))
         }.let { Int8Array(it.arrayBuffer()) }
-            .asByteArray().decodeToString() shouldBe "hi"
+            .toByteArray().decodeToString() shouldBe "hi"
     }
 
     @Test
@@ -146,7 +146,7 @@ class IndexedDBMediaStoreTest {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
             store.put(
-                Blob(arrayOf("hi".encodeToByteArray().asInt8Array())),
+                Blob(jsArrayOf("hi".encodeToByteArray().toInt8Array())),
                 IDBValidKey(file1)
             )
         }
@@ -162,7 +162,7 @@ class IndexedDBMediaStoreTest {
     fun shouldDeleteMedia() = test {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
-            store.put("hi".encodeToByteArray().asInt8Array(), IDBValidKey(file1))
+            store.put("hi".encodeToByteArray().toInt8Array(), IDBValidKey(file1))
         }
         cut.deleteMedia(file1)
         database.readTransaction(MEDIA_OBJECT_STORE_NAME) {
@@ -181,13 +181,13 @@ class IndexedDBMediaStoreTest {
     fun shouldChangeMediaUrl() = test {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
-            store.put("hi".encodeToByteArray().asInt8Array(), IDBValidKey(file1))
+            store.put("hi".encodeToByteArray().toInt8Array(), IDBValidKey(file1))
         }
         cut.changeMediaUrl(file1, file2)
         database.readTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
             store shouldBeSize 1
-            store.get<ByteArray>(IDBValidKey(file2))?.decodeToString() shouldBe "hi"
+            store.get<Int8Array<ArrayBuffer>>(IDBValidKey(file2))?.toByteArray()?.decodeToString() shouldBe "hi"
         }
     }
 
@@ -204,7 +204,7 @@ class IndexedDBMediaStoreTest {
     fun shouldDeleteTmpDatabaseOnStartup() = test {
         database.writeTransaction(TMP_MEDIA_OBJECT_STORE_NAME) {
             val tmpStore = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)
-            tmpStore.put(ByteArray(0).asInt8Array(), IDBValidKey(file1))
+            tmpStore.put(ByteArray(0).toInt8Array(), IDBValidKey(file1))
         }
         database.readTransaction(TMP_MEDIA_OBJECT_STORE_NAME) {
             val tmpStore = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)
@@ -221,7 +221,7 @@ class IndexedDBMediaStoreTest {
     fun shouldDeleteTmpDirectoryOnShutdown() = test {
         database.writeTransaction(TMP_MEDIA_OBJECT_STORE_NAME) {
             val tmpStore = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)
-            tmpStore.put(ByteArray(0).asInt8Array(), IDBValidKey(file1))
+            tmpStore.put(ByteArray(0).toInt8Array(), IDBValidKey(file1))
         }
         database.readTransaction(TMP_MEDIA_OBJECT_STORE_NAME) {
             val tmpStore = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)
