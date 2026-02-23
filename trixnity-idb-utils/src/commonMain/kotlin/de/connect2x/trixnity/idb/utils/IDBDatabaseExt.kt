@@ -27,8 +27,7 @@ import kotlin.js.toJsString
 suspend fun <T> IDBDatabase.readTransaction(
     vararg names: String,
     block: suspend WrappedTransaction.() -> T
-): T =
-    readTransaction(
+): T = transaction(
         names = names,
         mode = IDBTransactionMode.readonly,
         block = block,
@@ -37,15 +36,14 @@ suspend fun <T> IDBDatabase.readTransaction(
 suspend fun <T> IDBDatabase.writeTransaction(
     vararg names: String,
     block: suspend WrappedTransaction.() -> T
-): T =
-    readTransaction(
+): T = transaction(
         names = names,
         mode = IDBTransactionMode.readwrite,
         block = block,
     )
 
 
-private suspend fun <T> IDBDatabase.readTransaction(
+private suspend fun <T> IDBDatabase.transaction(
     names: Array<out String>,
     mode: IDBTransactionMode,
     block: suspend WrappedTransaction.() -> T
