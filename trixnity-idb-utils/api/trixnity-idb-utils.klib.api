@@ -36,13 +36,13 @@ final value class de.connect2x.trixnity.idb.utils/WrappedTransaction { // de.con
     final suspend fun <#A1: kotlin/Any> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).get(web.idb/IDBValidKey): #A1? // de.connect2x.trixnity.idb.utils/WrappedTransaction.get|get@de.connect2x.trixnity.idb.utils.WrappedObjectStore(web.idb.IDBValidKey){0§<kotlin.Any>}[0]
 
     // Targets: [js]
-    final suspend fun <#A1: kotlin/Any> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).put(#A1, web.idb/IDBValidKey) // de.connect2x.trixnity.idb.utils/WrappedTransaction.put|put@de.connect2x.trixnity.idb.utils.WrappedObjectStore(0:0;web.idb.IDBValidKey){0§<kotlin.Any>}[0]
+    final suspend fun <#A1: kotlin/Any> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).put(#A1, web.idb/IDBValidKey? = ...) // de.connect2x.trixnity.idb.utils/WrappedTransaction.put|put@de.connect2x.trixnity.idb.utils.WrappedObjectStore(0:0;web.idb.IDBValidKey?){0§<kotlin.Any>}[0]
 
     // Targets: [wasmJs]
     final suspend fun <#A1: kotlin.js/JsAny> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).get(web.idb/IDBValidKey): #A1? // de.connect2x.trixnity.idb.utils/WrappedTransaction.get|get@de.connect2x.trixnity.idb.utils.WrappedObjectStore(web.idb.IDBValidKey){0§<kotlin.js.JsAny>}[0]
 
     // Targets: [wasmJs]
-    final suspend fun <#A1: kotlin.js/JsAny> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).put(#A1, web.idb/IDBValidKey) // de.connect2x.trixnity.idb.utils/WrappedTransaction.put|put@de.connect2x.trixnity.idb.utils.WrappedObjectStore(0:0;web.idb.IDBValidKey){0§<kotlin.js.JsAny>}[0]
+    final suspend fun <#A1: kotlin.js/JsAny> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).put(#A1, web.idb/IDBValidKey? = ...) // de.connect2x.trixnity.idb.utils/WrappedTransaction.put|put@de.connect2x.trixnity.idb.utils.WrappedObjectStore(0:0;web.idb.IDBValidKey?){0§<kotlin.js.JsAny>}[0]
 }
 
 final object de.connect2x.trixnity.idb.utils/IDBUtils { // de.connect2x.trixnity.idb.utils/IDBUtils|null[0]

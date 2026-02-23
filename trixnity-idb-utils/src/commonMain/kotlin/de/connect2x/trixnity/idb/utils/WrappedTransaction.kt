@@ -37,9 +37,9 @@ value class WrappedTransaction(val tx: IDBTransaction) {
             }
         }
 
-    suspend fun <T : JsAny> WrappedObjectStore.put(value: T, key: IDBValidKey): Unit =
+    suspend fun <T : JsAny> WrappedObjectStore.put(value: T, key: IDBValidKey? = null): Unit =
         suspendCoroutine { continuation ->
-            val request = store.put(value, key)
+            val request = key?.let { store.put(value, it) } ?: store.put(value)
 
             request.onsuccess = EventHandler {
                 continuation.resume(Unit)
