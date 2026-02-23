@@ -6,8 +6,10 @@ import de.connect2x.trixnity.idb.utils.IDBException.Operation.CLEAR
 import de.connect2x.trixnity.idb.utils.IDBException.Operation.DELETE
 import de.connect2x.trixnity.idb.utils.IDBException.Operation.GET
 import de.connect2x.trixnity.idb.utils.IDBException.Operation.PUT
+import js.objects.unsafeJso
 import kotlinx.coroutines.suspendCancellableCoroutine
 import web.events.EventHandler
+import web.idb.IDBDatabase
 import web.idb.IDBRequest
 import web.idb.IDBTransaction
 import web.idb.IDBValidKey
@@ -15,10 +17,26 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
+import kotlin.js.toJsArray
+import kotlin.js.toJsString
 import kotlin.js.undefined
 import kotlin.js.unsafeCast
 
 value class WrappedTransaction(val tx: IDBTransaction) {
+
+    fun createObjectStore(
+        database: IDBDatabase,
+        name: String,
+        keyPath: KeyPath? = null,
+        autoIncrement: Boolean? = null
+    ): WrappedObjectStore = WrappedObjectStore(database.createObjectStore(name, unsafeJso {
+        this.autoIncrement = autoIncrement
+        this.keyPath = when (keyPath) {
+            null -> null
+            is KeyPath.Single -> keyPath.value.toJsString()
+            is KeyPath.Multiple -> keyPath.values.map(String::toJsString).toJsArray()
+        }
+    }))
 
     fun objectStore(name: String): WrappedObjectStore = WrappedObjectStore(tx.objectStore(name))
 
