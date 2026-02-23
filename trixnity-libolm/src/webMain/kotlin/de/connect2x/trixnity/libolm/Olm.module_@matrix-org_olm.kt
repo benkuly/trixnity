@@ -4,6 +4,10 @@
 package de.connect2x.trixnity.libolm
 
 import js.typedarrays.Uint8Array
+import kotlin.js.JsArray
+import kotlin.js.JsModule
+import kotlin.js.JsNumber
+import kotlin.js.JsQualifier
 
 external class Account {
     fun free()
@@ -12,8 +16,8 @@ external class Account {
     fun sign(message: String): String
     fun one_time_keys(): String
     fun mark_keys_as_published()
-    fun max_number_of_one_time_keys(): Number
-    fun generate_one_time_keys(number_of_keys: Number)
+    fun max_number_of_one_time_keys(): JsNumber
+    fun generate_one_time_keys(number_of_keys: JsNumber)
     fun remove_one_time_keys(session: Session)
     fun generate_fallback_key()
     fun forget_old_fallback_key()
@@ -34,7 +38,7 @@ external class Session {
     fun matches_inbound(one_time_key_message: String): Boolean
     fun matches_inbound_from(identity_key: String, one_time_key_message: String): Boolean
     fun encrypt(plainText: String): Message
-    fun decrypt(message_type: Number, message: String): String
+    fun decrypt(message_type: JsNumber, message: String): String
     fun describe(): String
 }
 
@@ -49,12 +53,12 @@ external class InboundGroupSession {
     fun free()
     fun pickle(key: String): String
     fun unpickle(key: String, pickle: String)
-    fun create(session_key: String): String
-    fun import_session(session_key: String): String
+    fun create(session_key: String)
+    fun import_session(session_key: String)
     fun decrypt(message: String): InboundGroupMessage
     fun session_id(): String
-    fun first_known_index(): Number
-    fun export_session(message_index: Number): String
+    fun first_known_index(): JsNumber
+    fun export_session(message_index: JsNumber): String
 }
 
 external class OutboundGroupSession {
@@ -65,7 +69,7 @@ external class OutboundGroupSession {
     fun encrypt(plainText: String): String
     fun session_id(): String
     fun session_key(): String
-    fun message_index(): Number
+    fun message_index(): JsNumber
 }
 
 external class PkEncryption {
@@ -95,19 +99,19 @@ external class SAS {
     fun free()
     fun get_pubkey(): String
     fun set_their_key(their_key: String)
-    fun generate_bytes(info: String, length: Number): Uint8Array<*>
+    fun generate_bytes(info: String, length: JsNumber): Uint8Array<*>
     fun calculate_mac(input: String, info: String): String
     fun calculate_mac_fixed_base64(input: String, info: String): String
 }
 
 external class Message {
-    val type: Number
+    val type: JsNumber
     val body: String
 }
 
 external class InboundGroupMessage {
     val plaintext: String
-    val message_index: Number
+    val message_index: JsNumber
 }
 
 external class PkMessage {
@@ -116,6 +120,6 @@ external class PkMessage {
     val ephemeral: String
 }
 
-external fun get_library_version(): List<Number> /* JsTuple<Number, Number, Number> */
+external fun get_library_version(): JsArray<JsNumber> /* JsTuple<Number, Number, Number> */
 
-external var PRIVATE_KEY_LENGTH: Number
+external var PRIVATE_KEY_LENGTH: JsNumber

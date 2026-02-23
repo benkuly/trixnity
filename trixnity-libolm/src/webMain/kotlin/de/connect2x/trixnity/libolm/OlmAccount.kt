@@ -1,9 +1,11 @@
 package de.connect2x.trixnity.libolm
 
 import kotlinx.serialization.json.Json
+import kotlin.js.toInt
+import kotlin.js.toJsNumber
 
 actual class OlmAccount private constructor() : WantsToBeFree {
-    internal actual val ptr: OlmAccountPointer = rethrow { Account() }.unsafeCast<OlmAccountPointer>()
+    internal actual val ptr: OlmAccountPointer = rethrow { Account() }
 
     actual companion object {
         actual fun create(): OlmAccount {
@@ -21,7 +23,7 @@ actual class OlmAccount private constructor() : WantsToBeFree {
     actual val identityKeys: OlmIdentityKeys get() = Json.decodeFromString(rethrow { ptr.identity_keys() })
     actual val unpublishedFallbackKey: OlmOneTimeKeys get() = Json.decodeFromString(rethrow { ptr.unpublished_fallback_key() })
     actual val oneTimeKeys: OlmOneTimeKeys get() = Json.decodeFromString(rethrow { ptr.one_time_keys() })
-    actual val maxNumberOfOneTimeKeys: Long get() = rethrow { ptr.max_number_of_one_time_keys() }.toLong()
+    actual val maxNumberOfOneTimeKeys: Long get() = rethrow { ptr.max_number_of_one_time_keys() }.toInt().toLong()
 
     actual override fun free() = ptr.free()
 
@@ -33,7 +35,7 @@ actual class OlmAccount private constructor() : WantsToBeFree {
 
     actual fun generateOneTimeKeys(numberOfKeys: Long) {
         require(numberOfKeys > 0) { "number of keys requested for generation must be positive" }
-        rethrow { ptr.generate_one_time_keys(numberOfKeys) }
+        rethrow { ptr.generate_one_time_keys(numberOfKeys.toInt().toJsNumber()) }
     }
 
     actual fun removeOneTimeKeys(session: OlmSession) = rethrow { ptr.remove_one_time_keys(session.ptr) }

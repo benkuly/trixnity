@@ -1,7 +1,10 @@
 package de.connect2x.trixnity.libolm
 
+import kotlin.js.toInt
+import kotlin.js.toJsNumber
+
 actual class OlmSession private constructor() : WantsToBeFree {
-    internal actual val ptr: OlmSessionPointer = rethrow { Session() }.unsafeCast<OlmSessionPointer>()
+    internal actual val ptr: OlmSessionPointer = rethrow { Session() }
 
     actual companion object {
         actual fun createOutbound(
@@ -60,7 +63,7 @@ actual class OlmSession private constructor() : WantsToBeFree {
     }
 
     actual fun decrypt(message: OlmMessage): String = rethrow {
-        ptr.decrypt(message.type.value, message.cipherText)
+        ptr.decrypt(message.type.value.toJsNumber(), message.cipherText)
     }
 }
 

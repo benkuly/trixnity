@@ -1,9 +1,10 @@
 package de.connect2x.trixnity.libolm
 
 import js.typedarrays.toByteArray
+import kotlin.js.toJsNumber
 
 actual class OlmSAS private constructor() : WantsToBeFree {
-    internal actual val ptr: OlmSASPointer = rethrow { SAS() }.unsafeCast<OlmSASPointer>()
+    internal actual val ptr: OlmSASPointer = rethrow { SAS() }
 
     actual companion object {
         actual fun create(): OlmSAS {
@@ -18,7 +19,7 @@ actual class OlmSAS private constructor() : WantsToBeFree {
     actual fun setTheirPublicKey(theirPublicKey: String) = rethrow { ptr.set_their_key(theirPublicKey) }
 
     actual fun generateShortCode(info: String, numberOfBytes: Int): ByteArray =
-        rethrow { ptr.generate_bytes(info, numberOfBytes) }.toByteArray()
+        rethrow { ptr.generate_bytes(info, numberOfBytes.toJsNumber()) }.toByteArray()
 
     actual fun calculateMac(input: String, info: String): String = rethrow { ptr.calculate_mac(input, info) }
     actual fun calculateMacFixedBase64(input: String, info: String) =

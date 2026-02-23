@@ -5,6 +5,7 @@ import com.android.build.gradle.tasks.ExternalNativeCleanTask
 import de.connect2x.conventions.asAAR
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
@@ -114,7 +115,7 @@ val desktopOlmLibs by tasks.registering(Jar::class) {
 kotlin {
     addJvmTarget()
     addAndroidTarget()
-    addJsTarget(rootDir)
+    addWebTarget(rootDir)
 
     applyDefaultHierarchyTemplate {
         common {
@@ -161,6 +162,7 @@ kotlin {
         configureEach {
             languageSettings.optIn("kotlin.RequiresOptIn")
             if (isNativeOnly) languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+            if (isWebOnly) languageSettings.optIn("kotlin.js.ExperimentalWasmJsInterop")
         }
 
         commonMain {
@@ -187,7 +189,7 @@ kotlin {
                 implementation(sharedLibs.jna.asProvider().asJar())
             }
         }
-        jsMain {
+        webMain {
             dependencies {
                 implementation(
                     npm(
@@ -217,3 +219,6 @@ kotlin {
 }
 
 private fun Provider<MinimalExternalModuleDependency>.asJar(): Provider<String> = map { "$it@jar" }
+
+private val KotlinSourceSet.isWebOnly: Boolean
+    get() = name == "jsMain" || name == "wasmJsMain" || name == "webMain"

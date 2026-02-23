@@ -1,8 +1,10 @@
 package de.connect2x.trixnity.libolm
 
+import kotlin.js.toInt
+
 actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
     internal actual val ptr: OlmOutboundGroupSessionPointer =
-        rethrow { OutboundGroupSession() }.unsafeCast<OlmOutboundGroupSessionPointer>()
+        rethrow { OutboundGroupSession() }
 
     actual companion object {
         actual fun create(): OlmOutboundGroupSession {
@@ -18,7 +20,7 @@ actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
 
     actual val sessionId: String get() = rethrow { ptr.session_id() }
     actual val sessionKey: String get() = rethrow { ptr.session_key() }
-    actual val messageIndex: Long get() = rethrow { ptr.message_index().toLong() }
+    actual val messageIndex: Long get() = rethrow { ptr.message_index().toInt().toLong() }
 
     actual override fun free() = ptr.free()
 

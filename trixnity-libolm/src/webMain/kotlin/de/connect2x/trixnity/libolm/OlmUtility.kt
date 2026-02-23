@@ -3,7 +3,7 @@ package de.connect2x.trixnity.libolm
 import js.typedarrays.toUint8Array
 
 actual class OlmUtility private constructor() : WantsToBeFree {
-    internal actual val ptr: OlmUtilityPointer = rethrow { Utility() }.unsafeCast<OlmUtilityPointer>()
+    internal actual val ptr: OlmUtilityPointer = rethrow { Utility() }
 
     actual companion object {
         actual fun create(): OlmUtility {
