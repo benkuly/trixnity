@@ -24,7 +24,7 @@ class IDBException private constructor(
     }
 
     enum class Operation {
-        GET, PUT, DELETE, CLEAR, TRANSACTION
+        GET, PUT, DELETE, CLEAR, TRANSACTION, CURSOR
     }
 }
 

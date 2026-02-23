@@ -3,10 +3,14 @@
 package de.connect2x.trixnity.idb.utils
 
 import de.connect2x.trixnity.idb.utils.IDBException.Operation.CLEAR
+import de.connect2x.trixnity.idb.utils.IDBException.Operation.CURSOR
 import de.connect2x.trixnity.idb.utils.IDBException.Operation.DELETE
 import de.connect2x.trixnity.idb.utils.IDBException.Operation.GET
 import de.connect2x.trixnity.idb.utils.IDBException.Operation.PUT
 import js.objects.unsafeJso
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import web.events.EventHandler
 import web.idb.IDBDatabase
@@ -114,6 +118,79 @@ value class WrappedTransaction(val tx: IDBTransaction) {
 
         request.onerror = EventHandler { event ->
             continuation.resumeWithException(IDBException.fromDom(CLEAR, event.target.error))
+        }
+    }
+
+    fun WrappedObjectStore.openCursor(key: IDBValidKey? = null): Flow<CursorItem> = callbackFlow {
+        val request = key?.let { store.openCursor(it) } ?: store.openCursor()
+
+        request.onsuccess = EventHandler { event ->
+            val cursor = event.target.result
+
+            if (cursor == null) {
+                channel.close()
+            } else {
+                channel.trySend(CursorItem(cursor.primaryKey, cursor.value))
+                cursor.`continue`()
+            }
+        }
+
+        request.onerror = EventHandler { event ->
+            channel.close(IDBException.fromDom(CURSOR, event.target.error))
+        }
+
+        awaitClose {
+            request.onsuccess = null
+            request.onerror = null
+        }
+    }
+
+    fun WrappedIndex.openCursor(key: IDBValidKey? = null): Flow<CursorItem> = callbackFlow {
+        val request = key?.let { index.openCursor(it) } ?: index.openCursor()
+
+        request.onsuccess = EventHandler { event ->
+            val cursor = event.target.result
+
+
+            if (cursor == null) {
+                channel.close()
+            } else {
+                channel.trySend(CursorItem(cursor.primaryKey, cursor.value))
+                cursor.`continue`()
+            }
+        }
+
+        request.onerror = EventHandler { event ->
+            channel.close(IDBException.fromDom(CURSOR, event.target.error))
+        }
+
+        awaitClose {
+            request.onsuccess = null
+            request.onerror = null
+        }
+    }
+
+    fun WrappedIndex.openKeyCursor(key: IDBValidKey? = null): Flow<IDBValidKey> = callbackFlow {
+        val request = key?.let { index.openKeyCursor(it) } ?: index.openKeyCursor()
+
+        request.onsuccess = EventHandler { event ->
+            val cursor = event.target.result
+
+            if (cursor == null) {
+                channel.close()
+            } else {
+                channel.trySend(cursor.primaryKey)
+                cursor.`continue`()
+            }
+        }
+
+        request.onerror = EventHandler { event ->
+            channel.close(IDBException.fromDom(CURSOR, event.target.error))
+        }
+
+        awaitClose {
+            request.onsuccess = null
+            request.onerror = null
         }
     }
 }
