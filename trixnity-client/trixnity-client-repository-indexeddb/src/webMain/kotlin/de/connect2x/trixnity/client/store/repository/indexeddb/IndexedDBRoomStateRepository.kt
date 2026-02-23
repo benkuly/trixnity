@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalWasmJsInterop::class)
-
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
 import kotlinx.coroutines.flow.filter

@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalWasmJsInterop::class)
-
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
 import kotlinx.coroutines.flow.map
@@ -8,7 +6,6 @@ import kotlinx.coroutines.flow.toSet
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToDynamic
 import de.connect2x.trixnity.client.store.KeyChainLink
 import de.connect2x.trixnity.client.store.repository.KeyChainLinkRepository
 import de.connect2x.trixnity.core.model.UserId

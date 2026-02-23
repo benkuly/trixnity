@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalWasmJsInterop::class)
-
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
 import kotlinx.coroutines.flow.mapNotNull
@@ -7,12 +5,12 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToDynamic
 import de.connect2x.trixnity.client.store.repository.FullRepository
 import de.connect2x.trixnity.idb.utils.WrappedObjectStore
 import de.connect2x.trixnity.idb.utils.WrappedTransaction
 import web.idb.IDBDatabase
 import web.idb.IDBValidKey
+import kotlin.js.toJsArray
 
 fun WrappedTransaction.createIndexedDBMinimalStoreRepository(
     database: IDBDatabase,
