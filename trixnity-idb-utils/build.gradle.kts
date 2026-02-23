@@ -7,10 +7,7 @@ plugins {
 }
 
 kotlin {
-    addJsTarget(rootDir, nodeJsEnabled = false)
-
-    // TODO: add wasm helper in buildSrc
-    wasmJs { browser() }
+    addWebTarget(rootDir, nodeJsEnabled = false)
 
     sourceSets {
         commonMain.dependencies {
