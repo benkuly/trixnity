@@ -2,7 +2,7 @@
 
 package de.connect2x.trixnity.idb.utils
 
-import js.errors.toThrowable
+import de.connect2x.trixnity.idb.utils.IDBException.Operation.TRANSACTION
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -14,7 +14,6 @@ import web.idb.IDBTransactionMode
 import web.idb.readonly
 import web.idb.readwrite
 import kotlin.Array
-import kotlin.Error
 import kotlin.OptIn
 import kotlin.String
 import kotlin.Unit
@@ -58,14 +57,18 @@ private suspend fun <T> IDBDatabase.transaction(
                     tx.abort()
                 }
 
-                tx.onerror = EventHandler { event ->
-                    continuation.resumeWithException(Error(event.target.error?.toThrowable()))
+                tx.onerror = EventHandler {
+                    continuation.resumeWithException(
+                        IDBException.fromDom(TRANSACTION, tx.error),
+                    )
                 }
                 tx.oncomplete = EventHandler {
                     continuation.resume(Unit)
                 }
                 tx.onabort = EventHandler {
-                    continuation.resumeWithException(Error("transaction aborted"))
+                    continuation.resumeWithException(
+                        IDBException.fromDom(TRANSACTION, tx.error),
+                    )
                 }
             }
         }

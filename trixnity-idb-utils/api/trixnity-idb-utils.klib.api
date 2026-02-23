@@ -6,6 +6,31 @@
 // - Show declarations: true
 
 // Library unique name: <de.connect2x.trixnity:trixnity-idb-utils>
+final class de.connect2x.trixnity.idb.utils/IDBException : kotlin/IllegalStateException { // de.connect2x.trixnity.idb.utils/IDBException|null[0]
+    final val cause // de.connect2x.trixnity.idb.utils/IDBException.cause|{}cause[0]
+        final fun <get-cause>(): kotlin/Throwable? // de.connect2x.trixnity.idb.utils/IDBException.cause.<get-cause>|<get-cause>(){}[0]
+    final val operation // de.connect2x.trixnity.idb.utils/IDBException.operation|{}operation[0]
+        final fun <get-operation>(): de.connect2x.trixnity.idb.utils/IDBException.Operation // de.connect2x.trixnity.idb.utils/IDBException.operation.<get-operation>|<get-operation>(){}[0]
+
+    final enum class Operation : kotlin/Enum<de.connect2x.trixnity.idb.utils/IDBException.Operation> { // de.connect2x.trixnity.idb.utils/IDBException.Operation|null[0]
+        enum entry CLEAR // de.connect2x.trixnity.idb.utils/IDBException.Operation.CLEAR|null[0]
+        enum entry DELETE // de.connect2x.trixnity.idb.utils/IDBException.Operation.DELETE|null[0]
+        enum entry GET // de.connect2x.trixnity.idb.utils/IDBException.Operation.GET|null[0]
+        enum entry PUT // de.connect2x.trixnity.idb.utils/IDBException.Operation.PUT|null[0]
+        enum entry TRANSACTION // de.connect2x.trixnity.idb.utils/IDBException.Operation.TRANSACTION|null[0]
+
+        final val entries // de.connect2x.trixnity.idb.utils/IDBException.Operation.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.idb.utils/IDBException.Operation> // de.connect2x.trixnity.idb.utils/IDBException.Operation.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): de.connect2x.trixnity.idb.utils/IDBException.Operation // de.connect2x.trixnity.idb.utils/IDBException.Operation.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<de.connect2x.trixnity.idb.utils/IDBException.Operation> // de.connect2x.trixnity.idb.utils/IDBException.Operation.values|values#static(){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.idb.utils/IDBException.Companion|null[0]
+        final fun fromDom(de.connect2x.trixnity.idb.utils/IDBException.Operation, web.errors/DOMException?): kotlin/IllegalStateException // de.connect2x.trixnity.idb.utils/IDBException.Companion.fromDom|fromDom(de.connect2x.trixnity.idb.utils.IDBException.Operation;web.errors.DOMException?){}[0]
+    }
+}
+
 final value class de.connect2x.trixnity.idb.utils/WrappedObjectStore { // de.connect2x.trixnity.idb.utils/WrappedObjectStore|null[0]
     constructor <init>(web.idb/IDBObjectStore) // de.connect2x.trixnity.idb.utils/WrappedObjectStore.<init>|<init>(web.idb.IDBObjectStore){}[0]
 

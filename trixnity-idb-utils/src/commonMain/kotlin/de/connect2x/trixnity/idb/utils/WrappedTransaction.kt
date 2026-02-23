@@ -2,7 +2,10 @@
 
 package de.connect2x.trixnity.idb.utils
 
-import js.errors.toThrowable
+import de.connect2x.trixnity.idb.utils.IDBException.Operation.CLEAR
+import de.connect2x.trixnity.idb.utils.IDBException.Operation.DELETE
+import de.connect2x.trixnity.idb.utils.IDBException.Operation.GET
+import de.connect2x.trixnity.idb.utils.IDBException.Operation.PUT
 import web.events.EventHandler
 import web.idb.IDBRequest
 import web.idb.IDBTransaction
@@ -33,7 +36,7 @@ value class WrappedTransaction(val tx: IDBTransaction) {
             }
 
             request.onerror = EventHandler { event ->
-                continuation.resumeWithException(Error("get error", event.target.error?.toThrowable()))
+                continuation.resumeWithException(IDBException.fromDom(GET, event.target.error))
             }
         }
 
@@ -46,7 +49,7 @@ value class WrappedTransaction(val tx: IDBTransaction) {
             }
 
             request.onerror = EventHandler { event ->
-                continuation.resumeWithException(Error("put error", event.target.error?.toThrowable()))
+                continuation.resumeWithException(IDBException.fromDom(PUT, event.target.error))
             }
         }
 
@@ -58,7 +61,7 @@ value class WrappedTransaction(val tx: IDBTransaction) {
         }
 
         request.onerror = EventHandler { event ->
-            continuation.resumeWithException(Error("delete error", event.target.error?.toThrowable()))
+            continuation.resumeWithException(IDBException.fromDom(DELETE, event.target.error))
         }
     }
 
@@ -70,7 +73,7 @@ value class WrappedTransaction(val tx: IDBTransaction) {
         }
 
         request.onerror = EventHandler { event ->
-            continuation.resumeWithException(Error("clear error", event.target.error?.toThrowable()))
+            continuation.resumeWithException(IDBException.fromDom(CLEAR, event.target.error))
         }
     }
 }
