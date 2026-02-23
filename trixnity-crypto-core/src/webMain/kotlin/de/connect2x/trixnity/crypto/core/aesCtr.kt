@@ -5,12 +5,14 @@ import io.ktor.util.*
 import js.buffer.ArrayBuffer
 import js.buffer.BufferSource
 import js.typedarrays.Uint8Array
-import js.typedarrays.asInt8Array
 import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import de.connect2x.trixnity.utils.ByteArrayFlow
+import js.array.jsArrayOf
+import js.objects.unsafeJso
+import js.typedarrays.toInt8Array
 import web.crypto.*
 
 actual fun ByteArrayFlow.encryptAes256Ctr(
@@ -93,10 +95,13 @@ private suspend fun ByteArrayFlow.aesOperation(
 
     val aesKey = crypto.importKey(
         format = KeyFormat.raw,
-        keyData = key.asInt8Array(),
-        algorithm = AesKeyAlgorithm(name = "AES-CTR", length = 256),
+        keyData = key.fastToUint8Array(),
+        algorithm = unsafeJso<AesKeyAlgorithm> {
+            name = "AES-CTR"
+            length = 256
+        },
         extractable = false,
-        keyUsages = arrayOf(KeyUsage.encrypt, KeyUsage.decrypt),
+        keyUsages = jsArrayOf(KeyUsage.encrypt, KeyUsage.decrypt),
     )
     // iv is composed of a nonce and counter in AES-CTR
     val nonce = initialisationVector.copyOf(8)
@@ -106,13 +111,13 @@ private suspend fun ByteArrayFlow.aesOperation(
         val input = previousInput + nextInput
         val output = Uint8Array(
             operation(
-                AesCtrParams(
-                    name = "AES-CTR",
-                    counter = (nonce + currentCounter).asInt8Array(),
-                    length = 64,
-                ),
+                unsafeJso<AesCtrParams> {
+                    name = "AES-CTR"
+                    counter = (nonce + currentCounter).fastToUint8Array()
+                    length = 64
+                },
                 aesKey,
-                input.asInt8Array(),
+                input.fastToUint8Array(),
             )
         ).toByteArray()
         val nextOutput = output.copyOfRange(previousInput.size, output.size)

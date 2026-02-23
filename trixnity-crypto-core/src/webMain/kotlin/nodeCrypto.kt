@@ -1,19 +1,20 @@
 @file:JsModule("crypto")
-@file:JsNonModule
 
-import js.typedarrays.Int8Array
+import js.errors.JsError
 import js.typedarrays.Uint8Array
+import kotlin.js.JsModule
+import kotlin.js.JsNumber
 
 
-external fun randomFillSync(buffer: Int8Array<*>): Uint8Array<*>
+external fun randomFillSync(buffer: Uint8Array<js.buffer.ArrayBuffer>): Uint8Array<*>
 
 external fun pbkdf2(
     password: String,
     salt: Uint8Array<*>,
-    iterations: Number,
-    keylen: Number,
+    iterations: JsNumber,
+    keylen: JsNumber,
     digest: String,
-    callback: (err: Error?, derivedKey: Uint8Array<*>) -> Unit
+    callback: (err: JsError?, derivedKey: Uint8Array<*>) -> Unit
 )
 
 external fun createCipheriv(

@@ -2,31 +2,34 @@ package de.connect2x.trixnity.crypto.core
 
 import createHmac
 import io.ktor.util.*
+import js.array.jsArrayOf
 import js.buffer.toByteArray
+import js.json.rawJSON
+import js.objects.unsafeJso
 import js.typedarrays.Uint8Array
-import js.typedarrays.asInt8Array
 import js.typedarrays.toByteArray
+import js.typedarrays.toInt8Array
 import js.typedarrays.toUint8Array
 import web.crypto.*
-import kotlin.js.json
+import kotlin.js.toJsString
 
 actual suspend fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray {
     return if (PlatformUtils.IS_BROWSER) {
         val crypto = crypto.subtle
         val hmacKey = crypto.importKey(
             format = KeyFormat.raw,
-            keyData = key.asInt8Array(),
-            algorithm = HmacImportParams(
-                name = "HMAC",
-                hash = json("name" to "SHA-256"),
-            ),
+            keyData = key.fastToUint8Array(),
+            algorithm = unsafeJso<HmacImportParams> {
+                name = "HMAC"
+                hash = "SHA-256".toJsString()
+            },
             extractable = false,
-            keyUsages = arrayOf(KeyUsage.sign)
+            keyUsages = jsArrayOf(KeyUsage.sign)
         )
         crypto.sign(
             algorithm = "HMAC",
             key = hmacKey,
-            data = data.asInt8Array()
+            data = data.fastToUint8Array()
         ).toByteArray()
     } else {
         val hmac = createHmac(algorithm = "sha256", key = key.toUint8Array())

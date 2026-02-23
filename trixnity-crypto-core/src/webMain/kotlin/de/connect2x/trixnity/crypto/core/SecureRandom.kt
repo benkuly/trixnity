@@ -1,16 +1,19 @@
 package de.connect2x.trixnity.crypto.core
 
 import io.ktor.util.*
-import js.buffer.ArrayBuffer
 import js.typedarrays.Uint8Array
-import js.typedarrays.asInt8Array
 import randomFillSync
 import web.crypto.crypto
 
 actual fun fillRandomBytes(array: ByteArray) {
+    val buffer = fastToBuffer(array)
+    val view = Uint8Array(buffer, 0, array.size)
+
     if (PlatformUtils.IS_BROWSER) {
-        crypto.getRandomValues(array.asInt8Array().unsafeCast<Uint8Array<ArrayBuffer>>())
+        crypto.getRandomValues(view)
     } else {
-        randomFillSync(array.asInt8Array())
+        randomFillSync(view)
     }
+
+    fastCopyBack(array, buffer)
 }
