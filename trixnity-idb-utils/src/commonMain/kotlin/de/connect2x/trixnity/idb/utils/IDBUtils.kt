@@ -13,7 +13,7 @@ object IDBUtils {
     suspend fun openDatabase(
         name: String,
         version: Int,
-        upgrade: (IDBDatabase, Int, Int?) -> Unit
+        upgrade: WrappedTransaction.(IDBDatabase, Int, Int?) -> Unit,
     ): IDBDatabase = coroutineScope {
         val request = indexedDB.open(name, version.toDouble())
 
@@ -39,7 +39,12 @@ object IDBUtils {
                 )
             }
             request.onupgradeneeded = EventHandler { event ->
-                upgrade(event.target.result, event.oldVersion.toInt(), event.newVersion?.toInt())
+                val transaction = WrappedTransaction(checkNotNull(event.target.transaction))
+                transaction.upgrade(
+                    event.target.result,
+                    event.oldVersion.toInt(),
+                    event.newVersion?.toInt(),
+                )
             }
         }
     }

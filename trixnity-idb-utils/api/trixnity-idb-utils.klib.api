@@ -46,7 +46,7 @@ final value class de.connect2x.trixnity.idb.utils/WrappedTransaction { // de.con
 }
 
 final object de.connect2x.trixnity.idb.utils/IDBUtils { // de.connect2x.trixnity.idb.utils/IDBUtils|null[0]
-    final suspend fun openDatabase(kotlin/String, kotlin/Int, kotlin/Function3<web.idb/IDBDatabase, kotlin/Int, kotlin/Int?, kotlin/Unit>): web.idb/IDBDatabase // de.connect2x.trixnity.idb.utils/IDBUtils.openDatabase|openDatabase(kotlin.String;kotlin.Int;kotlin.Function3<web.idb.IDBDatabase,kotlin.Int,kotlin.Int?,kotlin.Unit>){}[0]
+    final suspend fun openDatabase(kotlin/String, kotlin/Int, kotlin/Function4<de.connect2x.trixnity.idb.utils/WrappedTransaction, web.idb/IDBDatabase, kotlin/Int, kotlin/Int?, kotlin/Unit>): web.idb/IDBDatabase // de.connect2x.trixnity.idb.utils/IDBUtils.openDatabase|openDatabase(kotlin.String;kotlin.Int;kotlin.Function4<de.connect2x.trixnity.idb.utils.WrappedTransaction,web.idb.IDBDatabase,kotlin.Int,kotlin.Int?,kotlin.Unit>){}[0]
 }
 
 final suspend fun <#A: kotlin/Any?> (web.idb/IDBDatabase).de.connect2x.trixnity.idb.utils/readTransaction(kotlin/Array<out kotlin/String>..., kotlin.coroutines/SuspendFunction1<de.connect2x.trixnity.idb.utils/WrappedTransaction, #A>): #A // de.connect2x.trixnity.idb.utils/readTransaction|readTransaction@web.idb.IDBDatabase(kotlin.Array<out|kotlin.String>...;kotlin.coroutines.SuspendFunction1<de.connect2x.trixnity.idb.utils.WrappedTransaction,0:0>){0§<kotlin.Any?>}[0]
