@@ -5,7 +5,7 @@ plugins {
 kotlin {
     addJvmTarget()
     addNativeTargets()
-    addJsTarget(rootDir)
+    addWebTarget(rootDir)
 
     sourceSets {
         val commonMain by getting
