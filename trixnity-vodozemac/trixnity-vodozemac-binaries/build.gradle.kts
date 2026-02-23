@@ -31,7 +31,7 @@ kotlin {
     addAndroidTarget()
     addNativeTargets()
     addNativeAppleTargets()
-    addJsTarget(rootDir)
+    addWebTarget(rootDir)
 
     applyDefaultHierarchyTemplate()
 }
@@ -181,7 +181,7 @@ private fun registerLibvodozemac(remoteBinaries: VodozemacBinaries.Remote) {
         }
 
     kotlin.sourceSets
-        .named { it == "jsMain" }
+        .named { it == "jsMain" || it == "wasmJsMain" }
         .configureEach { dependencies { implementation(npm("vodozemac", directories.webNpm.get())) } }
 
     val cinteropDefFile by
