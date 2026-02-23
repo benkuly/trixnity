@@ -2,8 +2,6 @@ package de.connect2x.trixnity.client.key
 
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.warn
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.first
 import de.connect2x.trixnity.client.CurrentSyncState
 import de.connect2x.trixnity.client.store.*
 import de.connect2x.trixnity.client.user.LazyMemberEventHandler
@@ -29,6 +27,8 @@ import de.connect2x.trixnity.crypto.olm.membershipsAllowedToReceiveKey
 import de.connect2x.trixnity.crypto.sign.SignService
 import de.connect2x.trixnity.crypto.sign.VerifyResult
 import de.connect2x.trixnity.crypto.sign.verify
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 
 private val log = Logger("de.connect2x.trixnity.client.key.OutdatedKeysHandler")
 
@@ -60,7 +60,7 @@ class OutdatedKeysHandler(
 
     internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?, syncState: SyncState) =
         withContext(KeyStore.SkipOutdatedKeys) {
-            log.debug { "handle new device list" }
+            log.trace { "handle new device list" }
             // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
             val trackOwnKey = deviceList?.changed?.contains(userInfo.userId) == true
             if (syncState != SyncState.INITIAL_SYNC) {

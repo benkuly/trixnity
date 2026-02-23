@@ -2,10 +2,6 @@ package de.connect2x.trixnity.crypto.olm
 
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.error
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import de.connect2x.trixnity.core.*
 import de.connect2x.trixnity.core.ClientEventEmitter.Priority
 import de.connect2x.trixnity.core.model.UserId
@@ -25,6 +21,10 @@ import de.connect2x.trixnity.crypto.driver.keys.Curve25519PublicKey
 import de.connect2x.trixnity.crypto.driver.useAll
 import de.connect2x.trixnity.crypto.invoke
 import de.connect2x.trixnity.crypto.sign.SignService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 
@@ -79,7 +79,7 @@ class OlmEventHandler(
         var newOneTimeKeys: Keys? = null
         var newFallbackKeys: Keys? = null
 
-        log.debug { "handle change of own olm keys server count (oneTimeKeysCount=$oneTimeKeysCount, fallbackKeyTypes=$fallbackKeyTypes)" }
+        log.trace { "handle change of own olm keys server count (oneTimeKeysCount=$oneTimeKeysCount, fallbackKeyTypes=$fallbackKeyTypes)" }
         store.updateOlmAccount { pickledOlmAccount ->
             driver.olm.account.fromPickle(pickledOlmAccount, driver.key.pickleKey(store.getOlmPickleKey()))
                 .use { olmAccount ->
