@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs]
 // Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxX64, macosArm64, macosX64, mingwX64]
 // Rendering settings:
 // - Signature version: 2
@@ -255,7 +255,7 @@ abstract class de.connect2x.trixnity.vodozemac.utils/Managed : de.connect2x.trix
     // Targets: [native]
     constructor <init>(kotlin/Long, kotlin/Function1<kotlin/Long, kotlin/Unit>) // de.connect2x.trixnity.vodozemac.utils/Managed.<init>|<init>(kotlin.Long;kotlin.Function1<kotlin.Long,kotlin.Unit>){}[0]
 
-    // Targets: [js]
+    // Targets: [js, wasmJs]
     constructor <init>(kotlin/Int, kotlin/Function1<kotlin/Int, kotlin/Unit>) // de.connect2x.trixnity.vodozemac.utils/Managed.<init>|<init>(kotlin.Int;kotlin.Function1<kotlin.Int,kotlin.Unit>){}[0]
 }
 
@@ -265,7 +265,7 @@ abstract class de.connect2x.trixnity.vodozemac.utils/Native { // de.connect2x.tr
     // Targets: [native]
     constructor <init>(kotlin/Long) // de.connect2x.trixnity.vodozemac.utils/Native.<init>|<init>(kotlin.Long){}[0]
 
-    // Targets: [js]
+    // Targets: [js, wasmJs]
     constructor <init>(kotlin/Int) // de.connect2x.trixnity.vodozemac.utils/Native.<init>|<init>(kotlin.Int){}[0]
 }
 
@@ -804,7 +804,7 @@ sealed class de.connect2x.trixnity.vodozemac.megolm/MegolmMessage : de.connect2x
         // Targets: [native]
         constructor <init>(kotlin/Long) // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes.<init>|<init>(kotlin.Long){}[0]
 
-        // Targets: [js]
+        // Targets: [js, wasmJs]
         constructor <init>(kotlin/Int) // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Bytes.<init>|<init>(kotlin.Int){}[0]
     }
 
@@ -817,7 +817,7 @@ sealed class de.connect2x.trixnity.vodozemac.megolm/MegolmMessage : de.connect2x
         // Targets: [native]
         constructor <init>(kotlin/Long) // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text.<init>|<init>(kotlin.Long){}[0]
 
-        // Targets: [js]
+        // Targets: [js, wasmJs]
         constructor <init>(kotlin/Int) // de.connect2x.trixnity.vodozemac.megolm/MegolmMessage.Text.<init>|<init>(kotlin.Int){}[0]
     }
 
@@ -828,7 +828,7 @@ final val de.connect2x.trixnity.vodozemac.utils/nullPtr // de.connect2x.trixnity
     // Targets: [native]
     final fun <get-nullPtr>(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/nullPtr.<get-nullPtr>|<get-nullPtr>(){}[0]
 
-    // Targets: [js]
+    // Targets: [js, wasmJs]
     final fun <get-nullPtr>(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/nullPtr.<get-nullPtr>|<get-nullPtr>(){}[0]
 final val de.connect2x.trixnity.vodozemac.utils/ptrSize // de.connect2x.trixnity.vodozemac.utils/ptrSize|{}ptrSize[0]
     final fun <get-ptrSize>(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/ptrSize.<get-ptrSize>|<get-ptrSize>(){}[0]
@@ -887,50 +887,58 @@ final fun (kotlin/Nothing?).de.connect2x.trixnity.vodozemac/toInterop(): kotlin.
 // Targets: [native]
 final inline fun <#A: kotlin/Any?> (kotlin/LongArray).de.connect2x.trixnity.vodozemac.utils/map(kotlin/Function1<kotlin/Long, #A>): kotlin.collections/List<#A> // de.connect2x.trixnity.vodozemac.utils/map|map@kotlin.LongArray(kotlin.Function1<kotlin.Long,0:0>){0§<kotlin.Any?>}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final val de.connect2x.trixnity.vodozemac.utils/intValue // de.connect2x.trixnity.vodozemac.utils/intValue|@kotlin.Int{}intValue[0]
     final fun (kotlin/Int).<get-intValue>(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/intValue.<get-intValue>|<get-intValue>@kotlin.Int(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final val de.connect2x.trixnity.vodozemac.utils/longValue // de.connect2x.trixnity.vodozemac.utils/longValue|@kotlin.Int{}longValue[0]
     final fun (kotlin/Int).<get-longValue>(): kotlin/Long // de.connect2x.trixnity.vodozemac.utils/longValue.<get-longValue>|<get-longValue>@kotlin.Int(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final val de.connect2x.trixnity.vodozemac/InitHook // de.connect2x.trixnity.vodozemac/InitHook|{}InitHook[0]
     final fun <get-InitHook>(): kotlin/Function0<kotlin/Unit> // de.connect2x.trixnity.vodozemac/InitHook.<get-InitHook>|<get-InitHook>(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/Int).de.connect2x.trixnity.vodozemac.utils/format(): kotlin/String // de.connect2x.trixnity.vodozemac.utils/format|format@kotlin.Int(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/Int).de.connect2x.trixnity.vodozemac/toByteArray(kotlin/Int): kotlin/ByteArray // de.connect2x.trixnity.vodozemac/toByteArray|toByteArray@kotlin.Int(kotlin.Int){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/Int).de.connect2x.trixnity.vodozemac/toNativePointerArray(kotlin/Int): kotlin/IntArray // de.connect2x.trixnity.vodozemac/toNativePointerArray|toNativePointerArray@kotlin.Int(kotlin.Int){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/asPtrSequence(): kotlin.sequences/Sequence<kotlin/Int> // de.connect2x.trixnity.vodozemac.utils/asPtrSequence|asPtrSequence@kotlin.IntArray(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component1(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component1|component1@kotlin.IntArray(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component2(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component2|component2@kotlin.IntArray(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component3(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component3|component3@kotlin.IntArray(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component4(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component4|component4@kotlin.IntArray(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component5(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component5|component5@kotlin.IntArray(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/component6(): kotlin/Int // de.connect2x.trixnity.vodozemac.utils/component6|component6@kotlin.IntArray(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (kotlin/Nothing?).de.connect2x.trixnity.vodozemac/toInterop(): kotlin/Int? // de.connect2x.trixnity.vodozemac/toInterop|toInterop@kotlin.Nothing?(){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final inline fun <#A: kotlin/Any?> (kotlin/IntArray).de.connect2x.trixnity.vodozemac.utils/map(kotlin/Function1<kotlin/Int, #A>): kotlin.collections/List<#A> // de.connect2x.trixnity.vodozemac.utils/map|map@kotlin.IntArray(kotlin.Function1<kotlin.Int,0:0>){0§<kotlin.Any?>}[0]
+
+// Targets: [wasmJs]
+open annotation class de.connect2x.trixnity.vodozemac/ExternalSymbolName : kotlin/Annotation { // de.connect2x.trixnity.vodozemac/ExternalSymbolName|null[1]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.vodozemac/ExternalSymbolName.<init>|<init>(kotlin.String){}[1]
+
+    final val name // de.connect2x.trixnity.vodozemac/ExternalSymbolName.name|{}name[1]
+        final fun <get-name>(): kotlin/String // de.connect2x.trixnity.vodozemac/ExternalSymbolName.name.<get-name>|<get-name>(){}[1]
+}
