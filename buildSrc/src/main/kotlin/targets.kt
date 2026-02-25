@@ -1,9 +1,11 @@
 import org.gradle.kotlin.dsl.get
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
+import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinWasmJsTargetDsl
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
 import java.io.File
@@ -60,6 +62,58 @@ fun KotlinMultiplatformExtension.addJsTarget(
         useEsModules()
         binaries.executable()
     }
+
+@OptIn(ExperimentalWasmDsl::class)
+fun KotlinMultiplatformExtension.addWasmJsTarget(
+    rootDir: File,
+    testEnabled: Boolean = true,
+    browserEnabled: Boolean = true,
+    nodeJsEnabled: Boolean = true,
+): KotlinWasmJsTargetDsl =
+    wasmJs {
+        if (browserEnabled)
+            browser {
+                commonWebpackConfig {
+                    configDirectory = rootDir.resolve("webpack.config.d")
+                }
+                testTask {
+                    useKarma {
+                        useFirefoxHeadless()
+                        useConfigDirectory(rootDir.resolve("karma.config.d"))
+                    }
+                    enabled = testEnabled
+                }
+            }
+        if (nodeJsEnabled)
+            nodejs {
+                testTask {
+                    enabled = testEnabled
+                }
+            }
+        useEsModules()
+        binaries.executable()
+    }
+
+fun KotlinMultiplatformExtension.addWebTarget(
+    rootDir: File,
+    testEnabled: Boolean = true,
+    browserEnabled: Boolean = true,
+    nodeJsEnabled: Boolean = true,
+) {
+    addJsTarget(
+        rootDir = rootDir,
+        testEnabled = testEnabled,
+        browserEnabled = browserEnabled,
+        nodeJsEnabled = nodeJsEnabled,
+    )
+
+    addWasmJsTarget(
+        rootDir = rootDir,
+        testEnabled = testEnabled,
+        browserEnabled = browserEnabled,
+        nodeJsEnabled = nodeJsEnabled,
+    )
+}
 
 fun KotlinMultiplatformExtension.addNativeTargets(configure: (KotlinNativeTarget.() -> Unit) = {}): Set<KotlinNativeTarget> =
     addNativeDesktopTargets(configure) + addNativeAppleTargets(configure)

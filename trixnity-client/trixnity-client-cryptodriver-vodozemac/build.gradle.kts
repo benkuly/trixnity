@@ -6,7 +6,7 @@ plugins {
 kotlin {
     addJvmTarget()
     addNativeTargets()
-    addJsTarget(rootDir)
+    addWebTarget(rootDir)
 
     sourceSets {
         all {

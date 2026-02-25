@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs]
 // Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxX64, macosArm64, macosX64, mingwX64]
 // Rendering settings:
 // - Signature version: 2
@@ -550,7 +550,7 @@ final object de.connect2x.trixnity.libolm/OlmLibrary { // de.connect2x.trixnity.
     final fun utility_last_error(de.connect2x.trixnity.libolm/OlmUtilityPointer): kotlin/String? // de.connect2x.trixnity.libolm/OlmLibrary.utility_last_error|utility_last_error(de.connect2x.trixnity.libolm.OlmUtilityPointer){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/Account { // de.connect2x.trixnity.libolm/Account|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/Account.<init>|<init>(){}[0]
 
@@ -558,68 +558,101 @@ final class de.connect2x.trixnity.libolm/Account { // de.connect2x.trixnity.libo
     final fun forget_old_fallback_key() // de.connect2x.trixnity.libolm/Account.forget_old_fallback_key|forget_old_fallback_key(){}[0]
     final fun free() // de.connect2x.trixnity.libolm/Account.free|free(){}[0]
     final fun generate_fallback_key() // de.connect2x.trixnity.libolm/Account.generate_fallback_key|generate_fallback_key(){}[0]
-    final fun generate_one_time_keys(kotlin/Number) // de.connect2x.trixnity.libolm/Account.generate_one_time_keys|generate_one_time_keys(kotlin.Number){}[0]
     final fun identity_keys(): kotlin/String // de.connect2x.trixnity.libolm/Account.identity_keys|identity_keys(){}[0]
     final fun mark_keys_as_published() // de.connect2x.trixnity.libolm/Account.mark_keys_as_published|mark_keys_as_published(){}[0]
-    final fun max_number_of_one_time_keys(): kotlin/Number // de.connect2x.trixnity.libolm/Account.max_number_of_one_time_keys|max_number_of_one_time_keys(){}[0]
     final fun one_time_keys(): kotlin/String // de.connect2x.trixnity.libolm/Account.one_time_keys|one_time_keys(){}[0]
     final fun pickle(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Account.pickle|pickle(kotlin.String){}[0]
     final fun remove_one_time_keys(de.connect2x.trixnity.libolm/Session) // de.connect2x.trixnity.libolm/Account.remove_one_time_keys|remove_one_time_keys(de.connect2x.trixnity.libolm.Session){}[0]
     final fun sign(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Account.sign|sign(kotlin.String){}[0]
     final fun unpickle(kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/Account.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
     final fun unpublished_fallback_key(): kotlin/String // de.connect2x.trixnity.libolm/Account.unpublished_fallback_key|unpublished_fallback_key(){}[0]
+
+    // Targets: [js]
+    final fun generate_one_time_keys(kotlin/Double) // de.connect2x.trixnity.libolm/Account.generate_one_time_keys|generate_one_time_keys(kotlin.Double){}[0]
+
+    // Targets: [js]
+    final fun max_number_of_one_time_keys(): kotlin/Double // de.connect2x.trixnity.libolm/Account.max_number_of_one_time_keys|max_number_of_one_time_keys(){}[0]
+
+    // Targets: [wasmJs]
+    final fun generate_one_time_keys(kotlin.js/JsNumber) // de.connect2x.trixnity.libolm/Account.generate_one_time_keys|generate_one_time_keys(kotlin.js.JsNumber){}[0]
+
+    // Targets: [wasmJs]
+    final fun max_number_of_one_time_keys(): kotlin.js/JsNumber // de.connect2x.trixnity.libolm/Account.max_number_of_one_time_keys|max_number_of_one_time_keys(){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/InboundGroupMessage { // de.connect2x.trixnity.libolm/InboundGroupMessage|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/InboundGroupMessage.<init>|<init>(){}[0]
 
     final val message_index // de.connect2x.trixnity.libolm/InboundGroupMessage.message_index|{}message_index[0]
-        final fun <get-message_index>(): kotlin/Number // de.connect2x.trixnity.libolm/InboundGroupMessage.message_index.<get-message_index>|<get-message_index>(){}[0]
+        // Targets: [js]
+        final fun <get-message_index>(): kotlin/Double // de.connect2x.trixnity.libolm/InboundGroupMessage.message_index.<get-message_index>|<get-message_index>(){}[0]
+
+        // Targets: [wasmJs]
+        final fun <get-message_index>(): kotlin.js/JsNumber // de.connect2x.trixnity.libolm/InboundGroupMessage.message_index.<get-message_index>|<get-message_index>(){}[0]
     final val plaintext // de.connect2x.trixnity.libolm/InboundGroupMessage.plaintext|{}plaintext[0]
         final fun <get-plaintext>(): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupMessage.plaintext.<get-plaintext>|<get-plaintext>(){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/InboundGroupSession { // de.connect2x.trixnity.libolm/InboundGroupSession|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/InboundGroupSession.<init>|<init>(){}[0]
 
-    final fun create(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.create|create(kotlin.String){}[0]
+    final fun create(kotlin/String) // de.connect2x.trixnity.libolm/InboundGroupSession.create|create(kotlin.String){}[0]
     final fun decrypt(kotlin/String): de.connect2x.trixnity.libolm/InboundGroupMessage // de.connect2x.trixnity.libolm/InboundGroupSession.decrypt|decrypt(kotlin.String){}[0]
-    final fun export_session(kotlin/Number): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.export_session|export_session(kotlin.Number){}[0]
-    final fun first_known_index(): kotlin/Number // de.connect2x.trixnity.libolm/InboundGroupSession.first_known_index|first_known_index(){}[0]
     final fun free() // de.connect2x.trixnity.libolm/InboundGroupSession.free|free(){}[0]
-    final fun import_session(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.import_session|import_session(kotlin.String){}[0]
+    final fun import_session(kotlin/String) // de.connect2x.trixnity.libolm/InboundGroupSession.import_session|import_session(kotlin.String){}[0]
     final fun pickle(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.pickle|pickle(kotlin.String){}[0]
     final fun session_id(): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.session_id|session_id(){}[0]
     final fun unpickle(kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/InboundGroupSession.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
+
+    // Targets: [js]
+    final fun export_session(kotlin/Double): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.export_session|export_session(kotlin.Double){}[0]
+
+    // Targets: [js]
+    final fun first_known_index(): kotlin/Double // de.connect2x.trixnity.libolm/InboundGroupSession.first_known_index|first_known_index(){}[0]
+
+    // Targets: [wasmJs]
+    final fun export_session(kotlin.js/JsNumber): kotlin/String // de.connect2x.trixnity.libolm/InboundGroupSession.export_session|export_session(kotlin.js.JsNumber){}[0]
+
+    // Targets: [wasmJs]
+    final fun first_known_index(): kotlin.js/JsNumber // de.connect2x.trixnity.libolm/InboundGroupSession.first_known_index|first_known_index(){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/Message { // de.connect2x.trixnity.libolm/Message|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/Message.<init>|<init>(){}[0]
 
     final val body // de.connect2x.trixnity.libolm/Message.body|{}body[0]
         final fun <get-body>(): kotlin/String // de.connect2x.trixnity.libolm/Message.body.<get-body>|<get-body>(){}[0]
     final val type // de.connect2x.trixnity.libolm/Message.type|{}type[0]
-        final fun <get-type>(): kotlin/Number // de.connect2x.trixnity.libolm/Message.type.<get-type>|<get-type>(){}[0]
+        // Targets: [js]
+        final fun <get-type>(): kotlin/Double // de.connect2x.trixnity.libolm/Message.type.<get-type>|<get-type>(){}[0]
+
+        // Targets: [wasmJs]
+        final fun <get-type>(): kotlin.js/JsNumber // de.connect2x.trixnity.libolm/Message.type.<get-type>|<get-type>(){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/OutboundGroupSession { // de.connect2x.trixnity.libolm/OutboundGroupSession|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/OutboundGroupSession.<init>|<init>(){}[0]
 
     final fun create() // de.connect2x.trixnity.libolm/OutboundGroupSession.create|create(){}[0]
     final fun encrypt(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OutboundGroupSession.encrypt|encrypt(kotlin.String){}[0]
     final fun free() // de.connect2x.trixnity.libolm/OutboundGroupSession.free|free(){}[0]
-    final fun message_index(): kotlin/Number // de.connect2x.trixnity.libolm/OutboundGroupSession.message_index|message_index(){}[0]
     final fun pickle(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/OutboundGroupSession.pickle|pickle(kotlin.String){}[0]
     final fun session_id(): kotlin/String // de.connect2x.trixnity.libolm/OutboundGroupSession.session_id|session_id(){}[0]
     final fun session_key(): kotlin/String // de.connect2x.trixnity.libolm/OutboundGroupSession.session_key|session_key(){}[0]
     final fun unpickle(kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/OutboundGroupSession.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
+
+    // Targets: [js]
+    final fun message_index(): kotlin/Double // de.connect2x.trixnity.libolm/OutboundGroupSession.message_index|message_index(){}[0]
+
+    // Targets: [wasmJs]
+    final fun message_index(): kotlin.js/JsNumber // de.connect2x.trixnity.libolm/OutboundGroupSession.message_index|message_index(){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/PkDecryption { // de.connect2x.trixnity.libolm/PkDecryption|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/PkDecryption.<init>|<init>(){}[0]
 
@@ -632,7 +665,7 @@ final class de.connect2x.trixnity.libolm/PkDecryption { // de.connect2x.trixnity
     final fun unpickle(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/PkDecryption.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/PkEncryption { // de.connect2x.trixnity.libolm/PkEncryption|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/PkEncryption.<init>|<init>(){}[0]
 
@@ -641,7 +674,7 @@ final class de.connect2x.trixnity.libolm/PkEncryption { // de.connect2x.trixnity
     final fun set_recipient_key(kotlin/String) // de.connect2x.trixnity.libolm/PkEncryption.set_recipient_key|set_recipient_key(kotlin.String){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/PkMessage { // de.connect2x.trixnity.libolm/PkMessage|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/PkMessage.<init>|<init>(){}[0]
 
@@ -653,7 +686,7 @@ final class de.connect2x.trixnity.libolm/PkMessage { // de.connect2x.trixnity.li
         final fun <get-mac>(): kotlin/String // de.connect2x.trixnity.libolm/PkMessage.mac.<get-mac>|<get-mac>(){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/PkSigning { // de.connect2x.trixnity.libolm/PkSigning|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/PkSigning.<init>|<init>(){}[0]
 
@@ -663,26 +696,30 @@ final class de.connect2x.trixnity.libolm/PkSigning { // de.connect2x.trixnity.li
     final fun sign(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/PkSigning.sign|sign(kotlin.String){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/SAS { // de.connect2x.trixnity.libolm/SAS|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/SAS.<init>|<init>(){}[0]
 
     final fun calculate_mac(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/SAS.calculate_mac|calculate_mac(kotlin.String;kotlin.String){}[0]
     final fun calculate_mac_fixed_base64(kotlin/String, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/SAS.calculate_mac_fixed_base64|calculate_mac_fixed_base64(kotlin.String;kotlin.String){}[0]
     final fun free() // de.connect2x.trixnity.libolm/SAS.free|free(){}[0]
-    final fun generate_bytes(kotlin/String, kotlin/Number): js.typedarrays/Uint8Array<*> // de.connect2x.trixnity.libolm/SAS.generate_bytes|generate_bytes(kotlin.String;kotlin.Number){}[0]
     final fun get_pubkey(): kotlin/String // de.connect2x.trixnity.libolm/SAS.get_pubkey|get_pubkey(){}[0]
     final fun set_their_key(kotlin/String) // de.connect2x.trixnity.libolm/SAS.set_their_key|set_their_key(kotlin.String){}[0]
+
+    // Targets: [js]
+    final fun generate_bytes(kotlin/String, kotlin/Double): js.typedarrays/Uint8Array<*> // de.connect2x.trixnity.libolm/SAS.generate_bytes|generate_bytes(kotlin.String;kotlin.Double){}[0]
+
+    // Targets: [wasmJs]
+    final fun generate_bytes(kotlin/String, kotlin.js/JsNumber): js.typedarrays/Uint8Array<*> // de.connect2x.trixnity.libolm/SAS.generate_bytes|generate_bytes(kotlin.String;kotlin.js.JsNumber){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/Session { // de.connect2x.trixnity.libolm/Session|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/Session.<init>|<init>(){}[0]
 
     final fun create_inbound(de.connect2x.trixnity.libolm/Account, kotlin/String) // de.connect2x.trixnity.libolm/Session.create_inbound|create_inbound(de.connect2x.trixnity.libolm.Account;kotlin.String){}[0]
     final fun create_inbound_from(de.connect2x.trixnity.libolm/Account, kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/Session.create_inbound_from|create_inbound_from(de.connect2x.trixnity.libolm.Account;kotlin.String;kotlin.String){}[0]
     final fun create_outbound(de.connect2x.trixnity.libolm/Account, kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/Session.create_outbound|create_outbound(de.connect2x.trixnity.libolm.Account;kotlin.String;kotlin.String){}[0]
-    final fun decrypt(kotlin/Number, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Session.decrypt|decrypt(kotlin.Number;kotlin.String){}[0]
     final fun describe(): kotlin/String // de.connect2x.trixnity.libolm/Session.describe|describe(){}[0]
     final fun encrypt(kotlin/String): de.connect2x.trixnity.libolm/Message // de.connect2x.trixnity.libolm/Session.encrypt|encrypt(kotlin.String){}[0]
     final fun free() // de.connect2x.trixnity.libolm/Session.free|free(){}[0]
@@ -692,9 +729,15 @@ final class de.connect2x.trixnity.libolm/Session { // de.connect2x.trixnity.libo
     final fun pickle(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Session.pickle|pickle(kotlin.String){}[0]
     final fun session_id(): kotlin/String // de.connect2x.trixnity.libolm/Session.session_id|session_id(){}[0]
     final fun unpickle(kotlin/String, kotlin/String) // de.connect2x.trixnity.libolm/Session.unpickle|unpickle(kotlin.String;kotlin.String){}[0]
+
+    // Targets: [js]
+    final fun decrypt(kotlin/Double, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Session.decrypt|decrypt(kotlin.Double;kotlin.String){}[0]
+
+    // Targets: [wasmJs]
+    final fun decrypt(kotlin.js/JsNumber, kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Session.decrypt|decrypt(kotlin.js.JsNumber;kotlin.String){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class de.connect2x.trixnity.libolm/Utility { // de.connect2x.trixnity.libolm/Utility|null[0]
     constructor <init>() // de.connect2x.trixnity.libolm/Utility.<init>|<init>(){}[0]
 
@@ -704,13 +747,25 @@ final class de.connect2x.trixnity.libolm/Utility { // de.connect2x.trixnity.libo
     final fun sha256(kotlin/String): kotlin/String // de.connect2x.trixnity.libolm/Utility.sha256|sha256(kotlin.String){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final var de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH|{}PRIVATE_KEY_LENGTH[0]
-    final fun <get-PRIVATE_KEY_LENGTH>(): kotlin/Number // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH.<get-PRIVATE_KEY_LENGTH>|<get-PRIVATE_KEY_LENGTH>(){}[0]
-    final fun <set-PRIVATE_KEY_LENGTH>(kotlin/Number) // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH.<set-PRIVATE_KEY_LENGTH>|<set-PRIVATE_KEY_LENGTH>(kotlin.Number){}[0]
+    // Targets: [js]
+    final fun <get-PRIVATE_KEY_LENGTH>(): kotlin/Double // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH.<get-PRIVATE_KEY_LENGTH>|<get-PRIVATE_KEY_LENGTH>(){}[0]
+
+    // Targets: [js]
+    final fun <set-PRIVATE_KEY_LENGTH>(kotlin/Double) // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH.<set-PRIVATE_KEY_LENGTH>|<set-PRIVATE_KEY_LENGTH>(kotlin.Double){}[0]
+
+    // Targets: [wasmJs]
+    final fun <get-PRIVATE_KEY_LENGTH>(): kotlin.js/JsNumber // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH.<get-PRIVATE_KEY_LENGTH>|<get-PRIVATE_KEY_LENGTH>(){}[0]
+
+    // Targets: [wasmJs]
+    final fun <set-PRIVATE_KEY_LENGTH>(kotlin.js/JsNumber) // de.connect2x.trixnity.libolm/PRIVATE_KEY_LENGTH.<set-PRIVATE_KEY_LENGTH>|<set-PRIVATE_KEY_LENGTH>(kotlin.js.JsNumber){}[0]
+
+// Targets: [js, wasmJs]
+final inline fun <#A: kotlin/Any?> de.connect2x.trixnity.libolm/rethrow(crossinline kotlin/Function0<#A>): #A // de.connect2x.trixnity.libolm/rethrow|rethrow(kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]
 
 // Targets: [js]
-final fun <#A: kotlin/Any?> de.connect2x.trixnity.libolm/rethrow(kotlin/Function0<#A>): #A // de.connect2x.trixnity.libolm/rethrow|rethrow(kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]
+final fun de.connect2x.trixnity.libolm/get_library_version(): kotlin/Array<kotlin/Double> // de.connect2x.trixnity.libolm/get_library_version|get_library_version(){}[0]
 
-// Targets: [js]
-final fun de.connect2x.trixnity.libolm/get_library_version(): kotlin.collections/List<kotlin/Number> // de.connect2x.trixnity.libolm/get_library_version|get_library_version(){}[0]
+// Targets: [wasmJs]
+final fun de.connect2x.trixnity.libolm/get_library_version(): kotlin.js/JsArray<kotlin.js/JsNumber> // de.connect2x.trixnity.libolm/get_library_version|get_library_version(){}[0]

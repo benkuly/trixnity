@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs]
 // Alias: apple => [iosArm64, iosSimulatorArm64, iosX64, macosArm64, macosX64]
 // Rendering settings:
 // - Signature version: 2
@@ -80,44 +80,47 @@ final suspend fun de.connect2x.trixnity.crypto.core/hmacSha256(kotlin/ByteArray,
 // Targets: [apple]
 final fun (kotlinx.coroutines.flow/Flow<kotlin/ByteArray>).de.connect2x.trixnity.crypto.core/withCCCryptor(kotlin/UInt, kotlin/ByteArray, kotlin/ByteArray): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.crypto.core/withCCCryptor|withCCCryptor@kotlinx.coroutines.flow.Flow<kotlin.ByteArray>(kotlin.UInt;kotlin.ByteArray;kotlin.ByteArray){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 abstract interface /Cipher { // /Cipher|null[0]
     abstract fun final(): js.buffer/ArrayBuffer // /Cipher.final|final(){}[0]
     abstract fun update(js.typedarrays/Uint8Array<*>): js.buffer/ArrayBuffer // /Cipher.update|update(js.typedarrays.Uint8Array<*>){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 abstract interface /Decipher { // /Decipher|null[0]
     abstract fun final(): js.buffer/ArrayBuffer // /Decipher.final|final(){}[0]
     abstract fun update(js.typedarrays/Uint8Array<*>): js.buffer/ArrayBuffer // /Decipher.update|update(js.typedarrays.Uint8Array<*>){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 abstract interface /HMAC { // /HMAC|null[0]
     abstract fun digest(): js.buffer/ArrayBuffer // /HMAC.digest|digest(){}[0]
     abstract fun update(js.typedarrays/Uint8Array<*>) // /HMAC.update|update(js.typedarrays.Uint8Array<*>){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 abstract interface /Hash { // /Hash|null[0]
     abstract fun digest(): js.buffer/ArrayBuffer // /Hash.digest|digest(){}[0]
     abstract fun update(js.typedarrays/Uint8Array<*>) // /Hash.update|update(js.typedarrays.Uint8Array<*>){}[0]
 }
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun /createCipheriv(kotlin/String, js.typedarrays/Uint8Array<*>, js.typedarrays/Uint8Array<*>): /Cipher // /createCipheriv|createCipheriv(kotlin.String;js.typedarrays.Uint8Array<*>;js.typedarrays.Uint8Array<*>){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun /createDecipheriv(kotlin/String, js.typedarrays/Uint8Array<*>, js.typedarrays/Uint8Array<*>): /Decipher // /createDecipheriv|createDecipheriv(kotlin.String;js.typedarrays.Uint8Array<*>;js.typedarrays.Uint8Array<*>){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun /createHash(kotlin/String): /Hash // /createHash|createHash(kotlin.String){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun /createHmac(kotlin/String, js.typedarrays/Uint8Array<*>): /HMAC // /createHmac|createHmac(kotlin.String;js.typedarrays.Uint8Array<*>){}[0]
 
-// Targets: [js]
-final fun /pbkdf2(kotlin/String, js.typedarrays/Uint8Array<*>, kotlin/Number, kotlin/Number, kotlin/String, kotlin/Function2<kotlin/Error?, js.typedarrays/Uint8Array<*>, kotlin/Unit>) // /pbkdf2|pbkdf2(kotlin.String;js.typedarrays.Uint8Array<*>;kotlin.Number;kotlin.Number;kotlin.String;kotlin.Function2<kotlin.Error?,js.typedarrays.Uint8Array<*>,kotlin.Unit>){}[0]
+// Targets: [js, wasmJs]
+final fun /randomFillSync(js.typedarrays/Uint8Array<js.buffer/ArrayBuffer>): js.typedarrays/Uint8Array<*> // /randomFillSync|randomFillSync(js.typedarrays.Uint8Array<js.buffer.ArrayBuffer>){}[0]
 
 // Targets: [js]
-final fun /randomFillSync(js.typedarrays/Int8Array<*>): js.typedarrays/Uint8Array<*> // /randomFillSync|randomFillSync(js.typedarrays.Int8Array<*>){}[0]
+final fun /pbkdf2(kotlin/String, js.typedarrays/Uint8Array<*>, kotlin/Double, kotlin/Double, kotlin/String, kotlin/Function2<kotlin/Throwable?, js.typedarrays/Uint8Array<*>, kotlin/Unit>) // /pbkdf2|pbkdf2(kotlin.String;js.typedarrays.Uint8Array<*>;kotlin.Double;kotlin.Double;kotlin.String;kotlin.Function2<kotlin.Throwable?,js.typedarrays.Uint8Array<*>,kotlin.Unit>){}[0]
+
+// Targets: [wasmJs]
+final fun /pbkdf2(kotlin/String, js.typedarrays/Uint8Array<*>, kotlin.js/JsNumber, kotlin.js/JsNumber, kotlin/String, kotlin/Function2<js.errors/JsError?, js.typedarrays/Uint8Array<*>, kotlin/Unit>) // /pbkdf2|pbkdf2(kotlin.String;js.typedarrays.Uint8Array<*>;kotlin.js.JsNumber;kotlin.js.JsNumber;kotlin.String;kotlin.Function2<js.errors.JsError?,js.typedarrays.Uint8Array<*>,kotlin.Unit>){}[0]

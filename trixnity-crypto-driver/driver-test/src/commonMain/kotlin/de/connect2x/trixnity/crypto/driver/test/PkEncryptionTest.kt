@@ -10,7 +10,7 @@ import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import kotlin.test.Test
 
-open class PkEncryptionTest(val driver: CryptoDriver) : TrixnityBaseTest() {
+abstract class PkEncryptionTest(val driver: CryptoDriver) : TrixnityBaseTest() {
 
     @Test
     fun encrypt() = runTest {

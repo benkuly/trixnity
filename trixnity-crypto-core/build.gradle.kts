@@ -2,6 +2,7 @@
 
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -34,7 +35,7 @@ val opensslNativeTargetList = listOf(
 
 kotlin {
     addJvmTarget()
-    addJsTarget(rootDir)
+    addWebTarget(rootDir)
     addNativeAppleTargets()
 
     opensslNativeTargetList.onEach { target ->
@@ -79,6 +80,7 @@ kotlin {
         configureEach {
             languageSettings.optIn("kotlin.RequiresOptIn")
             if (isNativeOnly) languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+            if (isWebOnly) languageSettings.optIn("kotlin.js.ExperimentalWasmJsInterop")
         }
 
         commonMain {
@@ -96,3 +98,6 @@ kotlin {
         }
     }
 }
+
+private val KotlinSourceSet.isWebOnly: Boolean
+    get() = name == "jsMain" || name == "wasmJsMain" || name == "webMain"

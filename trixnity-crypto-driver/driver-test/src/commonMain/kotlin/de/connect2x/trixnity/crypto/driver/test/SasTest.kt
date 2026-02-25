@@ -11,7 +11,7 @@ import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import kotlin.test.Test
 
-open class SasTest(val driver: CryptoDriver) : TrixnityBaseTest() {
+abstract class SasTest(val driver: CryptoDriver) : TrixnityBaseTest() {
     @Test
     fun testSASCode() = runTest {
         useAll({ driver.sas.invoke() }, { driver.sas.invoke() }) { aliceSAS, bobSAS ->

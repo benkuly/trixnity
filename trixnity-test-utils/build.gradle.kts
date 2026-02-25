@@ -9,7 +9,7 @@ plugins {
 
 kotlin {
     addJvmTarget()
-    addJsTarget(rootDir)
+    addWebTarget(rootDir)
     addAndroidTarget()
     addNativeDesktopTargets()
     addNativeAppleTargets()

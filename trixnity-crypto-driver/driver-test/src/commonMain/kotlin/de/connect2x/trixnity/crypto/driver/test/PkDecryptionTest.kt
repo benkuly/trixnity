@@ -8,7 +8,7 @@ import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import kotlin.test.Test
 
-open class PkDecryptionTest(val driver: CryptoDriver) : TrixnityBaseTest() {
+abstract class PkDecryptionTest(val driver: CryptoDriver) : TrixnityBaseTest() {
 
     @Test
     fun decrypt() = runTest {

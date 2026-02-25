@@ -14,7 +14,7 @@ import de.connect2x.trixnity.test.utils.runTest
 import kotlin.random.Random
 import kotlin.test.Test
 
-open class InboundGroupSessionTest(val driver: CryptoDriver) : TrixnityBaseTest() {
+abstract class InboundGroupSessionTest(val driver: CryptoDriver) : TrixnityBaseTest() {
 
     private val sessionKey = driver.megolm.sessionKey(
         "AgAAAAAwMTIzNDU2Nzg5QUJERUYwMTIzNDU2Nzg5QUJDREVGMDEyMzQ1Njc4OUFCREVGM" + "DEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkRFRjAxMjM0NTY3ODlBQkNERUYwMTIzND" + "U2Nzg5QUJERUYwMTIzNDU2Nzg5QUJDREVGMDEyMw0bdg1BDq4Px/slBow06q8n/B9WBfw" + "WYyNOB8DlUmXGGwrFmaSb9bR/eY8xgERrxmP07hFmD9uqA2p8PMHdnV5ysmgufE6oLZ5+" + "8/mWQOW3VVTnDIlnwd8oHUYRuk8TCQ"

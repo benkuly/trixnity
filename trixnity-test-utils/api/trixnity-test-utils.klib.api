@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64]
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs]
 // Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxX64, macosArm64, macosX64, mingwX64]
 // Rendering settings:
 // - Signature version: 2
@@ -45,8 +45,8 @@ final fun (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity
 // Targets: [native]
 final fun <#A: kotlin/Any?> (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/runTest(kotlin.time/Duration? = ..., kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, #A>, kotlin.coroutines/SuspendFunction2<kotlinx.coroutines.test/TestScope, #A, kotlin/Unit>) // de.connect2x.trixnity.test.utils/runTest|runTest@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.time.Duration?;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,0:0>;kotlin.coroutines.SuspendFunction2<kotlinx.coroutines.test.TestScope,0:0,kotlin.Unit>){0§<kotlin.Any?>}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/runTest(kotlin.time/Duration? = ..., kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, kotlin/Unit>): kotlinx.coroutines.test.internal/JsPromiseInterfaceForTesting // de.connect2x.trixnity.test.utils/runTest|runTest@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.time.Duration?;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,kotlin.Unit>){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final fun <#A: kotlin/Any?> (de.connect2x.trixnity.test.utils/CoroutineTest).de.connect2x.trixnity.test.utils/runTest(kotlin.time/Duration? = ..., kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.test/TestScope, #A>, kotlin.coroutines/SuspendFunction2<kotlinx.coroutines.test/TestScope, #A, kotlin/Unit>): kotlinx.coroutines.test.internal/JsPromiseInterfaceForTesting // de.connect2x.trixnity.test.utils/runTest|runTest@de.connect2x.trixnity.test.utils.CoroutineTest(kotlin.time.Duration?;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.test.TestScope,0:0>;kotlin.coroutines.SuspendFunction2<kotlinx.coroutines.test.TestScope,0:0,kotlin.Unit>){0§<kotlin.Any?>}[0]

@@ -13,9 +13,7 @@ kotlin {
         group("common") {
             group("web") {
                 withJs()
-
-                // TODO: Enable Wasm !544
-                // withWasmJs()
+                withWasmJs()
             }
             group("jni") {
                 withJvm()
@@ -26,7 +24,7 @@ kotlin {
 
     addJvmTarget()
     addAndroidTarget()
-    addJsTarget(rootDir)
+    addWebTarget(rootDir)
     addNativeTargets()
 
     compilerOptions {
@@ -36,9 +34,9 @@ kotlin {
     }
 
     sourceSets {
-        val webMain = named("webMain")
         configureEach {
             if (isNativeOnly) languageSettings.optIn("kotlin.native.SymbolNameIsInternal")
+            if (name == "wasmJsMain") languageSettings.optIn("kotlin.js.ExperimentalWasmJsInterop")
         }
 
         commonMain.dependencies {

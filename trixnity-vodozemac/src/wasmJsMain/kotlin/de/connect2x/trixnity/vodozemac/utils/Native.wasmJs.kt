@@ -1,16 +1,15 @@
 package de.connect2x.trixnity.vodozemac.utils
 
-import js.core.JsPrimitives.toByte
 import js.core.JsPrimitives.toJsByte
 import js.core.JsPrimitives.toJsInt
 import js.core.JsPrimitives.toJsShort
-import js.core.JsPrimitives.toShort
-import js.reflect.unsafeCast
 import js.typedarrays.BigInt64Array
 import js.typedarrays.Int16Array
 import js.typedarrays.Int32Array
 import js.typedarrays.Int8Array
 import de.connect2x.trixnity.vodozemac.memory
+import js.core.JsPrimitives.toKotlinByte
+import js.core.JsPrimitives.toKotlinShort
 
 internal actual fun toWasm(dest: NativePointer, src: ByteArray) {
     val view = Int8Array(memory.buffer, dest, src.size)
@@ -35,14 +34,14 @@ internal actual fun toWasm(dest: NativePointer, src: LongArray) {
 internal actual fun fromWasm(src: NativePointer, result: ByteArray) {
     val view = Int8Array(memory.buffer, src, result.size)
     for (index in result.indices) {
-        result[index] = view[index].toByte()
+        result[index] = view[index].toKotlinByte()
     }
 }
 
 internal actual fun fromWasm(src: NativePointer, result: ShortArray) {
     val view = Int16Array(memory.buffer, src, result.size)
     for (index in result.indices) {
-        result[index] = view[index].toShort()
+        result[index] = view[index].toKotlinShort()
     }
 }
 

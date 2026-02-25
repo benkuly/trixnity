@@ -70,9 +70,9 @@ build:linux:
     - *if-merge-request
   script:
     - gradle
-      compileKotlin{Jvm,Js,LinuxX64,MingwX64}
+      compileKotlin{Jvm,Js,WasmJs,LinuxX64,MingwX64}
       compileReleaseKotlinAndroid
-      compileTestKotlin{Jvm,Js,LinuxX64,MingwX64}
+      compileTestKotlin{Jvm,Js,WasmJs,LinuxX64,MingwX64}
       compileReleaseUnitTestKotlinAndroid
       --stacktrace
 
@@ -102,7 +102,7 @@ test:linux:
     - *if-merge-request
   script:
     - gradle
-      {jvm,js,linuxX64,mingwX64,testReleaseUnit}Test -x :trixnity-client:integration-tests:jvmTest
+      {jvm,js,wasmJs,linuxX64,mingwX64,testReleaseUnit}Test -x :trixnity-client:integration-tests:jvmTest
       testCoverage
       --stacktrace
   coverage: '/Total test coverage.+ ([0-9]{1,3}%)/'
@@ -211,7 +211,7 @@ publish:linux-dev:
       - website/static/api/
   script:
     - gradle
-      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationToGitLabRepository
+      publish{KotlinMultiplatform,Jvm,Js,WasmJs,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationToGitLabRepository
       dokkaHtmlToWebsite
       --stacktrace
 

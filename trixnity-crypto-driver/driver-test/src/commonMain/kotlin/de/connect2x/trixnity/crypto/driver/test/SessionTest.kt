@@ -11,7 +11,7 @@ import de.connect2x.trixnity.test.utils.runTest
 import kotlin.random.Random
 import kotlin.test.Test
 
-open class SessionTest(val driver: CryptoDriver) : TrixnityBaseTest() {
+abstract class SessionTest(val driver: CryptoDriver) : TrixnityBaseTest() {
 
     private val someKey = driver.key.pickleKey(Random.nextBytes(32))
     private val emptyKey = driver.key.pickleKey()
