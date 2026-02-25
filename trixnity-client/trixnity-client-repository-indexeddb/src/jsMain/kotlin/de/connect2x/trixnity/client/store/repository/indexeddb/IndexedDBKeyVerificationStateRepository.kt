@@ -1,12 +1,12 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import de.connect2x.trixnity.client.store.KeyVerificationState
 import de.connect2x.trixnity.client.store.repository.KeyVerificationStateKey
 import de.connect2x.trixnity.client.store.repository.KeyVerificationStateRepository
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 internal class IndexedDBKeyVerificationStateRepository(
     json: Json
@@ -19,7 +19,7 @@ internal class IndexedDBKeyVerificationStateRepository(
     ) {
     companion object {
         const val objectStoreName = "key_verification_state"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 1) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }

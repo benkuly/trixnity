@@ -6,6 +6,116 @@
 // - Show declarations: true
 
 // Library unique name: <de.connect2x.trixnity:trixnity-idb-utils>
+sealed interface de.connect2x.trixnity.idb.utils/KeyPath { // de.connect2x.trixnity.idb.utils/KeyPath|null[0]
+    final class Multiple : de.connect2x.trixnity.idb.utils/KeyPath { // de.connect2x.trixnity.idb.utils/KeyPath.Multiple|null[0]
+        constructor <init>(kotlin.collections/List<kotlin/String>) // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.<init>|<init>(kotlin.collections.List<kotlin.String>){}[0]
+        constructor <init>(kotlin/Array<out kotlin/String>...) // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.<init>|<init>(kotlin.Array<out|kotlin.String>...){}[0]
+
+        final val values // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.values|{}values[0]
+            final fun <get-values>(): kotlin.collections/List<kotlin/String> // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.values.<get-values>|<get-values>(){}[0]
+
+        final fun component1(): kotlin.collections/List<kotlin/String> // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.component1|component1(){}[0]
+        final fun copy(kotlin.collections/List<kotlin/String> = ...): de.connect2x.trixnity.idb.utils/KeyPath.Multiple // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.copy|copy(kotlin.collections.List<kotlin.String>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.toString|toString(){}[0]
+
+        final object Companion // de.connect2x.trixnity.idb.utils/KeyPath.Multiple.Companion|null[0]
+    }
+
+    final class Single : de.connect2x.trixnity.idb.utils/KeyPath { // de.connect2x.trixnity.idb.utils/KeyPath.Single|null[0]
+        constructor <init>(kotlin/String) // de.connect2x.trixnity.idb.utils/KeyPath.Single.<init>|<init>(kotlin.String){}[0]
+
+        final val value // de.connect2x.trixnity.idb.utils/KeyPath.Single.value|{}value[0]
+            final fun <get-value>(): kotlin/String // de.connect2x.trixnity.idb.utils/KeyPath.Single.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.idb.utils/KeyPath.Single.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): de.connect2x.trixnity.idb.utils/KeyPath.Single // de.connect2x.trixnity.idb.utils/KeyPath.Single.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.idb.utils/KeyPath.Single.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.idb.utils/KeyPath.Single.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.idb.utils/KeyPath.Single.toString|toString(){}[0]
+
+        final object Companion // de.connect2x.trixnity.idb.utils/KeyPath.Single.Companion|null[0]
+    }
+
+    final object Companion // de.connect2x.trixnity.idb.utils/KeyPath.Companion|null[0]
+}
+
+final class de.connect2x.trixnity.idb.utils/CursorItem { // de.connect2x.trixnity.idb.utils/CursorItem|null[0]
+    final val primaryKey // de.connect2x.trixnity.idb.utils/CursorItem.primaryKey|{}primaryKey[0]
+        final fun <get-primaryKey>(): web.idb/IDBValidKey // de.connect2x.trixnity.idb.utils/CursorItem.primaryKey.<get-primaryKey>|<get-primaryKey>(){}[0]
+    final val value // de.connect2x.trixnity.idb.utils/CursorItem.value|{}value[0]
+        // Targets: [js]
+        final fun <get-value>(): kotlin/Any? // de.connect2x.trixnity.idb.utils/CursorItem.value.<get-value>|<get-value>(){}[0]
+
+        // Targets: [wasmJs]
+        final fun <get-value>(): kotlin.js/JsAny? // de.connect2x.trixnity.idb.utils/CursorItem.value.<get-value>|<get-value>(){}[0]
+
+    final fun component1(): web.idb/IDBValidKey // de.connect2x.trixnity.idb.utils/CursorItem.component1|component1(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.idb.utils/CursorItem.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.idb.utils/CursorItem.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.idb.utils/CursorItem.toString|toString(){}[0]
+
+    final object Companion // de.connect2x.trixnity.idb.utils/CursorItem.Companion|null[0]
+
+    // Targets: [js]
+    constructor <init>(web.idb/IDBValidKey, kotlin/Any?) // de.connect2x.trixnity.idb.utils/CursorItem.<init>|<init>(web.idb.IDBValidKey;kotlin.Any?){}[0]
+
+    // Targets: [js]
+    final fun component2(): kotlin/Any? // de.connect2x.trixnity.idb.utils/CursorItem.component2|component2(){}[0]
+
+    // Targets: [js]
+    final fun copy(web.idb/IDBValidKey = ..., kotlin/Any? = ...): de.connect2x.trixnity.idb.utils/CursorItem // de.connect2x.trixnity.idb.utils/CursorItem.copy|copy(web.idb.IDBValidKey;kotlin.Any?){}[0]
+
+    // Targets: [wasmJs]
+    constructor <init>(web.idb/IDBValidKey, kotlin.js/JsAny?) // de.connect2x.trixnity.idb.utils/CursorItem.<init>|<init>(web.idb.IDBValidKey;kotlin.js.JsAny?){}[0]
+
+    // Targets: [wasmJs]
+    final fun component2(): kotlin.js/JsAny? // de.connect2x.trixnity.idb.utils/CursorItem.component2|component2(){}[0]
+
+    // Targets: [wasmJs]
+    final fun copy(web.idb/IDBValidKey = ..., kotlin.js/JsAny? = ...): de.connect2x.trixnity.idb.utils/CursorItem // de.connect2x.trixnity.idb.utils/CursorItem.copy|copy(web.idb.IDBValidKey;kotlin.js.JsAny?){}[0]
+}
+
+final class de.connect2x.trixnity.idb.utils/IDBException : kotlin/IllegalStateException { // de.connect2x.trixnity.idb.utils/IDBException|null[0]
+    final val cause // de.connect2x.trixnity.idb.utils/IDBException.cause|{}cause[0]
+        final fun <get-cause>(): kotlin/Throwable? // de.connect2x.trixnity.idb.utils/IDBException.cause.<get-cause>|<get-cause>(){}[0]
+    final val operation // de.connect2x.trixnity.idb.utils/IDBException.operation|{}operation[0]
+        final fun <get-operation>(): de.connect2x.trixnity.idb.utils/IDBException.Operation // de.connect2x.trixnity.idb.utils/IDBException.operation.<get-operation>|<get-operation>(){}[0]
+
+    final enum class Operation : kotlin/Enum<de.connect2x.trixnity.idb.utils/IDBException.Operation> { // de.connect2x.trixnity.idb.utils/IDBException.Operation|null[0]
+        enum entry CLEAR // de.connect2x.trixnity.idb.utils/IDBException.Operation.CLEAR|null[0]
+        enum entry CURSOR // de.connect2x.trixnity.idb.utils/IDBException.Operation.CURSOR|null[0]
+        enum entry DELETE // de.connect2x.trixnity.idb.utils/IDBException.Operation.DELETE|null[0]
+        enum entry GET // de.connect2x.trixnity.idb.utils/IDBException.Operation.GET|null[0]
+        enum entry PUT // de.connect2x.trixnity.idb.utils/IDBException.Operation.PUT|null[0]
+        enum entry TRANSACTION // de.connect2x.trixnity.idb.utils/IDBException.Operation.TRANSACTION|null[0]
+
+        final val entries // de.connect2x.trixnity.idb.utils/IDBException.Operation.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.idb.utils/IDBException.Operation> // de.connect2x.trixnity.idb.utils/IDBException.Operation.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): de.connect2x.trixnity.idb.utils/IDBException.Operation // de.connect2x.trixnity.idb.utils/IDBException.Operation.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<de.connect2x.trixnity.idb.utils/IDBException.Operation> // de.connect2x.trixnity.idb.utils/IDBException.Operation.values|values#static(){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.idb.utils/IDBException.Companion|null[0]
+        final fun fromDom(de.connect2x.trixnity.idb.utils/IDBException.Operation, web.errors/DOMException?): kotlin/IllegalStateException // de.connect2x.trixnity.idb.utils/IDBException.Companion.fromDom|fromDom(de.connect2x.trixnity.idb.utils.IDBException.Operation;web.errors.DOMException?){}[0]
+    }
+}
+
+final value class de.connect2x.trixnity.idb.utils/WrappedIndex { // de.connect2x.trixnity.idb.utils/WrappedIndex|null[0]
+    constructor <init>(web.idb/IDBIndex) // de.connect2x.trixnity.idb.utils/WrappedIndex.<init>|<init>(web.idb.IDBIndex){}[0]
+
+    final val index // de.connect2x.trixnity.idb.utils/WrappedIndex.index|{}index[0]
+        final fun <get-index>(): web.idb/IDBIndex // de.connect2x.trixnity.idb.utils/WrappedIndex.index.<get-index>|<get-index>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.idb.utils/WrappedIndex.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.idb.utils/WrappedIndex.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.idb.utils/WrappedIndex.toString|toString(){}[0]
+
+    final object Companion // de.connect2x.trixnity.idb.utils/WrappedIndex.Companion|null[0]
+}
+
 final value class de.connect2x.trixnity.idb.utils/WrappedObjectStore { // de.connect2x.trixnity.idb.utils/WrappedObjectStore|null[0]
     constructor <init>(web.idb/IDBObjectStore) // de.connect2x.trixnity.idb.utils/WrappedObjectStore.<init>|<init>(web.idb.IDBObjectStore){}[0]
 
@@ -25,6 +135,12 @@ final value class de.connect2x.trixnity.idb.utils/WrappedTransaction { // de.con
     final val tx // de.connect2x.trixnity.idb.utils/WrappedTransaction.tx|{}tx[0]
         final fun <get-tx>(): web.idb/IDBTransaction // de.connect2x.trixnity.idb.utils/WrappedTransaction.tx.<get-tx>|<get-tx>(){}[0]
 
+    final fun (de.connect2x.trixnity.idb.utils/WrappedIndex).openCursor(web.idb/IDBValidKey? = ...): kotlinx.coroutines.flow/Flow<de.connect2x.trixnity.idb.utils/CursorItem> // de.connect2x.trixnity.idb.utils/WrappedTransaction.openCursor|openCursor@de.connect2x.trixnity.idb.utils.WrappedIndex(web.idb.IDBValidKey?){}[0]
+    final fun (de.connect2x.trixnity.idb.utils/WrappedIndex).openKeyCursor(web.idb/IDBValidKey? = ...): kotlinx.coroutines.flow/Flow<web.idb/IDBValidKey> // de.connect2x.trixnity.idb.utils/WrappedTransaction.openKeyCursor|openKeyCursor@de.connect2x.trixnity.idb.utils.WrappedIndex(web.idb.IDBValidKey?){}[0]
+    final fun (de.connect2x.trixnity.idb.utils/WrappedObjectStore).createIndex(kotlin/String, de.connect2x.trixnity.idb.utils/KeyPath, kotlin/Boolean? = ..., kotlin/Boolean? = ...): de.connect2x.trixnity.idb.utils/WrappedIndex // de.connect2x.trixnity.idb.utils/WrappedTransaction.createIndex|createIndex@de.connect2x.trixnity.idb.utils.WrappedObjectStore(kotlin.String;de.connect2x.trixnity.idb.utils.KeyPath;kotlin.Boolean?;kotlin.Boolean?){}[0]
+    final fun (de.connect2x.trixnity.idb.utils/WrappedObjectStore).index(kotlin/String): de.connect2x.trixnity.idb.utils/WrappedIndex // de.connect2x.trixnity.idb.utils/WrappedTransaction.index|index@de.connect2x.trixnity.idb.utils.WrappedObjectStore(kotlin.String){}[0]
+    final fun (de.connect2x.trixnity.idb.utils/WrappedObjectStore).openCursor(web.idb/IDBValidKey? = ...): kotlinx.coroutines.flow/Flow<de.connect2x.trixnity.idb.utils/CursorItem> // de.connect2x.trixnity.idb.utils/WrappedTransaction.openCursor|openCursor@de.connect2x.trixnity.idb.utils.WrappedObjectStore(web.idb.IDBValidKey?){}[0]
+    final fun createObjectStore(web.idb/IDBDatabase, kotlin/String, de.connect2x.trixnity.idb.utils/KeyPath? = ..., kotlin/Boolean? = ...): de.connect2x.trixnity.idb.utils/WrappedObjectStore // de.connect2x.trixnity.idb.utils/WrappedTransaction.createObjectStore|createObjectStore(web.idb.IDBDatabase;kotlin.String;de.connect2x.trixnity.idb.utils.KeyPath?;kotlin.Boolean?){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.idb.utils/WrappedTransaction.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // de.connect2x.trixnity.idb.utils/WrappedTransaction.hashCode|hashCode(){}[0]
     final fun objectStore(kotlin/String): de.connect2x.trixnity.idb.utils/WrappedObjectStore // de.connect2x.trixnity.idb.utils/WrappedTransaction.objectStore|objectStore(kotlin.String){}[0]
@@ -36,17 +152,17 @@ final value class de.connect2x.trixnity.idb.utils/WrappedTransaction { // de.con
     final suspend fun <#A1: kotlin/Any> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).get(web.idb/IDBValidKey): #A1? // de.connect2x.trixnity.idb.utils/WrappedTransaction.get|get@de.connect2x.trixnity.idb.utils.WrappedObjectStore(web.idb.IDBValidKey){0§<kotlin.Any>}[0]
 
     // Targets: [js]
-    final suspend fun <#A1: kotlin/Any> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).put(#A1, web.idb/IDBValidKey) // de.connect2x.trixnity.idb.utils/WrappedTransaction.put|put@de.connect2x.trixnity.idb.utils.WrappedObjectStore(0:0;web.idb.IDBValidKey){0§<kotlin.Any>}[0]
+    final suspend fun <#A1: kotlin/Any> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).put(#A1, web.idb/IDBValidKey? = ...) // de.connect2x.trixnity.idb.utils/WrappedTransaction.put|put@de.connect2x.trixnity.idb.utils.WrappedObjectStore(0:0;web.idb.IDBValidKey?){0§<kotlin.Any>}[0]
 
     // Targets: [wasmJs]
     final suspend fun <#A1: kotlin.js/JsAny> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).get(web.idb/IDBValidKey): #A1? // de.connect2x.trixnity.idb.utils/WrappedTransaction.get|get@de.connect2x.trixnity.idb.utils.WrappedObjectStore(web.idb.IDBValidKey){0§<kotlin.js.JsAny>}[0]
 
     // Targets: [wasmJs]
-    final suspend fun <#A1: kotlin.js/JsAny> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).put(#A1, web.idb/IDBValidKey) // de.connect2x.trixnity.idb.utils/WrappedTransaction.put|put@de.connect2x.trixnity.idb.utils.WrappedObjectStore(0:0;web.idb.IDBValidKey){0§<kotlin.js.JsAny>}[0]
+    final suspend fun <#A1: kotlin.js/JsAny> (de.connect2x.trixnity.idb.utils/WrappedObjectStore).put(#A1, web.idb/IDBValidKey? = ...) // de.connect2x.trixnity.idb.utils/WrappedTransaction.put|put@de.connect2x.trixnity.idb.utils.WrappedObjectStore(0:0;web.idb.IDBValidKey?){0§<kotlin.js.JsAny>}[0]
 }
 
 final object de.connect2x.trixnity.idb.utils/IDBUtils { // de.connect2x.trixnity.idb.utils/IDBUtils|null[0]
-    final suspend fun openDatabase(kotlin/String, kotlin/Int, kotlin/Function3<web.idb/IDBDatabase, kotlin/Int, kotlin/Int?, kotlin/Unit>): web.idb/IDBDatabase // de.connect2x.trixnity.idb.utils/IDBUtils.openDatabase|openDatabase(kotlin.String;kotlin.Int;kotlin.Function3<web.idb.IDBDatabase,kotlin.Int,kotlin.Int?,kotlin.Unit>){}[0]
+    final suspend fun openDatabase(kotlin/String, kotlin/Int, kotlin/Function4<de.connect2x.trixnity.idb.utils/WrappedTransaction, web.idb/IDBDatabase, kotlin/Int, kotlin/Int?, kotlin/Unit>): web.idb/IDBDatabase // de.connect2x.trixnity.idb.utils/IDBUtils.openDatabase|openDatabase(kotlin.String;kotlin.Int;kotlin.Function4<de.connect2x.trixnity.idb.utils.WrappedTransaction,web.idb.IDBDatabase,kotlin.Int,kotlin.Int?,kotlin.Unit>){}[0]
 }
 
 final suspend fun <#A: kotlin/Any?> (web.idb/IDBDatabase).de.connect2x.trixnity.idb.utils/readTransaction(kotlin/Array<out kotlin/String>..., kotlin.coroutines/SuspendFunction1<de.connect2x.trixnity.idb.utils/WrappedTransaction, #A>): #A // de.connect2x.trixnity.idb.utils/readTransaction|readTransaction@web.idb.IDBDatabase(kotlin.Array<out|kotlin.String>...;kotlin.coroutines.SuspendFunction1<de.connect2x.trixnity.idb.utils.WrappedTransaction,0:0>){0§<kotlin.Any?>}[0]

@@ -1,18 +1,19 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.ObjectStore
-import com.juul.indexeddb.Transaction
-import com.juul.indexeddb.WriteTransaction
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import de.connect2x.trixnity.client.store.repository.RepositoryTransactionManager
+import de.connect2x.trixnity.idb.utils.WrappedObjectStore
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import de.connect2x.trixnity.idb.utils.readTransaction
+import de.connect2x.trixnity.idb.utils.writeTransaction
+import web.idb.IDBDatabase
 import kotlin.coroutines.CoroutineContext
 
 class IndexedDBReadTransaction(
-    val database: Database,
+    val database: IDBDatabase,
 ) : CoroutineContext.Element {
     override val key: CoroutineContext.Key<*> = Key
 
@@ -21,11 +22,11 @@ class IndexedDBReadTransaction(
 
 class IndexedDbWriteOperation(
     val objectStoreName: String,
-    val operation: suspend WriteTransaction.(ObjectStore) -> Unit,
+    val operation: suspend WrappedTransaction.(WrappedObjectStore) -> Unit,
 )
 
 class IndexedDBWriteTransaction(
-    val database: Database,
+    val database: IDBDatabase,
     val testMode: Boolean,
 ) : CoroutineContext.Element {
     override val key: CoroutineContext.Key<*> = Key
@@ -35,7 +36,10 @@ class IndexedDBWriteTransaction(
     private val operations = mutableListOf<IndexedDbWriteOperation>()
     private val mutex = Mutex()
 
-    suspend fun addOperation(objectStoreName: String, operation: suspend WriteTransaction.(ObjectStore) -> Unit): Unit =
+    suspend fun addOperation(
+        objectStoreName: String,
+        operation: suspend WrappedTransaction.(WrappedObjectStore) -> Unit
+    ): Unit =
         mutex.withLock {
             operations.add(IndexedDbWriteOperation(objectStoreName, operation))
         }
@@ -43,16 +47,16 @@ class IndexedDBWriteTransaction(
     fun getOperations(): List<IndexedDbWriteOperation> = operations
 }
 
-suspend fun <T> IndexedDBRepository.withIndexedDBRead(block: suspend Transaction.(ObjectStore) -> T) =
+suspend fun <T> IndexedDBRepository.withIndexedDBRead(block: suspend WrappedTransaction.(WrappedObjectStore) -> T) =
     coroutineScope {
         val readTransaction =
             checkNotNull(coroutineContext[IndexedDBReadTransaction]) { "read transaction is missing" }
-        readTransaction.database.transaction(objectStoreName) {
+        readTransaction.database.readTransaction(objectStoreName) {
             block(objectStore(objectStoreName))
         }
     }
 
-suspend fun IndexedDBRepository.withIndexedDBWrite(block: suspend WriteTransaction.(ObjectStore) -> Unit): Unit =
+suspend fun IndexedDBRepository.withIndexedDBWrite(block: suspend WrappedTransaction.(WrappedObjectStore) -> Unit): Unit =
     coroutineScope {
         val writeTransaction =
             checkNotNull(coroutineContext[IndexedDBWriteTransaction]) { "write transaction is missing" }
@@ -64,7 +68,7 @@ suspend fun IndexedDBRepository.withIndexedDBWrite(block: suspend WriteTransacti
     }
 
 class IndexedDBRepositoryTransactionManager(
-    private val database: Database,
+    private val database: IDBDatabase,
     private val allObjectStores: Array<String>,
     private val testMode: Boolean = false,
 ) : RepositoryTransactionManager {

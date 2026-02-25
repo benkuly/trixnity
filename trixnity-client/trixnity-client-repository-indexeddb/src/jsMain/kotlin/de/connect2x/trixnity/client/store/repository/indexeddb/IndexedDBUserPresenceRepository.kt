@@ -1,12 +1,12 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import de.connect2x.trixnity.client.store.UserPresence
 import de.connect2x.trixnity.client.store.repository.UserPresenceRepository
 import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 internal class IndexedDBUserPresenceRepository(
     json: Json
@@ -19,7 +19,7 @@ internal class IndexedDBUserPresenceRepository(
     ) {
     companion object {
         const val objectStoreName = "user_presence"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 7) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }

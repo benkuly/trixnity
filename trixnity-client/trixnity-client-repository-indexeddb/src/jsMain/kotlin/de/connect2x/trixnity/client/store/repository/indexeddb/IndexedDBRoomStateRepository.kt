@@ -1,9 +1,7 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.Key
-import com.juul.indexeddb.KeyPath
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -15,11 +13,14 @@ import de.connect2x.trixnity.client.store.repository.RoomStateRepository
 import de.connect2x.trixnity.client.store.repository.RoomStateRepositoryKey
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.ClientEvent.StateBaseEvent
+import de.connect2x.trixnity.idb.utils.KeyPath
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 @Serializable
 internal class IndexedDBRoomState(
     val roomId: String,
-    val type: String,
+    @Suppress("unused") val type: String,
     val stateKey: String,
     @Contextual
     val event: StateBaseEvent<*>,
@@ -41,17 +42,21 @@ internal class IndexedDBRoomStateRepository(
     ) {
     companion object {
         const val objectStoreName = "room_state"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 1)
                 createIndexedDBTwoDimensionsStoreRepository(
                     database = database,
                     objectStoreName = objectStoreName,
-                    keyPath = KeyPath("roomId", "type", "stateKey"),
+                    keyPath = KeyPath.Multiple("roomId", "type", "stateKey"),
                     firstKeyIndexName = "roomId|type",
-                    firstKeyIndexKeyPath = KeyPath("roomId", "type"),
-                ) {
-                    createIndex("roomId", KeyPath("roomId"), unique = false)
-                    createIndex("type|stateKey", KeyPath("type", "stateKey"), unique = false)
+                    firstKeyIndexKeyPath = KeyPath.Multiple("roomId", "type"),
+                ) { store ->
+                    store.createIndex("roomId", KeyPath.Single("roomId"), unique = false)
+                    store.createIndex(
+                        "type|stateKey",
+                        KeyPath.Multiple("type", "stateKey"),
+                        unique = false
+                    )
                 }
         }
     }
@@ -59,7 +64,7 @@ internal class IndexedDBRoomStateRepository(
     override suspend fun getByRooms(roomIds: Set<RoomId>, type: String, stateKey: String): List<StateBaseEvent<*>> =
         withIndexedDBRead { store ->
             val roomIdStrings = roomIds.map { it.full }
-            store.index("type|stateKey").openCursor(keyOf(arrayOf(type, stateKey)), autoContinue = true)
+            store.index("type|stateKey").openCursor(keyOf(arrayOf(type, stateKey)))
                 .mapNotNull { json.decodeFromDynamicNullable(representationSerializer, it.value) }
                 .filter { roomIdStrings.contains(it.roomId) }
                 .map { mapFromRepresentation(it) }
@@ -67,9 +72,9 @@ internal class IndexedDBRoomStateRepository(
         }
 
     override suspend fun deleteByRoomId(roomId: RoomId) = withIndexedDBWrite { store ->
-        store.index("roomId").openCursor(Key(roomId.full), autoContinue = true)
+        store.index("roomId").openCursor(keyOf(roomId.full))
             .collect {
-                store.delete(Key(it.primaryKey))
+                store.delete(it.primaryKey)
             }
     }
 }

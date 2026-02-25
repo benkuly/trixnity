@@ -11,9 +11,9 @@ import js.typedarrays.toUint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.TestResult
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.runTest
 import de.connect2x.trixnity.client.MatrixClientConfiguration
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.utils.toByteArrayFlow
 import web.blob.arrayBuffer
 import web.fs.*
@@ -24,20 +24,22 @@ import kotlin.test.Test
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
-class OpfsMediaStoreTest {
+class OpfsMediaStoreTest : TrixnityBaseTest() {
 
-    private lateinit var cut: OpfsMediaStore
-    lateinit var basePath: FileSystemDirectoryHandle
-    lateinit var tmpPath: FileSystemDirectoryHandle
-    lateinit var coroutineScope: CoroutineScope
+    private data class TestContext(
+        val basePath: FileSystemDirectoryHandle,
+        val tmpPath: FileSystemDirectoryHandle,
+        val cut: OpfsMediaStore,
+        val backgroundScope: CoroutineScope,
+    )
 
-    fun test(testBody: suspend TestScope.() -> Unit): TestResult = runTest {
-        basePath = navigator.storage.getDirectory()
-        coroutineScope = CoroutineScope(Dispatchers.Default)
-        tmpPath = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
-        cut = OpfsMediaStore(basePath, coroutineScope, MatrixClientConfiguration(), Clock.System)
+    private fun test(testBody: suspend TestContext.() -> Unit): TestResult = runTest {
+        val basePath = navigator.storage.getDirectory()
+        val tmpPath = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
+        val cut = OpfsMediaStore(basePath, backgroundScope, MatrixClientConfiguration(), Clock.System)
+
         try {
-            testBody()
+            TestContext(basePath, tmpPath, cut, backgroundScope).testBody()
         } catch (throwable: Throwable) {
             throwable.printStackTrace()
             throw throwable
@@ -45,13 +47,12 @@ class OpfsMediaStoreTest {
             basePath.values().asFlow().collect { entry ->
                 basePath.removeEntry(entry.name, FileSystemRemoveOptions(recursive = true))
             }
-            coroutineScope.cancel()
         }
     }
 
     @Test
     fun shouldDeleteAll() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         basePath.getFileHandle("url1", FileSystemGetFileOptions(create = true))
         basePath.getFileHandle("url2", FileSystemGetFileOptions(create = true))
         basePath.values().toList().size shouldBe 3
@@ -61,7 +62,7 @@ class OpfsMediaStoreTest {
 
     @Test
     fun shouldAddMedia() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
         basePath.values().toList()
         Uint8Array(
@@ -71,19 +72,19 @@ class OpfsMediaStoreTest {
 
     @Test
     fun shouldNotAddMediaOnException() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         val file = MutableSharedFlow<ByteArray>()
-        val job = async {
+        val job = backgroundScope.launch {
             cut.addMedia("url1", file)
         }
         file.emit("h".encodeToByteArray())
-        job.cancel()
+        job.cancelAndJoin()
         basePath.values().toList().size shouldBe 1
     }
 
     @Test
     fun shouldGetMedia() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", FileSystemGetFileOptions(create = true))
             .createWritable()
             .apply {
@@ -95,13 +96,13 @@ class OpfsMediaStoreTest {
 
     @Test
     fun shouldGetMediaWhenFileNotExists() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         cut.getMedia("url1")?.toByteArray()?.decodeToString() shouldBe null
     }
 
     @Test
     fun shouldDeleteMedia() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", FileSystemGetFileOptions(create = true))
             .createWritable()
             .apply {
@@ -114,14 +115,14 @@ class OpfsMediaStoreTest {
 
     @Test
     fun shouldDeleteMediaWhenFileNotExists() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         cut.deleteMedia("url1")
         basePath.values().toList().size shouldBe 1
     }
 
     @Test
     fun shouldChangeMediaUrl() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", FileSystemGetFileOptions(create = true))
             .createWritable()
             .apply {
@@ -136,7 +137,7 @@ class OpfsMediaStoreTest {
 
     @Test
     fun shouldChangeMediaUrlWhenFileNotExists() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         cut.changeMediaUrl("url1", "url2")
         basePath.values().toList().size shouldBe 1
     }
@@ -149,29 +150,32 @@ class OpfsMediaStoreTest {
                 close()
             }
         tmpPath.values().toList().size shouldBe 1
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         tmpPath.values().toList().size shouldBe 0
     }
 
     @Test
     fun shouldDeleteTmpDirectoryOnShutdown() = test {
-        cut.init(coroutineScope)
+        val opfsJob = Job()
+        val opfsScope = CoroutineScope(backgroundScope.coroutineContext + opfsJob)
+
+        cut.init(opfsScope)
         tmpPath.getFileHandle("tmp_file_1", FileSystemGetFileOptions(create = true)).createWritable()
             .apply {
                 write("hi".encodeToByteArray().toUint8Array())
                 close()
             }
         tmpPath.values().toList().size shouldBe 1
-        coroutineScope.cancel()
+        opfsJob.cancelAndJoin()
         withContext(Dispatchers.Default) {
-            delay(100.milliseconds)
+            delay(500.milliseconds)
         }
         tmpPath.values().toList().size shouldBe 0
     }
 
     @Test
     fun shouldCreateTemporaryFile() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
         val platformMedia = cut.getMedia("url1").shouldNotBeNull()
         tmpPath.values().toList().size shouldBe 0
@@ -182,7 +186,7 @@ class OpfsMediaStoreTest {
 
     @Test
     fun shouldCreateTransformedTemporaryFile() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
         val platformMedia = cut.getMedia("url1").shouldNotBeNull()
         tmpPath.values().toList().size shouldBe 0
@@ -196,7 +200,7 @@ class OpfsMediaStoreTest {
 
     @Test
     fun shouldDeleteTemporaryFile() = test {
-        cut.init(coroutineScope)
+        cut.init(backgroundScope)
         cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
         val platformMedia = cut.getMedia("url1").shouldNotBeNull()
         val tmpFile = platformMedia.getTemporaryFile().getOrThrow()

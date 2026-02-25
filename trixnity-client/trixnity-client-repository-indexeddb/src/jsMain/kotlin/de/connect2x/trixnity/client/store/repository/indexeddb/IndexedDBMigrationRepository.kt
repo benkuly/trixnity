@@ -1,10 +1,10 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import de.connect2x.trixnity.client.store.repository.MigrationRepository
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 internal class IndexedDBMigrationRepository(json: Json) : MigrationRepository,
     IndexedDBFullRepository<String, String>(
@@ -15,7 +15,7 @@ internal class IndexedDBMigrationRepository(json: Json) : MigrationRepository,
     ) {
     companion object {
         const val objectStoreName = "migration"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 8) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }

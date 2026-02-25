@@ -1,9 +1,7 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.Key
-import com.juul.indexeddb.ObjectStore
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -11,14 +9,18 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToDynamic
 import de.connect2x.trixnity.client.store.repository.FullRepository
+import de.connect2x.trixnity.idb.utils.WrappedObjectStore
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
+import web.idb.IDBValidKey
 
-fun VersionChangeTransaction.createIndexedDBMinimalStoreRepository(
-    database: Database,
+fun WrappedTransaction.createIndexedDBMinimalStoreRepository(
+    database: IDBDatabase,
     objectStoreName: String,
-    block: ObjectStore.() -> Unit = {},
+    block: WrappedTransaction.(WrappedObjectStore) -> Unit = {},
 ) {
-    database.createObjectStore(objectStoreName).apply {
-        block()
+    createObjectStore(database, objectStoreName).apply {
+        block(this)
     }
 }
 
@@ -30,17 +32,22 @@ internal abstract class IndexedDBFullRepository<K, V : Any>(
 ) : FullRepository<K, V>, IndexedDBRepository(objectStoreName) {
 
     override suspend fun get(key: K): V? = withIndexedDBRead { store ->
-        json.decodeFromDynamicNullable(valueSerializer, store.get(Key(keySerializer(key))))
+        json.decodeFromDynamicNullable(
+            valueSerializer,
+            store.get(backwardsCompatibleKeyOf(keySerializer(key))),
+        )
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun save(key: K, value: V): Unit = withIndexedDBWrite { store ->
-        store.put(item = json.encodeToDynamic(valueSerializer, value), key = Key(keySerializer(key)))
-        Unit
+        store.put(
+            value = json.encodeToDynamic(valueSerializer, value),
+            key = backwardsCompatibleKeyOf(keySerializer(key)),
+        )
     }
 
     override suspend fun delete(key: K): Unit = withIndexedDBWrite { store ->
-        store.delete(Key(keySerializer(key)))
+        store.delete(backwardsCompatibleKeyOf(keySerializer(key)))
     }
 
     override suspend fun deleteAll(): Unit = withIndexedDBWrite { store ->
@@ -48,8 +55,14 @@ internal abstract class IndexedDBFullRepository<K, V : Any>(
     }
 
     override suspend fun getAll(): List<V> = withIndexedDBRead { store ->
-        store.openCursor(autoContinue = true)
+        store.openCursor()
             .mapNotNull { json.decodeFromDynamicNullable(valueSerializer, it.value) }
             .toList()
     }
 }
+
+// This keyOf implementation always encodes a composite key as array while the default
+// implementation will encode arrays with one element as the element itself.
+// This is necessary to stay backwards compatible to the previous implementation.
+private fun backwardsCompatibleKeyOf(keys: Array<String>): IDBValidKey =
+    IDBValidKey(keys.map(::IDBValidKey).toJsArray())

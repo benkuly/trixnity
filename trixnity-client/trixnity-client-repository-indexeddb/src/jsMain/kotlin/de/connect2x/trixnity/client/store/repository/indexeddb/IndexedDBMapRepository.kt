@@ -1,6 +1,7 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.*
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
@@ -9,18 +10,22 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToDynamic
 import de.connect2x.trixnity.client.store.repository.MapRepository
+import de.connect2x.trixnity.idb.utils.KeyPath
+import de.connect2x.trixnity.idb.utils.WrappedObjectStore
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
-fun VersionChangeTransaction.createIndexedDBTwoDimensionsStoreRepository(
-    database: Database,
+fun WrappedTransaction.createIndexedDBTwoDimensionsStoreRepository(
+    database: IDBDatabase,
     objectStoreName: String,
-    keyPath: KeyPath,
+    keyPath: KeyPath?,
     firstKeyIndexName: String,
     firstKeyIndexKeyPath: KeyPath,
-    block: ObjectStore.() -> Unit = {},
+    block: WrappedTransaction.(WrappedObjectStore) -> Unit = {},
 ) {
-    database.createObjectStore(objectStoreName, keyPath).apply {
+    createObjectStore(database, objectStoreName, keyPath).apply {
         createIndex(firstKeyIndexName, firstKeyIndexKeyPath, unique = false)
-        block()
+        block(this)
     }
 }
 
@@ -37,12 +42,8 @@ internal abstract class IndexedDBMapRepository<K1, K2, V, R : Any>(
     val json: Json
 ) : MapRepository<K1, K2, V>, IndexedDBRepository(objectStoreName) {
 
-    protected fun keyOf(keys: Array<String>) =
-        Key(keys.first(), *keys.drop(1).toTypedArray())
-
     override suspend fun get(firstKey: K1): Map<K2, V> = withIndexedDBRead { store ->
-        store.index(firstKeyIndexName)
-            .openCursor(keyOf(firstKeySerializer(firstKey)), autoContinue = true)
+        store.index(firstKeyIndexName).openCursor(keyOf(firstKeySerializer(firstKey)))
             .mapNotNull { json.decodeFromDynamicNullable(representationSerializer, it.value) }
             .map { secondKeyDestructor(it) to mapFromRepresentation(it) }
             .toList()
@@ -59,12 +60,11 @@ internal abstract class IndexedDBMapRepository<K1, K2, V, R : Any>(
     override suspend fun save(firstKey: K1, secondKey: K2, value: V): Unit =
         withIndexedDBWrite { store ->
             store.put(
-                item = json.encodeToDynamic(
+                value = json.encodeToDynamic(
                     representationSerializer,
                     mapToRepresentation(firstKey, secondKey, value)
                 )
             )
-            Unit
         }
 
     override suspend fun delete(firstKey: K1, secondKey: K2): Unit = withIndexedDBWrite { store ->

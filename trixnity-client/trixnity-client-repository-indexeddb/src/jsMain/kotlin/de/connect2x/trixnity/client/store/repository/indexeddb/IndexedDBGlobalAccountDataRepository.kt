@@ -1,17 +1,17 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.KeyPath
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.store.repository.GlobalAccountDataRepository
 import de.connect2x.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import de.connect2x.trixnity.idb.utils.KeyPath
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 @Serializable
 internal class IndexedDBGlobalAccountData(
-    val type: String,
+    @Suppress("unused") val type: String,
     val key: String,
     @Contextual
     val value: GlobalAccountDataEvent<*>,
@@ -33,14 +33,14 @@ internal class IndexedDBGlobalAccountDataRepository(
     ) {
     companion object {
         const val objectStoreName = "global_account_data"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
             if (oldVersion < 1)
                 createIndexedDBTwoDimensionsStoreRepository(
                     database = database,
                     objectStoreName = objectStoreName,
-                    keyPath = KeyPath("type", "key"),
+                    keyPath = KeyPath.Multiple("type", "key"),
                     firstKeyIndexName = "type",
-                    firstKeyIndexKeyPath = KeyPath("type"),
+                    firstKeyIndexKeyPath = KeyPath.Single("type"),
                 )
         }
     }

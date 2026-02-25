@@ -1,9 +1,7 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
-import com.juul.indexeddb.Database
-import com.juul.indexeddb.Key
-import com.juul.indexeddb.KeyPath
-import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
@@ -20,6 +18,9 @@ import de.connect2x.trixnity.client.store.repository.RoomOutboxMessageRepository
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import de.connect2x.trixnity.idb.utils.KeyPath
+import de.connect2x.trixnity.idb.utils.WrappedTransaction
+import web.idb.IDBDatabase
 
 @Serializable
 internal class IndexedDBRoomOutboxMessage<T : MessageEventContent>(
@@ -72,10 +73,12 @@ internal class IndexedDBRoomOutboxMessageRepository(
 
     companion object {
         const val objectStoreName = "room_outbox_message_2"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            if (oldVersion < 6)
-                createIndexedDBMinimalStoreRepository(database, objectStoreName) {
-                    createIndex("roomId", KeyPath("roomId"), unique = false)
+        fun WrappedTransaction.migrate(database: IDBDatabase, oldVersion: Int) {
+            if (oldVersion < 6) createIndexedDBMinimalStoreRepository(
+                database,
+                objectStoreName
+            ) { store ->
+                store.createIndex("roomId", KeyPath.Single("roomId"), unique = false)
                 }
         }
     }
@@ -85,7 +88,7 @@ internal class IndexedDBRoomOutboxMessageRepository(
         internalRepository.get(key)?.value
 
     override suspend fun getAll(): List<RoomOutboxMessage<*>> = withIndexedDBRead { store ->
-        store.openCursor(autoContinue = true)
+        store.openCursor()
             .mapNotNull { json.decodeFromDynamicNullable(serializer, it.value) }
             .map { it.value }
             .toList()
@@ -104,9 +107,9 @@ internal class IndexedDBRoomOutboxMessageRepository(
         internalRepository.deleteAll()
 
     override suspend fun deleteByRoomId(roomId: RoomId) = withIndexedDBWrite { store ->
-        store.index("roomId").openCursor(Key(roomId.full), autoContinue = true)
+        store.index("roomId").openCursor(keyOf(roomId.full))
             .collect {
-                store.delete(Key(it.primaryKey))
+                store.delete(it.primaryKey)
             }
     }
 }

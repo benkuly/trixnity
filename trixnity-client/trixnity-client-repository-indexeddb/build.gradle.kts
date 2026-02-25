@@ -14,10 +14,7 @@ kotlin {
         jsMain {
             dependencies {
                 implementation(projects.trixnityClient)
-
-                implementation(sharedLibs.lognity.api)
-
-                api(libs.juulLabs.indexeddb)
+                implementation(projects.trixnityIdbUtils)
             }
         }
         jsTest {
