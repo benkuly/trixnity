@@ -1,6 +1,5 @@
 package de.connect2x.trixnity.client.room
 
-import io.kotest.matchers.shouldBe
 import de.connect2x.trixnity.client.getInMemoryGlobalAccountDataStore
 import de.connect2x.trixnity.client.mockMatrixClientServerApiClient
 import de.connect2x.trixnity.client.simpleRoom
@@ -19,6 +18,7 @@ import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.testutils.PortableMockEngineConfig
 import de.connect2x.trixnity.testutils.matrixJsonEndpoint
+import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
 class DirectRoomEventHandlerTest : TrixnityBaseTest() {
@@ -288,6 +288,40 @@ class DirectRoomEventHandlerTest : TrixnityBaseTest() {
             setDirectCalled shouldBe true
         }
 
+    @Test
+    fun `setNewDirectEventFromMemberEvent » only consider last membership change`() =
+        runTest {
+            ownMembershipIsLeaveOrBanSetup()
+            val event1 = StateEvent(
+                MemberEventContent(membership = Membership.LEAVE),
+                EventId("$123"),
+                alice,
+                room,
+                1234,
+                stateKey = bob.full
+            )
+            val event2 = StateEvent(
+                MemberEventContent(membership = Membership.JOIN, isDirect = true),
+                EventId("$123"),
+                UserId("1", "server"),
+                room,
+                1234,
+                stateKey = bob.full
+            )
+            var setDirectCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(SetGlobalAccountData(bob, "m.direct")) {
+                    it shouldBe DirectEventContent(
+                        mapOf(
+                            UserId("2", "server") to setOf(otherRoom)
+                        )
+                    )
+                    setDirectCalled = true
+                }
+            }
+            cut.setNewDirectEventFromMemberEvent(listOf(event1, event2))
+            setDirectCalled shouldBe false
+        }
 
     private suspend fun noDirectRoomsWithThatUserSetup() {
         globalAccountDataStore.save(

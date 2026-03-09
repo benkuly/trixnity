@@ -1,8 +1,6 @@
 package de.connect2x.trixnity.client.room
 
 import de.connect2x.lognity.api.logger.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.first
 import de.connect2x.trixnity.client.store.GlobalAccountDataStore
 import de.connect2x.trixnity.client.store.get
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -10,13 +8,14 @@ import de.connect2x.trixnity.core.EventHandler
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent
-import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import de.connect2x.trixnity.core.model.events.m.DirectEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership.BAN
 import de.connect2x.trixnity.core.model.events.m.room.Membership.LEAVE
 import de.connect2x.trixnity.core.subscribeEventList
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 
 private val log = Logger("de.connect2x.trixnity.client.room.DirectRoomEventHandler")
 
@@ -38,7 +37,9 @@ class DirectRoomEventHandler(
             log.trace { "direct event mappings before recalculation: $initialDirectEventContentMappings" }
 
             var directEventContentMappings = initialDirectEventContentMappings
-            for (event in events) {
+
+            val lastMembershipChanges = events.asReversed().distinctBy { it.roomId to it.stateKey }.asReversed()
+            for (event in lastMembershipChanges) {
                 val roomId = event.roomId ?: continue // in sync, roomId is always there
                 val stateKey = event.stateKey
                 val sender = event.sender
