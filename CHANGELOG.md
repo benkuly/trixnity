@@ -9,13 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 5.2.0
+
+### Added
+
 - Kotlin/WasmJs Support
 
 ### Changed
 
 - Implement IndexedDB Repositories without juullabs indexeddb
-
-### Deprecated
 
 ### Removed
 
@@ -24,8 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed `DirectRoomEventHandler` processing multiple membership events for the same room and user in a single batch
-
-### Security
 
 ## 5.1.2
 
