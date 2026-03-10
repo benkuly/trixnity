@@ -11,14 +11,22 @@ This project contains among others the following modules, which can be used inde
 - [trixnity-core](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-core)
   contains all basic data structures of the spec and it’s serialization algorithms. This includes events, identifiers
   and other things like CrossSigningKeys.
-- [trixnity-olm](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-olm)
+- [trixnity-libolm](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-libolm)
   implements the wrappers of the
   E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin
-  JVM/Android/JS/Native. It also ships the
-  olm binaries for most Android, JVM and Native targets.
+  Multiplatform. It also ships the
+  olm binaries for most targets.
+- [trixnity-vodozemac](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-vodozemac)
+  implements the wrappers of the
+  E2E-olm-library [vodozemac](github.com/matrix-org/vodozemac) for Kotlin
+  Multiplatform. It also ships the
+  olm binaries for most targets.
+- [trixnity-crypto-core](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-crypto)
+  contains various cryptographic primitives used in Matrix.
+- [trixnity-crypto-driver-*](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-crypto)
+  is a common layer for olm and megolm based crypto libraries including various implementations.
 - [trixnity-crypto](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-crypto)
-  contains various cryptographic algorithms
-  used in Matrix.
+  contains various cryptographic algorithms used in Matrix.
 - [trixnity-api-client](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-api-client)
   provides tools for api client
   modules.
@@ -60,7 +68,8 @@ This project contains among others the following modules, which can be used inde
     - [trixnity-applicationserviceapi-server](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-applicationserviceapi/trixnity-applicationserviceapi-server)
       is
       the server implementation without logic.
-- [trixnity-client](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client)
+- [trixnity-client-*](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client)
   provides a high level client
   implementation. It allows you to easily implement
   clients by just rendering data from and passing user interactions to Trixnity.
+  It contains various submodules for different use cases.

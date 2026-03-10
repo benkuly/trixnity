@@ -10,8 +10,9 @@ sidebar_position: 12
       implements a database for trixnity-client with [Exposed](https://github.com/JetBrains/Exposed).
       This supports JVM based platforms only.
     - [trixnity-client-repository-indexeddb](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-repository-indexeddb)
-      implements a database for trixnity-client with [indexeddb](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API).
-      This supports JS (browser).
+      implements a database for trixnity-client
+      with [indexeddb](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API).
+      This supports Js/Wasm.
     - [trixnity-client-repository-room](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-repository-room)
       implements a database for trixnity-client
       with [room](https://developer.android.com/jetpack/androidx/releases/room).
@@ -24,10 +25,10 @@ sidebar_position: 12
     - [trixnity-client-media-opfs](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-media-indexeddb)
       implements a store
       with [Origin private file system](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system).
-      This supports JS (browser).
+      This supports Js/Wasm.
     - [trixnity-client-media-indexeddb](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-media-indexeddb)
       implements a store with [indexeddb](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API).
-      This supports JS (browser).
+      This supports Js/Wasm.
 - [x] exchangeable crypto driver
     - [trixnity-client-cryptodriver-libolm](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-cryptodriver-libolm)
       using [libolm](https://gitlab.matrix.org/matrix-org/olm).
