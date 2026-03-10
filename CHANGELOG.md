@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed `DirectRoomEventHandler` processing multiple membership events for the same room and user in a single batch
+
 ### Security
 
 ## 5.1.2
