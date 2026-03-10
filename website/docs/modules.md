@@ -18,7 +18,7 @@ This project contains among others the following modules, which can be used inde
   olm binaries for most targets.
 - [trixnity-vodozemac](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-vodozemac)
   implements the wrappers of the
-  E2E-olm-library [vodozemac](github.com/matrix-org/vodozemac) for Kotlin
+  E2E-olm-library [vodozemac](https://github.com/matrix-org/vodozemac) for Kotlin
   Multiplatform. It also ships the
   olm binaries for most targets.
 - [trixnity-crypto-core](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-crypto)
