@@ -1,11 +1,6 @@
 package de.connect2x.trixnity.client.notification
 
 import de.connect2x.lognity.api.logger.Logger
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.transform
-import kotlinx.coroutines.withTimeoutOrNull
 import de.connect2x.trixnity.client.room.RoomService
 import de.connect2x.trixnity.client.room.firstWithContent
 import de.connect2x.trixnity.client.store.StoredNotification
@@ -20,6 +15,11 @@ import de.connect2x.trixnity.core.model.events.roomIdOrNull
 import de.connect2x.trixnity.core.model.events.senderOrNull
 import de.connect2x.trixnity.core.model.push.PushRule
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
@@ -146,9 +146,8 @@ class EventsToNotificationUpdatesImpl(
         if (processedNotifications.contains(id)) {
             log.trace { "skip message event $id" }
             return emptyList()
-        } else {
-            log.trace { "handle message event $id" }
         }
+        log.trace { "handle message event $id" }
 
         val update = notificationUpdate(
             id = id,
@@ -180,13 +179,13 @@ class EventsToNotificationUpdatesImpl(
                         if (processedNotifications.contains(redactedId)) {
                             log.trace { "skip state event redaction $redactedId" }
                             return@run null
-                        } else {
-                            log.trace { "handle state event redaction $redactedId" }
                         }
+                        log.trace { "handle state event redaction $redactedId" }
                         val currentState =
                             roomService.getState(roomId, mapping.kClass, redactedTimelineEvent.stateKey)
                                 .first()
                                 ?: return@run null
+
                         notificationUpdate(
                             id = redactedId,
                             roomId = roomId,
@@ -221,9 +220,9 @@ class EventsToNotificationUpdatesImpl(
                 if (processedNotifications.contains(replacedId)) {
                     log.trace { "skip message event replace $replacedId" }
                     return@run null
-                } else {
-                    log.trace { "handle message event replace $replacedId" }
                 }
+
+                log.trace { "handle message event replace $replacedId" }
                 val replacedTimelineEvent =
                     withTimeoutOrNull(5.seconds) {
                         roomService.getTimelineEvent(roomId, relatesTo.eventId) {
