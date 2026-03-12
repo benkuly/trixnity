@@ -1,9 +1,5 @@
 package de.connect2x.trixnity.client.notification
 
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.runTest
 import de.connect2x.trixnity.client.ClockMock
 import de.connect2x.trixnity.client.mocks.RoomServiceMock
 import de.connect2x.trixnity.client.store.StoredNotification
@@ -29,6 +25,10 @@ import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMap
 import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.scheduleSetup
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
 class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
@@ -401,7 +401,9 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
                 someMessageEvent.copy(content = RedactionEventContent(redacts = someMessageEvent2.id)),
             ),
             pushRules = listOf(),
-            existingNotifications = mapOf(),
+            existingNotifications = mapOf(
+                StoredNotification.Message.id(roomId, someMessageEvent2.id) to "s"
+            ),
             removeStale = false,
         ).toList() shouldBe listOf(
             StoredNotificationUpdate.New(
@@ -413,6 +415,28 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
             StoredNotificationUpdate.Remove(
                 id = StoredNotification.Message.id(roomId, someMessageEvent2.id),
                 roomId = roomId,
+            ),
+        )
+    }
+
+    @Test
+    fun `message event - redact message - not existing - skip`() = runTest {
+        roomServiceMock.returnGetTimelineEvent = flowOf(TimelineEvent(someMessageEvent2))
+        evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify)))
+        cut.invoke(
+            roomId = roomId,
+            eventFlow = flowOf(
+                someMessageEvent.copy(content = RedactionEventContent(redacts = someMessageEvent2.id)),
+            ),
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
+        ).toList() shouldBe listOf(
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent.id),
             ),
         )
     }

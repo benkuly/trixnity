@@ -205,6 +205,10 @@ class EventsToNotificationUpdatesImpl(
 
                     is RoomEvent.MessageEvent -> {
                         val redactedId = StoredNotification.Message.id(roomId, content.redacts)
+                        if (existingNotifications.containsKey(redactedId).not()) {
+                            log.trace { "skip message event redaction $redactedId" }
+                            return@run null
+                        }
                         log.trace { "handle message event redaction $redactedId" }
                         StoredNotificationUpdate.Remove(
                             id = StoredNotification.Message.id(roomId, content.redacts),
