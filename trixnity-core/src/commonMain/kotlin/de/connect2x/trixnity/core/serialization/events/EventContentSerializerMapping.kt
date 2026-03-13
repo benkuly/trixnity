@@ -1,9 +1,9 @@
 package de.connect2x.trixnity.core.serialization.events
 
-import kotlinx.serialization.KSerializer
 import de.connect2x.trixnity.core.model.events.EventContent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
+import kotlinx.serialization.KSerializer
 import kotlin.reflect.KClass
 
 interface EventContentSerializerMapping<C : EventContent> {
