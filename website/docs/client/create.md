@@ -11,7 +11,7 @@ by using `MatrixClient.create(...)`. There are some mandatory parameters:
   e.g. `RepositoriesModule.room(...)`. Secrets are also stored in the repository. Therefore, you should encrypt it.
 - `mediaStoreModule` which can be created by adding a `trixnity-client-media-*` dependency and calling
   e.g. `MediaStoreModule.okio(...)`
-- `cryptoDriverModule` which can be created by adding a `trixnity-cryptodriver-*` dependency and calling
+- `cryptoDriverModule` which can be created by adding a `trixnity-client-cryptodriver-*` dependency and calling
   e.g. `CryptoDriverModule.vodozemac(...)`
 - `authProviderData` which should be passed when an authentication is required (e.g. on login). It can be derived by
   calling e.g. `MatrixClientAuthProviderData.oAuth2Login(...)`.
