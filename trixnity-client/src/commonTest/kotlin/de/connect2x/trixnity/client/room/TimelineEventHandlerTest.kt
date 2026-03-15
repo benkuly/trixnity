@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.mocks.TransactionManagerMock
 import de.connect2x.trixnity.client.store.*
@@ -18,6 +19,7 @@ import de.connect2x.trixnity.clientserverapi.client.SyncEvents
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
+import de.connect2x.trixnity.clientserverapi.model.user.Filters
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
@@ -54,9 +56,16 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
     private val apiConfig = PortableMockEngineConfig()
     private val api = mockMatrixClientServerApiClient(config = apiConfig)
 
-    private val filter = """
-        {"types":["m.room.message","m.reaction","m.room.redaction","m.room.encrypted","m.key.verification.start","m.key.verification.ready","m.key.verification.done","m.key.verification.cancel","m.key.verification.accept","m.key.verification.key","m.key.verification.mac","m.call.invite","m.call.candidates","m.call.answer","m.call.hangup","m.call.negotiate","m.call.reject","m.call.select_answer","m.call.sdp_stream_metadata_changed","m.room.avatar","m.room.canonical_alias","m.room.create","m.room.join_rules","m.room.member","m.room.name","m.room.pinned_events","m.room.power_levels","m.room.topic","m.room.encryption","m.room.history_visibility","m.room.third_party_invite","m.room.guest_access","m.room.server_acl","m.room.tombstone","m.policy.rule.user","m.policy.rule.room","m.policy.rule.server","m.space.parent","m.space.child"]}
-    """.trimIndent()
+    private val filter = run {
+        val baseFilter = MatrixClientConfiguration().syncFilter
+        val timelineFilter = (baseFilter.room?.timeline ?: Filters.RoomFilter.RoomEventFilter()).copy(
+            // Must match production ordering semantics.
+            types = (EventContentSerializerMappings.default.message + EventContentSerializerMappings.default.state)
+                .map { it.type }
+                .toSet(),
+        )
+        createMatrixEventJson().encodeToString(timelineFilter)
+    }
 
     private val cut = TimelineEventHandlerImpl(
         api,
