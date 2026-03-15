@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Kotlin/WasmJs Support
+- Added MSC4143 typed event content for `m.rtc.slot` and `m.rtc.member` with stable/unstable mappings
 
 ### Changed
 

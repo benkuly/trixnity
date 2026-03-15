@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.core.serialization.events
 
 import de.connect2x.trixnity.core.MSC3814
+import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.model.events.block.m.TextContentBlock
 import de.connect2x.trixnity.core.model.events.block.m.TopicContentBlock
 import de.connect2x.trixnity.core.model.events.m.*
@@ -12,6 +13,8 @@ import de.connect2x.trixnity.core.model.events.m.key.verification.*
 import de.connect2x.trixnity.core.model.events.m.policy.RoomRuleEventContent
 import de.connect2x.trixnity.core.model.events.m.policy.ServerRuleEventContent
 import de.connect2x.trixnity.core.model.events.m.policy.UserRuleEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotEventContent
 import de.connect2x.trixnity.core.model.events.m.room.*
 import de.connect2x.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import de.connect2x.trixnity.core.model.events.m.secret.SecretKeySendEventContent
@@ -41,6 +44,11 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     messageOf<CallEventContent.SelectAnswer>("m.call.select_answer")
     messageOf<CallEventContent.SdpStreamMetadataChanged>("m.call.sdp_stream_metadata_changed")
 
+    @OptIn(MSC4143::class)
+    messageOf<RtcMemberEventContent>("m.rtc.member", RtcMemberEventContentSerializer())
+    @OptIn(MSC4143::class)
+    messageOf<RtcMemberEventContent>("org.matrix.msc4143.rtc.member", RtcMemberEventContentSerializer())
+
     stateOf<AvatarEventContent>("m.room.avatar")
     stateOf<CanonicalAliasEventContent>("m.room.canonical_alias")
     stateOf<CreateEventContent>("m.room.create")
@@ -61,6 +69,11 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     stateOf<ServerRuleEventContent>("m.policy.rule.server")
     stateOf<ParentEventContent>("m.space.parent")
     stateOf<ChildEventContent>("m.space.child")
+
+    @OptIn(MSC4143::class)
+    stateOf<RtcSlotEventContent>("m.rtc.slot", RtcSlotEventContentSerializer())
+    @OptIn(MSC4143::class)
+    stateOf<RtcSlotEventContent>("org.matrix.msc4143.rtc.slot", RtcSlotEventContentSerializer())
 
     ephemeralOf<PresenceEventContent>("m.presence")
     ephemeralOf<TypingEventContent>("m.typing")
