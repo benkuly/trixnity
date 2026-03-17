@@ -2,18 +2,13 @@
 
 package de.connect2x.trixnity.idb.schemaexporter
 
-import js.core.JsPrimitives.toKotlinString
 import js.objects.ReadonlyRecord
 import js.objects.unsafeJso
+import js.string.JsStrings.toKotlinString
 import web.idb.IDBDatabase
 import web.idb.IDBTransactionMode
 import web.idb.readonly
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsAny
-import kotlin.js.JsNumber
-import kotlin.js.JsString
-import kotlin.js.toJsArray
-import kotlin.js.toJsNumber
+import kotlin.js.*
 
 internal external interface DatabaseInfo : JsAny {
     var version: JsNumber

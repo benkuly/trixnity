@@ -434,7 +434,7 @@ class NotificationServiceImpl(
                     NotificationUpdate.Content.Message(
                         roomService.getTimelineEvent(roomId, eventId) {
                             decryptionTimeout = 5.seconds
-                        }.firstWithContent() ?: return@withTimeoutOrNull null
+                        }.firstWithContent()
                     )
                 }
 

@@ -1,15 +1,15 @@
 package de.connect2x.trixnity.crypto.key
 
-import io.kotest.assertions.throwables.shouldThrowAny
-import io.kotest.matchers.shouldBe
-import io.ktor.util.*
-import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.encodeToJsonElement
 import de.connect2x.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import de.connect2x.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.crypto.core.encryptAesHmacSha2
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import de.connect2x.trixnity.utils.encodeBase64
+import io.kotest.assertions.throwables.shouldThrowAny
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlin.random.Random
 import kotlin.test.Test
 

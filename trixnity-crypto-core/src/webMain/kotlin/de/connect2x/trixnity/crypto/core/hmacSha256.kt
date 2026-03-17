@@ -4,14 +4,11 @@ import createHmac
 import io.ktor.util.*
 import js.array.jsArrayOf
 import js.buffer.toByteArray
-import js.json.rawJSON
 import js.objects.unsafeJso
 import js.typedarrays.Uint8Array
 import js.typedarrays.toByteArray
-import js.typedarrays.toInt8Array
 import js.typedarrays.toUint8Array
 import web.crypto.*
-import kotlin.js.toJsString
 
 actual suspend fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray {
     return if (PlatformUtils.IS_BROWSER) {
@@ -21,7 +18,7 @@ actual suspend fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray {
             keyData = key.fastToUint8Array(),
             algorithm = unsafeJso<HmacImportParams> {
                 name = "HMAC"
-                hash = "SHA-256".toJsString()
+                hash = AlgorithmIdentifier("SHA-256")
             },
             extractable = false,
             keyUsages = jsArrayOf(KeyUsage.sign)

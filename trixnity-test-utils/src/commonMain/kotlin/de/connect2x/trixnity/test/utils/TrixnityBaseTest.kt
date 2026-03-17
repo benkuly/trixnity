@@ -8,11 +8,11 @@ import de.connect2x.lognity.test.TestBackend
 
 open class TrixnityBaseTest : CoroutineTest {
     init {
-        Backend.setOnce(TestBackend)
+        Backend.set(TestBackend)
         Backend.configSpec = {
             consoleAppender(
                 "{{levelColor}}>> {{levelSymbol}} {{hh}}:{{mm}}:{{ss}}.{{SSS}} [{{threadId}}/{{coroutineName}}][{{name}}] {{message}}{{r}}",
-                filter = Filter { logger, message, marker ->
+                filter = Filter { logger, _, _, _ ->
                     logger.context.get(Logger.Name)?.name?.startsWith("de.connect2x.trixnity") ?: false
                 }
             )

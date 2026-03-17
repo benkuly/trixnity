@@ -3,6 +3,7 @@
 package de.connect2x.trixnity.vodozemac
 
 import de.connect2x.trixnity.vodozemac.utils.NativePointer
+import js.buffer.ArrayBuffer
 import web.assembly.Memory
 
 @ExternalSymbolName("alloc")
@@ -13,4 +14,5 @@ internal external fun alloc(size: Int, align: Int): NativePointer
 @ModuleImport("vodozemac", "dealloc")
 internal external fun dealloc(ptr: NativePointer, size: Int, align: Int)
 
-@ExternalSymbolName("memory") internal external val memory: Memory
+@ExternalSymbolName("memory")
+internal external val memory: Memory<ArrayBuffer>

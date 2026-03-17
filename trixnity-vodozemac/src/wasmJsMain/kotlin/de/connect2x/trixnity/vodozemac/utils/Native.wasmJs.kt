@@ -1,15 +1,15 @@
 package de.connect2x.trixnity.vodozemac.utils
 
-import js.core.JsPrimitives.toJsByte
-import js.core.JsPrimitives.toJsInt
-import js.core.JsPrimitives.toJsShort
+import de.connect2x.trixnity.vodozemac.memory
+import js.numbers.JsNumbers.toJsByte
+import js.numbers.JsNumbers.toJsInt
+import js.numbers.JsNumbers.toJsShort
+import js.numbers.JsNumbers.toKotlinByte
+import js.numbers.JsNumbers.toKotlinShort
 import js.typedarrays.BigInt64Array
 import js.typedarrays.Int16Array
 import js.typedarrays.Int32Array
 import js.typedarrays.Int8Array
-import de.connect2x.trixnity.vodozemac.memory
-import js.core.JsPrimitives.toKotlinByte
-import js.core.JsPrimitives.toKotlinShort
 
 internal actual fun toWasm(dest: NativePointer, src: ByteArray) {
     val view = Int8Array(memory.buffer, dest, src.size)

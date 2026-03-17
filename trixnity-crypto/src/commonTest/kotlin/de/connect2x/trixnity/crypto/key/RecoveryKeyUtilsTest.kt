@@ -1,13 +1,14 @@
 package de.connect2x.trixnity.crypto.key
 
-import io.kotest.assertions.throwables.shouldThrowAny
-import io.kotest.matchers.shouldBe
-import io.ktor.util.*
-import kotlinx.coroutines.test.runTest
 import de.connect2x.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import de.connect2x.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
 import de.connect2x.trixnity.crypto.core.generatePbkdf2Sha512
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import de.connect2x.trixnity.utils.decodeBase64
+import de.connect2x.trixnity.utils.encodeBase64
+import io.kotest.assertions.throwables.shouldThrowAny
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.test.runTest
 import kotlin.random.Random
 import kotlin.test.Test
 
@@ -96,7 +97,7 @@ class RecoveryKeyUtilsTest : TrixnityBaseTest() {
             iv = iv
         )
 
-        val result = checkRecoveryKey(key.decodeBase64Bytes(), info)
+        val result = checkRecoveryKey(key.decodeBase64(), info)
         result.isSuccess shouldBe true
     }
 
@@ -112,7 +113,7 @@ class RecoveryKeyUtilsTest : TrixnityBaseTest() {
             iv = iv
         )
 
-        val result = checkRecoveryKey(key.decodeBase64Bytes(), info)
+        val result = checkRecoveryKey(key.decodeBase64(), info)
         result.isSuccess shouldBe true
     }
 
@@ -127,7 +128,7 @@ class RecoveryKeyUtilsTest : TrixnityBaseTest() {
             iv = iv
         )
 
-        val result = checkRecoveryKey(key.decodeBase64Bytes(), info)
+        val result = checkRecoveryKey(key.decodeBase64(), info)
         result.isSuccess shouldBe true
     }
 
@@ -135,7 +136,7 @@ class RecoveryKeyUtilsTest : TrixnityBaseTest() {
     fun `checkRecoveryKey - with bad mac`() = runTest {
         val key = "KSEbjMN+jOZMNDA36/n9CUkREWGNFuD5RqHNYDcjs0M="
         val iv = "9c0YLX0Wl4I61FE2H3A0Xg=="
-        val mac = "baaaaaaad"
+        val mac = "baaaaaaada33"
         val info = SecretKeyEventContent.AesHmacSha2Key(
             name = "",
             passphrase = null,
@@ -143,7 +144,7 @@ class RecoveryKeyUtilsTest : TrixnityBaseTest() {
             iv = iv
         )
 
-        val result = checkRecoveryKey(key.decodeBase64Bytes(), info)
+        val result = checkRecoveryKey(key.decodeBase64(), info)
         result.exceptionOrNull() shouldBe RecoveryKeyInvalidException("expected mac uj0Uwiqyr44yMPBaJ+2NuJ/5hjdrVbRxd53AnUQ9Tso, but got $mac")
     }
 }

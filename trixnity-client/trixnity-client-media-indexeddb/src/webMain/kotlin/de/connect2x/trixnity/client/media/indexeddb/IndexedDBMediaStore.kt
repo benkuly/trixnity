@@ -1,14 +1,5 @@
 package de.connect2x.trixnity.client.media.indexeddb
 
-import js.buffer.ArrayBuffer
-import js.typedarrays.Uint8Array
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.MediaStoreModule
 import de.connect2x.trixnity.client.media.CachedMediaStore
@@ -16,16 +7,16 @@ import de.connect2x.trixnity.client.media.MediaStore
 import de.connect2x.trixnity.idb.utils.IDBUtils
 import de.connect2x.trixnity.idb.utils.readTransaction
 import de.connect2x.trixnity.idb.utils.writeTransaction
-import de.connect2x.trixnity.utils.ByteArrayFlow
-import de.connect2x.trixnity.utils.byteArrayFlowFromReadableStream
-import de.connect2x.trixnity.utils.nextString
-import de.connect2x.trixnity.utils.toByteArray
-import de.connect2x.trixnity.utils.writeTo
+import de.connect2x.trixnity.utils.*
+import js.buffer.ArrayBuffer
+import js.reflect.unsafeCast
+import js.typedarrays.Uint8Array
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.FlowCollector
 import org.koin.dsl.module
 import web.blob.Blob
 import web.events.EventType
 import web.events.addEventHandler
-import web.http.BodyInit
 import web.http.Response
 import web.http.blob
 import web.idb.IDBDatabase
@@ -72,7 +63,7 @@ internal class IndexedDBMediaStore(
             GlobalScope.launch { clearTmp() }
         }
     }
-    
+
     override suspend fun deleteAllFromStore() {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME, TMP_MEDIA_OBJECT_STORE_NAME) {
             objectStore(MEDIA_OBJECT_STORE_NAME).clear()
@@ -85,7 +76,7 @@ internal class IndexedDBMediaStore(
         launch {
             content.writeTo(transformStream.writable)
         }
-        val value = Response(BodyInit(transformStream.readable)).blob()
+        val value = Response(unsafeCast(transformStream.readable)).blob()
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
             store.put(value, IDBValidKey(url))
@@ -153,7 +144,7 @@ internal class IndexedDBMediaStore(
                 launch {
                     delegate.writeTo(transformStream.writable)
                 }
-                val file = Response(BodyInit(transformStream.readable)).blob()
+                val file = Response(unsafeCast(transformStream.readable)).blob()
                 getTemporaryFile(file)
             }
         }

@@ -1,9 +1,6 @@
 package de.connect2x.trixnity.client.key
 
 import de.connect2x.lognity.api.logger.Logger
-import io.ktor.util.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.flatMap
 import de.connect2x.trixnity.client.room.RoomService
@@ -37,13 +34,14 @@ import de.connect2x.trixnity.crypto.core.SecureRandom
 import de.connect2x.trixnity.crypto.core.createAesHmacSha2MacFromKey
 import de.connect2x.trixnity.crypto.driver.CryptoDriver
 import de.connect2x.trixnity.crypto.key.*
-import de.connect2x.trixnity.crypto.key.DeviceTrustLevel
-import de.connect2x.trixnity.crypto.key.UserTrustLevel
 import de.connect2x.trixnity.crypto.of
 import de.connect2x.trixnity.crypto.sign.SignService
 import de.connect2x.trixnity.crypto.sign.SignWith
 import de.connect2x.trixnity.crypto.sign.sign
+import de.connect2x.trixnity.utils.encodeBase64
 import de.connect2x.trixnity.utils.encodeUnpaddedBase64
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlin.random.Random
 
 private val log = Logger("de.connect2x.trixnity.client.key.KeyService")

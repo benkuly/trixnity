@@ -1,10 +1,5 @@
 package de.connect2x.trixnity.clientserverapi.client.oauth2
 
-import io.kotest.matchers.shouldBe
-import io.ktor.client.engine.mock.*
-import io.ktor.http.*
-import io.ktor.utils.io.charsets.*
-import kotlinx.coroutines.test.runTest
 import de.connect2x.trixnity.clientserverapi.client.trimToFlatJson
 import de.connect2x.trixnity.clientserverapi.model.authentication.TokenTypeHint
 import de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.*
@@ -12,6 +7,11 @@ import de.connect2x.trixnity.core.MSC4191
 import de.connect2x.trixnity.crypto.core.SecureRandom
 import de.connect2x.trixnity.testutils.scopedMockEngine
 import de.connect2x.trixnity.utils.nextString
+import io.kotest.matchers.shouldBe
+import io.ktor.client.engine.mock.*
+import io.ktor.http.*
+import io.ktor.utils.io.charsets.*
+import kotlinx.coroutines.test.runTest
 import okio.ByteString.Companion.toByteString
 import kotlin.test.Test
 
