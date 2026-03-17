@@ -86,8 +86,10 @@ final const val de.connect2x.trixnity.utils/BYTE_ARRAY_FLOW_CHUNK_SIZE // de.con
 
 final fun (io.ktor.utils.io/ByteReadChannel).de.connect2x.trixnity.utils/toByteArrayFlow(): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.utils/toByteArrayFlow|toByteArrayFlow@io.ktor.utils.io.ByteReadChannel(){}[0]
 final fun (kotlin.random/Random).de.connect2x.trixnity.utils/nextString(kotlin/Int, kotlin.collections/List<kotlin/Char> = ...): kotlin/String // de.connect2x.trixnity.utils/nextString|nextString@kotlin.random.Random(kotlin.Int;kotlin.collections.List<kotlin.Char>){}[0]
+final fun (kotlin/ByteArray).de.connect2x.trixnity.utils/encodeBase64(): kotlin/String // de.connect2x.trixnity.utils/encodeBase64|encodeBase64@kotlin.ByteArray(){}[0]
 final fun (kotlin/ByteArray).de.connect2x.trixnity.utils/encodeUnpaddedBase64(): kotlin/String // de.connect2x.trixnity.utils/encodeUnpaddedBase64|encodeUnpaddedBase64@kotlin.ByteArray(){}[0]
 final fun (kotlin/ByteArray).de.connect2x.trixnity.utils/toByteArrayFlow(): kotlinx.coroutines.flow/Flow<kotlin/ByteArray> // de.connect2x.trixnity.utils/toByteArrayFlow|toByteArrayFlow@kotlin.ByteArray(){}[0]
+final fun (kotlin/String).de.connect2x.trixnity.utils/decodeBase64(): kotlin/ByteArray // de.connect2x.trixnity.utils/decodeBase64|decodeBase64@kotlin.String(){}[0]
 final fun (kotlin/String).de.connect2x.trixnity.utils/decodeUnpaddedBase64Bytes(): kotlin/ByteArray // de.connect2x.trixnity.utils/decodeUnpaddedBase64Bytes|decodeUnpaddedBase64Bytes@kotlin.String(){}[0]
 final fun (okio/FileSystem).de.connect2x.trixnity.utils/readByteArrayFlow(okio/Path, kotlin.coroutines/CoroutineContext = ...): kotlinx.coroutines.flow/Flow<kotlin/ByteArray>? // de.connect2x.trixnity.utils/readByteArrayFlow|readByteArrayFlow@okio.FileSystem(okio.Path;kotlin.coroutines.CoroutineContext){}[0]
 final fun <#A: kotlin/Any?, #B: #A> de.connect2x.trixnity.utils/concurrentOf(kotlin/Function0<#B>): de.connect2x.trixnity.utils/Concurrent<#A, #B> // de.connect2x.trixnity.utils/concurrentOf|concurrentOf(kotlin.Function0<0:1>){0§<kotlin.Any?>;1§<0:0>}[0]

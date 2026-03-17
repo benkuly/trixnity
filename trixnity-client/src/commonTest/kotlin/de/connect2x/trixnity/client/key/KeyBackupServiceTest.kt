@@ -1,20 +1,5 @@
 package de.connect2x.trixnity.client.key
 
-import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.maps.shouldBeEmpty
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNot
-import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.beEmpty
-import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.http.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.mocks.SignServiceMock
 import de.connect2x.trixnity.client.store.KeySignatureTrustLevel
@@ -26,7 +11,6 @@ import de.connect2x.trixnity.clientserverapi.client.SyncState.RUNNING
 import de.connect2x.trixnity.clientserverapi.model.key.*
 import de.connect2x.trixnity.clientserverapi.model.user.SetGlobalAccountData
 import de.connect2x.trixnity.core.ErrorResponse
-import de.connect2x.trixnity.core.model.keys.ExportedSessionKeyValue
 import de.connect2x.trixnity.core.MatrixServerException
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.RoomId
@@ -54,9 +38,26 @@ import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.suspendLazy
 import de.connect2x.trixnity.testutils.PortableMockEngineConfig
 import de.connect2x.trixnity.testutils.matrixJsonEndpoint
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNot
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.beEmpty
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.http.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class KeyBackupServiceTest : TrixnityBaseTest() {
@@ -136,9 +137,9 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                 )
             )
         }
-        eventually(10.seconds) {
-            cut.version.value shouldBe keyVersion
-        }
+        delay(1.seconds)
+        cut.version.value shouldBe keyVersion
+
         keyStore.updateSecrets {
             mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
@@ -147,9 +148,9 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                 )
             )
         }
-        eventually(10.seconds) {
-            cut.version.value shouldBe null
-        }
+        delay(1.seconds)
+        cut.version.value shouldBe null
+
     }
 
     @Test
@@ -172,9 +173,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                     )
                 )
             }
-            eventually(10.seconds) {
-                cut.version.value shouldBe keyVersion
-            }
+            delay(1.seconds)
+            cut.version.value shouldBe keyVersion
         }
 
     @Test
@@ -212,9 +212,9 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                     )
                 )
             }
-            eventually(10.seconds) {
-                cut.version.value shouldBe keyVersion
-            }
+            delay(1.seconds)
+            cut.version.value shouldBe keyVersion
+
             setRoomKeyBackupVersionCalled shouldBe true
         }
 
@@ -251,9 +251,9 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                     )
                 )
             }
-            eventually(10.seconds) {
-                cut.version.value shouldBe keyVersion
-            }
+            delay(1.seconds)
+            cut.version.value shouldBe keyVersion
+
             keyStore.updateSecrets {
                 mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
@@ -263,9 +263,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                     )
                 )
             }
-            eventually(10.seconds) {
-                cut.version.value shouldBe null
-            }
+            delay(1.seconds)
+            cut.version.value shouldBe null
 
             setRoomKeyBackupVersionCalled shouldBe true
             keyStore.getSecrets().shouldBeEmpty()
@@ -378,10 +377,9 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
             olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
             cut.loadMegolmSession(roomId, sessionId)
-            eventually(10.seconds) {
-                olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()
-                    .shouldNotBeNull().firstKnownIndex shouldBe 1
-            }
+            delay(1.seconds)
+            olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()
+                .shouldNotBeNull().firstKnownIndex shouldBe 1
             assertSoftly(
                 olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()
             ) {
@@ -429,9 +427,9 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                 }
             }
             allLoadMegolmSessionsCalled.value = true
-            eventually(10.seconds) {
-                olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first().shouldNotBeNull()
-            }
+            delay(1.seconds)
+            olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first().shouldNotBeNull()
+
             getRoomKeyBackupDataCalled shouldBe true
         }
 
@@ -439,10 +437,10 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
     fun `loadMegolmSession » megolm session on server » with error » retry fetch megolm session`() = runTest {
         megolmSessionOnServerWithError()
         cut.loadMegolmSession(roomId, sessionId)
-        val session = eventually(10.seconds) {
-            olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
-                .first().shouldNotBeNull()
-        }
+        delay(1.seconds)
+        val session = olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
+            .first().shouldNotBeNull()
+
         assertSoftly(session) {
             assertNotNull(this)
             this.senderKey shouldBe senderKey
@@ -625,19 +623,17 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         }
         setVersion(validKeyBackup, "1")
 
-        eventually(10.seconds) {
-            olmCryptoStore.notBackedUpInboundMegolmSessions.value.shouldBeEmpty()
-        }
+        delay(1.seconds)
+        olmCryptoStore.notBackedUpInboundMegolmSessions.value.shouldBeEmpty()
+
         setRoomKeyBackupDataCalled shouldBe true
         session1.run {
-            eventually(10.seconds) {
-                olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
-            }
+            delay(1.seconds)
+            olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
         }
         session2.run {
-            eventually(10.seconds) {
-                olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
-            }
+            delay(1.seconds)
+            olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
         }
     }
 
@@ -670,9 +666,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
             else it
         }
 
-        eventually(10.seconds) {
-            olmCryptoStore.notBackedUpInboundMegolmSessions.first().shouldBeEmpty()
-        }
+        delay(1.minutes)
+        olmCryptoStore.notBackedUpInboundMegolmSessions.first().shouldBeEmpty()
         setRoomKeyBackupDataCalled2.value shouldBe true
     }
 
@@ -813,8 +808,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                 )
             )
         }
-        eventually(10.seconds) {
-            cut.version.value shouldBe defaultVersion
-        }
+        delay(1.seconds)
+        cut.version.value shouldBe defaultVersion
     }
 }

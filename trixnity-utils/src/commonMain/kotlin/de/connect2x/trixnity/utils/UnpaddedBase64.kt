@@ -8,3 +8,6 @@ private val base64 = Base64.withPadding(ABSENT_OPTIONAL)
 fun ByteArray.encodeUnpaddedBase64(): String = base64.encode(this)
 
 fun String.decodeUnpaddedBase64Bytes(): ByteArray = base64.decode(this)
+
+fun ByteArray.encodeBase64(): String = base64.encode(this)
+fun String.decodeBase64(): ByteArray = base64.decode(this)

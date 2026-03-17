@@ -13,7 +13,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.js.toJsNumber
-import kotlin.js.toJsString
 
 actual suspend fun generatePbkdf2Sha512(
     password: String,
@@ -37,7 +36,7 @@ actual suspend fun generatePbkdf2Sha512(
                 this.name = "PBKDF2"
                 this.salt = salt.fastToUint8Array()
                 this.iterations = iterationCount
-                this.hash = "SHA-512".toJsString()
+                this.hash = AlgorithmIdentifier("SHA-512")
             },
             baseKey = key,
             length = keyBitLength,

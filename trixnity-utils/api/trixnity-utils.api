@@ -136,7 +136,9 @@ public abstract interface annotation class de/connect2x/trixnity/utils/TrixnityP
 }
 
 public final class de/connect2x/trixnity/utils/UnpaddedBase64Kt {
+	public static final fun decodeBase64 (Ljava/lang/String;)[B
 	public static final fun decodeUnpaddedBase64Bytes (Ljava/lang/String;)[B
+	public static final fun encodeBase64 ([B)Ljava/lang/String;
 	public static final fun encodeUnpaddedBase64 ([B)Ljava/lang/String;
 }
 

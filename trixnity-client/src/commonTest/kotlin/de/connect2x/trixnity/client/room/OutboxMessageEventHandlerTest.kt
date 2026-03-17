@@ -1,18 +1,5 @@
 package de.connect2x.trixnity.client.room
 
-import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import io.ktor.http.*
-import io.ktor.http.ContentType.Image.PNG
-import io.ktor.utils.io.core.*
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
 import de.connect2x.trixnity.client.*
 import de.connect2x.trixnity.client.mocks.*
 import de.connect2x.trixnity.client.room.message.MessageBuilder
@@ -47,6 +34,20 @@ import de.connect2x.trixnity.testutils.CustomErrorResponse
 import de.connect2x.trixnity.testutils.PortableMockEngineConfig
 import de.connect2x.trixnity.testutils.matrixJsonEndpoint
 import de.connect2x.trixnity.utils.toByteArrayFlow
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.ktor.http.*
+import io.ktor.http.ContentType.Image.PNG
+import io.ktor.utils.io.core.*
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
@@ -111,10 +112,9 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
             update(outbox3.roomId, outbox3.transactionId) { outbox3 }
         }
 
-        eventually(3.seconds) {// we need this, because the cache may not be fast enough
-            cut.removeOldOutboxMessages()
-            roomOutboxMessageStore.getAll().flattenValues().first() shouldContainExactly listOf(outbox1, outbox3)
-        }
+        delay(1.seconds)
+        cut.removeOldOutboxMessages()
+        roomOutboxMessageStore.getAll().flattenValues().first() shouldContainExactly listOf(outbox1, outbox3)
     }
 
     @Test
@@ -167,12 +167,11 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
 
             currentSyncState.value = SyncState.RUNNING
             mediaServiceMock.uploadMediaCalled.first { it == cacheUrl }
-            eventually(3.seconds) {// we need this, because the cache may not be fast enough
-                val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-                outboxMessages shouldHaveSize 2
-                outboxMessages[0].sentAt shouldNotBe null
-                outboxMessages[1].sentAt shouldNotBe null
-            }
+            delay(1.seconds)
+            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboxMessages shouldHaveSize 2
+            outboxMessages[0].sentAt shouldNotBe null
+            outboxMessages[1].sentAt shouldNotBe null
             sendMessageEventCalled shouldBe true
         }
 
@@ -203,11 +202,11 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
 
         backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-        eventually(3.seconds) {// we need this, because the cache may not be fast enough
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages.first().sentAt shouldNotBe null
-        }
+        delay(1.seconds)
+        val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().onEach { println(it) }.first()
+        outboxMessages shouldHaveSize 1
+        outboxMessages.first().sentAt shouldNotBe null
+
         sendMessageEventCalled shouldBe true
     }
 
@@ -304,11 +303,10 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
 
         backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-        eventually(3.seconds) {// we need this, because the cache may not be fast enough
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages.first().sentAt shouldNotBe null
-        }
+        delay(1.seconds)
+        val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages shouldHaveSize 1
+        outboxMessages.first().sentAt shouldNotBe null
     }
 
     @Test
@@ -333,12 +331,11 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
 
         backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-        eventually(3.seconds) {// we need this, because the cache may not be fast enough
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages.first().sentAt shouldBe null
-            outboxMessages.first().sendError shouldNotBe null
-        }
+        delay(1.seconds)
+        val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages shouldHaveSize 1
+        outboxMessages.first().sentAt shouldBe null
+        outboxMessages.first().sendError shouldNotBe null
     }
 
     @Test
@@ -356,12 +353,11 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         }
         backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-        eventually(3.seconds) {// we need this, because the cache may not be fast enough
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages.first().sentAt shouldBe null
-            outboxMessages.first().sendError shouldBe RoomOutboxMessage.SendError.NoEventPermission
-        }
+        delay(1.seconds)
+        val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages shouldHaveSize 1
+        outboxMessages.first().sentAt shouldBe null
+        outboxMessages.first().sendError shouldBe RoomOutboxMessage.SendError.NoEventPermission
     }
 
     @Test
@@ -386,12 +382,11 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
 
         backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-        eventually(3.seconds) {// we need this, because the cache may not be fast enough
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages.first().sentAt shouldBe null
-            outboxMessages.first().sendError shouldNotBe null
-        }
+        delay(1.seconds)
+        val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages shouldHaveSize 1
+        outboxMessages.first().sentAt shouldBe null
+        outboxMessages.first().sendError shouldNotBe null
     }
 
     @Test
@@ -421,16 +416,13 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
 
         backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-        retry(100, 200.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages.first().sentAt shouldBe null
-        }
-        eventually(3.seconds) {// we need this, because the cache may not be fast enough
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages.first().sentAt shouldBe null
-        }
+        val outboxMessages1 = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages1 shouldHaveSize 1
+        outboxMessages1.first().sentAt shouldBe null
+        delay(1.seconds)
+        val outboxMessages2 = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages2 shouldHaveSize 1
+        outboxMessages2.first().sentAt shouldBe null
     }
 
     @Test
@@ -459,7 +451,7 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         }
 
         mediaServiceMock.returnUploadMedia = Result.success(mxcUrl)
-        mediaServiceMock.uploadTimer.value = 3_000
+        mediaServiceMock.uploadTimer.value = 3.seconds
         apiConfig.endpoints {
             matrixJsonEndpoint(
                 SendMessageEvent(room, "m.room.message", "abortedMessage"),
@@ -480,23 +472,22 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
         backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            delay(100)
+            delay(100.milliseconds)
             roomOutboxMessageStore.update(message1.roomId, message1.transactionId) { null }
         }
         currentSyncState.value = SyncState.RUNNING
         mediaServiceMock.uploadMediaCalled.first { it == cacheUrl }
 
-        eventually(5.seconds) {// we need this, because the cache may not be fast enough
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages[0].sentAt shouldNotBe null
-        }
+        delay(1.seconds)
+        val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages shouldHaveSize 1
+        outboxMessages[0].sentAt shouldNotBe null
     }
 
     @Test
     fun `processOutboxMessages » monitor upload on a file with thumbnail correctly`() = runTest {
         val thumbnailInfo = ThumbnailInfo(15, 15, "image/png", 10)
-        mediaServiceMock.uploadTimer.value = 100
+        mediaServiceMock.uploadTimer.value = 1.seconds
         mediaServiceMock.returnPrepareUploadMedia.add("mediaCacheUrl")
         mediaServiceMock.returnPrepareUploadMedia.add("thumbnailCacheUrl")
         mediaServiceMock.returnUploadMedia = Result.success("mxc://success")
@@ -542,19 +533,23 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         }
 
         currentSyncState.value = SyncState.RUNNING
-        eventually(3.seconds) {
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages[0].mediaUploadProgress.value shouldBe FileTransferProgress(0, 35)
-        }
-        eventually(3.seconds) {
-            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
-            outboxMessages shouldHaveSize 1
-            outboxMessages[0].mediaUploadProgress.value shouldBe FileTransferProgress(35, 35)
-        }
-        eventually(3.seconds) {
-            sendEventCalled shouldBe true
-        }
+        delay(100.milliseconds)
+        val outboxMessages1 = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages1 shouldHaveSize 1
+        outboxMessages1[0].mediaUploadProgress.value shouldBe FileTransferProgress(0, 35)
+
+        delay(1.seconds)
+        val outboxMessages2 = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages2 shouldHaveSize 1
+        outboxMessages2[0].mediaUploadProgress.value shouldBe FileTransferProgress(10, 35)
+
+        delay(2.seconds)
+        val outboxMessages3 = roomOutboxMessageStore.getAll().flattenValues().first()
+        outboxMessages3 shouldHaveSize 1
+        outboxMessages3[0].mediaUploadProgress.value shouldBe FileTransferProgress(35, 35)
+
+        delay(1.seconds)
+        sendEventCalled shouldBe true
     }
 
 }

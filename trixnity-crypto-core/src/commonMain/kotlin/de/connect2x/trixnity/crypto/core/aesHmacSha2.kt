@@ -1,6 +1,6 @@
 package de.connect2x.trixnity.crypto.core
 
-import io.ktor.util.*
+import de.connect2x.trixnity.utils.decodeBase64
 import de.connect2x.trixnity.utils.encodeUnpaddedBase64
 import de.connect2x.trixnity.utils.toByteArray
 import de.connect2x.trixnity.utils.toByteArrayFlow
@@ -48,12 +48,12 @@ suspend fun decryptAesHmacSha2(
     name: String,
 ): ByteArray {
     val keys = deriveKeys(key, name)
-    val ciphertextBytes = content.ciphertext.decodeBase64Bytes()
+    val ciphertextBytes = content.ciphertext.decodeBase64()
     val hmac = hmacSha256(keys.hmacKey, ciphertextBytes)
-    if (!hmac.contentEquals(content.mac.decodeBase64Bytes())) throw IllegalArgumentException("bad mac")
+    if (!hmac.contentEquals(content.mac.decodeBase64())) throw IllegalArgumentException("bad mac")
     return ciphertextBytes.toByteArrayFlow().decryptAes256Ctr(
         key = keys.aesKey,
-        initialisationVector = content.iv.decodeBase64Bytes()
+        initialisationVector = content.iv.decodeBase64()
     ).toByteArray()
 }
 

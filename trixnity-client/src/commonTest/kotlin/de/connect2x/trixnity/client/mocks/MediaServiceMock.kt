@@ -9,6 +9,7 @@ import de.connect2x.trixnity.utils.ByteArrayFlow
 import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlin.time.Duration
 
 class MediaServiceMock : MediaService {
     override suspend fun getMedia(
@@ -51,7 +52,7 @@ class MediaServiceMock : MediaService {
 
     var returnUploadMedia: Result<String> = Result.success("")
     val uploadMediaCalled = MutableStateFlow<String?>(null)
-    val uploadTimer = MutableStateFlow<Long>(0)
+    val uploadTimer = MutableStateFlow(Duration.ZERO)
     val uploadSizes = MutableStateFlow<ArrayList<Long>?>(null)
     var currentUploadSize = 0
     override suspend fun uploadMedia(

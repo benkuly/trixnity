@@ -1,11 +1,11 @@
 package de.connect2x.trixnity.crypto.key
 
-import io.ktor.util.*
 import de.connect2x.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import de.connect2x.trixnity.crypto.core.createAesHmacSha2MacFromKey
 import de.connect2x.trixnity.crypto.core.decodeBase58
 import de.connect2x.trixnity.crypto.core.encodeBase58
 import de.connect2x.trixnity.crypto.core.generatePbkdf2Sha512
+import de.connect2x.trixnity.utils.decodeBase64
 
 private val recoveryKeyPrefix = listOf(0x8B.toByte(), 0x01.toByte())
 
@@ -51,11 +51,11 @@ suspend fun recoveryKeyFromPassphrase(
 
 suspend fun checkRecoveryKey(key: ByteArray, info: AesHmacSha2Key): Result<Unit> {
     val expectedMac = createAesHmacSha2MacFromKey(
-        key, info.iv?.decodeBase64Bytes()
+        key, info.iv?.decodeBase64()
             ?: throw IllegalArgumentException("iv was null")
     )
     val mac = info.mac
-    return if (mac != null && !mac.decodeBase64Bytes().contentEquals(expectedMac.decodeBase64Bytes()))
+    return if (mac != null && !mac.decodeBase64().contentEquals(expectedMac.decodeBase64()))
         Result.failure(RecoveryKeyInvalidException("expected mac ${expectedMac}, but got ${info.mac}"))
     else Result.success(Unit)
 }

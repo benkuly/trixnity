@@ -87,6 +87,7 @@ public final class de/connect2x/trixnity/clientserverapi/client/AuthenticationAp
 public abstract class de/connect2x/trixnity/clientserverapi/client/BearerClientAuthProvider : de/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProvider {
 	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProviderDataStore;Lkotlin/jvm/functions/Function2;)V
 	public fun addRequestHeaders (Lio/ktor/client/request/HttpRequestBuilder;Lio/ktor/http/auth/HttpAuthHeader;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun clearToken ()V
 	public fun getSendWithoutRequest ()Z
 	public fun isApplicable (Lio/ktor/http/auth/HttpAuthHeader;)Z
 	public fun logout-CmtIpJM (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -291,6 +292,7 @@ public abstract interface class de/connect2x/trixnity/clientserverapi/client/Mat
 }
 
 public final class de/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProvider$DefaultImpls {
+	public static fun clearToken (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProvider;)V
 	public static fun logout-CmtIpJM (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProvider;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun refreshToken (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProvider;Lio/ktor/client/statement/HttpResponse;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun sendWithoutRequest (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProvider;Lio/ktor/client/request/HttpRequestBuilder;)Z
@@ -846,6 +848,7 @@ public final class de/connect2x/trixnity/clientserverapi/client/UIAKt {
 public final class de/connect2x/trixnity/clientserverapi/client/UnauthenticatedMatrixClientAuthProvider : de/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProvider {
 	public fun <init> (Lio/ktor/http/Url;)V
 	public fun addRequestHeaders (Lio/ktor/client/request/HttpRequestBuilder;Lio/ktor/http/auth/HttpAuthHeader;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun clearToken ()V
 	public fun getBaseUrl ()Lio/ktor/http/Url;
 	public fun getSendWithoutRequest ()Z
 	public fun isApplicable (Lio/ktor/http/auth/HttpAuthHeader;)Z

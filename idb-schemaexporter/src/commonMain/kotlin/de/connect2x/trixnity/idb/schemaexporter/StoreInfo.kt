@@ -2,10 +2,9 @@
 
 package de.connect2x.trixnity.idb.schemaexporter
 
-import js.core.JsPrimitives.toKotlinString
 import js.objects.ReadonlyRecord
 import js.objects.unsafeJso
-import web.idb.IDBIndex
+import js.string.JsStrings.toKotlinString
 import web.idb.IDBObjectStore
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny

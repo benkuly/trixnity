@@ -3,10 +3,6 @@ package de.connect2x.trixnity.client.key
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.error
 import de.connect2x.lognity.api.logger.warn
-import io.ktor.utils.io.CancellationException
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.store.KeySignatureTrustLevel.CrossSigned
 import de.connect2x.trixnity.client.store.KeyStore
@@ -38,8 +34,12 @@ import de.connect2x.trixnity.crypto.sign.SignServiceStore
 import de.connect2x.trixnity.crypto.sign.SignWith.DeviceKey
 import de.connect2x.trixnity.crypto.sign.SignWith.KeyPair
 import de.connect2x.trixnity.crypto.sign.sign
+import de.connect2x.trixnity.utils.decodeBase64
 import de.connect2x.trixnity.utils.retry
-import okio.ByteString.Companion.decodeBase64
+import io.ktor.utils.io.CancellationException
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
@@ -84,7 +84,11 @@ class DehydratedDeviceService(
                         return@collect
                     }
                     val dehydratedDeviceSecret =
-                        currentEncodedDehydratedDeviceSecret.decryptedPrivateKey.decodeBase64()?.toByteArray()
+                        try {
+                            currentEncodedDehydratedDeviceSecret.decryptedPrivateKey.decodeBase64()
+                        } catch (_: Exception) {
+                            null
+                        }
                     if (dehydratedDeviceSecret == null) {
                         log.warn { "skip device dehydration, because dehydrated device private key could not be decoded" }
                         return@collect

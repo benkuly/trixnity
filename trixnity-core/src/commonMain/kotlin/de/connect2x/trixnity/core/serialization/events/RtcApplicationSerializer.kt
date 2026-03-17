@@ -10,11 +10,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 
 @MSC4143
 class RtcApplicationSerializer(
@@ -27,9 +23,10 @@ class RtcApplicationSerializer(
     override fun serialize(encoder: Encoder, value: RtcApplication) {
         val jsonEncoder = encoder as? JsonEncoder
             ?: error("RtcApplicationSerializer only supports JSON encoding")
+
         @Suppress("UNCHECKED_CAST")
         val mapping = mappings.find { it.kClass.isInstance(value) }
-            as RtcApplicationSerializerMapping<RtcApplication>?
+                as RtcApplicationSerializerMapping<RtcApplication>?
         if (mapping != null) {
             val element = jsonEncoder.json.encodeToJsonElement(mapping.serializer, value).jsonObject
             jsonEncoder.encodeJsonElement(JsonObject(buildMap {
@@ -49,9 +46,9 @@ class RtcApplicationSerializer(
             ?: error("RtcApplicationSerializer only supports JSON decoding")
         val element = jsonDecoder.decodeJsonElement().jsonObject
         val type = (element["type"] as? JsonPrimitive)?.content
-        @Suppress("UNCHECKED_CAST")
         val mapping = if (type != null) mappings.find { it.type == type } else null
         return if (mapping != null) {
+            @Suppress("UNCHECKED_CAST")
             jsonDecoder.json.decodeFromJsonElement(
                 mapping.serializer as KSerializer<RtcApplication>,
                 element
