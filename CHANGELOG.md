@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## 5.3.1
+
+### FIxed
+
+- Downgrade lognity due to performance regression and bugs
+
 ## 5.3.0
 
 ### Added
