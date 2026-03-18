@@ -1,13 +1,13 @@
 package de.connect2x.trixnity.core.model.events.m.rtc
 
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.m.Mentions
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * MatrixRTC membership content.
@@ -55,6 +55,7 @@ data class RtcMemberEventContent(
     @MSC4143
     @Serializable
     data class RtcTransport(
+        // TODO should be extensible similar to [RtcApplication]
         @SerialName("type")
         val type: String,
     )
