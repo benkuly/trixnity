@@ -12,7 +12,7 @@ open class TrixnityBaseTest : CoroutineTest {
         Backend.configSpec = {
             consoleAppender(
                 "{{levelColor}}>> {{levelSymbol}} {{hh}}:{{mm}}:{{ss}}.{{SSS}} [{{threadId}}/{{coroutineName}}][{{name}}] {{message}}{{r}}",
-                filter = Filter { logger, _, _, _ ->
+                filter = Filter { logger, _, _ ->
                     logger.context.get(Logger.Name)?.name?.startsWith("de.connect2x.trixnity") ?: false
                 }
             )
