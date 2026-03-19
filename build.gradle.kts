@@ -1,11 +1,19 @@
-import com.vanniktech.maven.publish.MavenPublishPlugin
-import de.connect2x.conventions.*
+import de.connect2x.conventions.PluginIds
+import de.connect2x.conventions.apache2
+import de.connect2x.conventions.c2xOrganization
+import de.connect2x.conventions.configureJava
+import de.connect2x.conventions.defaultDependencyLocking
+import de.connect2x.conventions.defaultPublishing
+import de.connect2x.conventions.enableAbiChecker
+import de.connect2x.conventions.registerCoverageTask
+import de.connect2x.conventions.setProjectInfo
+import de.connect2x.conventions.updateAbiFilesFromReportZip
+import de.connect2x.conventions.withVersionSuffix
+import java.time.ZonedDateTime
 import kotlinx.kover.gradle.plugin.KoverGradlePlugin
-import org.gradle.kotlin.dsl.configure
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.DokkaPlugin
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import java.time.ZonedDateTime
 
 plugins {
     alias(sharedLibs.plugins.c2xConventions)
@@ -22,6 +30,8 @@ plugins {
     alias(sharedLibs.plugins.kotlin.serialization) apply false
     alias(sharedLibs.plugins.mokkery) apply false
 }
+
+updateAbiFilesFromReportZip()
 
 allprojects {
     group = "de.connect2x.trixnity"
