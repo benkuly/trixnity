@@ -3,11 +3,6 @@ package de.connect2x.trixnity.client.room
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.error
 import de.connect2x.lognity.api.logger.warn
-import io.ktor.http.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.selects.select
 import de.connect2x.trixnity.client.CurrentSyncState
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.flattenNotNull
@@ -25,9 +20,27 @@ import de.connect2x.trixnity.client.user.UserService
 import de.connect2x.trixnity.client.utils.retryLoop
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.model.media.FileTransferProgress
-import de.connect2x.trixnity.core.*
+import de.connect2x.trixnity.core.EventHandler
+import de.connect2x.trixnity.core.MatrixServerException
+import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
+import de.connect2x.trixnity.core.subscribe
+import de.connect2x.trixnity.core.unsubscribeOnCompletion
+import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
@@ -65,7 +78,12 @@ class OutboxMessageEventHandler(
         }
         if (removeOutboxMessages.isNotEmpty())
             tm.writeTransaction {
-                removeOutboxMessages.forEach { roomOutboxMessageStore.update(it.first, it.second) { null } }
+                removeOutboxMessages.forEach {
+                    roomOutboxMessageStore.update(
+                        it.first,
+                        it.second
+                    ) { null }
+                }
             }
     }
 
@@ -84,8 +102,9 @@ class OutboxMessageEventHandler(
                 .map { outbox ->
                     alreadyProcessedOutboxMessages.removeAll(alreadyProcessedOutboxMessages - outbox.keys)
                     outbox.filterKeys { !alreadyProcessedOutboxMessages.contains(it) }
-                        .filterValues { it.sentAt == null && it.sendError == null }.values
-                        .also { alreadyProcessedOutboxMessages.addAll(outbox.keys) }
+                        .filterValues { it.sentAt == null && it.sendError == null && !it.isDraft }
+                        .also { alreadyProcessedOutboxMessages.addAll(it.keys) }
+                        .values
                 }
                 .collect { outboxMessages ->
                     val outboxMessagesGroupedByRoom = outboxMessages
@@ -103,8 +122,10 @@ class OutboxMessageEventHandler(
                                 } != null
                                 if (doesRoomExist) {
                                     for (outboxMessage in outboxMessagesInRoom) {
-                                        val sendMessage = async { sendOutboxMessage(outboxMessage, roomId) }
-                                        val checkCancelled = async { checkWhetherCancelled(outboxMessage) }
+                                        val sendMessage =
+                                            async { sendOutboxMessage(outboxMessage, roomId) }
+                                        val checkCancelled =
+                                            async { checkWhetherCancelled(outboxMessage) }
                                         select {
                                             sendMessage.onAwait {}
                                             checkCancelled.onAwait {}
@@ -126,7 +147,8 @@ class OutboxMessageEventHandler(
 
 
     private suspend fun checkWhetherCancelled(outboxMessage: RoomOutboxMessage<*>) {
-        roomOutboxMessageStore.getAsFlow(outboxMessage.roomId, outboxMessage.transactionId).first { it == null }
+        roomOutboxMessageStore.getAsFlow(outboxMessage.roomId, outboxMessage.transactionId)
+            .first { it == null }
         log.debug { "cancel sending of ${outboxMessage.transactionId}" }
     }
 
@@ -228,7 +250,11 @@ class OutboxMessageEventHandler(
                         }
                 }
                 launch {
-                    api.room.setAccountData(MarkedUnreadEventContent(false), roomId, userInfo.userId)
+                    api.room.setAccountData(
+                        MarkedUnreadEventContent(false),
+                        roomId,
+                        userInfo.userId
+                    )
                         .onFailure { exception ->
                             log.warn(exception) { "could not reset unread for sent message $eventId in $roomId" }
                         }
