@@ -1,9 +1,17 @@
 package de.connect2x.trixnity.client.mocks
 
 import de.connect2x.trixnity.client.flatten
-import de.connect2x.trixnity.client.room.*
+import de.connect2x.trixnity.client.room.GetTimelineEventConfig
+import de.connect2x.trixnity.client.room.GetTimelineEventsConfig
+import de.connect2x.trixnity.client.room.RoomService
+import de.connect2x.trixnity.client.room.Timeline
+import de.connect2x.trixnity.client.room.TimelineStateChange
 import de.connect2x.trixnity.client.room.message.MessageBuilder
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.RoomOutboxMessage
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.TimelineEventRelation
+import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
 import de.connect2x.trixnity.core.model.EventId
@@ -15,7 +23,17 @@ import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.TypingEventContent
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.dropWhile
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
@@ -95,7 +113,10 @@ class RoomServiceMock : RoomService {
     }
 
     var returnGetTimelineEventsOnce: Flow<TimelineEvent> = flowOf()
-    override fun getTimelineEvents(response: Sync.Response, decryptionTimeout: Duration): Flow<TimelineEvent> {
+    override fun getTimelineEvents(
+        response: Sync.Response,
+        decryptionTimeout: Duration
+    ): Flow<TimelineEvent> {
         return returnGetTimelineEventsOnce
     }
 
@@ -116,7 +137,12 @@ class RoomServiceMock : RoomService {
         sentMessages.update {
             it + (roomId to
                     requireNotNull(
-                        MessageBuilder(roomId, RoomServiceMock(), MediaServiceMock(), UserId("own", "server"))
+                        MessageBuilder(
+                            roomId,
+                            RoomServiceMock(),
+                            MediaServiceMock(),
+                            UserId("own", "server")
+                        )
                             .build(builder)
                     ))
         }
@@ -128,6 +154,28 @@ class RoomServiceMock : RoomService {
     }
 
     override suspend fun retrySendMessage(roomId: RoomId, transactionId: String) {
+        throw NotImplementedError()
+    }
+
+    var returnDraftMessage = flowOf(null)
+    override fun getDraftMessage(roomId: RoomId): Flow<RoomOutboxMessage<*>?> {
+        return returnDraftMessage
+    }
+
+    override suspend fun deleteDraftMessage(
+        roomId: RoomId,
+    ) {
+        throw NotImplementedError()
+    }
+
+    override suspend fun setDraftMessage(
+        roomId: RoomId,
+        builder: suspend MessageBuilder.() -> Unit,
+    ) {
+        throw NotImplementedError()
+    }
+
+    override suspend fun sendDraftMessage(roomId: RoomId) {
         throw NotImplementedError()
     }
 
@@ -163,7 +211,8 @@ class RoomServiceMock : RoomService {
         }.distinctUntilChanged()
 
     override fun getOutbox(roomId: RoomId, transactionId: String): Flow<RoomOutboxMessage<*>?> =
-        outbox.flatten().map { it.find { it.roomId == roomId && it.transactionId == transactionId } }
+        outbox.flatten()
+            .map { it.find { it.roomId == roomId && it.transactionId == transactionId } }
 
     data class GetStateKey(
         val roomId: RoomId,

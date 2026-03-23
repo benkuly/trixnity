@@ -18,9 +18,13 @@ import de.connect2x.trixnity.core.ClientEventEmitter.Priority
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.events.*
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StateBaseEvent
+import de.connect2x.trixnity.core.model.events.MessageEventContent
+import de.connect2x.trixnity.core.model.events.RedactedEventContent
+import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
+import de.connect2x.trixnity.core.model.events.StateEventContent
+import de.connect2x.trixnity.core.model.events.idOrNull
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.TypingEventContent
@@ -31,14 +35,39 @@ import de.connect2x.trixnity.core.subscribeAsFlow
 import de.connect2x.trixnity.crypto.core.SecureRandom
 import de.connect2x.trixnity.utils.KeyedMutex
 import de.connect2x.trixnity.utils.nextString
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.reflect.KClass
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 private val log = Logger("de.connect2x.trixnity.client.room.RoomService")
 
@@ -151,12 +180,30 @@ interface RoomService {
     suspend fun sendMessage(
         roomId: RoomId,
         keepMediaInCache: Boolean = true,
-        builder: suspend MessageBuilder.() -> Unit
+        builder: suspend MessageBuilder.() -> Unit,
     ): String
 
     suspend fun cancelSendMessage(roomId: RoomId, transactionId: String)
 
     suspend fun retrySendMessage(roomId: RoomId, transactionId: String)
+
+    fun getDraftMessage(roomId: RoomId): Flow<RoomOutboxMessage<*>?>
+
+    /**
+     * Deletes all outbox messages from roomId that are drafts
+     */
+    suspend fun deleteDraftMessage(roomId: RoomId)
+
+    /**
+     * A draft message is stored in the Outbox but never send. There can only ever be one draft message per room.
+     * This function is locked to not run concurrently
+     */
+    suspend fun setDraftMessage(
+        roomId: RoomId,
+        builder: suspend MessageBuilder.() -> Unit,
+    )
+
+    suspend fun sendDraftMessage(roomId: RoomId)
 
     /**
      * Upgraded rooms ([Room.hasBeenReplaced]) should not be rendered.
@@ -212,7 +259,8 @@ class RoomServiceImpl(
     private val currentSyncState: CurrentSyncState,
     private val scope: CoroutineScope,
 ) : RoomService {
-    override val usersTyping: StateFlow<Map<RoomId, TypingEventContent>> = typingEventHandler.usersTyping
+    override val usersTyping: StateFlow<Map<RoomId, TypingEventContent>> =
+        typingEventHandler.usersTyping
 
     override suspend fun fillTimelineGaps(
         roomId: RoomId,
@@ -223,7 +271,8 @@ class RoomServiceImpl(
             currentSyncState.retry(
                 onError = { error, delay -> log.warn(error) { "failed fill timeline gaps, try again in $delay" } },
             ) {
-                timelineEventHandler.unsafeFillTimelineGaps(startEventId, roomId, limit).getOrThrow()
+                timelineEventHandler.unsafeFillTimelineGaps(startEventId, roomId, limit)
+                    .getOrThrow()
             }
         }.await()
     }
@@ -248,7 +297,8 @@ class RoomServiceImpl(
             .flatMapLatest { timelineEvent ->
                 val event = timelineEvent?.event
                 if (cfg.allowReplaceContent && event is MessageEvent && event.content !is RedactedEventContent) {
-                    val replacedByFlow = getTimelineEventReplaceAggregation(roomId, eventId).map { it.replacedBy }
+                    val replacedByFlow =
+                        getTimelineEventReplaceAggregation(roomId, eventId).map { it.replacedBy }
                     replacedByFlow.flatMapLatest { replacedBy ->
                         if (replacedBy != null) {
                             getTimelineEvent(roomId, replacedBy)
@@ -256,11 +306,12 @@ class RoomServiceImpl(
                                     val newContent =
                                         replacedByTimelineEvent?.content
                                             ?.mapCatching { content ->
-                                                val newContent = if (content is MessageEventContent) {
-                                                    val relatesTo = content.relatesTo
-                                                    if (relatesTo is RelatesTo.Replace) relatesTo.newContent
-                                                    else null
-                                                } else null
+                                                val newContent =
+                                                    if (content is MessageEventContent) {
+                                                        val relatesTo = content.relatesTo
+                                                        if (relatesTo is RelatesTo.Replace) relatesTo.newContent
+                                                        else null
+                                                    } else null
                                                 newContent?.copyWith(event.content.relatesTo)
                                                     ?: throw TimelineEventContentError.NoContent
                                             } ?: timelineEvent.content
@@ -301,13 +352,18 @@ class RoomServiceImpl(
                             try {
                                 withTimeout(cfg.decryptionTimeout) {
                                     getTimelineEventDecryptionMutex.withLock(timelineEvent.eventId to roomId) {
-                                        val decryptionResult = roomEventEncryptionServices.decrypt(event)
+                                        val decryptionResult =
+                                            roomEventEncryptionServices.decrypt(event)
                                         if (decryptionResult != null) {
                                             try {
                                                 Result.success(decryptionResult.getOrThrow())
                                             } catch (exception: Exception) {
                                                 log.trace { "getTimelineEvent: failed decrypt ${timelineEvent.eventId} (${exception.message})" }
-                                                Result.failure(TimelineEventContentError.DecryptionError(exception))
+                                                Result.failure(
+                                                    TimelineEventContentError.DecryptionError(
+                                                        exception
+                                                    )
+                                                )
                                             }
                                         } else {
                                             log.trace { "getTimelineEvent: failed decrypt ${timelineEvent.eventId} (algorithm not supported)" }
@@ -421,8 +477,12 @@ class RoomServiceImpl(
                             if (direction == BACKWARDS && currentTimelineEvent.isFirst && currentTimelineEventContent is CreateEventContent) {
                                 val predecessor = currentTimelineEventContent.predecessor
                                 if (predecessor != null) {
-                                    val tombstone = getState<TombstoneEventContent>(predecessor.roomId).first()?.id
-                                    if (tombstone != null) RoomEventIdPair(tombstone, predecessor.roomId)
+                                    val tombstone =
+                                        getState<TombstoneEventContent>(predecessor.roomId).first()?.id
+                                    if (tombstone != null) RoomEventIdPair(
+                                        tombstone,
+                                        predecessor.roomId
+                                    )
                                     else {
                                         log.warn { "getTimelineEvents: found predecessor of room, but room or tombstone does not exist locally" }
                                         null
@@ -437,7 +497,10 @@ class RoomServiceImpl(
                                 if (tombstone != null) {
                                     val create =
                                         getState<CreateEventContent>(tombstone.replacementRoom).first()?.idOrNull
-                                    if (create != null) RoomEventIdPair(create, tombstone.replacementRoom)
+                                    if (create != null) RoomEventIdPair(
+                                        create,
+                                        tombstone.replacementRoom
+                                    )
                                     else {
                                         log.warn { "getTimelineEvents: found successor of room, but room does not exist locally" }
                                         null
@@ -518,7 +581,8 @@ class RoomServiceImpl(
 
                 when (followTimelineResult) {
                     is FollowTimelineResult.Continue -> {
-                        currentTimelineEventFlow = followTimelineResult.timelineEventFlow.filterNotNull()
+                        currentTimelineEventFlow =
+                            followTimelineResult.timelineEventFlow.filterNotNull()
                     }
 
                     is FollowTimelineResult.Stop -> break
@@ -565,7 +629,8 @@ class RoomServiceImpl(
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
         api.sync.subscribeAsFlow(Priority.AFTER_DEFAULT).map { it.syncResponse }
-            .buffer(syncResponseBufferSize).flatMapConcat { getTimelineEvents(it, decryptionTimeout) }
+            .buffer(syncResponseBufferSize)
+            .flatMapConcat { getTimelineEvents(it, decryptionTimeout) }
 
     override fun getTimelineEvents(
         response: Sync.Response,
@@ -573,7 +638,8 @@ class RoomServiceImpl(
     ): Flow<TimelineEvent> {
         val timelineEvents =
             response.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
-                    response.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
+                    response.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }
+                        .orEmpty()
 
         return flow {
             coroutineScope {
@@ -604,27 +670,45 @@ class RoomServiceImpl(
         roomId: RoomId,
         eventId: EventId,
         relationType: RelationType,
-    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?> = roomTimelineStore.getRelations(eventId, roomId, relationType)
+    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?> =
+        roomTimelineStore.getRelations(eventId, roomId, relationType)
+
+    private suspend fun updateMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean,
+        builder: suspend MessageBuilder.() -> Unit,
+        isDraft: Boolean,
+        transactionId: String? = null,
+        createdAt: Instant? = null
+    ): String {
+        val content = MessageBuilder(roomId, this, mediaService, userInfo.userId).build(builder)
+        requireNotNull(content) { "you must add some sort of content for sending a message" }
+        val newTransactionId = transactionId ?: SecureRandom.nextString(22)
+        roomOutboxMessageStore.update(roomId, newTransactionId) {
+            RoomOutboxMessage(
+                transactionId = newTransactionId,
+                roomId = roomId,
+                content = content,
+                createdAt = createdAt ?: clock.now(),
+                sentAt = null,
+                keepMediaInCache = keepMediaInCache,
+                isDraft = isDraft
+            )
+        }
+        return newTransactionId
+    }
 
     override suspend fun sendMessage(
         roomId: RoomId,
         keepMediaInCache: Boolean,
-        builder: suspend MessageBuilder.() -> Unit
+        builder: suspend MessageBuilder.() -> Unit,
     ): String {
-        val content = MessageBuilder(roomId, this, mediaService, userInfo.userId).build(builder)
-        requireNotNull(content) { "you must add some sort of content for sending a message" }
-        val transactionId = SecureRandom.nextString(22)
-        roomOutboxMessageStore.update(roomId, transactionId) {
-            RoomOutboxMessage(
-                transactionId = transactionId,
-                roomId = roomId,
-                content = content,
-                createdAt = clock.now(),
-                sentAt = null,
-                keepMediaInCache = keepMediaInCache,
-            )
-        }
-        return transactionId
+        return updateMessage(
+            roomId = roomId,
+            keepMediaInCache = keepMediaInCache,
+            builder = builder,
+            isDraft = false
+        )
     }
 
     override suspend fun cancelSendMessage(roomId: RoomId, transactionId: String) {
@@ -636,13 +720,80 @@ class RoomServiceImpl(
         roomOutboxMessageStore.update(roomId, transactionId) { it?.copy(sendError = null) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun getDraftMessage(roomId: RoomId): Flow<RoomOutboxMessage<*>?> {
+        val currentDrafts: Flow<Map<RoomId, Flow<RoomOutboxMessage<*>?>>> =
+            roomOutboxMessageStore.getAll().map { outbox ->
+                outbox.entries.groupBy(
+                    keySelector = { it.key.roomId },
+                    valueTransform = { it.value }
+                ).mapValues { (_, value) ->
+                    combine(value) {
+                        it.firstOrNull { outboxMessage ->
+                            outboxMessage?.isDraft == true
+                        }
+                    }
+                }
+            }
+
+        return currentDrafts.flatMapLatest {
+            it.getOrElse(roomId) { flowOf(null) }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override suspend fun deleteDraftMessage(roomId: RoomId) {
+        val draftMessages = roomOutboxMessageStore.getAll().flatMapLatest { outbox ->
+            combine(outbox.filterKeys { it.roomId == roomId }.values) {
+                it.filter { message -> message?.isDraft == true }
+            }
+        }.first()
+        draftMessages.filterNotNull().forEach {
+            roomOutboxMessageStore.update(
+                roomId,
+                it.transactionId
+            ) { null }
+        }
+    }
+
+    private val mutex = KeyedMutex<RoomId>()
+    override suspend fun setDraftMessage(
+        roomId: RoomId,
+        builder: suspend MessageBuilder.() -> Unit,
+    ) {
+        mutex.withLock(roomId) {
+            val draftMessage = getDraftMessage(roomId).first()
+            updateMessage(
+                roomId = roomId,
+                keepMediaInCache = true,
+                builder = builder,
+                isDraft = true,
+                transactionId = draftMessage?.transactionId,
+                createdAt = draftMessage?.createdAt
+            )
+        }
+    }
+
+    override suspend fun sendDraftMessage(roomId: RoomId) {
+        val draftMessage = getDraftMessage(roomId).first()
+        if (draftMessage == null) {
+            log.warn { "A draft message must exist when trying to send it. Use setDraftMessage first to create one " }
+            return
+        }
+        roomOutboxMessageStore.update(
+            roomId,
+            draftMessage.transactionId
+        ) { it?.copy(isDraft = false, createdAt = clock.now()) }
+    }
+
     override fun getAll(): Flow<Map<RoomId, Flow<Room?>>> = roomStore.getAll()
 
     override fun getById(roomId: RoomId): Flow<Room?> {
         return roomStore.get(roomId)
     }
 
-    override suspend fun forgetRoom(roomId: RoomId, force: Boolean) = forgetRoomService(roomId, force)
+    override suspend fun forgetRoom(roomId: RoomId, force: Boolean) =
+        forgetRoomService(roomId, force)
 
     override fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
@@ -653,17 +804,33 @@ class RoomServiceImpl(
             .map { it?.content }
     }
 
+    private data class OutboxMessageDataWrapper(
+        val entry: Flow<RoomOutboxMessage<*>?>,
+        val createdAt: Instant?,
+        val isDraft: Boolean?,
+    )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getOutbox(): Flow<List<Flow<RoomOutboxMessage<*>?>>> =
         roomOutboxMessageStore.getAll().flatMapLatest { outbox ->
             if (outbox.isEmpty()) flowOf(emptyList())
             else {
-                val innerFlowsWithCreatedAt = outbox.values.map { entry -> entry.map { entry to it?.createdAt } }
+                val innerFlowsWithCreatedAt =
+                    outbox.values.map { entry ->
+                        entry.map {
+                            OutboxMessageDataWrapper(
+                                entry,
+                                it?.createdAt,
+                                it?.isDraft
+                            )
+                        }
+                    }
                 combine(innerFlowsWithCreatedAt) { innerFlowsWithCreatedAtArray ->
                     innerFlowsWithCreatedAtArray
-                        .mapNotNull { entry -> entry.second?.let { entry.first to entry.second } }
-                        .sortedBy { it.second }
-                        .map { it.first }
+                        .mapNotNull { entry -> entry.createdAt?.let { entry } }
+                        .sortedBy { it.createdAt }
+                        .filter { it.isDraft == false }
+                        .map { it.entry }
                 }
             }
         }.distinctUntilChanged()
@@ -674,12 +841,22 @@ class RoomServiceImpl(
             val roomOutbox = outbox.filterKeys { it.roomId == roomId }.values
             if (roomOutbox.isEmpty()) flowOf(emptyList())
             else {
-                val innerFlowsWithCreatedAt = roomOutbox.map { entry -> entry.map { entry to it?.createdAt } }
+                val innerFlowsWithCreatedAt =
+                    roomOutbox.map { entry ->
+                        entry.map {
+                            OutboxMessageDataWrapper(
+                                entry,
+                                it?.createdAt,
+                                it?.isDraft
+                            )
+                        }
+                    }
                 combine(innerFlowsWithCreatedAt) { innerFlowsWithCreatedAtArray ->
                     innerFlowsWithCreatedAtArray
-                        .mapNotNull { entry -> entry.second?.let { entry.first to entry.second } }
-                        .sortedBy { it.second }
-                        .map { it.first }
+                        .mapNotNull { entry -> entry.createdAt?.let { entry } }
+                        .sortedBy { it.createdAt }
+                        .filter { it.isDraft == false }
+                        .map { it.entry }
                 }
             }
         }.distinctUntilChanged()
