@@ -1,19 +1,45 @@
 package de.connect2x.trixnity.clientserverapi.server
 
-import dev.mokkery.*
-import dev.mokkery.answering.returns
-import dev.mokkery.matcher.any
-import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.shouldBe
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.server.testing.*
-import io.ktor.utils.io.charsets.*
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import de.connect2x.trixnity.api.server.matrixApiServer
-import de.connect2x.trixnity.clientserverapi.model.room.*
+import de.connect2x.trixnity.clientserverapi.model.room.BanUser
+import de.connect2x.trixnity.clientserverapi.model.room.CreateRoom
+import de.connect2x.trixnity.clientserverapi.model.room.DirectoryVisibility
+import de.connect2x.trixnity.clientserverapi.model.room.GetDirectoryVisibility
+import de.connect2x.trixnity.clientserverapi.model.room.GetEventContext
+import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
+import de.connect2x.trixnity.clientserverapi.model.room.GetHierarchy
+import de.connect2x.trixnity.clientserverapi.model.room.GetJoinedMembers
+import de.connect2x.trixnity.clientserverapi.model.room.GetJoinedRooms
+import de.connect2x.trixnity.clientserverapi.model.room.GetMembers
+import de.connect2x.trixnity.clientserverapi.model.room.GetPublicRoomsResponse
+import de.connect2x.trixnity.clientserverapi.model.room.GetPublicRoomsWithFilter
+import de.connect2x.trixnity.clientserverapi.model.room.GetRelations
+import de.connect2x.trixnity.clientserverapi.model.room.GetRelationsByRelationType
+import de.connect2x.trixnity.clientserverapi.model.room.GetRelationsByRelationTypeAndEventType
+import de.connect2x.trixnity.clientserverapi.model.room.GetRelationsResponse
+import de.connect2x.trixnity.clientserverapi.model.room.GetRoomAlias
+import de.connect2x.trixnity.clientserverapi.model.room.GetRoomAliases
+import de.connect2x.trixnity.clientserverapi.model.room.GetStateEvent
+import de.connect2x.trixnity.clientserverapi.model.room.GetSummary
+import de.connect2x.trixnity.clientserverapi.model.room.GetThreads
+import de.connect2x.trixnity.clientserverapi.model.room.InviteUser
+import de.connect2x.trixnity.clientserverapi.model.room.JoinRoom
+import de.connect2x.trixnity.clientserverapi.model.room.JoinRoomVia
+import de.connect2x.trixnity.clientserverapi.model.room.KickUser
+import de.connect2x.trixnity.clientserverapi.model.room.KnockRoom
+import de.connect2x.trixnity.clientserverapi.model.room.LeaveRoom
+import de.connect2x.trixnity.clientserverapi.model.room.RedactEvent
+import de.connect2x.trixnity.clientserverapi.model.room.ReportEvent
+import de.connect2x.trixnity.clientserverapi.model.room.ReportRoom
+import de.connect2x.trixnity.clientserverapi.model.room.SendEventResponse
+import de.connect2x.trixnity.clientserverapi.model.room.SetDirectoryVisibility
+import de.connect2x.trixnity.clientserverapi.model.room.SetReadMarkers
+import de.connect2x.trixnity.clientserverapi.model.room.SetRoomAlias
+import de.connect2x.trixnity.clientserverapi.model.room.SetTyping
+import de.connect2x.trixnity.clientserverapi.model.room.ThirdParty
+import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
+import de.connect2x.trixnity.clientserverapi.model.room.UnbanUser
+import de.connect2x.trixnity.clientserverapi.model.room.UpgradeRoom
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
@@ -29,7 +55,14 @@ import de.connect2x.trixnity.core.model.events.m.FullyReadEventContent
 import de.connect2x.trixnity.core.model.events.m.ReceiptType
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.TagEventContent
-import de.connect2x.trixnity.core.model.events.m.room.*
+import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
+import de.connect2x.trixnity.core.model.events.m.room.FileInfo
+import de.connect2x.trixnity.core.model.events.m.room.ImageInfo
+import de.connect2x.trixnity.core.model.events.m.room.JoinRulesEventContent
+import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
+import de.connect2x.trixnity.core.model.events.m.room.Membership
+import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.space.ChildEventContent
 import de.connect2x.trixnity.core.model.keys.Key
 import de.connect2x.trixnity.core.model.keys.Signed
@@ -38,6 +71,22 @@ import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import dev.mokkery.answering.returns
+import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
+import dev.mokkery.mock
+import dev.mokkery.resetAnswers
+import dev.mokkery.resetCalls
+import dev.mokkery.verifySuspend
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.shouldBe
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.server.testing.*
+import io.ktor.utils.io.charsets.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -1132,7 +1181,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         everySuspend { handlerMock.joinRoom(any()) }
             .returns(JoinRoom.Response(RoomId("!room:server")))
         val response =
-            client.post("/_matrix/client/v3/join/!room:server?via=server1.com&via=server2.com") {
+            client.post("/_matrix/client/v3/rooms/!room:server/join") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -1159,12 +1208,65 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.joinRoom(assert {
-                it.endpoint.roomIdOrRoomAliasId shouldBe "!room:server"
-                it.endpoint.via shouldBe setOf("server1.com", "server2.com")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 @Suppress("DEPRECATION")
                 it.requestBody shouldBe JoinRoom.Request(
                     thirdPartySigned = Signed(
-                        JoinRoom.Request.ThirdParty(
+                        ThirdParty(
+                            sender = UserId("alice", "server"),
+                            mxid = UserId("bob", "server"),
+                            token = "someToken"
+                        ),
+                        mapOf(
+                            "example.org" to
+                                    keysOf(Key.Ed25519Key("0", "some9signature"))
+                        )
+                    ),
+                    reason = null
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldJoinRoomVia() = testApplication {
+        initCut()
+        everySuspend { handlerMock.joinRoomVia(any()) }
+            .returns(JoinRoomVia.Response(RoomId("!room:server")))
+        val response =
+            client.post("/_matrix/client/v3/join/!room:server?via=server1.com&via=server2.com") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody(
+                    """
+                    {
+                      "third_party_signed":{
+                        "sender":"@alice:server",
+                        "mxid":"@bob:server",
+                        "token":"someToken",
+                        "signatures":{
+                          "example.org":{
+                            "ed25519:0":"some9signature"
+                          }
+                        }
+                      }
+                    }
+                    """.trimIndent()
+                )
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """{"room_id":"!room:server"}"""
+        }
+        verifySuspend {
+            handlerMock.joinRoomVia(assert {
+                it.endpoint.roomIdOrRoomAliasId shouldBe "!room:server"
+                it.endpoint.via shouldBe setOf("server1.com", "server2.com")
+                @Suppress("DEPRECATION")
+                it.requestBody shouldBe JoinRoomVia.Request(
+                    thirdPartySigned = Signed(
+                        ThirdParty(
                             sender = UserId("alice", "server"),
                             mxid = UserId("bob", "server"),
                             token = "someToken"

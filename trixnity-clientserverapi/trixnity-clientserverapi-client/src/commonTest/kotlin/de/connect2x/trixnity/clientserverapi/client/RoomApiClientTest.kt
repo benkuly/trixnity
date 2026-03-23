@@ -1,14 +1,24 @@
 package de.connect2x.trixnity.clientserverapi.client
 
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.client.engine.mock.*
-import io.ktor.http.*
-import io.ktor.http.ContentType.*
-import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.builtins.ListSerializer
-import de.connect2x.trixnity.clientserverapi.model.room.*
+import de.connect2x.trixnity.clientserverapi.model.room.CreateRoom
+import de.connect2x.trixnity.clientserverapi.model.room.DirectoryVisibility
+import de.connect2x.trixnity.clientserverapi.model.room.GetEventContext
+import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
+import de.connect2x.trixnity.clientserverapi.model.room.GetHierarchy
+import de.connect2x.trixnity.clientserverapi.model.room.GetJoinedMembers
+import de.connect2x.trixnity.clientserverapi.model.room.GetJoinedRooms
+import de.connect2x.trixnity.clientserverapi.model.room.GetMembers
+import de.connect2x.trixnity.clientserverapi.model.room.GetPublicRoomsResponse
+import de.connect2x.trixnity.clientserverapi.model.room.GetPublicRoomsWithFilter
+import de.connect2x.trixnity.clientserverapi.model.room.GetRelationsResponse
+import de.connect2x.trixnity.clientserverapi.model.room.GetRoomAlias
+import de.connect2x.trixnity.clientserverapi.model.room.GetSummary
+import de.connect2x.trixnity.clientserverapi.model.room.GetThreads
+import de.connect2x.trixnity.clientserverapi.model.room.JoinRoom
+import de.connect2x.trixnity.clientserverapi.model.room.KnockRoom
+import de.connect2x.trixnity.clientserverapi.model.room.SendEventResponse
+import de.connect2x.trixnity.clientserverapi.model.room.ThirdParty
+import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
@@ -21,8 +31,19 @@ import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
 import de.connect2x.trixnity.core.model.events.UnsignedRoomEventData
 import de.connect2x.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
-import de.connect2x.trixnity.core.model.events.m.*
-import de.connect2x.trixnity.core.model.events.m.room.*
+import de.connect2x.trixnity.core.model.events.m.FullyReadEventContent
+import de.connect2x.trixnity.core.model.events.m.Mentions
+import de.connect2x.trixnity.core.model.events.m.RelatesTo
+import de.connect2x.trixnity.core.model.events.m.RelationType
+import de.connect2x.trixnity.core.model.events.m.TagEventContent
+import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
+import de.connect2x.trixnity.core.model.events.m.room.FileInfo
+import de.connect2x.trixnity.core.model.events.m.room.ImageInfo
+import de.connect2x.trixnity.core.model.events.m.room.JoinRulesEventContent
+import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
+import de.connect2x.trixnity.core.model.events.m.room.Membership
+import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.space.ChildEventContent
 import de.connect2x.trixnity.core.model.keys.Key
 import de.connect2x.trixnity.core.model.keys.Signed
@@ -30,6 +51,14 @@ import de.connect2x.trixnity.core.model.keys.keysOf
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.testutils.scopedMockEngine
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.client.engine.mock.*
+import io.ktor.http.*
+import io.ktor.http.ContentType.*
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -977,7 +1006,59 @@ class RoomApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun shouldJoinRoomByRoomId() = runTest {
+    fun shouldJoinRoom() = runTest {
+        val response = JoinRoom.Response(RoomId("!room:server"))
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/rooms/!room:server/join",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """
+                    {
+                      "third_party_signed":{
+                        "sender":"@alice:server",
+                        "mxid":"@bob:server",
+                        "token":"someToken",
+                        "signatures":{
+                          "example.org":{
+                            "ed25519:0":"some9signature"
+                          }
+                        }
+                      }
+                    }
+                    """.trimToFlatJson(), request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        json.encodeToString(response),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        val result = matrixRestClient.room.joinRoom(
+            roomId = RoomId("!room:server"),
+            thirdPartySigned = Signed(
+                ThirdParty(
+                    sender = UserId("alice", "server"),
+                    mxid = UserId("bob", "server"),
+                    token = "someToken"
+                ),
+                mapOf(
+                    "example.org" to
+                            keysOf(Key.Ed25519Key("0", "some9signature"))
+                )
+            )
+        ).getOrThrow()
+        assertEquals(RoomId("!room:server"), result)
+    }
+
+    @Test
+    fun shouldJoinRoomViaByRoomId() = runTest {
         val response = JoinRoom.Response(RoomId("!room:server"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -1015,7 +1096,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
             roomId = RoomId("!room:server"),
             via = setOf("server1.com", "server2.com"),
             thirdPartySigned = Signed(
-                JoinRoom.Request.ThirdParty(
+                ThirdParty(
                     sender = UserId("alice", "server"),
                     mxid = UserId("bob", "server"),
                     token = "someToken"
@@ -1030,7 +1111,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun shouldJoinRoomByRoomAlias() = runTest {
+    fun shouldJoinRoomViaByRoomAlias() = runTest {
         val response = JoinRoom.Response(RoomId("!room:server"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -1068,7 +1149,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
             roomAliasId = RoomAliasId("alias", "server"),
             via = setOf("server1.com", "server2.com"),
             thirdPartySigned = Signed(
-                JoinRoom.Request.ThirdParty(
+                ThirdParty(
                     sender = UserId("alice", "server"),
                     mxid = UserId("bob", "server"),
                     token = "someToken"

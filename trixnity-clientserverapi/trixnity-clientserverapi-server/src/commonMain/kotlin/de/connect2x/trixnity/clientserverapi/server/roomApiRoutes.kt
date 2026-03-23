@@ -1,9 +1,9 @@
 package de.connect2x.trixnity.clientserverapi.server
 
-import io.ktor.server.routing.*
-import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.api.server.matrixEndpoint
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import io.ktor.server.routing.*
+import kotlinx.serialization.json.Json
 
 internal fun Route.roomApiRoutes(
     handler: RoomApiHandler,
@@ -34,6 +34,7 @@ internal fun Route.roomApiRoutes(
     matrixEndpoint(json, contentMappings, handler::banUser)
     matrixEndpoint(json, contentMappings, handler::unbanUser)
     matrixEndpoint(json, contentMappings, handler::joinRoom)
+    matrixEndpoint(json, contentMappings, handler::joinRoomVia)
     matrixEndpoint(json, contentMappings, handler::knockRoom)
     matrixEndpoint(json, contentMappings, handler::forgetRoom)
     matrixEndpoint(json, contentMappings, handler::leaveRoom)

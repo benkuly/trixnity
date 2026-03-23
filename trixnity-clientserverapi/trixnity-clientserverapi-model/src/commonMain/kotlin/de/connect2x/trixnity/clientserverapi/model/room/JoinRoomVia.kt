@@ -9,14 +9,15 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * @see <a href="https://spec.matrix.org/v1.17/client-server-api/#post_matrixclientv3roomsroomidjoin">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
  */
 @Serializable
-@Resource("/_matrix/client/v3/rooms/{roomId}/join")
+@Resource("/_matrix/client/v3/join/{roomIdOrRoomAliasId}")
 @HttpMethod(POST)
-data class JoinRoom(
-    @SerialName("roomId") val roomId: RoomId,
-) : MatrixEndpoint<JoinRoom.Request, JoinRoom.Response> {
+data class JoinRoomVia(
+    @SerialName("roomIdOrRoomAliasId") val roomIdOrRoomAliasId: String,
+    @SerialName("via") val via: Set<String>? = null,
+) : MatrixEndpoint<JoinRoomVia.Request, JoinRoomVia.Response> {
     @Serializable
     data class Request(
         @SerialName("reason") val reason: String? = null,
