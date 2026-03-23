@@ -1,0 +1,46 @@
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+max_line_length = 120
+tab_width = 4
+ij_continuation_indent_size = 8
+ij_formatter_off_tag = @formatter:off
+ij_formatter_on_tag = @formatter:on
+ij_formatter_tags_enabled = true
+
+[*.xml]
+indent_size = 2
+ij_continuation_indent_size = 4
+
+[{*.yml,*.yaml}]
+indent_size = 2
+ij_continuation_indent_size = 4
+
+[{*.kt,*.kts}]
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+ij_kotlin_import_nested_classes = false
+ij_kotlin_imports_layout = *, java.**, javax.**, kotlin.**, ^
+ij_kotlin_keep_blank_lines_before_right_brace = 2
+ij_kotlin_keep_blank_lines_in_code = 2
+ij_kotlin_keep_blank_lines_in_declarations = 2
+ij_kotlin_keep_first_column_comment = true
+ij_kotlin_keep_line_breaks = true
+ij_kotlin_name_count_to_use_star_import = 1024
+ij_kotlin_name_count_to_use_star_import_for_members = 1024
+
+[*.properties]
+ij_properties_align_group_field_declarations = false
+ij_properties_keep_blank_lines = true
+ij_properties_key_value_delimiter = equals
+ij_properties_spaces_around_key_value_delimiter = false
+
+[.editorconfig]
+ij_editorconfig_align_group_field_declarations = false
+ij_editorconfig_space_after_colon = false
+ij_editorconfig_space_after_comma = true
+ij_editorconfig_space_before_colon = false
+ij_editorconfig_space_before_comma = false
+ij_editorconfig_spaces_around_assignment_operators = true
