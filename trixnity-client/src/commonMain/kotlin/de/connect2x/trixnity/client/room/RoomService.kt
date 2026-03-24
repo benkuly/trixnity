@@ -34,6 +34,7 @@ import de.connect2x.trixnity.core.MatrixServerException
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
@@ -494,59 +495,11 @@ class RoomServiceImpl(
                             if (direction == BACKWARDS && currentTimelineEvent.isFirst && currentTimelineEventContent is CreateEventContent) {
                                 val predecessorRoomId = currentTimelineEventContent.predecessor?.roomId
                                 if (predecessorRoomId != null) {
-                                    val sender = currentTimelineEvent.sender
-                                    val predecessorRoom = getById(predecessorRoomId).first()
-                                    val tombstoneEventId = when {
-                                        matrixClientConfig.autoJoinUpgradedRooms.not() -> {
-                                            getState<TombstoneEventContent>(predecessorRoomId).first()?.idOrNull
-                                        }
-
-                                        predecessorRoom == null -> {
-                                            log.debug { "try join upgraded room via" }
-                                            retry(
-                                                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
-                                            ) {
-                                                api.room.joinRoom(
-                                                    roomId = predecessorRoomId,
-                                                    via = setOf(sender.domain)
-                                                ).fold(
-                                                    onSuccess = {
-                                                        getState<TombstoneEventContent>(predecessorRoomId).filterNotNull()
-                                                            .first().idOrNull
-                                                    },
-                                                    onFailure = {
-                                                        if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
-                                                            null
-                                                        } else throw it
-                                                    }
-                                                )
-                                            }
-                                        }
-
-                                        predecessorRoom.membership == Membership.INVITE -> {
-                                            log.debug { "try join upgraded room" }
-                                            retry(
-                                                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
-                                            ) {
-                                                api.room.joinRoom(predecessorRoomId)
-                                                    .fold(
-                                                        onSuccess = {
-                                                            getState<TombstoneEventContent>(predecessorRoomId).filterNotNull()
-                                                                .first().idOrNull
-                                                        },
-                                                        onFailure = {
-                                                            if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
-                                                                null
-                                                            } else throw it
-                                                        }
-                                                    )
-                                            }
-                                        }
-
-                                        else -> {
-                                            getState<TombstoneEventContent>(predecessorRoomId).first()?.idOrNull
-                                        }
-                                    }
+                                    val tombstoneEventId = joinAndGetTombstone(
+                                        predecessorRoomId = predecessorRoomId,
+                                        predecessorRoom = getById(predecessorRoomId).first(),
+                                        sender = currentTimelineEvent.sender
+                                    )
                                     if (tombstoneEventId != null) RoomEventIdPair(tombstoneEventId, predecessorRoomId)
                                     else {
                                         log.warn { "getTimelineEvents: found predecessor of room, but room or tombstone does not exist locally" }
@@ -559,59 +512,11 @@ class RoomServiceImpl(
                                 val tombstone = getState<TombstoneEventContent>(currentRoomId).firstOrNull()
                                 if (tombstone != null) {
                                     val replacementRoomId = tombstone.content.replacementRoom
-                                    val sender = tombstone.sender
-                                    val replacementRoom = getById(replacementRoomId).first()
-                                    val createEventId = when {
-                                        matrixClientConfig.autoJoinUpgradedRooms.not() -> {
-                                            getState<CreateEventContent>(replacementRoomId).first()?.idOrNull
-                                        }
-
-                                        replacementRoom == null -> {
-                                            log.debug { "try join upgraded room via" }
-                                            retry(
-                                                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
-                                            ) {
-                                                api.room.joinRoom(
-                                                    roomId = replacementRoomId,
-                                                    via = setOf(sender.domain)
-                                                ).fold(
-                                                    onSuccess = {
-                                                        getState<CreateEventContent>(replacementRoomId).filterNotNull()
-                                                            .first().idOrNull
-                                                    },
-                                                    onFailure = {
-                                                        if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
-                                                            null
-                                                        } else throw it
-                                                    }
-                                                )
-                                            }
-                                        }
-
-                                        replacementRoom.membership == Membership.INVITE -> {
-                                            log.debug { "try join upgraded room" }
-                                            retry(
-                                                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
-                                            ) {
-                                                api.room.joinRoom(replacementRoomId)
-                                                    .fold(
-                                                        onSuccess = {
-                                                            getState<CreateEventContent>(replacementRoomId).filterNotNull()
-                                                                .first().idOrNull
-                                                        },
-                                                        onFailure = {
-                                                            if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
-                                                                null
-                                                            } else throw it
-                                                        }
-                                                    )
-                                            }
-                                        }
-
-                                        else -> {
-                                            getState<CreateEventContent>(replacementRoomId).first()?.idOrNull
-                                        }
-                                    }
+                                    val createEventId = joinAndGetCreate(
+                                        replacementRoomId = replacementRoomId,
+                                        replacementRoom = getById(replacementRoomId).first(),
+                                        sender = tombstone.sender
+                                    )
                                     if (createEventId != null) RoomEventIdPair(createEventId, replacementRoomId)
                                     else {
                                         log.warn { "getTimelineEvents: found successor of room, but room does not exist locally" }
@@ -720,6 +625,118 @@ class RoomServiceImpl(
                 size++
             }
         }.buffer(0)
+
+    private suspend fun joinAndGetCreate(
+        replacementRoomId: RoomId,
+        replacementRoom: Room?,
+        sender: UserId
+    ): EventId? = when {
+        matrixClientConfig.autoJoinUpgradedRooms.not() -> {
+            getState<CreateEventContent>(replacementRoomId).first()?.idOrNull
+        }
+
+        replacementRoom == null -> {
+            log.debug { "try join upgraded room via" }
+            retry(
+                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
+            ) {
+                api.room.joinRoom(
+                    roomId = replacementRoomId,
+                    via = setOf(sender.domain)
+                ).fold(
+                    onSuccess = {
+                        getState<CreateEventContent>(replacementRoomId).filterNotNull()
+                            .first().idOrNull
+                    },
+                    onFailure = {
+                        if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
+                            null
+                        } else throw it
+                    }
+                )
+            }
+        }
+
+        replacementRoom.membership == Membership.INVITE -> {
+            log.debug { "try join upgraded room" }
+            retry(
+                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
+            ) {
+                api.room.joinRoom(replacementRoomId)
+                    .fold(
+                        onSuccess = {
+                            getState<CreateEventContent>(replacementRoomId).filterNotNull()
+                                .first().idOrNull
+                        },
+                        onFailure = {
+                            if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
+                                null
+                            } else throw it
+                        }
+                    )
+            }
+        }
+
+        else -> {
+            getState<CreateEventContent>(replacementRoomId).first()?.idOrNull
+        }
+    }
+
+    private suspend fun joinAndGetTombstone(
+        predecessorRoomId: RoomId,
+        predecessorRoom: Room?,
+        sender: UserId
+    ): EventId? = when {
+        matrixClientConfig.autoJoinUpgradedRooms.not() -> {
+            getState<TombstoneEventContent>(predecessorRoomId).first()?.idOrNull
+        }
+
+        predecessorRoom == null -> {
+            log.debug { "try join upgraded room via" }
+            retry(
+                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
+            ) {
+                api.room.joinRoom(
+                    roomId = predecessorRoomId,
+                    via = setOf(sender.domain)
+                ).fold(
+                    onSuccess = {
+                        getState<TombstoneEventContent>(predecessorRoomId).filterNotNull()
+                            .first().idOrNull
+                    },
+                    onFailure = {
+                        if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
+                            null
+                        } else throw it
+                    }
+                )
+            }
+        }
+
+        predecessorRoom.membership == Membership.INVITE -> {
+            log.debug { "try join upgraded room" }
+            retry(
+                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
+            ) {
+                api.room.joinRoom(predecessorRoomId)
+                    .fold(
+                        onSuccess = {
+                            getState<TombstoneEventContent>(predecessorRoomId).filterNotNull()
+                                .first().idOrNull
+                        },
+                        onFailure = {
+                            if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
+                                null
+                            } else throw it
+                        }
+                    )
+            }
+        }
+
+        else -> {
+            getState<TombstoneEventContent>(predecessorRoomId).first()?.idOrNull
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getLastTimelineEvents(
