@@ -1,21 +1,25 @@
 package de.connect2x.trixnity.clientserverapi.client
 
 import de.connect2x.lognity.api.logger.Logger
-import io.ktor.client.*
-import io.ktor.client.plugins.auth.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.http.auth.*
+import de.connect2x.trixnity.core.AuthRequired
+import de.connect2x.trixnity.core.ErrorResponse
+import de.connect2x.trixnity.core.MatrixServerException
+import de.connect2x.trixnity.core.decodeErrorResponse
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.auth.AuthCircuitBreaker
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.headers
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.auth.AuthScheme
+import io.ktor.http.auth.HttpAuthHeader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
-import de.connect2x.trixnity.core.AuthRequired
-import de.connect2x.trixnity.core.ErrorResponse
-import de.connect2x.trixnity.core.MatrixServerException
-import de.connect2x.trixnity.core.decodeErrorResponse
 
 private val log = Logger("de.connect2x.trixnity.clientserverapi.client.BearerMatrixAuthProvider")
 
@@ -94,7 +98,9 @@ abstract class BearerClientAuthProvider<T : BearerTokens>(
 
                         else -> {}
                     }
-                    throw MatrixServerException(response.status, errorResponse, null)
+                    if (errorResponse != null) {
+                        throw MatrixServerException(response.status, errorResponse, null)
+                    }
                 }
                 return false
             } finally {
