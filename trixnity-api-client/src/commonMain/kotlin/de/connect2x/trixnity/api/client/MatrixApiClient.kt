@@ -1,8 +1,12 @@
 package de.connect2x.trixnity.api.client
 
 import de.connect2x.lognity.api.logger.Logger
-import de.connect2x.trixnity.core.*
+import de.connect2x.trixnity.core.Auth
+import de.connect2x.trixnity.core.AuthRequired
 import de.connect2x.trixnity.core.HttpMethod
+import de.connect2x.trixnity.core.MatrixEndpoint
+import de.connect2x.trixnity.core.MatrixServerException
+import de.connect2x.trixnity.core.decodeErrorResponse
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default

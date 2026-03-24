@@ -1,19 +1,20 @@
 package de.connect2x.trixnity.client.room
 
-import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.job
-import kotlinx.coroutines.withTimeoutOrNull
-import de.connect2x.trixnity.client.*
+import de.connect2x.trixnity.client.CurrentSyncState
+import de.connect2x.trixnity.client.MatrixClientConfiguration
+import de.connect2x.trixnity.client.flattenValues
+import de.connect2x.trixnity.client.getInMemoryRoomAccountDataStore
+import de.connect2x.trixnity.client.getInMemoryRoomOutboxMessageStore
+import de.connect2x.trixnity.client.getInMemoryRoomStateStore
+import de.connect2x.trixnity.client.getInMemoryRoomStore
+import de.connect2x.trixnity.client.getInMemoryRoomTimelineStore
+import de.connect2x.trixnity.client.mockMatrixClientServerApiClient
 import de.connect2x.trixnity.client.mocks.MediaServiceMock
 import de.connect2x.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import de.connect2x.trixnity.client.mocks.TimelineEventHandlerMock
+import de.connect2x.trixnity.client.retry
+import de.connect2x.trixnity.client.simpleRoom
+import de.connect2x.trixnity.client.simpleUserInfo
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.TimelineEvent.TimelineEventContentError
@@ -39,6 +40,21 @@ import de.connect2x.trixnity.crypto.olm.OlmEncryptionService
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.testClock
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.job
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.ZERO
@@ -72,7 +88,7 @@ class RoomServiceTest : TrixnityBaseTest() {
         userInfo = simpleUserInfo,
         timelineEventHandler = TimelineEventHandlerMock(),
         clock = testScope.testClock,
-        config = MatrixClientConfiguration(),
+        matrixClientConfig = MatrixClientConfiguration(),
         typingEventHandler = TypingEventHandlerImpl(api),
         currentSyncState = CurrentSyncState(currentSyncState),
         scope = testScope.backgroundScope

@@ -1,19 +1,15 @@
 package de.connect2x.trixnity.client.integrationtests
 
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.collections.shouldNotContain
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldNotContain
-import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.http.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import kotlinx.serialization.Serializable
-import de.connect2x.trixnity.client.*
+import de.connect2x.trixnity.client.CryptoDriverModule
+import de.connect2x.trixnity.client.MatrixClient
+import de.connect2x.trixnity.client.MediaStoreModule
+import de.connect2x.trixnity.client.RepositoriesModule
+import de.connect2x.trixnity.client.create
 import de.connect2x.trixnity.client.cryptodriver.vodozemac.vodozemac
+import de.connect2x.trixnity.client.flatten
+import de.connect2x.trixnity.client.flattenValues
 import de.connect2x.trixnity.client.media.inMemory
+import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.room.getState
 import de.connect2x.trixnity.client.room.getTimeline
 import de.connect2x.trixnity.client.room.getTimelineEventsAround
@@ -30,6 +26,9 @@ import de.connect2x.trixnity.clientserverapi.client.SyncState
 import de.connect2x.trixnity.clientserverapi.client.classicLogin
 import de.connect2x.trixnity.clientserverapi.client.classicLoginWith
 import de.connect2x.trixnity.clientserverapi.model.authentication.IdentifierType
+import de.connect2x.trixnity.clientserverapi.model.room.CreateRoom
+import de.connect2x.trixnity.clientserverapi.model.room.DirectoryVisibility
+import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.BACKWARDS
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
@@ -51,6 +50,34 @@ import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.core.serialization.events.invoke
 import de.connect2x.trixnity.core.serialization.events.messageOf
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.http.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.and
@@ -555,6 +582,66 @@ class TimelineEventIT : TrixnityBaseTest() {
 
             client1.room.getAll().flattenValues(filterUpgradedRooms = true).firstWithTimeout()
                 .map { it.roomId } shouldNotContain oldRoom
+        }
+    }
+
+    @Test
+    fun shouldFollowRoomUpgradesByJoiningPreviousRoom(): Unit = runBlocking(Dispatchers.Default) {
+        withTimeout(30_000) {
+            val oldRoom = client1.api.room.createRoom(
+                preset = CreateRoom.Request.Preset.PUBLIC,
+                visibility = DirectoryVisibility.PUBLIC,
+                roomVersion = "11"
+            ).getOrThrow()
+            client1.room.sendMessage(oldRoom) { text("hi old") }
+            client1.room.getLastTimelineEvent(oldRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
+                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
+            }.firstWithTimeout { it } // wait for sync
+
+            val newRoom = client1.api.room.upgradeRoom(oldRoom, "12").getOrThrow()
+            client1.room.sendMessage(newRoom) { text("hi new") }
+            client1.room.getLastTimelineEvent(newRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
+                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
+            }.firstWithTimeout { it } // wait for sync
+
+            client1.api.room.inviteUser(newRoom, client2.userId).getOrThrow()
+            client2.api.room.joinRoom(newRoom).getOrThrow()
+
+            val lastEventId = client2.room.getById(newRoom).firstWithTimeout { it?.lastEventId != null }
+                ?.lastEventId.shouldNotBeNull()
+
+            client2.room.getTimelineEvents(newRoom, lastEventId, BACKWARDS)
+                .firstWithTimeout { it.first().roomId == oldRoom }
+        }
+    }
+
+    @Test
+    fun shouldFollowRoomUpgradesByJoiningNextRoom(): Unit = runBlocking(Dispatchers.Default) {
+        withTimeout(30_000) {
+            val oldRoom = client1.api.room.createRoom(
+                preset = CreateRoom.Request.Preset.PUBLIC,
+                visibility = DirectoryVisibility.PUBLIC,
+                roomVersion = "11"
+            ).getOrThrow()
+            client1.room.sendMessage(oldRoom) { text("hi old") }
+            client1.room.getLastTimelineEvent(oldRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
+                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
+            }.firstWithTimeout { it } // wait for sync
+
+            val newRoom = client1.api.room.upgradeRoom(oldRoom, "12").getOrThrow()
+            client1.room.sendMessage(newRoom) { text("hi new") }
+            client1.room.getLastTimelineEvent(newRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
+                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
+            }.firstWithTimeout { it } // wait for sync
+
+            client1.api.room.inviteUser(oldRoom, client2.userId).getOrThrow()
+            client2.api.room.joinRoom(oldRoom).getOrThrow()
+
+            val lastEventId = client2.room.getById(oldRoom).firstWithTimeout { it?.lastEventId != null }
+                ?.lastEventId.shouldNotBeNull()
+
+            client2.room.getTimelineEvents(oldRoom, lastEventId, FORWARDS)
+                .firstWithTimeout { it.first().roomId == newRoom }
         }
     }
 
