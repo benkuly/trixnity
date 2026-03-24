@@ -16,12 +16,14 @@ import de.connect2x.trixnity.client.retry
 import de.connect2x.trixnity.client.simpleRoom
 import de.connect2x.trixnity.client.simpleUserInfo
 import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.RoomOutboxMessage
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.clientserverapi.client.SyncState
 import de.connect2x.trixnity.clientserverapi.client.SyncState.RUNNING
 import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
@@ -54,9 +56,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -223,18 +227,20 @@ class RoomServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `getTimelineEvent » should just return event » with already encrypted event`() = shouldJustReturnEvent(
-        encryptedTimelineEvent.copy(
-            content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
+    fun `getTimelineEvent » should just return event » with already encrypted event`() =
+        shouldJustReturnEvent(
+            encryptedTimelineEvent.copy(
+                content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
+            )
         )
-    )
 
     @Test
-    fun `getTimelineEvent » should just return event » with encryption error`() = shouldJustReturnEvent(
-        encryptedTimelineEvent.copy(
-            content = Result.failure(TimelineEventContentError.DecryptionTimeout)
+    fun `getTimelineEvent » should just return event » with encryption error`() =
+        shouldJustReturnEvent(
+            encryptedTimelineEvent.copy(
+                content = Result.failure(TimelineEventContentError.DecryptionTimeout)
+            )
         )
-    )
 
     @Test
     fun `getTimelineEvent » should just return event » without RoomEvent`() = shouldJustReturnEvent(
@@ -244,11 +250,12 @@ class RoomServiceTest : TrixnityBaseTest() {
     )
 
     @Test
-    fun `getTimelineEvent » should just return event » without MegolmEncryptedEventContent`() = shouldJustReturnEvent(
-        encryptedTimelineEvent.copy(
-            event = textEvent(1)
+    fun `getTimelineEvent » should just return event » without MegolmEncryptedEventContent`() =
+        shouldJustReturnEvent(
+            encryptedTimelineEvent.copy(
+                event = textEvent(1)
+            )
         )
-    )
 
     @Test
     fun `getTimelineEvent » event can be decrypted » decrypt event`() = runTest {
@@ -278,14 +285,16 @@ class RoomServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `getTimelineEvent » event can be decrypted » timeout when decryption takes too long`() = runTest {
-        roomEventDecryptionServiceMock.decryptDelay = 10.seconds
-        roomEventDecryptionServiceMock.returnDecrypt = null
-        roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-        val result = async { cut.getTimelineEvent(room, eventId) { decryptionTimeout = ZERO }.collect() }
-        result.job.children.count() shouldBe 0 // there are no decryption jobs
-        result.cancel()
-    }
+    fun `getTimelineEvent » event can be decrypted » timeout when decryption takes too long`() =
+        runTest {
+            roomEventDecryptionServiceMock.decryptDelay = 10.seconds
+            roomEventDecryptionServiceMock.returnDecrypt = null
+            roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
+            val result =
+                async { cut.getTimelineEvent(room, eventId) { decryptionTimeout = ZERO }.collect() }
+            result.job.children.count() shouldBe 0 // there are no decryption jobs
+            result.cancel()
+        }
 
     @Test
     fun `getTimelineEvent » event can be decrypted » retry on decryption timeout`() = runTest {
@@ -331,7 +340,13 @@ class RoomServiceTest : TrixnityBaseTest() {
             val timelineEventWithRelation =
                 TimelineEvent(
                     event = MessageEvent(
-                        encryptedEventContent.copy(relatesTo = RelatesTo.Reply(RelatesTo.ReplyTo(EventId("\$replyTo")))),
+                        encryptedEventContent.copy(
+                            relatesTo = RelatesTo.Reply(
+                                RelatesTo.ReplyTo(
+                                    EventId("\$replyTo")
+                                )
+                            )
+                        ),
                         EventId("\$event1"),
                         UserId("sender", "server"),
                         room,
@@ -365,12 +380,14 @@ class RoomServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `getTimelineEvent » content has been replaced » not replace content when disabled`() = runTest {
-        roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
-        cut.getTimelineEvent(room, eventId) { allowReplaceContent = false }.first() shouldBe timelineEvent.copy(
-            content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
-        )
-    }
+    fun `getTimelineEvent » content has been replaced » not replace content when disabled`() =
+        runTest {
+            roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
+            cut.getTimelineEvent(room, eventId) { allowReplaceContent = false }
+                .first() shouldBe timelineEvent.copy(
+                content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
+            )
+        }
 
     @Test
     fun `getTimelineEvent » content has been replaced » not replace when redacted`() = runTest {
@@ -428,7 +445,9 @@ class RoomServiceTest : TrixnityBaseTest() {
         }
 
         result.await()[0] shouldBe null
-        withTimeoutOrNull(100.milliseconds) { result.await()[1].shouldNotBeNull().first() } shouldBe null
+        withTimeoutOrNull(100.milliseconds) {
+            result.await()[1].shouldNotBeNull().first()
+        } shouldBe null
         result.await()[2].shouldNotBeNull().first() shouldBe event2Timeline
     }
 
@@ -438,7 +457,11 @@ class RoomServiceTest : TrixnityBaseTest() {
         cut.sendMessage(room) {
             contentBuilder = { content }
         }
-        retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+        retry(
+            100,
+            3_000.milliseconds,
+            30.milliseconds
+        ) {// we need this, because the cache may not be fast enough
             val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
             outboundMessages shouldHaveSize 1
             assertSoftly(outboundMessages.first()) {
@@ -446,6 +469,195 @@ class RoomServiceTest : TrixnityBaseTest() {
                 content shouldBe content
                 transactionId.length shouldBeGreaterThan 12
             }
+        }
+    }
+
+    @Test
+    fun `setDraftMessage » draft Message being created`() = runTest {
+        val content = RoomMessageEventContent.TextBased.Text("hi")
+        cut.setDraftMessage(room) {
+            contentBuilder = { content }
+        }
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboundMessages shouldHaveSize 1
+            assertSoftly(outboundMessages.first()) {
+                roomId shouldBe room
+                content shouldBe content
+                isDraft shouldBe true
+            }
+        }
+    }
+
+    @Test
+    fun `setDraftMessage » sendDraftMessage » draft Message set to non draft`() = runTest {
+        val content = RoomMessageEventContent.TextBased.Text("hi")
+        cut.setDraftMessage(room) {
+            contentBuilder = { content }
+        }
+
+        cut.sendDraftMessage(room)
+
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboundMessages shouldHaveSize 1
+            assertSoftly(outboundMessages.first()) {
+                roomId shouldBe room
+                content shouldBe content
+                isDraft shouldBe false
+            }
+        }
+    }
+
+    @Test
+    fun `setDraftMessage » getDraftMessaage returns draft Message`() = runTest {
+        val content = RoomMessageEventContent.TextBased.Text("hi")
+        cut.setDraftMessage(room) {
+            contentBuilder = { content }
+        }
+
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val draftMessage = cut.getDraftMessage(room).first()
+            draftMessage.shouldNotBeNull()
+            assertSoftly(draftMessage) {
+                roomId shouldBe room
+                content shouldBe content
+                isDraft shouldBe true
+            }
+        }
+    }
+
+    @Test
+    fun `setDraftMessage » setDraftMessage » updates draft message`() = runTest {
+        val content1 = RoomMessageEventContent.TextBased.Text("hi")
+        cut.setDraftMessage(room) {
+            contentBuilder = { content1 }
+        }
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboundMessages shouldHaveSize 1
+            assertSoftly(outboundMessages.first()) {
+                roomId shouldBe room
+                content shouldBe content1
+                isDraft shouldBe true
+            }
+        }
+
+        val content2 = RoomMessageEventContent.TextBased.Text("hi2")
+        cut.setDraftMessage(room) {
+            contentBuilder = { content2 }
+        }
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboundMessages shouldHaveSize 1
+            assertSoftly(outboundMessages.first()) {
+                roomId shouldBe room
+                content shouldBe content2
+                isDraft shouldBe true
+            }
+        }
+    }
+
+    @Test
+    fun `getOutbox filters out draft Messages`() = runTest {
+        val content = RoomMessageEventContent.TextBased.Text("hi")
+        cut.setDraftMessage(room) {
+            contentBuilder = { content }
+        }
+
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboxMessages = cut.getOutbox(room).first()
+            outboxMessages shouldHaveSize 0
+            val allOutboxMessages = cut.getOutbox().first()
+            allOutboxMessages shouldHaveSize 0
+        }
+    }
+
+    @Test
+    fun `getOutbox of roomId filters out events from other rooms`() = runTest {
+        val content = RoomMessageEventContent.TextBased.Text("hi")
+        cut.sendMessage(room) {
+            contentBuilder = { content }
+        }
+
+        val room2 = RoomId("123")
+
+        val content2 = RoomMessageEventContent.TextBased.Text("hi2")
+        cut.sendMessage(room2) {
+            contentBuilder = { content2 }
+        }
+
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboxMessages = cut.getOutbox(room).first()
+            outboxMessages shouldHaveSize 1
+            outboxMessages[0].first()?.content shouldBe content
+        }
+    }
+
+    @Test
+    fun `deleteDraftMessage » all draft events are deleted`() = runTest {
+        val content1 = RoomMessageEventContent.TextBased.Text("hi")
+        val message1 = RoomOutboxMessage<RoomMessageEventContent.TextBased.Text>(
+            roomId = room,
+            transactionId = "1",
+            content = content1,
+            createdAt = Clock.System.now(),
+            sentAt = null,
+            eventId = null,
+            sendError = null,
+            keepMediaInCache = true,
+            isDraft = true,
+        )
+        val message2 = RoomOutboxMessage<RoomMessageEventContent.TextBased.Text>(
+            roomId = room,
+            transactionId = "2",
+            content = content1,
+            createdAt = Clock.System.now(),
+            sentAt = null,
+            eventId = null,
+            sendError = null,
+            keepMediaInCache = true,
+            isDraft = true,
+        )
+
+        roomOutboxMessageStore.update(room, "1") {
+            message1
+        }
+        roomOutboxMessageStore.update(room, "2") {
+            message2
+        }
+
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboundMessages shouldHaveSize 2
+        }
+
+        cut.deleteDraftMessage(room)
+
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboundMessages shouldHaveSize 0
+        }
+    }
+
+    @Test
+    fun `setDraftMessage twice concurrently will only create one draft message`() = runTest {
+        val content = RoomMessageEventContent.TextBased.Text("hi")
+        val content2 = RoomMessageEventContent.TextBased.Text("ELECTRICBOOGALOO")
+        testScope.launch {
+            cut.setDraftMessage(room) {
+                contentBuilder = { content }
+            }
+        }
+        testScope.launch {
+            cut.setDraftMessage(room) {
+                contentBuilder = { content2 }
+            }
+        }
+
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboundMessages shouldHaveSize 1
         }
     }
 

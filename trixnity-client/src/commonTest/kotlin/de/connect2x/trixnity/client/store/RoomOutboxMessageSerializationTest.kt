@@ -1,6 +1,5 @@
 package de.connect2x.trixnity.client.store
 
-import io.kotest.matchers.shouldBe
 import de.connect2x.trixnity.client.trimToFlatJson
 import de.connect2x.trixnity.core.ErrorResponse
 import de.connect2x.trixnity.core.model.RoomId
@@ -8,6 +7,7 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
+import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.time.Instant
 
@@ -31,7 +31,8 @@ class RoomOutboxMessageSerializationTest : TrixnityBaseTest() {
             "createdAt":"1970-01-01T00:00:00.012Z",
             "sentAt":"1970-01-01T00:00:00.024Z",
             "sendError":{"type":"bad_request","errorResponse":{"errcode":"M_FORBIDDEN","error":""}},
-            "keepMediaInCache":true
+            "keepMediaInCache":true,
+            "isDraft":false
         }
         """.trimToFlatJson()
 
@@ -42,6 +43,8 @@ class RoomOutboxMessageSerializationTest : TrixnityBaseTest() {
 
     @Test
     fun `deserialize RoomOutboxMessage`() = runTest {
-        json.decodeFromString<RoomOutboxMessage<RoomMessageEventContent.TextBased.Text>>(roomOutboxMessageJson) shouldBe roomOutboxMessage
+        json.decodeFromString<RoomOutboxMessage<RoomMessageEventContent.TextBased.Text>>(
+            roomOutboxMessageJson
+        ) shouldBe roomOutboxMessage
     }
 }
