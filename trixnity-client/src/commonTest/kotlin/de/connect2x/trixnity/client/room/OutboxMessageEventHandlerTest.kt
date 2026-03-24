@@ -57,7 +57,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.days
@@ -234,8 +233,7 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
         delay(1.seconds)
-        val outboxMessages =
-            roomOutboxMessageStore.getAll().flattenValues().onEach { println(it) }.first()
+        val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
         outboxMessages shouldHaveSize 1
         outboxMessages.first().sentAt shouldNotBe null
 
@@ -671,9 +669,106 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
             sendMessageEventCalled shouldBe true
 
             val outboxMessages =
-                roomOutboxMessageStore.getAll().flattenValues().onEach { println(it) }.first()
+                roomOutboxMessageStore.getAll().flattenValues().first()
             outboxMessages shouldHaveSize 1
             outboxMessages.first().sentAt shouldNotBe null
+        }
+
+    @Test
+    fun `processOutboxMessages » message with error is not send » message with now removed error is send`() =
+        runTest {
+            val message =
+                RoomOutboxMessage(
+                    room,
+                    "transaction",
+                    RoomMessageEventContent.TextBased.Text("hi"),
+                    testClock.now(),
+                    sendError = RoomOutboxMessage.SendError.Unknown()
+                )
+            roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
+
+            var sendMessageEventCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    SendMessageEvent(room, "m.room.message", "transaction"),
+                ) {
+                    it shouldBe RoomMessageEventContent.TextBased.Text("hi")
+                    sendMessageEventCalled = true
+                    SendEventResponse(EventId("event"))
+                }
+            }
+
+            backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
+
+            delay(500)
+
+            sendMessageEventCalled shouldBe false
+
+            roomOutboxMessageStore.update(
+                message.roomId,
+                message.transactionId
+            ) { message.copy(sendError = null) }
+
+            delay(1.seconds)
+
+            sendMessageEventCalled shouldBe true
+
+            val outboxMessages =
+                roomOutboxMessageStore.getAll().flattenValues().first()
+            outboxMessages shouldHaveSize 1
+            outboxMessages.first().sentAt shouldNotBe null
+        }
+
+    @Test
+    fun `processOutboxMessages » message fails to send » messages sendError is set to null » message will retry send`() =
+        runTest {
+            val message =
+                RoomOutboxMessage(
+                    room,
+                    "transaction",
+                    RoomMessageEventContent.TextBased.Text("hi"),
+                    testClock.now()
+                )
+            roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
+
+            var sendMessageEventCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    SendMessageEvent(room, "m.room.message", "transaction"),
+                ) {
+                    it shouldBe RoomMessageEventContent.TextBased.Text("hi")
+                    sendMessageEventCalled = true
+                    SendEventResponse(EventId("event"))
+                }
+            }
+
+            userService.canSendEvent[room to RoomMessageEventContent::class] = flowOf(false)
+
+            backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
+
+            delay(500)
+
+            sendMessageEventCalled shouldBe false
+            val outboxMessages =
+                roomOutboxMessageStore.getAll().flattenValues().first()
+            outboxMessages shouldHaveSize 1
+            outboxMessages.first().sendError shouldNotBe null
+
+            userService.canSendEvent[room to RoomMessageEventContent::class] = flowOf(true)
+
+            roomOutboxMessageStore.update(
+                message.roomId,
+                message.transactionId
+            ) { message.copy(sendError = null) }
+
+            delay(1.seconds)
+
+            sendMessageEventCalled shouldBe true
+
+            val outboxMessages2 =
+                roomOutboxMessageStore.getAll().flattenValues().first()
+            outboxMessages2 shouldHaveSize 1
+            outboxMessages2.first().sentAt shouldNotBe null
         }
 
 }

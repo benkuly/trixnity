@@ -95,12 +95,13 @@ class OutboxMessageEventHandler(
             val alreadyProcessedOutboxMessages = mutableSetOf<RoomOutboxMessageRepositoryKey>()
             outboxMessages
                 .map { outbox ->
+                    alreadyProcessedOutboxMessages.removeAll(alreadyProcessedOutboxMessages - outbox.keys)
                     // we need to filterKeys twice, because input and output of flattenNotNull are not in sync, and we do not want to flatten unnecessary
+                    //(during the time of executing flattenNotNull an event might have been added to alreadyProcessedOutboxMessages)
                     outbox.filterKeys { !alreadyProcessedOutboxMessages.contains(it) }
                 }
                 .flattenNotNull()
                 .map { outbox ->
-                    alreadyProcessedOutboxMessages.removeAll(alreadyProcessedOutboxMessages - outbox.keys)
                     outbox.filterKeys { !alreadyProcessedOutboxMessages.contains(it) }
                         .filterValues { it.sentAt == null && it.sendError == null && !it.isDraft }
                         .also { alreadyProcessedOutboxMessages.addAll(it.keys) }
@@ -127,7 +128,17 @@ class OutboxMessageEventHandler(
                                         val checkCancelled =
                                             async { checkWhetherCancelled(outboxMessage) }
                                         select {
-                                            sendMessage.onAwait {}
+                                            sendMessage.onAwait {
+                                                if (it == null) {
+                                                    return@onAwait
+                                                }
+                                                alreadyProcessedOutboxMessages.remove(
+                                                    RoomOutboxMessageRepositoryKey(
+                                                        roomId,
+                                                        outboxMessage.transactionId
+                                                    )
+                                                )
+                                            }
                                             checkCancelled.onAwait {}
                                         }
                                         sendMessage.cancel()
@@ -152,7 +163,10 @@ class OutboxMessageEventHandler(
         log.debug { "cancel sending of ${outboxMessage.transactionId}" }
     }
 
-    private suspend fun sendOutboxMessage(outboxMessage: RoomOutboxMessage<*>, roomId: RoomId) {
+    private suspend fun sendOutboxMessage(
+        outboxMessage: RoomOutboxMessage<*>,
+        roomId: RoomId
+    ): SendError? {
         val transactionId = outboxMessage.transactionId
         log.trace { "send outbox message (transactionId=${transactionId}, roomId=${outboxMessage.roomId})" }
         val canSendMessage = userService.canSendEvent(roomId, outboxMessage.content).first()
@@ -161,7 +175,7 @@ class OutboxMessageEventHandler(
             roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
                 it?.copy(sendError = SendError.NoEventPermission)
             }
-            return
+            return SendError.NoEventPermission
         }
         val originalContent = outboxMessage.content
         val uploader =
@@ -199,7 +213,7 @@ class OutboxMessageEventHandler(
             roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
                 it?.copy(sendError = sendError)
             }
-            return
+            return sendError
         }
         val contentResult = roomEventEncryptionServices.encrypt(uploadedContent, roomId)
 
@@ -209,15 +223,16 @@ class OutboxMessageEventHandler(
                 roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
                     it?.copy(sendError = SendError.EncryptionAlgorithmNotSupported)
                 }
-                return
+                return SendError.EncryptionAlgorithmNotSupported
             }
 
             contentResult.isFailure -> {
+                val sendError = SendError.EncryptionError(contentResult.exceptionOrNull()?.message)
                 log.warn(contentResult.exceptionOrNull()) { "cannot send message" }
                 roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
-                    it?.copy(sendError = SendError.EncryptionError(contentResult.exceptionOrNull()?.message))
+                    it?.copy(sendError = sendError)
                 }
-                return
+                return sendError
             }
 
             else -> contentResult.getOrThrow()
@@ -236,7 +251,7 @@ class OutboxMessageEventHandler(
             roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
                 it?.copy(sendError = sendError)
             }
-            return
+            return sendError
         }
         roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
             it?.copy(sentAt = clock.now(), eventId = eventId)
@@ -264,6 +279,7 @@ class OutboxMessageEventHandler(
         log.trace {
             "finished send outbox message (transactionId=${transactionId}, roomId=${outboxMessage.roomId})"
         }
+        return null
     }
 }
 

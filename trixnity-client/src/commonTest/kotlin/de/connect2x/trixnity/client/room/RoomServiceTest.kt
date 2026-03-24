@@ -661,6 +661,42 @@ class RoomServiceTest : TrixnityBaseTest() {
         }
     }
 
+    @Test
+    fun `retrySendMessage » sendError is set to null`() = runTest {
+        val content1 = RoomMessageEventContent.TextBased.Text("hi")
+        val message1 = RoomOutboxMessage<RoomMessageEventContent.TextBased.Text>(
+            roomId = room,
+            transactionId = "1",
+            content = content1,
+            createdAt = Clock.System.now(),
+            sentAt = null,
+            eventId = null,
+            sendError = RoomOutboxMessage.SendError.NoEventPermission,
+            keepMediaInCache = true,
+            isDraft = false,
+        )
+
+        roomOutboxMessageStore.update(room, "1") {
+            message1
+        }
+
+        cut.retrySendMessage(room, "1")
+
+        retry(
+            100,
+            3_000.milliseconds,
+            30.milliseconds
+        ) {
+            val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboundMessages shouldHaveSize 1
+            assertSoftly(outboundMessages.first()) {
+                roomId shouldBe room
+                content shouldBe content
+                sendError shouldBe null
+            }
+        }
+    }
+
     private fun textEvent(i: Long = 24): MessageEvent<RoomMessageEventContent.TextBased.Text> {
         return MessageEvent(
             RoomMessageEventContent.TextBased.Text("message $i"),
