@@ -1,18 +1,15 @@
 package de.connect2x.trixnity.client.verification
 
 import de.connect2x.lognity.api.logger.Logger
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.key.KeyTrustService
 import de.connect2x.trixnity.client.room.RoomService
 import de.connect2x.trixnity.client.store.KeyStore
-import de.connect2x.trixnity.client.verification.ActiveUserVerificationImpl.VerificationStepSearchResult.*
-import de.connect2x.trixnity.client.verification.ActiveVerificationState.*
+import de.connect2x.trixnity.client.verification.ActiveUserVerificationImpl.VerificationStepSearchResult.IsVerificationStep
+import de.connect2x.trixnity.client.verification.ActiveUserVerificationImpl.VerificationStepSearchResult.MaybeVerificationStep
+import de.connect2x.trixnity.client.verification.ActiveUserVerificationImpl.VerificationStepSearchResult.NoVerificationStep
+import de.connect2x.trixnity.client.verification.ActiveVerificationState.AcceptedByOtherDevice
+import de.connect2x.trixnity.client.verification.ActiveVerificationState.Ready
+import de.connect2x.trixnity.client.verification.ActiveVerificationState.Undefined
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
@@ -24,6 +21,14 @@ import de.connect2x.trixnity.core.model.events.m.key.verification.VerificationRe
 import de.connect2x.trixnity.core.model.events.m.key.verification.VerificationStep
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import de.connect2x.trixnity.crypto.driver.CryptoDriver
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 
 private val log = Logger("de.connect2x.trixnity.client.verification.ActiveUserVerification")
@@ -82,6 +87,7 @@ class ActiveUserVerificationImpl(
     override suspend fun lifecycle() = coroutineScope {
         val timelineJob = launch {
             room.getTimelineEvents(roomId, requestEventId, FORWARDS)
+                .onCompletion { println("NEEEEEEEEEEEEEEEEEEEEEEEEEEEEEVER!!!!!") }
                 .collect { timelineEvent ->
                     val searchResult = timelineEvent.filterNotNull().map {
                         val contentResult = it.content

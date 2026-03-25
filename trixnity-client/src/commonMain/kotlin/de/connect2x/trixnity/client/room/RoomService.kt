@@ -533,10 +533,6 @@ class RoomServiceImpl(
                             log.debug { "getTimelineEvents: reached start of timeline $currentRoomId" }
                             emit(FollowTimelineResult.Stop)
                         }
-                        if (direction == FORWARDS && currentTimelineEvent.isLast && successor == null) {
-                            log.debug { "getTimelineEvents: reached end of timeline $currentRoomId" }
-                            emit(FollowTimelineResult.Stop)
-                        }
                         if (minSize != null && size >= minSize
                             && (currentTimelineEvent.needsFetchGap() || (direction == FORWARDS && currentTimelineEvent.isLast))
                         ) {

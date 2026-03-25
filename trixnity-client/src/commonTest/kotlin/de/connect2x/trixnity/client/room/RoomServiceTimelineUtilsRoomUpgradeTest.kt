@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
@@ -364,14 +365,15 @@ class RoomServiceTimelineUtilsRoomUpgradeTest : TrixnityBaseTest() {
     private fun testNoRetryAfter(roomKnown: Boolean) = runTest {
         roomUpgradeAfterSetup(roomKnown)
         exception = MatrixServerException(HttpStatusCode.Forbidden, ErrorResponse.Forbidden("forbidden"))
-        val result = backgroundScope.async {
+        val result = mutableListOf<TimelineEvent>()
+        backgroundScope.launch {
             cut.getTimelineEvents(room, createEvent1.id, FORWARDS) { minSize = 5 }
-                .take(5).toList().map { it.first() }
+                .collect { result.add(it.first()) }
         }
         delay(1.seconds)
         joinCalled.value shouldBe if (roomKnown) listOf(newRoom) else listOf()
         joinViaCalled.value shouldBe if (!roomKnown) listOf(newRoom) else listOf()
-        result.await() shouldBe timeline.take(3)
+        result shouldBe timeline.take(3)
     }
 
     @Test
