@@ -423,7 +423,7 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `processOutboxMessages » not retry on ResponseException`() = runTest {
+    fun `processOutboxMessages » should retry on non homeserver exception`() = runTest {
         val message =
             RoomOutboxMessage(
                 room,
@@ -452,8 +452,8 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         delay(1.seconds)
         val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
         outboxMessages shouldHaveSize 1
-        outboxMessages.first().sentAt shouldBe null
-        outboxMessages.first().sendError shouldNotBe null
+        outboxMessages.first().sentAt shouldNotBe null
+        outboxMessages.first().sendError shouldBe null
     }
 
     @Test
