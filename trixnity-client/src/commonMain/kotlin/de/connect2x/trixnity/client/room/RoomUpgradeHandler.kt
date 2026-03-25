@@ -13,6 +13,7 @@ import de.connect2x.trixnity.core.EventHandler
 import de.connect2x.trixnity.core.MatrixServerException
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.ClientEvent
+import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.TombstoneEventContent
 import de.connect2x.trixnity.core.subscribeEventList
@@ -43,15 +44,22 @@ class RoomUpgradeHandler(
 ) : EventHandler {
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeEventList(Priority.AFTER_DEFAULT, ::onTombstone).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList(Priority.AFTER_DEFAULT, ::onCreate).unsubscribeOnCompletion(scope)
         scope.launch { joinUpgradedRooms() }
     }
 
     private val tombstonesFromSync = MutableStateFlow<Set<RoomId>>(setOf())
 
-    internal suspend fun onTombstone(tombstones: List<ClientEvent.RoomEvent.StateEvent<TombstoneEventContent>>) {
+    internal fun onTombstone(tombstones: List<ClientEvent.RoomEvent.StateEvent<TombstoneEventContent>>) {
         if (configuration.autoJoinUpgradedRooms.not() || tombstones.isEmpty()) return
 
         tombstonesFromSync.update { it + tombstones.map { it.roomId }.toSet() }
+    }
+
+    internal fun onCreate(creates: List<ClientEvent.RoomEvent.StateEvent<CreateEventContent>>) {
+        if (configuration.autoJoinUpgradedRooms.not() || creates.isEmpty()) return
+
+        tombstonesFromSync.update { it + creates.mapNotNull { it.content.predecessor?.roomId }.toSet() }
     }
 
     private val debounce = 10.seconds
