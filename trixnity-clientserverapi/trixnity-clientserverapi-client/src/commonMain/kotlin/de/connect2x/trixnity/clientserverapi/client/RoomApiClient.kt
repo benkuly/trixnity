@@ -1,13 +1,67 @@
 package de.connect2x.trixnity.clientserverapi.client
 
-import de.connect2x.trixnity.clientserverapi.model.room.*
+import de.connect2x.trixnity.clientserverapi.model.room.BanUser
+import de.connect2x.trixnity.clientserverapi.model.room.CreateRoom
+import de.connect2x.trixnity.clientserverapi.model.room.DeleteRoomAlias
+import de.connect2x.trixnity.clientserverapi.model.room.DeleteRoomTag
+import de.connect2x.trixnity.clientserverapi.model.room.DirectoryVisibility
+import de.connect2x.trixnity.clientserverapi.model.room.ForgetRoom
+import de.connect2x.trixnity.clientserverapi.model.room.GetDirectoryVisibility
+import de.connect2x.trixnity.clientserverapi.model.room.GetEvent
+import de.connect2x.trixnity.clientserverapi.model.room.GetEventContext
+import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
+import de.connect2x.trixnity.clientserverapi.model.room.GetHierarchy
+import de.connect2x.trixnity.clientserverapi.model.room.GetJoinedMembers
+import de.connect2x.trixnity.clientserverapi.model.room.GetJoinedRooms
+import de.connect2x.trixnity.clientserverapi.model.room.GetMembers
+import de.connect2x.trixnity.clientserverapi.model.room.GetPublicRooms
+import de.connect2x.trixnity.clientserverapi.model.room.GetPublicRoomsResponse
+import de.connect2x.trixnity.clientserverapi.model.room.GetPublicRoomsWithFilter
+import de.connect2x.trixnity.clientserverapi.model.room.GetRelations
+import de.connect2x.trixnity.clientserverapi.model.room.GetRelationsByRelationType
+import de.connect2x.trixnity.clientserverapi.model.room.GetRelationsByRelationTypeAndEventType
+import de.connect2x.trixnity.clientserverapi.model.room.GetRelationsResponse
+import de.connect2x.trixnity.clientserverapi.model.room.GetRoomAccountData
+import de.connect2x.trixnity.clientserverapi.model.room.GetRoomAlias
+import de.connect2x.trixnity.clientserverapi.model.room.GetRoomAliases
+import de.connect2x.trixnity.clientserverapi.model.room.GetRoomTags
+import de.connect2x.trixnity.clientserverapi.model.room.GetState
+import de.connect2x.trixnity.clientserverapi.model.room.GetStateEvent
+import de.connect2x.trixnity.clientserverapi.model.room.GetSummary
+import de.connect2x.trixnity.clientserverapi.model.room.GetThreads
+import de.connect2x.trixnity.clientserverapi.model.room.InviteUser
+import de.connect2x.trixnity.clientserverapi.model.room.JoinRoom
+import de.connect2x.trixnity.clientserverapi.model.room.JoinRoomVia
+import de.connect2x.trixnity.clientserverapi.model.room.KickUser
+import de.connect2x.trixnity.clientserverapi.model.room.KnockRoom
+import de.connect2x.trixnity.clientserverapi.model.room.LeaveRoom
+import de.connect2x.trixnity.clientserverapi.model.room.RedactEvent
+import de.connect2x.trixnity.clientserverapi.model.room.ReportEvent
+import de.connect2x.trixnity.clientserverapi.model.room.ReportRoom
+import de.connect2x.trixnity.clientserverapi.model.room.SendMessageEvent
+import de.connect2x.trixnity.clientserverapi.model.room.SendStateEvent
+import de.connect2x.trixnity.clientserverapi.model.room.SetDirectoryVisibility
+import de.connect2x.trixnity.clientserverapi.model.room.SetReadMarkers
+import de.connect2x.trixnity.clientserverapi.model.room.SetReceipt
+import de.connect2x.trixnity.clientserverapi.model.room.SetRoomAccountData
+import de.connect2x.trixnity.clientserverapi.model.room.SetRoomAlias
+import de.connect2x.trixnity.clientserverapi.model.room.SetRoomTag
+import de.connect2x.trixnity.clientserverapi.model.room.SetTyping
+import de.connect2x.trixnity.clientserverapi.model.room.ThirdPartySigned
+import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
+import de.connect2x.trixnity.clientserverapi.model.room.UnbanUser
+import de.connect2x.trixnity.clientserverapi.model.room.UpgradeRoom
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
-import de.connect2x.trixnity.core.model.events.*
+import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import de.connect2x.trixnity.core.model.events.InitialStateEvent
+import de.connect2x.trixnity.core.model.events.MessageEventContent
+import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
+import de.connect2x.trixnity.core.model.events.StateEventContent
 import de.connect2x.trixnity.core.model.events.m.ReceiptType
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.TagEventContent
@@ -15,7 +69,6 @@ import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.PowerLevelsEventContent
-import de.connect2x.trixnity.core.model.keys.Signed
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.contentType
 import de.connect2x.trixnity.utils.nextString
@@ -256,7 +309,7 @@ interface RoomApiClient {
         roomId: RoomId,
         via: Set<String>? = null,
         reason: String? = null,
-        thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>? = null,
+        thirdPartySigned: ThirdPartySigned? = null,
     ): Result<RoomId>
 
     /**
@@ -266,7 +319,7 @@ interface RoomApiClient {
         roomAliasId: RoomAliasId,
         via: Set<String>? = null,
         reason: String? = null,
-        thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>? = null,
+        thirdPartySigned: ThirdPartySigned? = null,
     ): Result<RoomId>
 
     /**
@@ -736,20 +789,26 @@ class RoomApiClientImpl(
         roomId: RoomId,
         via: Set<String>?,
         reason: String?,
-        thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>?,
+        thirdPartySigned: ThirdPartySigned?,
     ): Result<RoomId> =
-        baseClient.request(JoinRoom(roomId.full, via), JoinRoom.Request(reason, thirdPartySigned))
-            .mapCatching { it.roomId }
+        if (via == null) {
+            baseClient.request(JoinRoom(roomId), JoinRoom.Request(reason, thirdPartySigned))
+                .mapCatching { it.roomId }
+        } else {
+            baseClient.request(JoinRoomVia(roomId.full, via), JoinRoomVia.Request(reason, thirdPartySigned))
+                .mapCatching { it.roomId }
+        }
+
 
     override suspend fun joinRoom(
         roomAliasId: RoomAliasId,
         via: Set<String>?,
         reason: String?,
-        thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>?,
+        thirdPartySigned: ThirdPartySigned?,
     ): Result<RoomId> =
         baseClient.request(
-            JoinRoom(roomAliasId.full, via),
-            JoinRoom.Request(reason, thirdPartySigned)
+            JoinRoomVia(roomAliasId.full, via),
+            JoinRoomVia.Request(reason, thirdPartySigned)
         ).mapCatching { it.roomId }
 
     override suspend fun knockRoom(

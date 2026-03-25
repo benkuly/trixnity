@@ -2615,7 +2615,7 @@ final class de.connect2x.trixnity.client.room/RoomStateEventHandler : de.connect
 }
 
 final class de.connect2x.trixnity.client.room/RoomUpgradeHandler : de.connect2x.trixnity.core/EventHandler { // de.connect2x.trixnity.client.room/RoomUpgradeHandler|null[0]
-    constructor <init>(de.connect2x.trixnity.clientserverapi.client/MatrixClientServerApiClient, de.connect2x.trixnity.client.store/RoomStore, de.connect2x.trixnity.client/MatrixClientConfiguration) // de.connect2x.trixnity.client.room/RoomUpgradeHandler.<init>|<init>(de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient;de.connect2x.trixnity.client.store.RoomStore;de.connect2x.trixnity.client.MatrixClientConfiguration){}[0]
+    constructor <init>(de.connect2x.trixnity.clientserverapi.client/MatrixClientServerApiClient, de.connect2x.trixnity.client.store/RoomStore, de.connect2x.trixnity.client.store/RoomStateStore, de.connect2x.trixnity.client/MatrixClientConfiguration) // de.connect2x.trixnity.client.room/RoomUpgradeHandler.<init>|<init>(de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient;de.connect2x.trixnity.client.store.RoomStore;de.connect2x.trixnity.client.store.RoomStateStore;de.connect2x.trixnity.client.MatrixClientConfiguration){}[0]
 
     final fun startInCoroutineScope(kotlinx.coroutines/CoroutineScope) // de.connect2x.trixnity.client.room/RoomUpgradeHandler.startInCoroutineScope|startInCoroutineScope(kotlinx.coroutines.CoroutineScope){}[0]
 }

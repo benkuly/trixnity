@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added draftMessages to RoomService
 
+- Automatically join upgraded rooms when using timeline APIs
+
 ### Changed
 
 ### Deprecated
@@ -19,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Join without via parameter (e.g. for invites)
+- Fixed sync is blocked by room upgrade joins (possible rate limited)
 - Outbox retries not working
 
 ### Security

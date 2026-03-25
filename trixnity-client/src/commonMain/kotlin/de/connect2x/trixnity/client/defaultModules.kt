@@ -1,10 +1,5 @@
 package de.connect2x.trixnity.client
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 import de.connect2x.trixnity.client.cryptodriver.createCryptoModule
 import de.connect2x.trixnity.client.key.KeyBackupService
 import de.connect2x.trixnity.client.key.KeyService
@@ -14,14 +9,38 @@ import de.connect2x.trixnity.client.media.MediaService
 import de.connect2x.trixnity.client.media.createMediaModule
 import de.connect2x.trixnity.client.notification.NotificationService
 import de.connect2x.trixnity.client.notification.createNotificationModule
-import de.connect2x.trixnity.client.room.*
+import de.connect2x.trixnity.client.room.DirectRoomEventHandler
+import de.connect2x.trixnity.client.room.ForgetRoomService
+import de.connect2x.trixnity.client.room.ForgetRoomServiceImpl
+import de.connect2x.trixnity.client.room.MegolmRoomEventEncryptionService
+import de.connect2x.trixnity.client.room.OutboxMessageEventHandler
+import de.connect2x.trixnity.client.room.RoomAccountDataEventHandler
+import de.connect2x.trixnity.client.room.RoomEventEncryptionService
+import de.connect2x.trixnity.client.room.RoomListHandler
+import de.connect2x.trixnity.client.room.RoomService
+import de.connect2x.trixnity.client.room.RoomServiceImpl
+import de.connect2x.trixnity.client.room.RoomStateEventHandler
+import de.connect2x.trixnity.client.room.RoomUpgradeHandler
+import de.connect2x.trixnity.client.room.TimelineEventHandler
+import de.connect2x.trixnity.client.room.TypingEventHandler
+import de.connect2x.trixnity.client.room.UnencryptedRoomEventEncryptionService
+import de.connect2x.trixnity.client.room.createRoomModule
 import de.connect2x.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
 import de.connect2x.trixnity.client.room.outbox.default
 import de.connect2x.trixnity.client.server.createServerModule
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.createStoreModule
-import de.connect2x.trixnity.client.user.*
+import de.connect2x.trixnity.client.user.CanDoAction
+import de.connect2x.trixnity.client.user.CanDoActionImpl
+import de.connect2x.trixnity.client.user.GetPowerLevel
+import de.connect2x.trixnity.client.user.GetPowerLevelImpl
+import de.connect2x.trixnity.client.user.GlobalAccountDataEventHandler
+import de.connect2x.trixnity.client.user.LoadMembersService
+import de.connect2x.trixnity.client.user.LoadMembersServiceImpl
+import de.connect2x.trixnity.client.user.UserService
+import de.connect2x.trixnity.client.user.UserServiceImpl
+import de.connect2x.trixnity.client.user.createUserModule
 import de.connect2x.trixnity.client.verification.VerificationService
 import de.connect2x.trixnity.client.verification.createVerificationModule
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -33,6 +52,11 @@ import de.connect2x.trixnity.core.model.events.m.TypingEventContent
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.named
 import org.koin.core.module.dsl.singleOf
@@ -216,7 +240,7 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
                     clock = get(),
                     currentSyncState = get(),
                     scope = get(),
-                    config = get(),
+                    matrixClientConfig = get(),
                 )
             }
             singleOf(::GetPowerLevelImpl) { bind<GetPowerLevel>() }

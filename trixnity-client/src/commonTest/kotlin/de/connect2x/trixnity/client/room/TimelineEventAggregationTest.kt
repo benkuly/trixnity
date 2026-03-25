@@ -1,12 +1,18 @@
 package de.connect2x.trixnity.client.room
 
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.*
-import de.connect2x.trixnity.client.*
+import de.connect2x.trixnity.client.CurrentSyncState
+import de.connect2x.trixnity.client.MatrixClientConfiguration
+import de.connect2x.trixnity.client.getInMemoryRoomAccountDataStore
+import de.connect2x.trixnity.client.getInMemoryRoomOutboxMessageStore
+import de.connect2x.trixnity.client.getInMemoryRoomStateStore
+import de.connect2x.trixnity.client.getInMemoryRoomStore
+import de.connect2x.trixnity.client.getInMemoryRoomTimelineStore
+import de.connect2x.trixnity.client.mockMatrixClientServerApiClient
 import de.connect2x.trixnity.client.mocks.MediaServiceMock
 import de.connect2x.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import de.connect2x.trixnity.client.mocks.TimelineEventHandlerMock
+import de.connect2x.trixnity.client.simpleRoom
+import de.connect2x.trixnity.client.simpleUserInfo
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.TimelineEventRelation
 import de.connect2x.trixnity.clientserverapi.client.SyncState
@@ -15,11 +21,22 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.UnsignedRoomEventData
-import de.connect2x.trixnity.core.model.events.m.*
+import de.connect2x.trixnity.core.model.events.m.ReactionEventContent
+import de.connect2x.trixnity.core.model.events.m.RelatesTo
+import de.connect2x.trixnity.core.model.events.m.RelationType
+import de.connect2x.trixnity.core.model.events.m.Relations
+import de.connect2x.trixnity.core.model.events.m.ServerAggregation
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.testClock
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlin.test.Test
 
 class TimelineEventAggregationTest : TrixnityBaseTest() {
@@ -47,7 +64,7 @@ class TimelineEventAggregationTest : TrixnityBaseTest() {
         userInfo = simpleUserInfo,
         timelineEventHandler = TimelineEventHandlerMock(),
         clock = testScope.testClock,
-        config = MatrixClientConfiguration(),
+        matrixClientConfig = MatrixClientConfiguration(),
         typingEventHandler = TypingEventHandlerImpl(api),
         currentSyncState = CurrentSyncState(currentSyncState),
         scope = testScope.backgroundScope

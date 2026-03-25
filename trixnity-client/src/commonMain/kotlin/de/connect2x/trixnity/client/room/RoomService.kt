@@ -6,8 +6,23 @@ import de.connect2x.trixnity.client.CurrentSyncState
 import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.media.MediaService
 import de.connect2x.trixnity.client.room.message.MessageBuilder
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.RoomAccountDataStore
+import de.connect2x.trixnity.client.store.RoomOutboxMessage
+import de.connect2x.trixnity.client.store.RoomOutboxMessageStore
+import de.connect2x.trixnity.client.store.RoomStateStore
+import de.connect2x.trixnity.client.store.RoomStore
+import de.connect2x.trixnity.client.store.RoomTimelineStore
+import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.TimelineEvent.TimelineEventContentError
+import de.connect2x.trixnity.client.store.TimelineEventRelation
+import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.hasBeenReplaced
+import de.connect2x.trixnity.client.store.isEncrypted
+import de.connect2x.trixnity.client.store.isFirst
+import de.connect2x.trixnity.client.store.isLast
+import de.connect2x.trixnity.client.store.roomId
+import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.utils.retry
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction
@@ -15,9 +30,11 @@ import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.BACK
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
 import de.connect2x.trixnity.core.ClientEventEmitter.Priority
+import de.connect2x.trixnity.core.MatrixServerException
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
@@ -35,6 +52,7 @@ import de.connect2x.trixnity.core.subscribeAsFlow
 import de.connect2x.trixnity.crypto.core.SecureRandom
 import de.connect2x.trixnity.utils.KeyedMutex
 import de.connect2x.trixnity.utils.nextString
+import de.connect2x.trixnity.utils.retry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
@@ -254,7 +272,7 @@ class RoomServiceImpl(
     private val userInfo: UserInfo,
     private val timelineEventHandler: TimelineEventHandler,
     private val clock: Clock,
-    private val config: MatrixClientConfiguration,
+    private val matrixClientConfig: MatrixClientConfiguration,
     typingEventHandler: TypingEventHandler,
     private val currentSyncState: CurrentSyncState,
     private val scope: CoroutineScope,
@@ -380,7 +398,7 @@ class RoomServiceImpl(
                             roomTimelineStore.update(
                                 timelineEvent.eventId,
                                 roomId,
-                                persistIntoRepository = this@RoomServiceImpl.config.storeTimelineEventContentUnencrypted
+                                persistIntoRepository = this@RoomServiceImpl.matrixClientConfig.storeTimelineEventContentUnencrypted
                             ) { oldEvent ->
                                 // we check here again, because an event could be redacted at the same time
                                 if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEventContent)
@@ -475,14 +493,14 @@ class RoomServiceImpl(
                         val currentTimelineEventContent = currentTimelineEvent.event.content
                         val predecessor: RoomEventIdPair? =
                             if (direction == BACKWARDS && currentTimelineEvent.isFirst && currentTimelineEventContent is CreateEventContent) {
-                                val predecessor = currentTimelineEventContent.predecessor
-                                if (predecessor != null) {
-                                    val tombstone =
-                                        getState<TombstoneEventContent>(predecessor.roomId).first()?.id
-                                    if (tombstone != null) RoomEventIdPair(
-                                        tombstone,
-                                        predecessor.roomId
+                                val predecessorRoomId = currentTimelineEventContent.predecessor?.roomId
+                                if (predecessorRoomId != null) {
+                                    val tombstoneEventId = joinAndGetTombstone(
+                                        predecessorRoomId = predecessorRoomId,
+                                        predecessorRoom = getById(predecessorRoomId).first(),
+                                        sender = currentTimelineEvent.sender
                                     )
+                                    if (tombstoneEventId != null) RoomEventIdPair(tombstoneEventId, predecessorRoomId)
                                     else {
                                         log.warn { "getTimelineEvents: found predecessor of room, but room or tombstone does not exist locally" }
                                         null
@@ -491,16 +509,15 @@ class RoomServiceImpl(
                             } else null
                         val successor: RoomEventIdPair? =
                             if (direction == FORWARDS && (currentTimelineEvent.isLast || currentTimelineEventContent is TombstoneEventContent)) {
-                                val tombstone =
-                                    (currentTimelineEventContent as? TombstoneEventContent)
-                                        ?: getState<TombstoneEventContent>(currentTimelineEvent.roomId).first()?.content
+                                val tombstone = getState<TombstoneEventContent>(currentRoomId).firstOrNull()
                                 if (tombstone != null) {
-                                    val create =
-                                        getState<CreateEventContent>(tombstone.replacementRoom).first()?.idOrNull
-                                    if (create != null) RoomEventIdPair(
-                                        create,
-                                        tombstone.replacementRoom
+                                    val replacementRoomId = tombstone.content.replacementRoom
+                                    val createEventId = joinAndGetCreate(
+                                        replacementRoomId = replacementRoomId,
+                                        replacementRoom = getById(replacementRoomId).first(),
+                                        sender = tombstone.sender
                                     )
+                                    if (createEventId != null) RoomEventIdPair(createEventId, replacementRoomId)
                                     else {
                                         log.warn { "getTimelineEvents: found successor of room, but room does not exist locally" }
                                         null
@@ -604,6 +621,118 @@ class RoomServiceImpl(
                 size++
             }
         }.buffer(0)
+
+    private suspend fun joinAndGetCreate(
+        replacementRoomId: RoomId,
+        replacementRoom: Room?,
+        sender: UserId
+    ): EventId? = when {
+        matrixClientConfig.autoJoinUpgradedRooms.not() -> {
+            getState<CreateEventContent>(replacementRoomId).first()?.idOrNull
+        }
+
+        replacementRoom == null -> {
+            log.debug { "try join upgraded room via" }
+            retry(
+                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
+            ) {
+                api.room.joinRoom(
+                    roomId = replacementRoomId,
+                    via = setOf(sender.domain)
+                ).fold(
+                    onSuccess = {
+                        getState<CreateEventContent>(replacementRoomId).filterNotNull()
+                            .first().idOrNull
+                    },
+                    onFailure = {
+                        if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
+                            null
+                        } else throw it
+                    }
+                )
+            }
+        }
+
+        replacementRoom.membership == Membership.INVITE -> {
+            log.debug { "try join upgraded room" }
+            retry(
+                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
+            ) {
+                api.room.joinRoom(replacementRoomId)
+                    .fold(
+                        onSuccess = {
+                            getState<CreateEventContent>(replacementRoomId).filterNotNull()
+                                .first().idOrNull
+                        },
+                        onFailure = {
+                            if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
+                                null
+                            } else throw it
+                        }
+                    )
+            }
+        }
+
+        else -> {
+            getState<CreateEventContent>(replacementRoomId).first()?.idOrNull
+        }
+    }
+
+    private suspend fun joinAndGetTombstone(
+        predecessorRoomId: RoomId,
+        predecessorRoom: Room?,
+        sender: UserId
+    ): EventId? = when {
+        matrixClientConfig.autoJoinUpgradedRooms.not() -> {
+            getState<TombstoneEventContent>(predecessorRoomId).first()?.idOrNull
+        }
+
+        predecessorRoom == null -> {
+            log.debug { "try join upgraded room via" }
+            retry(
+                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
+            ) {
+                api.room.joinRoom(
+                    roomId = predecessorRoomId,
+                    via = setOf(sender.domain)
+                ).fold(
+                    onSuccess = {
+                        getState<TombstoneEventContent>(predecessorRoomId).filterNotNull()
+                            .first().idOrNull
+                    },
+                    onFailure = {
+                        if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
+                            null
+                        } else throw it
+                    }
+                )
+            }
+        }
+
+        predecessorRoom.membership == Membership.INVITE -> {
+            log.debug { "try join upgraded room" }
+            retry(
+                onError = { error, delay -> log.warn(error) { "could not join upgraded room, retry again in $delay" } }
+            ) {
+                api.room.joinRoom(predecessorRoomId)
+                    .fold(
+                        onSuccess = {
+                            getState<TombstoneEventContent>(predecessorRoomId).filterNotNull()
+                                .first().idOrNull
+                        },
+                        onFailure = {
+                            if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
+                                null
+                            } else throw it
+                        }
+                    )
+            }
+        }
+
+        else -> {
+            getState<TombstoneEventContent>(predecessorRoomId).first()?.idOrNull
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getLastTimelineEvents(

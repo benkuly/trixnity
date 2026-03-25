@@ -92,7 +92,7 @@ class RoomServiceTest : TrixnityBaseTest() {
         userInfo = simpleUserInfo,
         timelineEventHandler = TimelineEventHandlerMock(),
         clock = testScope.testClock,
-        config = MatrixClientConfiguration(),
+        matrixClientConfig = MatrixClientConfiguration(),
         typingEventHandler = TypingEventHandlerImpl(api),
         currentSyncState = CurrentSyncState(currentSyncState),
         scope = testScope.backgroundScope

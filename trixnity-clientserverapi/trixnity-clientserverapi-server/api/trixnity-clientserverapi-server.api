@@ -192,6 +192,7 @@ public abstract interface class de/connect2x/trixnity/clientserverapi/server/Roo
 	public abstract fun getThreads (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun inviteUser (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun joinRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun joinRoomVia (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun kickUser (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun knockRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun leaveRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

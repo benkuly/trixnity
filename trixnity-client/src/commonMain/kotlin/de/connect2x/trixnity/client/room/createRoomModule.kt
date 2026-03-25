@@ -91,7 +91,7 @@ fun createRoomModule() = module {
             clock = get(),
             currentSyncState = get(),
             scope = get(),
-            config = get(),
+            matrixClientConfig = get(),
         )
     }
 }
