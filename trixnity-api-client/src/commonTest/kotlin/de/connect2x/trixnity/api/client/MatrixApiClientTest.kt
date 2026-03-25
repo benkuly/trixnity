@@ -10,12 +10,12 @@ import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.testutils.scopedMockEngine
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.ContentType.Application
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod.Companion.Get
@@ -202,11 +202,6 @@ class MatrixApiClientTest : TrixnityBaseTest() {
             },
             json = json,
         )
-        shouldThrowAny {
-            try {
-                cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
-            } catch (_: MatrixServerException) {
-            }
-        }
+        shouldThrow<ClientRequestException> { cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() }
     }
 }

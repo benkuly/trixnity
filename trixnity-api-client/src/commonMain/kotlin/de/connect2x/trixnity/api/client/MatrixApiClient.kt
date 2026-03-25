@@ -31,7 +31,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.utils.io.charsets.MalformedInputException
 import kotlinx.io.Source
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -58,11 +57,7 @@ open class MatrixApiClient(
                 if (status.isSuccess()) return@validateResponse
                 log.trace { "try decode error response" }
 
-                val exceptionResponseText = try {
-                    response.bodyAsText()
-                } catch (_: MalformedInputException) {
-                    "<body failed decoding>"
-                }
+                val exceptionResponseText = response.bodyAsText()
                 val errorResponse = json.decodeErrorResponse(exceptionResponseText)
 
                 if (errorResponse != null) {
