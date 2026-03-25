@@ -1079,7 +1079,7 @@ public final class de/connect2x/trixnity/client/room/RoomStateEventHandler : de/
 }
 
 public final class de/connect2x/trixnity/client/room/RoomUpgradeHandler : de/connect2x/trixnity/core/EventHandler {
-	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiClient;Lde/connect2x/trixnity/client/store/RoomStore;Lde/connect2x/trixnity/client/MatrixClientConfiguration;)V
+	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiClient;Lde/connect2x/trixnity/client/store/RoomStore;Lde/connect2x/trixnity/client/store/RoomStateStore;Lde/connect2x/trixnity/client/MatrixClientConfiguration;)V
 	public fun startInCoroutineScope (Lkotlinx/coroutines/CoroutineScope;)V
 }
 
