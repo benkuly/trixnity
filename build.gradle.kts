@@ -1,4 +1,4 @@
-import com.vanniktech.maven.publish.MavenPublishPlugin
+import com.vanniktech.maven.publish.MavenPublishPlugin // never remove!
 import de.connect2x.conventions.PluginIds
 import de.connect2x.conventions.apache2
 import de.connect2x.conventions.c2xOrganization
@@ -10,11 +10,11 @@ import de.connect2x.conventions.registerCoverageTask
 import de.connect2x.conventions.setProjectInfo
 import de.connect2x.conventions.updateAbiFilesFromReportZip
 import de.connect2x.conventions.withVersionSuffix
-import java.time.ZonedDateTime
 import kotlinx.kover.gradle.plugin.KoverGradlePlugin
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.DokkaPlugin
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import java.time.ZonedDateTime
 
 plugins {
     alias(sharedLibs.plugins.c2xConventions)
