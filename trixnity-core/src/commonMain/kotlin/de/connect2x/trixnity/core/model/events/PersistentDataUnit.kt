@@ -1,14 +1,28 @@
 package de.connect2x.trixnity.core.model.events
 
-import kotlinx.serialization.*
+import de.connect2x.trixnity.core.MSC4354
+import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.*
-import de.connect2x.trixnity.core.model.EventId
-import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.UserId
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonNames
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/rooms/">matrix spec</a>
@@ -35,6 +49,9 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
         val sender: UserId
         val unsigned: UnsignedData?
 
+        @MSC4354
+        val sticky: StickyEventData?
+
         @Serializable
         data class PersistentMessageDataUnitV1<C : MessageEventContent>(
             @SerialName("auth_events") override val authEvents: @Serializable(with = EventHashPairListSerializer::class) List<@Contextual EventHashPair>,
@@ -46,7 +63,11 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
             @SerialName("prev_events") override val prevEvents: @Serializable(with = EventHashPairListSerializer::class) List<@Contextual EventHashPair>,
             @SerialName("room_id") override val roomId: RoomId,
             @SerialName("sender") override val sender: UserId,
-            @SerialName("unsigned") override val unsigned: UnsignedData? = null
+            @SerialName("unsigned") override val unsigned: UnsignedData? = null,
+            @OptIn(ExperimentalSerializationApi::class)
+            @JsonNames("sticky")
+            @SerialName("msc4354_sticky")
+            @MSC4354 override val sticky: StickyEventData? = null,
         ) : PersistentMessageDataUnit<C>, PersistentDataUnitV1<C>
 
         @Serializable
@@ -61,7 +82,11 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
             @SerialName("room_id") override val roomId: RoomId,
             @SerialName("sender") override val sender: UserId,
             @SerialName("state_key") val stateKey: String,
-            @SerialName("unsigned") override val unsigned: UnsignedData? = null
+            @SerialName("unsigned") override val unsigned: UnsignedData? = null,
+            @OptIn(ExperimentalSerializationApi::class)
+            @JsonNames("sticky")
+            @SerialName("msc4354_sticky")
+            @MSC4354 override val sticky: StickyEventData? = null,
         ) : PersistentStateDataUnit<C>, PersistentDataUnitV1<C>
 
         data class EventHashPair(
@@ -108,6 +133,9 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
         val sender: UserId
         val unsigned: UnsignedData?
 
+        @MSC4354
+        val sticky: StickyEventData?
+
         @Serializable
         data class PersistentMessageDataUnitV3<C : MessageEventContent>(
             @SerialName("auth_events") override val authEvents: List<EventId>,
@@ -118,7 +146,11 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
             @SerialName("prev_events") override val prevEvents: List<EventId>,
             @SerialName("room_id") override val roomId: RoomId,
             @SerialName("sender") override val sender: UserId,
-            @SerialName("unsigned") override val unsigned: UnsignedData? = null
+            @SerialName("unsigned") override val unsigned: UnsignedData? = null,
+            @OptIn(ExperimentalSerializationApi::class)
+            @JsonNames("sticky")
+            @SerialName("msc4354_sticky")
+            @MSC4354 override val sticky: StickyEventData? = null,
         ) : PersistentMessageDataUnit<C>, PersistentDataUnitV3<C>
 
         @Serializable
@@ -132,7 +164,11 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
             @SerialName("room_id") override val roomId: RoomId,
             @SerialName("sender") override val sender: UserId,
             @SerialName("state_key") val stateKey: String,
-            @SerialName("unsigned") override val unsigned: UnsignedData? = null
+            @SerialName("unsigned") override val unsigned: UnsignedData? = null,
+            @OptIn(ExperimentalSerializationApi::class)
+            @JsonNames("sticky")
+            @MSC4354 @SerialName("msc4354_sticky")
+            override val sticky: StickyEventData? = null,
         ) : PersistentStateDataUnit<C>, PersistentDataUnitV3<C>
     }
 
@@ -146,6 +182,9 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
         val sender: UserId
         val unsigned: UnsignedData?
 
+        @MSC4354
+        val sticky: StickyEventData?
+
         @Serializable
         data class PersistentMessageDataUnitV12<C : MessageEventContent>(
             @SerialName("auth_events") override val authEvents: List<EventId>,
@@ -156,7 +195,11 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
             @SerialName("prev_events") override val prevEvents: List<EventId>,
             @SerialName("room_id") override val roomId: RoomId,
             @SerialName("sender") override val sender: UserId,
-            @SerialName("unsigned") override val unsigned: UnsignedData? = null
+            @SerialName("unsigned") override val unsigned: UnsignedData? = null,
+            @OptIn(ExperimentalSerializationApi::class)
+            @JsonNames("sticky")
+            @SerialName("msc4354_sticky")
+            @MSC4354 override val sticky: StickyEventData? = null,
         ) : PersistentMessageDataUnit<C>, PersistentDataUnitV12<C>
 
         @Serializable
@@ -170,7 +213,11 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
             @SerialName("room_id") override val roomId: RoomId? = null,
             @SerialName("sender") override val sender: UserId,
             @SerialName("state_key") val stateKey: String,
-            @SerialName("unsigned") override val unsigned: UnsignedData? = null
+            @SerialName("unsigned") override val unsigned: UnsignedData? = null,
+            @OptIn(ExperimentalSerializationApi::class)
+            @JsonNames("sticky")
+            @SerialName("msc4354_sticky")
+            @MSC4354 override val sticky: StickyEventData? = null,
         ) : PersistentStateDataUnit<C>, PersistentDataUnitV12<C>
     }
 

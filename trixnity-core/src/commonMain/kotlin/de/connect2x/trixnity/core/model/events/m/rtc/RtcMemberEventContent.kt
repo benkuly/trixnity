@@ -19,6 +19,7 @@ import kotlinx.serialization.json.JsonNames
  * @see <a href="https://github.com/matrix-org/matrix-spec-proposals/pull/4143">MSC4143</a>
  */
 @MSC4143
+@MSC4354
 @Serializable
 data class RtcMemberEventContent(
     @SerialName("slot_id")
@@ -32,9 +33,9 @@ data class RtcMemberEventContent(
     val rtcTransports: List<RtcTransport>? = null,
     @MSC4354
     @property:OptIn(ExperimentalSerializationApi::class)
-    @JsonNames("msc4354_sticky_key")
-    @SerialName("sticky_key")
-    override val stickyKey: String? = null,
+    @JsonNames("sticky_key")
+    @SerialName("msc4354_sticky_key")
+    override val stickyKey: String,
     @SerialName("versions")
     val versions: List<String>? = null,
     @SerialName("disconnect_reason")

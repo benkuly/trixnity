@@ -1,10 +1,13 @@
 package de.connect2x.trixnity.core.model.events
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 
 /**
  * A client event with a specific type given by the generic parameter C.
@@ -25,6 +28,9 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
         val originTimestamp: Long
         val unsigned: UnsignedRoomEventData?
 
+        @MSC4354
+        val sticky: StickyEventData?
+
         /**
          * Matrix message event
          *
@@ -38,7 +44,11 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
             @SerialName("sender") override val sender: UserId,
             @SerialName("room_id") override val roomId: RoomId,
             @SerialName("origin_server_ts") override val originTimestamp: Long,
-            @SerialName("unsigned") override val unsigned: UnsignedRoomEventData.UnsignedMessageEventData? = null
+            @SerialName("unsigned") override val unsigned: UnsignedRoomEventData.UnsignedMessageEventData? = null,
+            @OptIn(ExperimentalSerializationApi::class)
+            @JsonNames("sticky")
+            @SerialName("msc4354_sticky")
+            @MSC4354 override val sticky: StickyEventData? = null,
         ) : RoomEvent<C>
 
         /**
@@ -56,6 +66,10 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
             @SerialName("origin_server_ts") override val originTimestamp: Long,
             @SerialName("unsigned") override val unsigned: UnsignedRoomEventData.UnsignedStateEventData? = null,
             @SerialName("state_key") override val stateKey: String,
+            @OptIn(ExperimentalSerializationApi::class)
+            @JsonNames("sticky")
+            @SerialName("msc4354_sticky")
+            @MSC4354 override val sticky: StickyEventData? = null,
         ) : RoomEvent<C>, StateBaseEvent<C>
     }
 

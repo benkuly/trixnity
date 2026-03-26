@@ -2,6 +2,7 @@ package de.connect2x.trixnity.core.serialization.events
 
 import de.connect2x.trixnity.core.MSC3814
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.events.block.m.TextContentBlock
 import de.connect2x.trixnity.core.model.events.block.m.TopicContentBlock
 import de.connect2x.trixnity.core.model.events.m.DehydratedDeviceEventContent
@@ -84,9 +85,9 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     messageOf<CallEventContent.Reject>("m.call.reject")
     messageOf<CallEventContent.SelectAnswer>("m.call.select_answer")
     messageOf<CallEventContent.SdpStreamMetadataChanged>("m.call.sdp_stream_metadata_changed")
-    @OptIn(MSC4143::class)
+    @OptIn(MSC4143::class, MSC4354::class)
     messageOf<RtcMemberEventContent>("org.matrix.msc4143.rtc.member", RtcMemberEventContentSerializer())
-    @OptIn(MSC4143::class)
+    @OptIn(MSC4143::class, MSC4354::class)
     messageOf<RtcMemberEventContent>("m.rtc.member", RtcMemberEventContentSerializer())
 
     stateOf<AvatarEventContent>("m.room.avatar")
