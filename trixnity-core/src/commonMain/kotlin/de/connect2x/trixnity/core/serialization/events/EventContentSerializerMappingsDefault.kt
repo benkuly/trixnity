@@ -4,18 +4,59 @@ import de.connect2x.trixnity.core.MSC3814
 import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.model.events.block.m.TextContentBlock
 import de.connect2x.trixnity.core.model.events.block.m.TopicContentBlock
-import de.connect2x.trixnity.core.model.events.m.*
+import de.connect2x.trixnity.core.model.events.m.DehydratedDeviceEventContent
+import de.connect2x.trixnity.core.model.events.m.DirectEventContent
+import de.connect2x.trixnity.core.model.events.m.DummyEventContent
+import de.connect2x.trixnity.core.model.events.m.ForwardedRoomKeyEventContent
+import de.connect2x.trixnity.core.model.events.m.FullyReadEventContent
+import de.connect2x.trixnity.core.model.events.m.IdentityServerEventContent
+import de.connect2x.trixnity.core.model.events.m.IgnoredUserListEventContent
+import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
+import de.connect2x.trixnity.core.model.events.m.MegolmBackupV1EventContent
+import de.connect2x.trixnity.core.model.events.m.PresenceEventContent
+import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
+import de.connect2x.trixnity.core.model.events.m.ReactionEventContent
+import de.connect2x.trixnity.core.model.events.m.ReceiptEventContent
+import de.connect2x.trixnity.core.model.events.m.RoomKeyEventContent
+import de.connect2x.trixnity.core.model.events.m.RoomKeyRequestEventContent
+import de.connect2x.trixnity.core.model.events.m.TagEventContent
+import de.connect2x.trixnity.core.model.events.m.TypingEventContent
 import de.connect2x.trixnity.core.model.events.m.call.CallEventContent
 import de.connect2x.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import de.connect2x.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import de.connect2x.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
-import de.connect2x.trixnity.core.model.events.m.key.verification.*
+import de.connect2x.trixnity.core.model.events.m.key.verification.SasAcceptEventContent
+import de.connect2x.trixnity.core.model.events.m.key.verification.SasKeyEventContent
+import de.connect2x.trixnity.core.model.events.m.key.verification.SasMacEventContent
+import de.connect2x.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import de.connect2x.trixnity.core.model.events.m.key.verification.VerificationDoneEventContent
+import de.connect2x.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
+import de.connect2x.trixnity.core.model.events.m.key.verification.VerificationRequestToDeviceEventContent
+import de.connect2x.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import de.connect2x.trixnity.core.model.events.m.policy.RoomRuleEventContent
 import de.connect2x.trixnity.core.model.events.m.policy.ServerRuleEventContent
 import de.connect2x.trixnity.core.model.events.m.policy.UserRuleEventContent
+import de.connect2x.trixnity.core.model.events.m.room.AvatarEventContent
+import de.connect2x.trixnity.core.model.events.m.room.CanonicalAliasEventContent
+import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
+import de.connect2x.trixnity.core.model.events.m.room.EncryptedMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent
+import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
+import de.connect2x.trixnity.core.model.events.m.room.GuestAccessEventContent
+import de.connect2x.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
+import de.connect2x.trixnity.core.model.events.m.room.JoinRulesEventContent
+import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
+import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
+import de.connect2x.trixnity.core.model.events.m.room.PinnedEventsEventContent
+import de.connect2x.trixnity.core.model.events.m.room.PowerLevelsEventContent
+import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.room.ServerACLEventContent
+import de.connect2x.trixnity.core.model.events.m.room.ThirdPartyInviteEventContent
+import de.connect2x.trixnity.core.model.events.m.room.TombstoneEventContent
+import de.connect2x.trixnity.core.model.events.m.room.TopicEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotEventContent
-import de.connect2x.trixnity.core.model.events.m.room.*
 import de.connect2x.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import de.connect2x.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import de.connect2x.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
@@ -43,11 +84,10 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     messageOf<CallEventContent.Reject>("m.call.reject")
     messageOf<CallEventContent.SelectAnswer>("m.call.select_answer")
     messageOf<CallEventContent.SdpStreamMetadataChanged>("m.call.sdp_stream_metadata_changed")
-
-    @OptIn(MSC4143::class)
-    messageOf<RtcMemberEventContent>("m.rtc.member", RtcMemberEventContentSerializer())
     @OptIn(MSC4143::class)
     messageOf<RtcMemberEventContent>("org.matrix.msc4143.rtc.member", RtcMemberEventContentSerializer())
+    @OptIn(MSC4143::class)
+    messageOf<RtcMemberEventContent>("m.rtc.member", RtcMemberEventContentSerializer())
 
     stateOf<AvatarEventContent>("m.room.avatar")
     stateOf<CanonicalAliasEventContent>("m.room.canonical_alias")
@@ -69,11 +109,10 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     stateOf<ServerRuleEventContent>("m.policy.rule.server")
     stateOf<ParentEventContent>("m.space.parent")
     stateOf<ChildEventContent>("m.space.child")
-
-    @OptIn(MSC4143::class)
-    stateOf<RtcSlotEventContent>("m.rtc.slot", RtcSlotEventContentSerializer())
     @OptIn(MSC4143::class)
     stateOf<RtcSlotEventContent>("org.matrix.msc4143.rtc.slot", RtcSlotEventContentSerializer())
+    @OptIn(MSC4143::class)
+    stateOf<RtcSlotEventContent>("m.rtc.slot", RtcSlotEventContentSerializer())
 
     ephemeralOf<PresenceEventContent>("m.presence")
     ephemeralOf<TypingEventContent>("m.typing")

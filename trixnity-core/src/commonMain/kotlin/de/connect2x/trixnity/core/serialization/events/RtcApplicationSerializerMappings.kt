@@ -1,4 +1,4 @@
-@file:OptIn(de.connect2x.trixnity.core.MSC4143::class)
+@file:OptIn(MSC4143::class)
 
 package de.connect2x.trixnity.core.serialization.events
 
@@ -31,10 +31,8 @@ class RtcApplicationSerializerMappingsBuilder {
             Set<RtcApplicationSerializerMapping<*>> by mappings {}
 }
 
-@MSC4143
-fun createRtcApplicationSerializerMappings(
-    builder: RtcApplicationSerializerMappingsBuilder.() -> Unit,
-): RtcApplicationSerializerMappings = RtcApplicationSerializerMappingsBuilder().apply(builder).build()
+operator fun RtcApplicationSerializerMappings.Companion.invoke(builder: RtcApplicationSerializerMappingsBuilder.() -> Unit): RtcApplicationSerializerMappings =
+    RtcApplicationSerializerMappingsBuilder().apply(builder).build()
 
 @MSC4143
 inline fun <reified T : RtcApplication> RtcApplicationSerializerMappingsBuilder.of(type: String) {
@@ -42,7 +40,7 @@ inline fun <reified T : RtcApplication> RtcApplicationSerializerMappingsBuilder.
 }
 
 private val defaultRtcApplicationSerializerMappings: RtcApplicationSerializerMappings =
-    createRtcApplicationSerializerMappings {
+    RtcApplicationSerializerMappings {
         of<CallApplication>("m.call")
     }
 

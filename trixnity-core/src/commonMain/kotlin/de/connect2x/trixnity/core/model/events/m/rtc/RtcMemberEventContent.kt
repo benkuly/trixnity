@@ -1,13 +1,17 @@
 package de.connect2x.trixnity.core.model.events.m.rtc
 
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.MessageEventContent
+import de.connect2x.trixnity.core.model.events.StickyEventContent
 import de.connect2x.trixnity.core.model.events.m.Mentions
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 
 /**
  * MatrixRTC membership content.
@@ -26,8 +30,11 @@ data class RtcMemberEventContent(
     val member: Member? = null,
     @SerialName("rtc_transports")
     val rtcTransports: List<RtcTransport>? = null,
+    @MSC4354
+    @property:OptIn(ExperimentalSerializationApi::class)
+    @JsonNames("msc4354_sticky_key")
     @SerialName("sticky_key")
-    val stickyKey: String? = null,
+    override val stickyKey: String? = null,
     @SerialName("versions")
     val versions: List<String>? = null,
     @SerialName("disconnect_reason")
@@ -36,7 +43,7 @@ data class RtcMemberEventContent(
     val disconnected: Boolean? = null,
     @SerialName("m.relates_to")
     override val relatesTo: RelatesTo? = null,
-) : MessageEventContent {
+) : MessageEventContent, StickyEventContent {
 
     override val mentions: Mentions? = null
     override val externalUrl: String? = null
