@@ -4,14 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
- 
+
 ## [Unreleased]
 
 ### Added
-
-- Added draftMessages to RoomService
-
-- Automatically join upgraded rooms when using timeline APIs
 
 ### Changed
 
@@ -21,12 +17,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+### Security
+
+## 5.4.0
+
+### Added
+
+- Added draftMessages to RoomService
+- Automatically join upgraded rooms when using timeline APIs
+
+### Fixed
+
 - Join without via parameter (e.g. for invites)
 - Fixed sync is blocked by room upgrade joins (possible rate limited)
 - Outbox retries not working
 - Exceptions, that are not MatrixServerExceptions being treated as such
-
-### Security
 
 ## 5.3.1
 
