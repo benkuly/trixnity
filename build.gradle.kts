@@ -1,3 +1,4 @@
+import com.vanniktech.maven.publish.MavenPublishPlugin
 import de.connect2x.conventions.PluginIds
 import de.connect2x.conventions.apache2
 import de.connect2x.conventions.c2xOrganization
