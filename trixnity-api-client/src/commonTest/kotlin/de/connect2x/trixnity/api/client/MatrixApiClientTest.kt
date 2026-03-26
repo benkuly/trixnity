@@ -1,18 +1,5 @@
 package de.connect2x.trixnity.api.client
 
-import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldStartWith
-import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.client.engine.mock.*
-import io.ktor.http.*
-import io.ktor.http.ContentType.*
-import io.ktor.http.HttpMethod.Companion.Get
-import io.ktor.http.HttpMethod.Companion.Post
-import io.ktor.resources.*
-import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import de.connect2x.trixnity.core.ErrorResponse
 import de.connect2x.trixnity.core.HttpMethod
 import de.connect2x.trixnity.core.HttpMethodType.GET
@@ -22,6 +9,24 @@ import de.connect2x.trixnity.core.MatrixServerException
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.testutils.scopedMockEngine
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.http.ContentType.Application
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod.Companion.Get
+import io.ktor.http.HttpMethod.Companion.Post
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.fullPath
+import io.ktor.http.headersOf
+import io.ktor.resources.Resource
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -184,7 +189,7 @@ class MatrixApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runTest {
+    fun itShouldCatchAllOtherNotOkResponseAndThrowOtherExceptionType() = runTest {
         val cut = MatrixApiClient(
             httpClientEngine = scopedMockEngine {
                 addHandler {
@@ -197,14 +202,6 @@ class MatrixApiClientTest : TrixnityBaseTest() {
             },
             json = json,
         )
-        val error = shouldThrow<MatrixServerException> {
-            cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
-        }
-        assertEquals(HttpStatusCode.NotFound, error.statusCode)
-        assertEquals(
-            ErrorResponse.NotJson::class,
-            error.errorResponse::class
-        )
-        error.errorResponse.error shouldStartWith "response could not be parsed"
+        shouldThrow<ClientRequestException> { cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() }
     }
 }

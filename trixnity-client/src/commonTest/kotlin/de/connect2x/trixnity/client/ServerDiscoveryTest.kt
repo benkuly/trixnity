@@ -1,17 +1,24 @@
 package de.connect2x.trixnity.client
 
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.client.engine.*
-import io.ktor.client.engine.mock.*
-import io.ktor.http.*
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockEngineConfig
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.respondError
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
+import io.ktor.http.headersOf
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 import kotlinx.coroutines.test.runTest
-import de.connect2x.trixnity.core.MatrixServerException
-import de.connect2x.trixnity.core.model.UserId
-import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.test.Test
 import kotlin.test.fail
@@ -176,7 +183,7 @@ class ServerDiscoveryTest : TrixnityBaseTest() {
         }
         "https://someHost:8008".serverDiscovery(httpClientEngine)
             .exceptionOrNull()
-            .shouldBeInstanceOf<MatrixServerException>().statusCode shouldBe HttpStatusCode.NotFound
+            .shouldBeInstanceOf<ClientRequestException>().response.status shouldBe HttpStatusCode.NotFound
     }
 
 

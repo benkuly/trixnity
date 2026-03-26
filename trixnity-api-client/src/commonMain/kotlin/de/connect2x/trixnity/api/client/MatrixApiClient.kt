@@ -10,16 +10,27 @@ import de.connect2x.trixnity.core.decodeErrorResponse
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.resources.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
+import io.ktor.client.call.body
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpCallValidator
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.RedirectResponseException
+import io.ktor.client.plugins.ResponseException
+import io.ktor.client.plugins.ServerResponseException
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.resources.Resources
+import io.ktor.client.plugins.resources.prepareRequest
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.accept
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.io.Source
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -46,8 +57,21 @@ open class MatrixApiClient(
                 if (status.isSuccess()) return@validateResponse
                 log.trace { "try decode error response" }
 
-                val errorResponse = json.decodeErrorResponse(response.bodyAsText())
-                throw MatrixServerException(response.status, errorResponse, null)
+                val exceptionResponseText = response.bodyAsText()
+                val errorResponse = json.decodeErrorResponse(exceptionResponseText)
+
+                if (errorResponse != null) {
+                    throw MatrixServerException(status, errorResponse, null)
+                }
+
+                val statusCode = status.value
+                val exception = when (statusCode) {
+                    in 300..399 -> RedirectResponseException(response, exceptionResponseText)
+                    in 400..499 -> ClientRequestException(response, exceptionResponseText)
+                    in 500..599 -> ServerResponseException(response, exceptionResponseText)
+                    else -> ResponseException(response, exceptionResponseText)
+                }
+                throw exception
             }
         }
         expectSuccess = false
