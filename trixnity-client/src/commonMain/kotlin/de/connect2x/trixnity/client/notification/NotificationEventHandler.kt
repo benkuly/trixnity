@@ -7,8 +7,21 @@ import de.connect2x.trixnity.client.flattenValues
 import de.connect2x.trixnity.client.key.getDeviceKey
 import de.connect2x.trixnity.client.room.RoomService
 import de.connect2x.trixnity.client.room.firstWithContent
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.GlobalAccountDataStore
+import de.connect2x.trixnity.client.store.KeyStore
+import de.connect2x.trixnity.client.store.NotificationStore
+import de.connect2x.trixnity.client.store.RoomStateStore
+import de.connect2x.trixnity.client.store.RoomStore
+import de.connect2x.trixnity.client.store.RoomUserStore
+import de.connect2x.trixnity.client.store.StoredNotification
+import de.connect2x.trixnity.client.store.StoredNotificationState
 import de.connect2x.trixnity.client.store.StoredNotificationState.SyncWithTimeline.IsRead
+import de.connect2x.trixnity.client.store.StoredNotificationUpdate
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.TransactionManager
+import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.get
+import de.connect2x.trixnity.client.store.isVerified
 import de.connect2x.trixnity.client.takeWhileInclusive
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.client.SyncEvents
@@ -25,8 +38,28 @@ import de.connect2x.trixnity.core.model.events.m.ReceiptType
 import de.connect2x.trixnity.core.model.push.toList
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.chunked
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.launch
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -112,6 +145,7 @@ class NotificationEventHandler(
             val lastRelevantEventId: EventId?,
             val isEncrypted: Boolean,
             val notificationsDisabled: Boolean,
+            val hasSuccessor: Boolean,
         )
 
         val (completelyReadRooms, unreadRooms) =
@@ -128,11 +162,12 @@ class NotificationEventHandler(
                         lastEventId = room.lastEventId,
                         lastRelevantEventId = room.lastRelevantEventId,
                         isEncrypted = room.encrypted,
-                        notificationsDisabled = pushRulesCache.pushRulesDisabled || disabledRooms.contains(roomId)
+                        notificationsDisabled = pushRulesCache.pushRulesDisabled || disabledRooms.contains(roomId),
+                        hasSuccessor = room.nextRoomId != null
                     )
                 } else null
             }.partition {
-                it.lastEventId != null && it.readReceipts.contains(it.lastEventId)
+                it.lastEventId != null && it.readReceipts.contains(it.lastEventId) || it.hasSuccessor
             }.let { roomWithReadMarker ->
                 roomWithReadMarker.first.map { it.roomId }.toSet() to roomWithReadMarker.second.toSet()
             }
