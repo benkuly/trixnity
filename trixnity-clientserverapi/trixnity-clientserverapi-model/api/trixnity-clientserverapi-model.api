@@ -7850,18 +7850,19 @@ public final class de/connect2x/trixnity/clientserverapi/model/room/SendEventRes
 
 public final class de/connect2x/trixnity/clientserverapi/model/room/SendMessageEvent : de/connect2x/trixnity/core/MatrixEndpoint {
 	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/SendMessageEvent$Companion;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-7hZGZBE ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/Long;
-	public final fun copy-nnwLeS4 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)Lde/connect2x/trixnity/clientserverapi/model/room/SendMessageEvent;
-	public static synthetic fun copy-nnwLeS4$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendMessageEvent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendMessageEvent;
+	public final fun copy-qv99HPQ (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;)Lde/connect2x/trixnity/clientserverapi/model/room/SendMessageEvent;
+	public static synthetic fun copy-qv99HPQ$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendMessageEvent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendMessageEvent;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getRequestContentType ()Lio/ktor/http/ContentType;
 	public fun getResponseContentType ()Lio/ktor/http/ContentType;
 	public final fun getRoomId-7hZGZBE ()Ljava/lang/String;
+	public final fun getStickyDurationMs ()Ljava/lang/Long;
 	public final fun getTs ()Ljava/lang/Long;
 	public final fun getTxnId ()Ljava/lang/String;
 	public final fun getType ()Ljava/lang/String;
@@ -7890,19 +7891,20 @@ public final class de/connect2x/trixnity/clientserverapi/model/room/SendMessageE
 
 public final class de/connect2x/trixnity/clientserverapi/model/room/SendStateEvent : de/connect2x/trixnity/core/MatrixEndpoint {
 	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/SendStateEvent$Companion;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-7hZGZBE ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/Long;
-	public final fun copy-nnwLeS4 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)Lde/connect2x/trixnity/clientserverapi/model/room/SendStateEvent;
-	public static synthetic fun copy-nnwLeS4$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendStateEvent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendStateEvent;
+	public final fun copy-qv99HPQ (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;)Lde/connect2x/trixnity/clientserverapi/model/room/SendStateEvent;
+	public static synthetic fun copy-qv99HPQ$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendStateEvent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendStateEvent;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getRequestContentType ()Lio/ktor/http/ContentType;
 	public fun getResponseContentType ()Lio/ktor/http/ContentType;
 	public final fun getRoomId-7hZGZBE ()Ljava/lang/String;
 	public final fun getStateKey ()Ljava/lang/String;
+	public final fun getStickyDurationMs ()Ljava/lang/Long;
 	public final fun getTs ()Ljava/lang/Long;
 	public final fun getType ()Ljava/lang/String;
 	public fun hashCode ()I
@@ -9821,21 +9823,25 @@ public final class de/connect2x/trixnity/clientserverapi/model/sync/Sync$Respons
 	public fun <init> ()V
 	public fun <init> (Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;Ljava/util/Map;)V
 	public synthetic fun <init> (Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;Ljava/util/Map;)V
+	public synthetic fun <init> (Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;
 	public final fun component2 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;
 	public final fun component3 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;
 	public final fun component4 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;
-	public final fun component5 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;
-	public final fun component6 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;
-	public final fun component7 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;
-	public final fun component8 ()Ljava/util/Map;
-	public final fun copy (Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;Ljava/util/Map;)Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;Ljava/util/Map;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom;
+	public final fun component5 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;
+	public final fun component6 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;
+	public final fun component7 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;
+	public final fun component8 ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;
+	public final fun component9 ()Ljava/util/Map;
+	public final fun copy (Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;Ljava/util/Map;)Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;Ljava/util/Map;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAccountData ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$RoomAccountData;
 	public final fun getEphemeral ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Ephemeral;
 	public final fun getState ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;
 	public final fun getStateAfter ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$State;
+	public final fun getSticky ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;
 	public final fun getSummary ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary;
 	public final fun getTimeline ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$Timeline;
 	public final fun getUnreadNotifications ()Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$UnreadNotificationCounts;
@@ -9918,6 +9924,35 @@ public final synthetic class de/connect2x/trixnity/clientserverapi/model/sync/Sy
 }
 
 public final class de/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$RoomSummary$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky {
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;Ljava/util/List;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvents ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/sync/Sync$Response$Rooms$JoinedRoom$Sticky$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 

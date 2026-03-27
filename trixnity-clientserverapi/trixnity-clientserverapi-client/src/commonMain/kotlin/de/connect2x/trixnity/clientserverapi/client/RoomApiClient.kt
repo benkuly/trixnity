@@ -51,6 +51,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.ThirdPartySigned
 import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
 import de.connect2x.trixnity.clientserverapi.model.room.UnbanUser
 import de.connect2x.trixnity.clientserverapi.model.room.UpgradeRoom
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
@@ -193,6 +194,19 @@ interface RoomApiClient {
         roomId: RoomId,
         eventContent: StateEventContent,
         stateKey: String = "",
+        ts: Long? = null,
+    ): Result<EventId>
+
+    /**
+     * @see [SendStateEvent]
+     */
+    @MSC4354
+    suspend fun sendStateEvent(
+        roomId: RoomId,
+        eventContent: StateEventContent,
+        stateKey: String = "",
+        ts: Long? = null,
+        stickyDurationMs: Long? = null,
     ): Result<EventId>
 
     /**
@@ -202,6 +216,19 @@ interface RoomApiClient {
         roomId: RoomId,
         eventContent: MessageEventContent,
         txnId: String = Random.nextString(22),
+        ts: Long? = null,
+    ): Result<EventId>
+
+    /**
+     * @see [SendMessageEvent]
+     */
+    @MSC4354
+    suspend fun sendMessageEvent(
+        roomId: RoomId,
+        eventContent: MessageEventContent,
+        txnId: String = Random.nextString(22),
+        ts: Long? = null,
+        stickyDurationMs: Long? = null,
     ): Result<EventId>
 
     /**
@@ -670,25 +697,47 @@ class RoomApiClientImpl(
     ): Result<GetThreads.Response> =
         baseClient.request(GetThreads(roomId, from, include, limit))
 
+    @MSC4354
     override suspend fun sendStateEvent(
         roomId: RoomId,
         eventContent: StateEventContent,
         stateKey: String,
+        ts: Long?,
+        stickyDurationMs: Long?,
     ): Result<EventId> {
         val eventType = contentMappings.state.contentType(eventContent)
-        return baseClient.request(SendStateEvent(roomId, eventType, stateKey), eventContent)
+        return baseClient.request(SendStateEvent(roomId, eventType, stateKey, ts, null, stickyDurationMs), eventContent)
             .mapCatching { it.eventId }
     }
 
+    @OptIn(MSC4354::class)
+    override suspend fun sendStateEvent(
+        roomId: RoomId,
+        eventContent: StateEventContent,
+        stateKey: String,
+        ts: Long?
+    ): Result<EventId> = sendStateEvent(roomId, eventContent, stateKey, ts, null)
+
+    @MSC4354
     override suspend fun sendMessageEvent(
         roomId: RoomId,
         eventContent: MessageEventContent,
         txnId: String,
+        ts: Long?,
+        stickyDurationMs: Long?,
     ): Result<EventId> {
         val eventType = contentMappings.message.contentType(eventContent)
-        return baseClient.request(SendMessageEvent(roomId, eventType, txnId), eventContent)
+        return baseClient.request(SendMessageEvent(roomId, eventType, txnId, ts, null, stickyDurationMs), eventContent)
             .mapCatching { it.eventId }
     }
+
+    @OptIn(MSC4354::class)
+    override suspend fun sendMessageEvent(
+        roomId: RoomId,
+        eventContent: MessageEventContent,
+        txnId: String,
+        ts: Long?
+    ): Result<EventId> = sendMessageEvent(roomId, eventContent, txnId, ts, null)
 
     override suspend fun redactEvent(
         roomId: RoomId,

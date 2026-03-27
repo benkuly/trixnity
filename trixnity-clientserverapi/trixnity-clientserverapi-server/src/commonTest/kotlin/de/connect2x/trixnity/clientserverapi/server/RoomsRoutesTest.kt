@@ -40,6 +40,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.ThirdParty
 import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
 import de.connect2x.trixnity.clientserverapi.model.room.UnbanUser
 import de.connect2x.trixnity.clientserverapi.model.room.UpgradeRoom
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
@@ -90,6 +91,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
+@OptIn(MSC4354::class)
 class RoomsRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
     private val mapping = EventContentSerializerMappings.default
@@ -734,7 +736,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         everySuspend { handlerMock.sendStateEvent(any()) }
             .returns(SendEventResponse(EventId("event")))
         val response =
-            client.put("/_matrix/client/v3/rooms/!room:server/state/m.room.name/") {
+            client.put("/_matrix/client/v3/rooms/!room:server/state/m.room.name?org.matrix.msc4354.sticky_duration_ms=60000") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"name":"name"}""")
@@ -753,6 +755,38 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.stateKey shouldBe ""
                 it.endpoint.type shouldBe "m.room.name"
+                it.endpoint.stickyDurationMs shouldBe 60000
+                it.requestBody shouldBe NameEventContent("name")
+            })
+        }
+    }
+
+    @Test
+    fun shouldSendStateEventWithStableStickyDurationMs() = testApplication {
+        initCut()
+        everySuspend { handlerMock.sendStateEvent(any()) }
+            .returns(SendEventResponse(EventId("event")))
+        val response =
+            client.put("/_matrix/client/v3/rooms/!room:server/state/m.room.name?sticky_duration_ms=60000") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"name":"name"}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+               {
+                  "event_id":"event"
+               }
+            """.trimToFlatJson()
+        }
+        verifySuspend {
+            handlerMock.sendStateEvent(assert {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.endpoint.stateKey shouldBe ""
+                it.endpoint.type shouldBe "m.room.name"
+                it.endpoint.stickyDurationMs shouldBe 60000
                 it.requestBody shouldBe NameEventContent("name")
             })
         }
@@ -798,7 +832,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         everySuspend { handlerMock.sendMessageEvent(any()) }
             .returns(SendEventResponse(EventId("event")))
         val response =
-            client.put("/_matrix/client/v3/rooms/!room:server/send/m.room.message/someTxnId") {
+            client.put("/_matrix/client/v3/rooms/!room:server/send/m.room.message/someTxnId?org.matrix.msc4354.sticky_duration_ms=60000") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"body":"someBody","msgtype":"m.text"}""")
@@ -817,6 +851,38 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.txnId shouldBe "someTxnId"
                 it.endpoint.type shouldBe "m.room.message"
+                it.endpoint.stickyDurationMs shouldBe 60000
+                it.requestBody shouldBe RoomMessageEventContent.TextBased.Text("someBody")
+            })
+        }
+    }
+
+    @Test
+    fun shouldSendMessageEventWithStableStickyDurationMs() = testApplication {
+        initCut()
+        everySuspend { handlerMock.sendMessageEvent(any()) }
+            .returns(SendEventResponse(EventId("event")))
+        val response =
+            client.put("/_matrix/client/v3/rooms/!room:server/send/m.room.message/someTxnId?sticky_duration_ms=60000") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"body":"someBody","msgtype":"m.text"}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+               {
+                  "event_id":"event"
+               }
+            """.trimToFlatJson()
+        }
+        verifySuspend {
+            handlerMock.sendMessageEvent(assert {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.endpoint.txnId shouldBe "someTxnId"
+                it.endpoint.type shouldBe "m.room.message"
+                it.endpoint.stickyDurationMs shouldBe 60000
                 it.requestBody shouldBe RoomMessageEventContent.TextBased.Text("someBody")
             })
         }

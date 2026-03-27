@@ -159,13 +159,13 @@ class RtcEventContentSerializerTest : TrixnityBaseTest() {
               "claimed_user_id":"@alice:example.org",
               "id":"xyzABCDEF0123"
             },
+            "msc4354_sticky_key":"xyzABCDEF0123",
             "rtc_transports":[
               {
                 "type":"livekit_multi_sfu"
               }
             ],
             "slot_id":"m.call#ROOM",
-            "sticky_key":"xyzABCDEF0123",
             "versions":[
               "v0"
             ]

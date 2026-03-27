@@ -1,7 +1,38 @@
 package de.connect2x.trixnity.clientserverapi.model.sync
 
+import de.connect2x.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap
+import de.connect2x.trixnity.core.HttpMethod
+import de.connect2x.trixnity.core.HttpMethodType.GET
+import de.connect2x.trixnity.core.MSC4354
+import de.connect2x.trixnity.core.MatrixEndpoint
+import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.ClientEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.EphemeralEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.ToDeviceEvent
+import de.connect2x.trixnity.core.model.events.m.Presence
+import de.connect2x.trixnity.core.model.events.m.PresenceEventContent
+import de.connect2x.trixnity.core.model.keys.KeyAlgorithm
+import de.connect2x.trixnity.core.serialization.events.EphemeralEventSerializer
+import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import de.connect2x.trixnity.core.serialization.events.MessageEventSerializer
+import de.connect2x.trixnity.core.serialization.events.RoomAccountDataEventSerializer
+import de.connect2x.trixnity.core.serialization.events.RoomEventSerializer
+import de.connect2x.trixnity.core.serialization.events.StateBaseEventSerializer
+import de.connect2x.trixnity.core.serialization.events.StateEventSerializer
+import de.connect2x.trixnity.core.serialization.events.StrippedStateEventSerializer
 import io.ktor.resources.*
-import kotlinx.serialization.*
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.mapSerialDescriptor
@@ -9,24 +40,17 @@ import kotlinx.serialization.encoding.CompositeDecoder.Companion.DECODE_DONE
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonNames
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonTransformingSerializer
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.overwriteWith
-import de.connect2x.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap
-import de.connect2x.trixnity.core.HttpMethod
-import de.connect2x.trixnity.core.HttpMethodType.GET
-import de.connect2x.trixnity.core.MatrixEndpoint
-import de.connect2x.trixnity.core.model.EventId
-import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.UserId
-import de.connect2x.trixnity.core.model.events.ClientEvent
-import de.connect2x.trixnity.core.model.events.ClientEvent.*
-import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import de.connect2x.trixnity.core.model.events.m.Presence
-import de.connect2x.trixnity.core.model.events.m.PresenceEventContent
-import de.connect2x.trixnity.core.model.keys.KeyAlgorithm
-import de.connect2x.trixnity.core.serialization.events.*
 import kotlin.jvm.JvmInline
 
 /**
@@ -58,7 +82,8 @@ data class Sync(
         @SerialName("to_device") val toDevice: ToDevice? = null,
         @SerialName("device_lists") val deviceLists: DeviceLists? = null,
         @SerialName("device_one_time_keys_count") val oneTimeKeysCount: OneTimeKeysCount? = null,
-        @SerialName("device_unused_fallback_key_types") val unusedFallbackKeyTypes: UnusedFallbackKeyTypes? = null,
+        @SerialName("device_unused_fallback_key_types")
+        val unusedFallbackKeyTypes: UnusedFallbackKeyTypes? = null,
     ) {
 
         @Serializable
@@ -86,11 +111,37 @@ data class Sync(
                 @SerialName("state") val state: State? = null,
                 @SerialName("timeline") val timeline: Timeline? = null,
                 @SerialName("state_after") val stateAfter: State? = null,
+                @MSC4354
+                @OptIn(ExperimentalSerializationApi::class, MSC4354::class)
+                @SerialName("msc4354_sticky")
+                @JsonNames("sticky")
+                val sticky: Sticky? = null,
                 @SerialName("ephemeral") val ephemeral: Ephemeral? = null,
                 @SerialName("account_data") val accountData: RoomAccountData? = null,
                 @SerialName("unread_notifications") val unreadNotifications: UnreadNotificationCounts? = null,
                 @SerialName("unread_thread_notifications") val unreadThreadNotifications: Map<EventId, UnreadThreadNotificationCounts>? = null
             ) {
+                constructor(
+                    summary: RoomSummary? = null,
+                    state: State? = null,
+                    timeline: Timeline? = null,
+                    stateAfter: State? = null,
+                    ephemeral: Ephemeral? = null,
+                    accountData: RoomAccountData? = null,
+                    unreadNotifications: UnreadNotificationCounts? = null,
+                    unreadThreadNotifications: Map<EventId, UnreadThreadNotificationCounts>? = null
+                ) : this(
+                    summary = summary,
+                    state = state,
+                    timeline = timeline,
+                    stateAfter = stateAfter,
+                    sticky = null,
+                    ephemeral = ephemeral,
+                    accountData = accountData,
+                    unreadNotifications = unreadNotifications,
+                    unreadThreadNotifications = unreadThreadNotifications,
+                )
+
                 @Serializable
                 data class RoomSummary(
                     @SerialName("m.heroes") val heroes: List<UserId>? = null,
@@ -101,6 +152,12 @@ data class Sync(
                 @Serializable
                 data class Ephemeral(
                     @SerialName("events") val events: List<@Contextual EphemeralEvent<*>>? = null
+                )
+
+                @MSC4354
+                @Serializable
+                data class Sticky(
+                    @SerialName("events") val events: List<@Contextual RoomEvent<*>>? = null,
                 )
 
                 @Serializable
@@ -178,6 +235,7 @@ data class Sync(
 typealias OneTimeKeysCount = Map<KeyAlgorithm, Int>
 typealias UnusedFallbackKeyTypes = Set<KeyAlgorithm>
 
+@OptIn(MSC4354::class)
 fun Sync.Response.allEvents(): List<ClientEvent<*>> = buildList {
     toDevice?.events?.forEach { add(it) }
     accountData?.events?.forEach { add(it) }
@@ -186,6 +244,7 @@ fun Sync.Response.allEvents(): List<ClientEvent<*>> = buildList {
         joinedRoom.state?.events?.forEach { add(it) }
         joinedRoom.timeline?.events?.forEach { add(it) }
         joinedRoom.stateAfter?.events?.forEach { add(it) }
+        joinedRoom.sticky?.events?.forEach { add(it) }
         joinedRoom.ephemeral?.events?.forEach { add(it) }
         joinedRoom.accountData?.events?.forEach { add(it) }
     }
