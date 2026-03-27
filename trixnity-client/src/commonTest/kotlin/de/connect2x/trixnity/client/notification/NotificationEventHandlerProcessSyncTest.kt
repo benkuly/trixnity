@@ -1,8 +1,17 @@
 package de.connect2x.trixnity.client.notification
 
-import de.connect2x.trixnity.client.*
+import de.connect2x.trixnity.client.CurrentSyncState
+import de.connect2x.trixnity.client.MatrixClientConfiguration
+import de.connect2x.trixnity.client.getInMemoryGlobalAccountDataStore
+import de.connect2x.trixnity.client.getInMemoryKeyStore
+import de.connect2x.trixnity.client.getInMemoryNotificationStore
+import de.connect2x.trixnity.client.getInMemoryRoomStateStore
+import de.connect2x.trixnity.client.getInMemoryRoomStore
+import de.connect2x.trixnity.client.getInMemoryRoomUserStore
+import de.connect2x.trixnity.client.mockMatrixClientServerApiClient
 import de.connect2x.trixnity.client.mocks.RoomServiceMock
 import de.connect2x.trixnity.client.mocks.TransactionManagerMock
+import de.connect2x.trixnity.client.simpleRoom
 import de.connect2x.trixnity.client.store.RoomUserReceipts
 import de.connect2x.trixnity.client.store.StoredNotification
 import de.connect2x.trixnity.client.store.StoredNotificationState
@@ -271,6 +280,21 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
     @Test
     fun `room is read`() = runTest {
         roomStore.update(roomId1) { simpleRoom.copy(roomId = roomId1, lastEventId = EventId("e1")) }
+        processSyncWith(updatedRooms = setOf(roomId1))
+
+        notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
+            notification1,
+            notification2
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
+            StoredNotificationState.Read(roomId1),
+            StoredNotificationState.SyncWithoutTimeline(roomId2, false),
+        )
+    }
+
+    @Test
+    fun `room is upgraded`() = runTest {
+        roomStore.update(roomId1) { simpleRoom.copy(roomId = roomId1, nextRoomId = RoomId("!newRoomId:example.org")) }
         processSyncWith(updatedRooms = setOf(roomId1))
 
         notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
