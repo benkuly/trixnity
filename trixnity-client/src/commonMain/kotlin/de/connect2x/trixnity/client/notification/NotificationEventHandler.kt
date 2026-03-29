@@ -359,7 +359,7 @@ class NotificationEventHandler(
                     notificationStore.updateState(roomId) { oldState ->
                         when (oldState) {
                             notificationState if isRead == IsRead.TRUE -> null
-                            is StoredNotificationState.SyncWithTimeline if oldState.lastProcessedEventId != null -> {
+                            is StoredNotificationState.SyncWithTimeline -> {
                                 oldState.copy(
                                     lastProcessedEventId = notificationState.lastEventId,
                                     isRead = isRead
