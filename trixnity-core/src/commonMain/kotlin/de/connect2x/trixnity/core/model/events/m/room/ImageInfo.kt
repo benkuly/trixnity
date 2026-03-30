@@ -1,10 +1,10 @@
 package de.connect2x.trixnity.core.model.events.m.room
 
+import de.connect2x.trixnity.core.MSC2448
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
-import de.connect2x.trixnity.core.MSC2448
 
 @Serializable
 data class ImageInfo(
@@ -24,7 +24,7 @@ data class ImageInfo(
     val thumbnailInfo: ThumbnailInfo? = null,
     @MSC2448
     @OptIn(ExperimentalSerializationApi::class)
-    @JsonNames("blurhash", "xyz.amorgan.blurhash")
+    @JsonNames("blurhash")
     @SerialName("xyz.amorgan.blurhash")
     val blurhash: String? = null,
 ) : FileBasedInfo

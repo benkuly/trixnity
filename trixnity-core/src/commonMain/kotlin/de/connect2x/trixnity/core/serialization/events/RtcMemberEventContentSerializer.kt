@@ -3,6 +3,7 @@
 package de.connect2x.trixnity.core.serialization.events
 
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -17,6 +18,7 @@ import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.overwriteWith
 
 @MSC4143
+@MSC4354
 class RtcMemberEventContentSerializer(
     rtcApplicationSerializerMappings: RtcApplicationSerializerMappings = RtcApplicationSerializerMappings.default,
 ) : KSerializer<RtcMemberEventContent> {

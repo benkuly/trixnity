@@ -1,14 +1,18 @@
 package de.connect2x.trixnity.core.model.events.m.call
 
-import kotlinx.serialization.*
+import de.connect2x.trixnity.core.model.events.MessageEventContent
+import de.connect2x.trixnity.core.model.events.m.Mentions
+import de.connect2x.trixnity.core.model.events.m.RelatesTo
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.jsonPrimitive
-import de.connect2x.trixnity.core.model.events.MessageEventContent
-import de.connect2x.trixnity.core.model.events.m.Mentions
-import de.connect2x.trixnity.core.model.events.m.RelatesTo
 
 /**
  * Matrix call event content
@@ -173,7 +177,7 @@ sealed interface CallEventContent : MessageEventContent {
      * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mcallnegotiate">matrix spec</a>
      */
     @Serializable
-    data class Negotiate constructor(
+    data class Negotiate(
         @OptIn(ExperimentalSerializationApi::class)
         @EncodeDefault
         @Serializable(with = VersionSerializer::class)

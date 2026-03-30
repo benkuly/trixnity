@@ -19,6 +19,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.KnockRoom
 import de.connect2x.trixnity.clientserverapi.model.room.SendEventResponse
 import de.connect2x.trixnity.clientserverapi.model.room.ThirdParty
 import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
@@ -64,7 +65,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-@OptIn(ExperimentalSerializationApi::class)
+@OptIn(MSC4354::class, ExperimentalSerializationApi::class)
 class RoomApiClientTest : TrixnityBaseTest() {
 
     private val json = createMatrixEventJson()
@@ -604,7 +605,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/!room:server/state/m.room.name/someStateKey",
+                        "/_matrix/client/v3/rooms/!room:server/state/m.room.name/someStateKey?org.matrix.msc4354.sticky_duration_ms=60000",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -621,7 +622,8 @@ class RoomApiClientTest : TrixnityBaseTest() {
         val result = matrixRestClient.room.sendStateEvent(
             roomId = RoomId("!room:server"),
             eventContent = eventContent,
-            stateKey = "someStateKey"
+            stateKey = "someStateKey",
+            stickyDurationMs = 60000,
         ).getOrThrow()
         assertEquals(EventId("event"), result)
     }
@@ -657,7 +659,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/!room:server/send/m.room.message/someTxnId",
+                        "/_matrix/client/v3/rooms/!room:server/send/m.room.message/someTxnId?org.matrix.msc4354.sticky_duration_ms=60000",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -676,7 +678,8 @@ class RoomApiClientTest : TrixnityBaseTest() {
         val result = matrixRestClient.room.sendMessageEvent(
             roomId = RoomId("!room:server"),
             eventContent = eventContent,
-            txnId = "someTxnId"
+            txnId = "someTxnId",
+            stickyDurationMs = 60000,
         ).getOrThrow()
         assertEquals(EventId("event"), result)
     }
