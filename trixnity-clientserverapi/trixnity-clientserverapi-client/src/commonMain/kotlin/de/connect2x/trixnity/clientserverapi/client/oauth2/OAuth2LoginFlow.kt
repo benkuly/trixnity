@@ -64,6 +64,7 @@ class OAuth2LoginFlowImpl(
     private val tosUri: LocalizedField<String>? = null,
     private val promptValue: PromptValue? = null,
     initialState: OAuth2LoginFlow.AuthRequestData.State? = null,
+    private val loginHint: String? = null,
     private val httpClientEngine: HttpClientEngine? = null,
     private val httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : OAuth2LoginFlow {
@@ -130,6 +131,7 @@ class OAuth2LoginFlowImpl(
                 parameters.append("code_challenge", codeChallenge)
                 parameters.append("code_challenge_method", CodeChallengeMethod.S256.value)
                 promptValue?.let { parameters.append("prompt", it.value) }
+                loginHint?.let { parameters.append("login_hint", it) }
             }.build().toString()
             clientId = clientMetadata.clientId
             OAuth2LoginFlow.AuthRequestData(
