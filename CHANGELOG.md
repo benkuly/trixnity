@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Room not being marked as unread properly, when notifications for a room are turned off
 - Remove notifications of upgraded rooms
 
 ### Security
