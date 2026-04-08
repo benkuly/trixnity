@@ -8,6 +8,7 @@ import de.connect2x.trixnity.client.getInMemoryRoomOutboxMessageStore
 import de.connect2x.trixnity.client.getInMemoryRoomStateStore
 import de.connect2x.trixnity.client.getInMemoryRoomStore
 import de.connect2x.trixnity.client.getInMemoryRoomTimelineStore
+import de.connect2x.trixnity.client.getInMemoryStickyEventStore
 import de.connect2x.trixnity.client.mockMatrixClientServerApiClient
 import de.connect2x.trixnity.client.mocks.MediaServiceMock
 import de.connect2x.trixnity.client.mocks.RoomEventEncryptionServiceMock
@@ -22,6 +23,7 @@ import de.connect2x.trixnity.client.store.TimelineEvent.TimelineEventContentErro
 import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.clientserverapi.client.SyncState
 import de.connect2x.trixnity.clientserverapi.client.SyncState.RUNNING
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
@@ -65,6 +67,7 @@ import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(MSC4354::class)
 class RoomServiceTest : TrixnityBaseTest() {
 
     private val room = simpleRoom.roomId
@@ -85,6 +88,7 @@ class RoomServiceTest : TrixnityBaseTest() {
         roomStateStore = getInMemoryRoomStateStore(),
         roomAccountDataStore = getInMemoryRoomAccountDataStore(),
         roomTimelineStore = roomTimelineStore,
+        stickyEventStore = getInMemoryStickyEventStore(),
         roomOutboxMessageStore = roomOutboxMessageStore,
         roomEventEncryptionServices = listOf(roomEventDecryptionServiceMock),
         mediaService = mediaServiceMock,

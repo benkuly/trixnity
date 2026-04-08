@@ -1,14 +1,14 @@
 package de.connect2x.trixnity.client.store.cache
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import de.connect2x.trixnity.client.store.repository.DeleteByRoomIdFullRepository
 import de.connect2x.trixnity.client.store.repository.DeleteByRoomIdMapRepository
 import de.connect2x.trixnity.client.store.repository.DeleteByRoomIdMinimalRepository
 import de.connect2x.trixnity.client.store.repository.RepositoryTransactionManager
 import de.connect2x.trixnity.core.model.RoomId
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -131,7 +131,7 @@ internal class FullDeleteByRoomIdRepositoryObservableCache<K : Any, V>(
     }
 }
 
-internal class MapDeleteByRoomIdRepositoryObservableCache<K1 : Any, K2 : Any, V>(
+internal class MapDeleteByRoomIdRepositoryObservableCache<K1 : Any, K2, V>(
     private val repository: DeleteByRoomIdMapRepository<K1, K2, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,

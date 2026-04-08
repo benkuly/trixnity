@@ -7,6 +7,7 @@ import de.connect2x.trixnity.client.getInMemoryRoomOutboxMessageStore
 import de.connect2x.trixnity.client.getInMemoryRoomStateStore
 import de.connect2x.trixnity.client.getInMemoryRoomStore
 import de.connect2x.trixnity.client.getInMemoryRoomTimelineStore
+import de.connect2x.trixnity.client.getInMemoryStickyEventStore
 import de.connect2x.trixnity.client.mockMatrixClientServerApiClient
 import de.connect2x.trixnity.client.mocks.MediaServiceMock
 import de.connect2x.trixnity.client.mocks.RoomEventEncryptionServiceMock
@@ -23,6 +24,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.BACK
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
@@ -55,6 +57,7 @@ import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(MSC4354::class)
 class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
     private val room = simpleRoom.roomId
     private val newRoom = RoomId("!new:server")
@@ -64,7 +67,6 @@ class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
     private val roomStore = getInMemoryRoomStore()
     private val roomStateStore = getInMemoryRoomStateStore()
     private val roomTimelineStore = getInMemoryRoomTimelineStore()
-
     private val mediaServiceMock = MediaServiceMock()
     private val roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock(true)
     private val timelineEventHandlerMock = TimelineEventHandlerMock()
@@ -84,6 +86,7 @@ class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
             roomStateStore = roomStateStore,
             roomAccountDataStore = getInMemoryRoomAccountDataStore(),
             roomTimelineStore = roomTimelineStore,
+            stickyEventStore = getInMemoryStickyEventStore(),
             roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(),
             roomEventEncryptionServices = listOf(roomEventDecryptionServiceMock),
             mediaService = mediaServiceMock,

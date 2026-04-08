@@ -1,14 +1,35 @@
 package de.connect2x.trixnity.client.store.repository
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.Account
+import de.connect2x.trixnity.client.store.Authentication
+import de.connect2x.trixnity.client.store.KeyChainLink
+import de.connect2x.trixnity.client.store.KeyVerificationState
+import de.connect2x.trixnity.client.store.MediaCacheMapping
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.RoomOutboxMessage
+import de.connect2x.trixnity.client.store.RoomUser
+import de.connect2x.trixnity.client.store.RoomUserReceipts
+import de.connect2x.trixnity.client.store.ServerData
+import de.connect2x.trixnity.client.store.StoredCrossSigningKeys
+import de.connect2x.trixnity.client.store.StoredDeviceKeys
+import de.connect2x.trixnity.client.store.StoredNotification
+import de.connect2x.trixnity.client.store.StoredNotificationState
+import de.connect2x.trixnity.client.store.StoredNotificationUpdate
+import de.connect2x.trixnity.client.store.StoredRoomKeyRequest
+import de.connect2x.trixnity.client.store.StoredSecret
+import de.connect2x.trixnity.client.store.StoredSecretKeyRequest
+import de.connect2x.trixnity.client.store.StoredStickyEvent
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.TimelineEventRelation
+import de.connect2x.trixnity.client.store.UserPresence
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
+import de.connect2x.trixnity.core.model.events.StickyEventContent
 import de.connect2x.trixnity.core.model.keys.Key
 import de.connect2x.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import de.connect2x.trixnity.crypto.SecretType
@@ -16,6 +37,8 @@ import de.connect2x.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import de.connect2x.trixnity.crypto.olm.StoredInboundMegolmSession
 import de.connect2x.trixnity.crypto.olm.StoredOlmSession
 import de.connect2x.trixnity.crypto.olm.StoredOutboundMegolmSession
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlin.time.Instant
 
 abstract class InMemoryMinimalRepository<K, V> : MinimalRepository<K, V> {
@@ -131,6 +154,30 @@ class InMemoryTimelineEventRelationRepository : TimelineEventRelationRepository,
         content.update { value -> value.filterKeys { it.roomId != roomId } }
     }
 
+}
+
+@MSC4354
+class InMemoryStickyEventRepository : StickyEventRepository,
+    InMemoryMapRepository<StickyEventRepositoryFirstKey, StickyEventRepositorySecondKey, StoredStickyEvent<StickyEventContent>>() {
+    override suspend fun getByEndTimeBefore(before: Instant): Set<Pair<StickyEventRepositoryFirstKey, StickyEventRepositorySecondKey>> =
+        content.value
+            .flatMap { (key, values) ->
+                values.filterValues {
+                    it.endTime < before
+                }.map { key to it.key }
+            }.toSet()
+
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { value -> value.filterKeys { it.roomId != roomId } }
+    }
+
+    override suspend fun getByEventId(
+        roomId: RoomId,
+        eventId: EventId
+    ): Pair<StickyEventRepositoryFirstKey, StickyEventRepositorySecondKey>? =
+        content.value.entries.firstNotNullOfOrNull { (key, values) ->
+            values.entries.find { it.value.event.roomId == roomId && it.value.event.id == eventId }?.let { key to it }
+        }?.let { it.first to it.second.key }
 }
 
 class InMemoryMediaCacheMappingRepository : MediaCacheMappingRepository,

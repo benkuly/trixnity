@@ -1,17 +1,33 @@
 package de.connect2x.trixnity.client.store
 
-import kotlinx.serialization.*
+import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
+import de.connect2x.trixnity.core.model.events.RedactedEventContent
+import de.connect2x.trixnity.core.model.events.RoomEventContent
+import de.connect2x.trixnity.core.model.events.UnknownEventContent
+import de.connect2x.trixnity.core.model.events.mergeContentOrNull
+import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMapping
+import de.connect2x.trixnity.core.serialization.events.RedactedEventContentSerializer
+import de.connect2x.trixnity.core.serialization.events.UnknownEventContentSerializer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.*
-import de.connect2x.trixnity.core.model.EventId
-import de.connect2x.trixnity.core.model.events.*
-import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
-import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMapping
-import de.connect2x.trixnity.core.serialization.events.RedactedEventContentSerializer
-import de.connect2x.trixnity.core.serialization.events.UnknownEventContentSerializer
+import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 data class TimelineEvent(
     val event: RoomEvent<*>,
@@ -93,35 +109,7 @@ data class TimelineEvent(
     val mergedEvent: Result<RoomEvent<*>>? by lazy {
         content?.fold(
             onSuccess = { finalContent ->
-                val originalEvent = event
-                when {
-                    originalEvent is RoomEvent.MessageEvent<*> && finalContent is MessageEventContent ->
-                        Result.success(
-                            RoomEvent.MessageEvent(
-                                content = finalContent,
-                                id = originalEvent.id,
-                                sender = originalEvent.sender,
-                                roomId = originalEvent.roomId,
-                                originTimestamp = originalEvent.originTimestamp,
-                                unsigned = originalEvent.unsigned,
-                            )
-                        )
-
-                    originalEvent is RoomEvent.StateEvent<*> && finalContent is StateEventContent ->
-                        Result.success(
-                            RoomEvent.StateEvent(
-                                content = finalContent,
-                                id = originalEvent.id,
-                                sender = originalEvent.sender,
-                                roomId = originalEvent.roomId,
-                                originTimestamp = originalEvent.originTimestamp,
-                                unsigned = originalEvent.unsigned,
-                                stateKey = originalEvent.stateKey,
-                            )
-                        )
-
-                    else -> null
-                }
+                event.mergeContentOrNull(finalContent)?.let { Result.success(it) }
             },
             onFailure = { Result.failure(it) }
         )

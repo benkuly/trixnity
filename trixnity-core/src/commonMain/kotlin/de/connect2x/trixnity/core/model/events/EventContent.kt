@@ -1,10 +1,11 @@
 package de.connect2x.trixnity.core.model.events
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.events.block.EventContentBlocks
 import de.connect2x.trixnity.core.model.events.m.Mentions
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 sealed interface EventContent
 
@@ -67,6 +68,7 @@ data object EmptyEventContent :
     override fun copyWith(relatesTo: RelatesTo?) = this
 }
 
+@OptIn(MSC4354::class)
 data class UnknownEventContent(
     val raw: JsonObject, // TODO remove when ExtensibleEventContent is the default
     override val blocks: EventContentBlocks,
@@ -80,12 +82,14 @@ data class UnknownEventContent(
     EphemeralDataUnitContent,
     GlobalAccountDataEventContent,
     RoomAccountDataEventContent,
-    ExtensibleEventContent<ExtensibleEventContent.Legacy.None> {
+    ExtensibleEventContent<ExtensibleEventContent.Legacy.None>,
+    StickyEventContent {
     // is always null, because this class is the last fallback, when nothing can be deserialized
     override val relatesTo: RelatesTo? = null
     override val mentions: Mentions? = null
     override val externalUrl: String? = null
     override val legacy: ExtensibleEventContent.Legacy.None? = null
+    override val stickyKey: String? = null
 
     override fun copyWith(relatesTo: RelatesTo?) = this
 }

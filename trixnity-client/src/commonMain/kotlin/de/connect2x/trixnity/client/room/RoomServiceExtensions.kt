@@ -1,16 +1,38 @@
 package de.connect2x.trixnity.client.room
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
+import de.connect2x.trixnity.core.model.events.StickyEventContent
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlin.jvm.JvmName
 
 /**
@@ -33,6 +55,18 @@ inline fun <reified C : StateEventContent> RoomService.getState(
 inline fun <reified C : StateEventContent> RoomService.getAllState(
     roomId: RoomId,
 ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> = getAllState(roomId, C::class)
+
+@MSC4354
+inline fun <reified C : StickyEventContent> RoomService.getSticky(
+    roomId: RoomId,
+    sender: UserId,
+    stickyKey: String? = null,
+): Flow<ClientEvent.RoomEvent<C>?> = getSticky(roomId, C::class, sender, stickyKey)
+
+@MSC4354
+inline fun <reified C : StickyEventContent> RoomService.getAllSticky(
+    roomId: RoomId,
+): Flow<Map<Pair<UserId, String?>, Flow<ClientEvent.RoomEvent<C>?>>> = getAllSticky(roomId, C::class)
 
 /**
  * Converts a flow of timeline events into a flow of list of timeline events limited by [maxSize].

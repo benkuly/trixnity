@@ -1,10 +1,17 @@
 package de.connect2x.trixnity.client.store.cache
 
 import de.connect2x.lognity.api.logger.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.*
 import de.connect2x.trixnity.client.store.repository.MapRepository
 import de.connect2x.trixnity.client.store.repository.RepositoryTransactionManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -99,7 +106,7 @@ private class MapRepositoryObservableCacheIndex<K1 : Any, K2>(
     }
 }
 
-internal open class MapRepositoryObservableCache<K1 : Any, K2 : Any, V>(
+internal open class MapRepositoryObservableCache<K1 : Any, K2, V>(
     repository: MapRepository<K1, K2, V>,
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,

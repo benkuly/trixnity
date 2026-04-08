@@ -61,3 +61,4 @@ rc_login:
 experimental_features:
   msc2697_enabled: false
   msc3814_enabled: true
+  msc4354_enabled: true

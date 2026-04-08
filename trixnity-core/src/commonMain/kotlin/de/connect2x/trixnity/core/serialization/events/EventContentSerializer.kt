@@ -2,16 +2,23 @@ package de.connect2x.trixnity.core.serialization.events
 
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.warn
+import de.connect2x.trixnity.core.model.events.EventContent
+import de.connect2x.trixnity.core.model.events.MessageEventContent
+import de.connect2x.trixnity.core.model.events.StateEventContent
+import de.connect2x.trixnity.core.serialization.canonicalJson
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.*
-import de.connect2x.trixnity.core.model.events.EventContent
-import de.connect2x.trixnity.core.model.events.MessageEventContent
-import de.connect2x.trixnity.core.model.events.StateEventContent
-import de.connect2x.trixnity.core.serialization.canonicalJson
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonTransformingSerializer
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
 
 private val log = Logger("de.connect2x.trixnity.core.serialization.events.EventContent")
 

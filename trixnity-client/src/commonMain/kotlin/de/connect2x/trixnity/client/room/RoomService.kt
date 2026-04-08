@@ -13,6 +13,7 @@ import de.connect2x.trixnity.client.store.RoomOutboxMessageStore
 import de.connect2x.trixnity.client.store.RoomStateStore
 import de.connect2x.trixnity.client.store.RoomStore
 import de.connect2x.trixnity.client.store.RoomTimelineStore
+import de.connect2x.trixnity.client.store.StickyEventStore
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import de.connect2x.trixnity.client.store.TimelineEventRelation
@@ -30,17 +31,20 @@ import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.BACK
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
 import de.connect2x.trixnity.core.ClientEventEmitter.Priority
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.MatrixServerException
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RedactedEventContent
 import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
+import de.connect2x.trixnity.core.model.events.StickyEventContent
 import de.connect2x.trixnity.core.model.events.idOrNull
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
@@ -84,6 +88,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
 import kotlin.time.Duration.Companion.ZERO
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -201,6 +206,14 @@ interface RoomService {
         builder: suspend MessageBuilder.() -> Unit,
     ): String
 
+    @MSC4354
+    suspend fun sendMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean = true,
+        stickyDuration: Duration? = null,
+        builder: suspend MessageBuilder.() -> Unit,
+    ): String
+
     suspend fun cancelSendMessage(roomId: RoomId, transactionId: String)
 
     suspend fun retrySendMessage(roomId: RoomId, transactionId: String)
@@ -218,10 +231,22 @@ interface RoomService {
      */
     suspend fun setDraftMessage(
         roomId: RoomId,
+        keepMediaInCache: Boolean = true,
         builder: suspend MessageBuilder.() -> Unit,
-    )
+    ): String
 
-    suspend fun sendDraftMessage(roomId: RoomId)
+    @MSC4354
+    suspend fun setDraftMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean = true,
+        stickyDuration: Duration? = null,
+        builder: suspend MessageBuilder.() -> Unit,
+    ): String
+
+    suspend fun sendDraftMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean = true,
+    ): String?
 
     /**
      * Upgraded rooms ([Room.hasBeenReplaced]) should not be rendered.
@@ -257,8 +282,23 @@ interface RoomService {
         roomId: RoomId,
         eventContentClass: KClass<C>,
     ): Flow<Map<String, Flow<StateBaseEvent<C>?>>>
+
+    @MSC4354
+    fun <C : StickyEventContent> getSticky(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        sender: UserId,
+        stickyKey: String? = null,
+    ): Flow<ClientEvent.RoomEvent<C>?>
+
+    @MSC4354
+    fun <C : StickyEventContent> getAllSticky(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+    ): Flow<Map<Pair<UserId, String?>, Flow<ClientEvent.RoomEvent<C>?>>>
 }
 
+@OptIn(MSC4354::class)
 class RoomServiceImpl(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
@@ -266,6 +306,7 @@ class RoomServiceImpl(
     private val roomAccountDataStore: RoomAccountDataStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
+    private val stickyEventStore: StickyEventStore,
     private val roomEventEncryptionServices: List<RoomEventEncryptionService>,
     private val mediaService: MediaService,
     private val forgetRoomService: ForgetRoomService,
@@ -802,43 +843,54 @@ class RoomServiceImpl(
     ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?> =
         roomTimelineStore.getRelations(eventId, roomId, relationType)
 
-    private suspend fun updateMessage(
+    private suspend fun setOutboxMessage(
         roomId: RoomId,
         keepMediaInCache: Boolean,
         builder: suspend MessageBuilder.() -> Unit,
         isDraft: Boolean,
-        transactionId: String? = null,
-        createdAt: Instant? = null
+        createdAt: Instant,
+        stickyDuration: Duration?,
+        useTransactionId: String? = null,
     ): String {
         val content = MessageBuilder(roomId, this, mediaService, userInfo.userId).build(builder)
         requireNotNull(content) { "you must add some sort of content for sending a message" }
-        val newTransactionId = transactionId ?: SecureRandom.nextString(22)
-        roomOutboxMessageStore.update(roomId, newTransactionId) {
+        val transactionId = useTransactionId ?: SecureRandom.nextString(22)
+        roomOutboxMessageStore.update(roomId, transactionId) {
             RoomOutboxMessage(
-                transactionId = newTransactionId,
+                transactionId = transactionId,
                 roomId = roomId,
                 content = content,
-                createdAt = createdAt ?: clock.now(),
+                createdAt = createdAt,
                 sentAt = null,
                 keepMediaInCache = keepMediaInCache,
-                isDraft = isDraft
+                isDraft = isDraft,
+                stickyDuration = stickyDuration?.coerceIn(ZERO..1.hours),
             )
         }
-        return newTransactionId
+        return transactionId
     }
 
     override suspend fun sendMessage(
         roomId: RoomId,
         keepMediaInCache: Boolean,
         builder: suspend MessageBuilder.() -> Unit,
-    ): String {
-        return updateMessage(
+    ): String = sendMessage(roomId, keepMediaInCache, null, builder)
+
+    @MSC4354
+    override suspend fun sendMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean,
+        stickyDuration: Duration?,
+        builder: suspend MessageBuilder.() -> Unit
+    ): String =
+        setOutboxMessage(
             roomId = roomId,
             keepMediaInCache = keepMediaInCache,
             builder = builder,
-            isDraft = false
+            isDraft = false,
+            createdAt = clock.now(),
+            stickyDuration = stickyDuration
         )
-    }
 
     override suspend fun cancelSendMessage(roomId: RoomId, transactionId: String) {
         roomOutboxMessageStore.update(roomId, transactionId) { null }
@@ -885,34 +937,44 @@ class RoomServiceImpl(
         }
     }
 
-    private val mutex = KeyedMutex<RoomId>()
+    private val draftMutex = KeyedMutex<RoomId>()
     override suspend fun setDraftMessage(
         roomId: RoomId,
-        builder: suspend MessageBuilder.() -> Unit,
-    ) {
-        mutex.withLock(roomId) {
+        keepMediaInCache: Boolean,
+        builder: suspend MessageBuilder.() -> Unit
+    ): String = setDraftMessage(roomId, keepMediaInCache, null, builder)
+
+    @MSC4354
+    override suspend fun setDraftMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean,
+        stickyDuration: Duration?,
+        builder: suspend MessageBuilder.() -> Unit
+    ): String =
+        draftMutex.withLock(roomId) {
             val draftMessage = getDraftMessage(roomId).first()
-            updateMessage(
+            setOutboxMessage(
                 roomId = roomId,
-                keepMediaInCache = true,
+                keepMediaInCache = keepMediaInCache,
                 builder = builder,
                 isDraft = true,
-                transactionId = draftMessage?.transactionId,
-                createdAt = draftMessage?.createdAt
+                useTransactionId = draftMessage?.transactionId,
+                createdAt = clock.now(),
+                stickyDuration = stickyDuration,
             )
         }
-    }
 
-    override suspend fun sendDraftMessage(roomId: RoomId) {
+    override suspend fun sendDraftMessage(roomId: RoomId, keepMediaInCache: Boolean): String? {
         val draftMessage = getDraftMessage(roomId).first()
         if (draftMessage == null) {
             log.warn { "A draft message must exist when trying to send it. Use setDraftMessage first to create one " }
-            return
+            return null
         }
         roomOutboxMessageStore.update(
             roomId,
             draftMessage.transactionId
-        ) { it?.copy(isDraft = false, createdAt = clock.now()) }
+        ) { it?.copy(isDraft = false) }
+        return draftMessage.transactionId
     }
 
     override fun getAll(): Flow<Map<RoomId, Flow<Room?>>> = roomStore.getAll()
@@ -1006,5 +1068,22 @@ class RoomServiceImpl(
         eventContentClass: KClass<C>,
     ): Flow<Map<String, Flow<StateBaseEvent<C>?>>> {
         return roomStateStore.get(roomId, eventContentClass)
+    }
+
+    override fun <C : StickyEventContent> getSticky(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        sender: UserId,
+        stickyKey: String?,
+    ): Flow<ClientEvent.RoomEvent<C>?> {
+        return stickyEventStore.getBySenderAndStickyKey(roomId, eventContentClass, sender, stickyKey).map { it?.event }
+    }
+
+    override fun <C : StickyEventContent> getAllSticky(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+    ): Flow<Map<Pair<UserId, String?>, Flow<ClientEvent.RoomEvent<C>?>>> {
+        return stickyEventStore.get(roomId, eventContentClass)
+            .map { it.mapValues { it.value.map { it?.event } } }
     }
 }

@@ -14,13 +14,16 @@ import de.connect2x.trixnity.client.store.TimelineEventRelation
 import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
+import de.connect2x.trixnity.core.model.events.StickyEventContent
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.TypingEventContent
 import kotlinx.coroutines.flow.Flow
@@ -149,6 +152,16 @@ class RoomServiceMock : RoomService {
         return sentMessages.value.size.toString()
     }
 
+    @MSC4354
+    override suspend fun sendMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean,
+        stickyDuration: Duration?,
+        builder: suspend MessageBuilder.() -> Unit
+    ): String {
+        throw NotImplementedError()
+    }
+
     override suspend fun cancelSendMessage(roomId: RoomId, transactionId: String) {
         throw NotImplementedError()
     }
@@ -170,12 +183,23 @@ class RoomServiceMock : RoomService {
 
     override suspend fun setDraftMessage(
         roomId: RoomId,
-        builder: suspend MessageBuilder.() -> Unit,
-    ) {
+        keepMediaInCache: Boolean,
+        builder: suspend MessageBuilder.() -> Unit
+    ): String {
         throw NotImplementedError()
     }
 
-    override suspend fun sendDraftMessage(roomId: RoomId) {
+    @MSC4354
+    override suspend fun setDraftMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean,
+        stickyDuration: Duration?,
+        builder: suspend MessageBuilder.() -> Unit
+    ): String {
+        throw NotImplementedError()
+    }
+
+    override suspend fun sendDraftMessage(roomId: RoomId, keepMediaInCache: Boolean): String? {
         throw NotImplementedError()
     }
 
@@ -235,5 +259,23 @@ class RoomServiceMock : RoomService {
         eventContentClass: KClass<C>,
     ): Flow<Map<String, Flow<StateBaseEvent<C>?>>> {
         throw NotImplementedError()
+    }
+
+    @MSC4354
+    override fun <C : StickyEventContent> getSticky(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        sender: UserId,
+        stickyKey: String?
+    ): Flow<ClientEvent.RoomEvent<C>?> {
+        return flowOf(null)
+    }
+
+    @MSC4354
+    override fun <C : StickyEventContent> getAllSticky(
+        roomId: RoomId,
+        eventContentClass: KClass<C>
+    ): Flow<Map<Pair<UserId, String?>, Flow<ClientEvent.RoomEvent<C>?>>> {
+        return flowOf(emptyMap())
     }
 }

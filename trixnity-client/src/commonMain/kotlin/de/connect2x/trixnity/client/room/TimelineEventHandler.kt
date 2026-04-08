@@ -1,19 +1,23 @@
 package de.connect2x.trixnity.client.room
 
 import de.connect2x.lognity.api.logger.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
-import kotlinx.serialization.json.Json
 import de.connect2x.trixnity.client.MatrixClientConfiguration
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.RoomStore
+import de.connect2x.trixnity.client.store.RoomTimelineStore
+import de.connect2x.trixnity.client.store.StickyEventStore
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.TimelineEventRelation
+import de.connect2x.trixnity.client.store.TransactionManager
+import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.getNext
+import de.connect2x.trixnity.client.store.getPrevious
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.client.SyncEvents
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
 import de.connect2x.trixnity.clientserverapi.model.user.Filters
 import de.connect2x.trixnity.core.ClientEventEmitter.Priority
 import de.connect2x.trixnity.core.EventHandler
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.ClientEvent
@@ -27,6 +31,11 @@ import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
 import de.connect2x.trixnity.utils.KeyedMutex
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.Json
 
 private val log = Logger("de.connect2x.trixnity.client.room.TimelineEventHandler")
 
@@ -41,10 +50,12 @@ interface TimelineEventHandler {
     ): Result<Unit>
 }
 
+@OptIn(MSC4354::class)
 class TimelineEventHandlerImpl(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
+    private val stickyEventStore: StickyEventStore,
     private val json: Json,
     private val mappings: EventContentSerializerMappings,
     private val config: MatrixClientConfiguration,
@@ -292,6 +303,9 @@ class TimelineEventHandlerImpl(
                 .associateBy { it.content.redacts }
                 .toMutableMap()
 
+        redactionEvents.values.forEach { redactionEvent ->
+            stickyEventStore.deleteByEventId(redactionEvent.roomId, redactionEvent.content.redacts)
+        }
         val eventsWithRedactedEvents = map { event ->
             val redactedBecause = redactionEvents[event.id]
             if (redactedBecause != null && redactedBecause != event) {

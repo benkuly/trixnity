@@ -4,13 +4,70 @@ import de.connect2x.trixnity.client.MatrixClientConfiguration
 import de.connect2x.trixnity.client.RepositoriesModule
 import de.connect2x.trixnity.client.createDefaultEventContentSerializerMappingsModule
 import de.connect2x.trixnity.client.createDefaultMatrixJsonModule
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.Account
+import de.connect2x.trixnity.client.store.Authentication
+import de.connect2x.trixnity.client.store.KeyChainLink
 import de.connect2x.trixnity.client.store.KeyVerificationState.Blocked
 import de.connect2x.trixnity.client.store.KeyVerificationState.Verified
-import de.connect2x.trixnity.client.store.repository.*
+import de.connect2x.trixnity.client.store.MediaCacheMapping
+import de.connect2x.trixnity.client.store.RoomOutboxMessage
+import de.connect2x.trixnity.client.store.RoomUser
+import de.connect2x.trixnity.client.store.RoomUserReceipts
+import de.connect2x.trixnity.client.store.StoredNotification
+import de.connect2x.trixnity.client.store.StoredNotificationState
+import de.connect2x.trixnity.client.store.StoredNotificationUpdate
+import de.connect2x.trixnity.client.store.StoredRoomKeyRequest
+import de.connect2x.trixnity.client.store.StoredSecret
+import de.connect2x.trixnity.client.store.StoredSecretKeyRequest
+import de.connect2x.trixnity.client.store.StoredStickyEvent
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.TimelineEventRelation
+import de.connect2x.trixnity.client.store.UserPresence
+import de.connect2x.trixnity.client.store.repository.AccountRepository
+import de.connect2x.trixnity.client.store.repository.AuthenticationRepository
+import de.connect2x.trixnity.client.store.repository.GlobalAccountDataRepository
+import de.connect2x.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
+import de.connect2x.trixnity.client.store.repository.InboundMegolmMessageIndexRepositoryKey
+import de.connect2x.trixnity.client.store.repository.InboundMegolmSessionRepository
+import de.connect2x.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
+import de.connect2x.trixnity.client.store.repository.KeyChainLinkRepository
+import de.connect2x.trixnity.client.store.repository.KeyVerificationStateKey
+import de.connect2x.trixnity.client.store.repository.KeyVerificationStateRepository
+import de.connect2x.trixnity.client.store.repository.MediaCacheMappingRepository
+import de.connect2x.trixnity.client.store.repository.MigrationRepository
+import de.connect2x.trixnity.client.store.repository.NotificationRepository
+import de.connect2x.trixnity.client.store.repository.NotificationStateRepository
+import de.connect2x.trixnity.client.store.repository.NotificationUpdateRepository
+import de.connect2x.trixnity.client.store.repository.OlmAccountRepository
+import de.connect2x.trixnity.client.store.repository.OlmForgetFallbackKeyAfterRepository
+import de.connect2x.trixnity.client.store.repository.OlmSessionRepository
+import de.connect2x.trixnity.client.store.repository.OutboundMegolmSessionRepository
+import de.connect2x.trixnity.client.store.repository.OutdatedKeysRepository
+import de.connect2x.trixnity.client.store.repository.RepositoryTransactionManager
+import de.connect2x.trixnity.client.store.repository.RoomAccountDataRepository
+import de.connect2x.trixnity.client.store.repository.RoomAccountDataRepositoryKey
+import de.connect2x.trixnity.client.store.repository.RoomKeyRequestRepository
+import de.connect2x.trixnity.client.store.repository.RoomOutboxMessageRepository
+import de.connect2x.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
+import de.connect2x.trixnity.client.store.repository.RoomStateRepository
+import de.connect2x.trixnity.client.store.repository.RoomStateRepositoryKey
+import de.connect2x.trixnity.client.store.repository.RoomUserReceiptsRepository
+import de.connect2x.trixnity.client.store.repository.RoomUserRepository
+import de.connect2x.trixnity.client.store.repository.SecretKeyRequestRepository
+import de.connect2x.trixnity.client.store.repository.SecretsRepository
+import de.connect2x.trixnity.client.store.repository.StickyEventRepository
+import de.connect2x.trixnity.client.store.repository.StickyEventRepositoryFirstKey
+import de.connect2x.trixnity.client.store.repository.StickyEventRepositorySecondKey
+import de.connect2x.trixnity.client.store.repository.TimelineEventKey
+import de.connect2x.trixnity.client.store.repository.TimelineEventRelationKey
+import de.connect2x.trixnity.client.store.repository.TimelineEventRelationRepository
+import de.connect2x.trixnity.client.store.repository.TimelineEventRepository
+import de.connect2x.trixnity.client.store.repository.UserPresenceRepository
 import de.connect2x.trixnity.clientserverapi.client.LogoutInfo
 import de.connect2x.trixnity.clientserverapi.model.user.Profile
 import de.connect2x.trixnity.clientserverapi.model.user.ProfileField
+import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
@@ -19,10 +76,18 @@ import de.connect2x.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import de.connect2x.trixnity.core.model.events.RedactedEventContent
+import de.connect2x.trixnity.core.model.events.StickyEventContent
 import de.connect2x.trixnity.core.model.events.UnknownEventContent
 import de.connect2x.trixnity.core.model.events.block.EventContentBlock
 import de.connect2x.trixnity.core.model.events.block.EventContentBlocks
-import de.connect2x.trixnity.core.model.events.m.*
+import de.connect2x.trixnity.core.model.events.m.DirectEventContent
+import de.connect2x.trixnity.core.model.events.m.FullyReadEventContent
+import de.connect2x.trixnity.core.model.events.m.KeyRequestAction
+import de.connect2x.trixnity.core.model.events.m.Presence
+import de.connect2x.trixnity.core.model.events.m.ReceiptEventContent
+import de.connect2x.trixnity.core.model.events.m.ReceiptType
+import de.connect2x.trixnity.core.model.events.m.RelationType
+import de.connect2x.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import de.connect2x.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import de.connect2x.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
@@ -30,6 +95,7 @@ import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent.FileBased
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import de.connect2x.trixnity.core.model.keys.Key
 import de.connect2x.trixnity.core.model.keys.KeyAlgorithm
@@ -49,10 +115,15 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -1556,6 +1627,134 @@ abstract class RepositoryTestSuite(
             cut.get(key1) shouldBe null
             cut.get(key2) shouldBe event2
             cut.get(key3) shouldBe null
+        }
+    }
+
+    @OptIn(MSC4143::class, MSC4354::class)
+    @Test
+    fun `StickyRoomEventRepository - save get and delete`() = runTestWithSetup {
+        val cut = di.get<StickyEventRepository>()
+        val roomId1 = RoomId("!room1:server")
+        val roomId2 = RoomId("!room2:server")
+        val sender1 = UserId("sender1", "server")
+        val sender2 = UserId("sender2", "server")
+        val stickyKey1 = "sticky1"
+        val stickyKey2 = "sticky2"
+        val eventId1 = EventId("\$event1")
+        val eventId2 = EventId("\$event2")
+
+        val value1 = StoredStickyEvent(
+            event = MessageEvent(
+                RtcMemberEventContent(stickyKey1, "slot") as StickyEventContent,
+                eventId1,
+                sender1,
+                roomId1,
+                1234,
+            ),
+            startTime = Instant.fromEpochMilliseconds(23),
+            endTime = Instant.fromEpochMilliseconds(24),
+        )
+        val value2 = StoredStickyEvent(
+            event = MessageEvent(
+                RtcMemberEventContent(stickyKey2, "slot") as StickyEventContent,
+                eventId2,
+                sender1,
+                roomId1,
+                1234,
+            ),
+            startTime = Instant.fromEpochMilliseconds(24),
+            endTime = Instant.fromEpochMilliseconds(25),
+        )
+        val value3 = StoredStickyEvent(
+            event = MessageEvent(
+                RtcMemberEventContent(stickyKey1, "slot") as StickyEventContent,
+                eventId2,
+                sender1,
+                roomId2,
+                1234,
+            ),
+            startTime = Instant.fromEpochMilliseconds(23),
+            endTime = Instant.fromEpochMilliseconds(24),
+        )
+        val value4 = StoredStickyEvent(
+            event = MessageEvent(
+                RtcMemberEventContent(stickyKey1, "slot") as StickyEventContent,
+                eventId2,
+                sender2,
+                roomId2,
+                1234,
+            ),
+            startTime = Instant.fromEpochMilliseconds(24),
+            endTime = Instant.fromEpochMilliseconds(25),
+        )
+
+        rtm.writeTransaction {
+            cut.save(
+                StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender1, stickyKey1),
+                value1,
+            )
+            cut.save(
+                StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender1, stickyKey2),
+                value2,
+            )
+            cut.save(
+                StickyEventRepositoryFirstKey(roomId2, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender1, stickyKey1),
+                value3,
+            )
+            cut.save(
+                StickyEventRepositoryFirstKey(roomId2, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender2, stickyKey1),
+                value4,
+            )
+            cut.get(
+                StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender1, stickyKey1),
+            ) shouldBe value1
+            cut.get(
+                StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender1, stickyKey2),
+            ) shouldBe value2
+            cut.get(
+                StickyEventRepositoryFirstKey(roomId2, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender1, stickyKey1),
+            ) shouldBe value3
+            cut.get(
+                StickyEventRepositoryFirstKey(roomId2, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender2, stickyKey1),
+            ) shouldBe value4
+
+            cut.get(StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"))
+                .values shouldBe setOf(value1, value2)
+            cut.getByEventId(roomId1, eventId1) shouldBe Pair(
+                StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender1, stickyKey1),
+            )
+            cut.getByEndTimeBefore(Instant.fromEpochMilliseconds(25)) shouldBe setOf(
+                Pair(
+                    StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
+                    StickyEventRepositorySecondKey(sender1, stickyKey1),
+                ),
+                Pair(
+                    StickyEventRepositoryFirstKey(roomId2, "org.matrix.msc4143.rtc.member"),
+                    StickyEventRepositorySecondKey(sender1, stickyKey1),
+                )
+            )
+            cut.delete(
+                StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender1, stickyKey1),
+            )
+            cut.get(
+                StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
+                StickyEventRepositorySecondKey(sender1, stickyKey1),
+            ) shouldBe null
+
+            cut.deleteByRoomId(roomId2)
+            cut.get(StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"))
+                .values shouldBe setOf(value2)
+            cut.get(StickyEventRepositoryFirstKey(roomId2, "org.matrix.msc4143.rtc.member")) shouldBe mapOf()
         }
     }
 

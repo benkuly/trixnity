@@ -22,6 +22,11 @@ import kotlinx.serialization.json.JsonNames
 @MSC4354
 @Serializable
 data class RtcMemberEventContent(
+    @MSC4354
+    @property:OptIn(ExperimentalSerializationApi::class)
+    @JsonNames("sticky_key")
+    @SerialName("msc4354_sticky_key")
+    override val stickyKey: String,
     @SerialName("slot_id")
     val slotId: String,
     @Contextual
@@ -31,11 +36,6 @@ data class RtcMemberEventContent(
     val member: Member? = null,
     @SerialName("rtc_transports")
     val rtcTransports: List<RtcTransport>? = null,
-    @MSC4354
-    @property:OptIn(ExperimentalSerializationApi::class)
-    @JsonNames("sticky_key")
-    @SerialName("msc4354_sticky_key")
-    override val stickyKey: String,
     @SerialName("versions")
     val versions: List<String>? = null,
     @SerialName("disconnect_reason")

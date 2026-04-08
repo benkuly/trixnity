@@ -1,6 +1,12 @@
 package de.connect2x.trixnity.client.store.repository.room
 
-import androidx.room.*
+import androidx.room.AutoMigration
+import androidx.room.ConstructedBy
+import androidx.room.Database
+import androidx.room.DeleteColumn
+import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
+import androidx.room.TypeConverters
 import androidx.room.migration.AutoMigrationSpec
 
 @Database(
@@ -37,14 +43,16 @@ import androidx.room.migration.AutoMigrationSpec
         RoomNotificationState::class,
         RoomNotificationUpdate::class,
         RoomMigration::class,
+        RoomStickyEvent::class,
     ],
-    version = 8, // tick this value when any entity classes change
+    version = 9, // tick this value when any entity classes change
     autoMigrations = [
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6),
         AutoMigration(from = 6, to = 7, spec = TrixnityRoomDatabase.Delete6to7MigrationSpec::class),
         AutoMigration(from = 7, to = 8, spec = TrixnityRoomDatabase.Delete7to8MigrationSpec::class),
+        AutoMigration(from = 8, to = 9),
     ],
     exportSchema = true,
 )
@@ -91,6 +99,7 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun notificationState(): NotificationStateDao
     abstract fun notificationUpdate(): NotificationUpdateDao
     abstract fun migration(): MigrationDao
+    abstract fun stickyRoomEvent(): StickyEventDao
 
     @DeleteColumn(
         tableName = "Account",

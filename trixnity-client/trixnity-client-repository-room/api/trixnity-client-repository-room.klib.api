@@ -241,6 +241,17 @@ abstract interface de.connect2x.trixnity.client.store.repository.room/ServerData
     abstract suspend fun insert(de.connect2x.trixnity.client.store.repository.room/RoomServerData) // de.connect2x.trixnity.client.store.repository.room/ServerDataDao.insert|insert(de.connect2x.trixnity.client.store.repository.room.RoomServerData){}[0]
 }
 
+abstract interface de.connect2x.trixnity.client.store.repository.room/StickyEventDao { // de.connect2x.trixnity.client.store.repository.room/StickyEventDao|null[0]
+    abstract suspend fun delete(de.connect2x.trixnity.core.model/RoomId, kotlin/String, de.connect2x.trixnity.core.model/UserId, kotlin/String) // de.connect2x.trixnity.client.store.repository.room/StickyEventDao.delete|delete(de.connect2x.trixnity.core.model.RoomId;kotlin.String;de.connect2x.trixnity.core.model.UserId;kotlin.String){}[0]
+    abstract suspend fun deleteAll() // de.connect2x.trixnity.client.store.repository.room/StickyEventDao.deleteAll|deleteAll(){}[0]
+    abstract suspend fun deleteByRoomId(de.connect2x.trixnity.core.model/RoomId) // de.connect2x.trixnity.client.store.repository.room/StickyEventDao.deleteByRoomId|deleteByRoomId(de.connect2x.trixnity.core.model.RoomId){}[0]
+    abstract suspend fun get(de.connect2x.trixnity.core.model/RoomId, kotlin/String): kotlin.collections/List<de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent> // de.connect2x.trixnity.client.store.repository.room/StickyEventDao.get|get(de.connect2x.trixnity.core.model.RoomId;kotlin.String){}[0]
+    abstract suspend fun get(de.connect2x.trixnity.core.model/RoomId, kotlin/String, de.connect2x.trixnity.core.model/UserId, kotlin/String): de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent? // de.connect2x.trixnity.client.store.repository.room/StickyEventDao.get|get(de.connect2x.trixnity.core.model.RoomId;kotlin.String;de.connect2x.trixnity.core.model.UserId;kotlin.String){}[0]
+    abstract suspend fun getByEndTimeBefore(kotlin/Long): kotlin.collections/List<de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent> // de.connect2x.trixnity.client.store.repository.room/StickyEventDao.getByEndTimeBefore|getByEndTimeBefore(kotlin.Long){}[0]
+    abstract suspend fun getByEventId(de.connect2x.trixnity.core.model/RoomId, de.connect2x.trixnity.core.model/EventId): de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent? // de.connect2x.trixnity.client.store.repository.room/StickyEventDao.getByEventId|getByEventId(de.connect2x.trixnity.core.model.RoomId;de.connect2x.trixnity.core.model.EventId){}[0]
+    abstract suspend fun insert(de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent) // de.connect2x.trixnity.client.store.repository.room/StickyEventDao.insert|insert(de.connect2x.trixnity.client.store.repository.room.RoomStickyEvent){}[0]
+}
+
 abstract interface de.connect2x.trixnity.client.store.repository.room/TimelineEventDao { // de.connect2x.trixnity.client.store.repository.room/TimelineEventDao|null[0]
     abstract suspend fun delete(de.connect2x.trixnity.core.model/RoomId) // de.connect2x.trixnity.client.store.repository.room/TimelineEventDao.delete|delete(de.connect2x.trixnity.core.model.RoomId){}[0]
     abstract suspend fun delete(de.connect2x.trixnity.core.model/RoomId, de.connect2x.trixnity.core.model/EventId) // de.connect2x.trixnity.client.store.repository.room/TimelineEventDao.delete|delete(de.connect2x.trixnity.core.model.RoomId;de.connect2x.trixnity.core.model.EventId){}[0]
@@ -299,6 +310,7 @@ abstract class de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDa
     abstract fun secretKeyRequest(): de.connect2x.trixnity.client.store.repository.room/SecretKeyRequestDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase.secretKeyRequest|secretKeyRequest(){}[0]
     abstract fun secrets(): de.connect2x.trixnity.client.store.repository.room/SecretsDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase.secrets|secrets(){}[0]
     abstract fun serverData(): de.connect2x.trixnity.client.store.repository.room/ServerDataDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase.serverData|serverData(){}[0]
+    abstract fun stickyRoomEvent(): de.connect2x.trixnity.client.store.repository.room/StickyEventDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase.stickyRoomEvent|stickyRoomEvent(){}[0]
     abstract fun timelineEvent(): de.connect2x.trixnity.client.store.repository.room/TimelineEventDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase.timelineEvent|timelineEvent(){}[0]
     abstract fun timelineEventRelation(): de.connect2x.trixnity.client.store.repository.room/TimelineEventRelationDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase.timelineEventRelation|timelineEventRelation(){}[0]
     abstract fun userPresence(): de.connect2x.trixnity.client.store.repository.room/UserPresenceDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase.userPresence|userPresence(){}[0]
@@ -1242,6 +1254,37 @@ final class de.connect2x.trixnity.client.store.repository.room/RoomStateDao_Impl
     }
 }
 
+final class de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent { // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent|null[0]
+    constructor <init>(de.connect2x.trixnity.core.model/RoomId, kotlin/String, de.connect2x.trixnity.core.model/UserId, kotlin/String, de.connect2x.trixnity.core.model/EventId, kotlin/Long, kotlin/String) // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.<init>|<init>(de.connect2x.trixnity.core.model.RoomId;kotlin.String;de.connect2x.trixnity.core.model.UserId;kotlin.String;de.connect2x.trixnity.core.model.EventId;kotlin.Long;kotlin.String){}[0]
+
+    final val endTimeMs // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.endTimeMs|{}endTimeMs[0]
+        final fun <get-endTimeMs>(): kotlin/Long // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.endTimeMs.<get-endTimeMs>|<get-endTimeMs>(){}[0]
+    final val eventId // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.eventId|{}eventId[0]
+        final fun <get-eventId>(): de.connect2x.trixnity.core.model/EventId // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.eventId.<get-eventId>|<get-eventId>(){}[0]
+    final val roomId // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.roomId|{}roomId[0]
+        final fun <get-roomId>(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.roomId.<get-roomId>|<get-roomId>(){}[0]
+    final val sender // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.sender|{}sender[0]
+        final fun <get-sender>(): de.connect2x.trixnity.core.model/UserId // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.sender.<get-sender>|<get-sender>(){}[0]
+    final val stickyKey // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.stickyKey|{}stickyKey[0]
+        final fun <get-stickyKey>(): kotlin/String // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.stickyKey.<get-stickyKey>|<get-stickyKey>(){}[0]
+    final val type // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.type|{}type[0]
+        final fun <get-type>(): kotlin/String // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.type.<get-type>|<get-type>(){}[0]
+    final val value // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.value|{}value[0]
+        final fun <get-value>(): kotlin/String // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.value.<get-value>|<get-value>(){}[0]
+
+    final fun component1(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.component1|component1(){}[0]
+    final fun component2(): kotlin/String // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.component2|component2(){}[0]
+    final fun component3(): de.connect2x.trixnity.core.model/UserId // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.component3|component3(){}[0]
+    final fun component4(): kotlin/String // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.component4|component4(){}[0]
+    final fun component5(): de.connect2x.trixnity.core.model/EventId // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.component5|component5(){}[0]
+    final fun component6(): kotlin/Long // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.component6|component6(){}[0]
+    final fun component7(): kotlin/String // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.component7|component7(){}[0]
+    final fun copy(de.connect2x.trixnity.core.model/RoomId = ..., kotlin/String = ..., de.connect2x.trixnity.core.model/UserId = ..., kotlin/String = ..., de.connect2x.trixnity.core.model/EventId = ..., kotlin/Long = ..., kotlin/String = ...): de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.copy|copy(de.connect2x.trixnity.core.model.RoomId;kotlin.String;de.connect2x.trixnity.core.model.UserId;kotlin.String;de.connect2x.trixnity.core.model.EventId;kotlin.Long;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent.toString|toString(){}[0]
+}
+
 final class de.connect2x.trixnity.client.store.repository.room/RoomTimelineEvent { // de.connect2x.trixnity.client.store.repository.room/RoomTimelineEvent|null[0]
     constructor <init>(de.connect2x.trixnity.core.model/RoomId, de.connect2x.trixnity.core.model/EventId, kotlin/String) // de.connect2x.trixnity.client.store.repository.room/RoomTimelineEvent.<init>|<init>(de.connect2x.trixnity.core.model.RoomId;de.connect2x.trixnity.core.model.EventId;kotlin.String){}[0]
 
@@ -1382,6 +1425,23 @@ final class de.connect2x.trixnity.client.store.repository.room/ServerDataDao_Imp
     }
 }
 
+final class de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl : de.connect2x.trixnity.client.store.repository.room/StickyEventDao { // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl|null[0]
+    constructor <init>(androidx.room/RoomDatabase) // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.<init>|<init>(androidx.room.RoomDatabase){}[0]
+
+    final suspend fun delete(de.connect2x.trixnity.core.model/RoomId, kotlin/String, de.connect2x.trixnity.core.model/UserId, kotlin/String) // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.delete|delete(de.connect2x.trixnity.core.model.RoomId;kotlin.String;de.connect2x.trixnity.core.model.UserId;kotlin.String){}[0]
+    final suspend fun deleteAll() // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.deleteAll|deleteAll(){}[0]
+    final suspend fun deleteByRoomId(de.connect2x.trixnity.core.model/RoomId) // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.deleteByRoomId|deleteByRoomId(de.connect2x.trixnity.core.model.RoomId){}[0]
+    final suspend fun get(de.connect2x.trixnity.core.model/RoomId, kotlin/String): kotlin.collections/List<de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent> // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.get|get(de.connect2x.trixnity.core.model.RoomId;kotlin.String){}[0]
+    final suspend fun get(de.connect2x.trixnity.core.model/RoomId, kotlin/String, de.connect2x.trixnity.core.model/UserId, kotlin/String): de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent? // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.get|get(de.connect2x.trixnity.core.model.RoomId;kotlin.String;de.connect2x.trixnity.core.model.UserId;kotlin.String){}[0]
+    final suspend fun getByEndTimeBefore(kotlin/Long): kotlin.collections/List<de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent> // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.getByEndTimeBefore|getByEndTimeBefore(kotlin.Long){}[0]
+    final suspend fun getByEventId(de.connect2x.trixnity.core.model/RoomId, de.connect2x.trixnity.core.model/EventId): de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent? // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.getByEventId|getByEventId(de.connect2x.trixnity.core.model.RoomId;de.connect2x.trixnity.core.model.EventId){}[0]
+    final suspend fun insert(de.connect2x.trixnity.client.store.repository.room/RoomStickyEvent) // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.insert|insert(de.connect2x.trixnity.client.store.repository.room.RoomStickyEvent){}[0]
+
+    final object Companion { // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.Companion|null[0]
+        final fun getRequiredConverters(): kotlin.collections/List<kotlin.reflect/KClass<*>> // de.connect2x.trixnity.client.store.repository.room/StickyEventDao_Impl.Companion.getRequiredConverters|getRequiredConverters(){}[0]
+    }
+}
+
 final class de.connect2x.trixnity.client.store.repository.room/TimelineEventDao_Impl : de.connect2x.trixnity.client.store.repository.room/TimelineEventDao { // de.connect2x.trixnity.client.store.repository.room/TimelineEventDao_Impl|null[0]
     constructor <init>(androidx.room/RoomDatabase) // de.connect2x.trixnity.client.store.repository.room/TimelineEventDao_Impl.<init>|<init>(androidx.room.RoomDatabase){}[0]
 
@@ -1447,6 +1507,7 @@ final class de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatab
     final fun secretKeyRequest(): de.connect2x.trixnity.client.store.repository.room/SecretKeyRequestDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase_Impl.secretKeyRequest|secretKeyRequest(){}[0]
     final fun secrets(): de.connect2x.trixnity.client.store.repository.room/SecretsDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase_Impl.secrets|secrets(){}[0]
     final fun serverData(): de.connect2x.trixnity.client.store.repository.room/ServerDataDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase_Impl.serverData|serverData(){}[0]
+    final fun stickyRoomEvent(): de.connect2x.trixnity.client.store.repository.room/StickyEventDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase_Impl.stickyRoomEvent|stickyRoomEvent(){}[0]
     final fun timelineEvent(): de.connect2x.trixnity.client.store.repository.room/TimelineEventDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase_Impl.timelineEvent|timelineEvent(){}[0]
     final fun timelineEventRelation(): de.connect2x.trixnity.client.store.repository.room/TimelineEventRelationDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase_Impl.timelineEventRelation|timelineEventRelation(){}[0]
     final fun userPresence(): de.connect2x.trixnity.client.store.repository.room/UserPresenceDao // de.connect2x.trixnity.client.store.repository.room/TrixnityRoomDatabase_Impl.userPresence|userPresence(){}[0]

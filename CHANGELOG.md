@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added MSC4354 sticky event models
+- Added MSC4354 sticky event support
 - Allow for setting the `login_hint` query-parameter for OAuth2 login requests
 
 ### Changed

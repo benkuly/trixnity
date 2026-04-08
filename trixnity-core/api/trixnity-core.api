@@ -1858,6 +1858,7 @@ public final class de/connect2x/trixnity/core/model/events/EventExtensionsKt {
 	public static final fun getRoomIdOrNull (Lde/connect2x/trixnity/core/model/events/ClientEvent;)Ljava/lang/String;
 	public static final fun getSenderOrNull (Lde/connect2x/trixnity/core/model/events/ClientEvent;)Ljava/lang/String;
 	public static final fun getStateKeyOrNull (Lde/connect2x/trixnity/core/model/events/ClientEvent;)Ljava/lang/String;
+	public static final fun mergeContentOrNull (Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent;Lde/connect2x/trixnity/core/model/events/RoomEventContent;)Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent;
 }
 
 public final class de/connect2x/trixnity/core/model/events/EventType {
@@ -2384,7 +2385,7 @@ public abstract interface class de/connect2x/trixnity/core/model/events/RoomEven
 public abstract interface class de/connect2x/trixnity/core/model/events/StateEventContent : de/connect2x/trixnity/core/model/events/RoomEventContent {
 }
 
-public abstract interface class de/connect2x/trixnity/core/model/events/StickyEventContent {
+public abstract interface class de/connect2x/trixnity/core/model/events/StickyEventContent : de/connect2x/trixnity/core/model/events/MessageEventContent, de/connect2x/trixnity/core/model/events/StateEventContent {
 	public abstract fun getStickyKey ()Ljava/lang/String;
 }
 
@@ -2431,7 +2432,7 @@ public final class de/connect2x/trixnity/core/model/events/UnknownEphemeralDataU
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class de/connect2x/trixnity/core/model/events/UnknownEventContent : de/connect2x/trixnity/core/model/events/EphemeralDataUnitContent, de/connect2x/trixnity/core/model/events/EphemeralEventContent, de/connect2x/trixnity/core/model/events/EventContent, de/connect2x/trixnity/core/model/events/ExtensibleEventContent, de/connect2x/trixnity/core/model/events/GlobalAccountDataEventContent, de/connect2x/trixnity/core/model/events/MessageEventContent, de/connect2x/trixnity/core/model/events/RoomAccountDataEventContent, de/connect2x/trixnity/core/model/events/RoomEventContent, de/connect2x/trixnity/core/model/events/StateEventContent, de/connect2x/trixnity/core/model/events/ToDeviceEventContent {
+public final class de/connect2x/trixnity/core/model/events/UnknownEventContent : de/connect2x/trixnity/core/model/events/EphemeralDataUnitContent, de/connect2x/trixnity/core/model/events/EphemeralEventContent, de/connect2x/trixnity/core/model/events/EventContent, de/connect2x/trixnity/core/model/events/ExtensibleEventContent, de/connect2x/trixnity/core/model/events/GlobalAccountDataEventContent, de/connect2x/trixnity/core/model/events/MessageEventContent, de/connect2x/trixnity/core/model/events/RoomAccountDataEventContent, de/connect2x/trixnity/core/model/events/RoomEventContent, de/connect2x/trixnity/core/model/events/StateEventContent, de/connect2x/trixnity/core/model/events/StickyEventContent, de/connect2x/trixnity/core/model/events/ToDeviceEventContent {
 	public synthetic fun <init> (Lkotlinx/serialization/json/JsonObject;Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lkotlinx/serialization/json/JsonObject;
 	public final fun component2-tNWdH1o ()Ljava/util/Map;
@@ -2449,6 +2450,7 @@ public final class de/connect2x/trixnity/core/model/events/UnknownEventContent :
 	public fun getMentions ()Lde/connect2x/trixnity/core/model/events/m/Mentions;
 	public final fun getRaw ()Lkotlinx/serialization/json/JsonObject;
 	public fun getRelatesTo ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo;
+	public fun getStickyKey ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -7553,19 +7555,19 @@ public abstract interface class de/connect2x/trixnity/core/model/events/m/rtc/Rt
 
 public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent : de/connect2x/trixnity/core/model/events/MessageEventContent, de/connect2x/trixnity/core/model/events/StickyEventContent {
 	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Companion;
-	public fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)V
-	public synthetic fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;
-	public final fun component3 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
-	public final fun component4 ()Ljava/util/List;
-	public final fun component5 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;
+	public final fun component4 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
+	public final fun component5 ()Ljava/util/List;
 	public final fun component6 ()Ljava/util/List;
 	public final fun component7 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;
 	public final fun component8 ()Ljava/lang/Boolean;
 	public final fun component9 ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo;
-	public final fun copy (Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;
 	public fun copyWith (Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)Lde/connect2x/trixnity/core/model/events/MessageEventContent;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getApplication ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;
