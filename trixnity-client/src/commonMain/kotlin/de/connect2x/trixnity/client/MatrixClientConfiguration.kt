@@ -1,16 +1,17 @@
 package de.connect2x.trixnity.client
 
-import io.ktor.client.*
-import io.ktor.client.engine.*
-import kotlinx.coroutines.CoroutineName
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClientFactory
 import de.connect2x.trixnity.clientserverapi.client.sync
 import de.connect2x.trixnity.clientserverapi.model.user.Filters
 import de.connect2x.trixnity.core.MSC3814
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
 import de.connect2x.trixnity.utils.RetryFlowDelayConfig
+import io.ktor.client.*
+import io.ktor.client.engine.*
+import kotlinx.coroutines.CoroutineName
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -147,6 +148,8 @@ data class MatrixClientConfiguration(
         val presence: Duration,
         val media: Duration,
         val notification: Duration,
+        @MSC4354
+        val stickyEvent: Duration,
     ) {
 
 
@@ -175,17 +178,17 @@ data class MatrixClientConfiguration(
                     presence = duration,
                     media = duration / 6,
                     notification = duration,
+                    stickyEvent = duration,
                 )
         }
     }
 
     data class ExperimentalFeatures(
-        /**
-         * Currently, the implementation uses some sort of undocumented compatibility mode, which allows it to run without adding new binaries like vodozemac.
-         * Therefore, it is not compatible with other clients yet.
-         */
         @MSC3814
-        var enableMSC3814: Boolean = false
+        var enableMSC3814: Boolean = false,
+
+        @MSC4354
+        var enableMSC4354: Boolean = false,
     )
 
     /**

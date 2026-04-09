@@ -15,6 +15,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import web.events.EventHandler
 import web.idb.IDBDatabase
 import web.idb.IDBIndexParameters
+import web.idb.IDBKeyRange
 import web.idb.IDBRequest
 import web.idb.IDBTransaction
 import web.idb.IDBValidKey
@@ -146,6 +147,31 @@ value class WrappedTransaction(val tx: IDBTransaction) {
     }
 
     fun WrappedIndex.openCursor(key: IDBValidKey? = null): Flow<CursorItem> = callbackFlow {
+        val request = key?.let { index.openCursor(it) } ?: index.openCursor()
+
+        request.onsuccess = EventHandler { event ->
+            val cursor = event.target.result
+
+
+            if (cursor == null) {
+                channel.close()
+            } else {
+                channel.trySend(CursorItem(cursor.primaryKey, cursor.value))
+                cursor.`continue`()
+            }
+        }
+
+        request.onerror = EventHandler { event ->
+            channel.close(IDBException.fromDom(CURSOR, event.target.error))
+        }
+
+        awaitClose {
+            request.onsuccess = null
+            request.onerror = null
+        }
+    }
+
+    fun WrappedIndex.openCursor(key: IDBKeyRange? = null): Flow<CursorItem> = callbackFlow {
         val request = key?.let { index.openCursor(it) } ?: index.openCursor()
 
         request.onsuccess = EventHandler { event ->

@@ -21,13 +21,14 @@ import de.connect2x.trixnity.client.utils.retryLoop
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.model.media.FileTransferProgress
 import de.connect2x.trixnity.core.EventHandler
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.MatrixServerException
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
 import de.connect2x.trixnity.core.subscribe
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.async
@@ -163,6 +164,7 @@ class OutboxMessageEventHandler(
         log.debug { "cancel sending of ${outboxMessage.transactionId}" }
     }
 
+    @OptIn(MSC4354::class)
     private suspend fun sendOutboxMessage(
         outboxMessage: RoomOutboxMessage<*>,
         roomId: RoomId
@@ -238,9 +240,13 @@ class OutboxMessageEventHandler(
             else -> contentResult.getOrThrow()
         }
         val eventId = try {
-            log.debug { "send outbox message ${transactionId} into $roomId" }
-            api.room.sendMessageEvent(roomId, content, transactionId)
-                .getOrThrow() // TODO fold as soon as continue is supported in inline lambdas
+            log.debug { "send outbox message $transactionId into $roomId" }
+            api.room.sendMessageEvent(
+                roomId = roomId,
+                eventContent = content,
+                txnId = transactionId,
+                stickyDurationMs = outboxMessage.stickyDuration?.inWholeMilliseconds
+            ).getOrThrow() // TODO fold as soon as continue is supported in inline lambdas
         } catch (exception: MatrixServerException) {
             val sendError = when (exception.statusCode) {
                 HttpStatusCode.Forbidden -> SendError.NoEventPermission

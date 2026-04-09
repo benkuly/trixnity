@@ -1,5 +1,3 @@
-@file:OptIn(de.connect2x.trixnity.core.MSC4143::class)
-
 package de.connect2x.trixnity.core.serialization.events
 
 import de.connect2x.trixnity.core.MSC4143
@@ -10,7 +8,11 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 
 @MSC4143
 class RtcApplicationSerializer(

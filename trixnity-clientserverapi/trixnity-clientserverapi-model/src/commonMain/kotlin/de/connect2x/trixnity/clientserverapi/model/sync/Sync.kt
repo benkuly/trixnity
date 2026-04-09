@@ -17,7 +17,6 @@ import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import de.connect2x.trixnity.core.model.events.m.Presence
-import de.connect2x.trixnity.core.model.events.m.PresenceEventContent
 import de.connect2x.trixnity.core.model.keys.KeyAlgorithm
 import de.connect2x.trixnity.core.serialization.events.EphemeralEventSerializer
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -211,7 +210,7 @@ data class Sync(
 
         @Serializable
         data class Presence(
-            @SerialName("events") val events: List<@Contextual EphemeralEvent<PresenceEventContent>>? = null
+            @SerialName("events") val events: List<@Contextual EphemeralEvent<*>>? = null
         )
 
         @Serializable

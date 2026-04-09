@@ -1,26 +1,48 @@
 package de.connect2x.trixnity.client.room
 
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import kotlinx.coroutines.flow.first
-import de.connect2x.trixnity.client.*
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.getInMemoryNotificationStore
+import de.connect2x.trixnity.client.getInMemoryRoomAccountDataStore
+import de.connect2x.trixnity.client.getInMemoryRoomOutboxMessageStore
+import de.connect2x.trixnity.client.getInMemoryRoomStateStore
+import de.connect2x.trixnity.client.getInMemoryRoomStore
+import de.connect2x.trixnity.client.getInMemoryRoomTimelineStore
+import de.connect2x.trixnity.client.getInMemoryRoomUserStore
+import de.connect2x.trixnity.client.getInMemoryStickyEventStore
+import de.connect2x.trixnity.client.simpleRoom
+import de.connect2x.trixnity.client.store.RoomOutboxMessage
+import de.connect2x.trixnity.client.store.RoomUser
+import de.connect2x.trixnity.client.store.StoredNotification
+import de.connect2x.trixnity.client.store.StoredStickyEvent
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.TimelineEventRelation
+import de.connect2x.trixnity.client.store.get
+import de.connect2x.trixnity.client.store.getByStateKey
+import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import de.connect2x.trixnity.core.model.events.StickyEventContent
+import de.connect2x.trixnity.core.model.events.StickyEventData
 import de.connect2x.trixnity.core.model.events.m.FullyReadEventContent
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
 import de.connect2x.trixnity.test.utils.testClock
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import kotlinx.coroutines.flow.first
 import kotlin.test.Test
+import kotlin.time.Instant
 
+@OptIn(MSC4354::class, MSC4143::class)
 class ForgetRoomsTest : TrixnityBaseTest() {
 
     private val room = simpleRoom.roomId
@@ -30,6 +52,7 @@ class ForgetRoomsTest : TrixnityBaseTest() {
     private val roomStateStore = getInMemoryRoomStateStore()
     private val roomAccountDataStore = getInMemoryRoomAccountDataStore()
     private val roomTimelineStore = getInMemoryRoomTimelineStore()
+    private val roomStickyEventStore = getInMemoryStickyEventStore()
     private val roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore()
     private val notificationStore = getInMemoryNotificationStore()
 
@@ -39,6 +62,7 @@ class ForgetRoomsTest : TrixnityBaseTest() {
         roomStateStore = roomStateStore,
         roomAccountDataStore = roomAccountDataStore,
         roomTimelineStore = roomTimelineStore,
+        stickyEventStore = roomStickyEventStore,
         roomOutboxMessageStore = roomOutboxMessageStore,
         notificationStore = notificationStore
     )
@@ -105,6 +129,23 @@ class ForgetRoomsTest : TrixnityBaseTest() {
                 testClock.now(),
             )
         }
+
+        val stickyEvent = MessageEvent(
+            content = RtcMemberEventContent(slotId = "slot", stickyKey = "sticky_key") as StickyEventContent,
+            id = EventId("${'$'}sticky"),
+            sender = UserId("sender", "server"),
+            roomId = room,
+            originTimestamp = 1234L,
+            sticky = StickyEventData(durationMs = 24_000),
+        )
+        roomStickyEventStore.save(
+            StoredStickyEvent(
+                event = stickyEvent,
+                startTime = Instant.fromEpochMilliseconds(24),
+                endTime = Instant.fromEpochMilliseconds(24)
+            )
+        )
+
         notificationStore.update("notif") {
             StoredNotification.Message("s", room, EventId("notif"), setOf())
         }
@@ -134,6 +175,13 @@ class ForgetRoomsTest : TrixnityBaseTest() {
 
         roomOutboxMessageStore.get(room, "t1").first() shouldBe null
         notificationStore.getById("notif").first() shouldBe null
+
+        roomStickyEventStore.getBySenderAndStickyKey(
+            room,
+            RtcMemberEventContent::class,
+            UserId("sender", "server"),
+            "sticky_key"
+        ).first() shouldBe null
     }
 
     @Test

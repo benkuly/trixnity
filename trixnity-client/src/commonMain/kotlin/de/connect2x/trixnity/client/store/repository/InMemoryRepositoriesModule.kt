@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.store.repository
 
 import de.connect2x.trixnity.client.RepositoriesModule
+import de.connect2x.trixnity.core.MSC4354
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
@@ -31,6 +32,7 @@ fun RepositoriesModule.Companion.inMemory() = RepositoriesModule {
         singleOf<RoomStateRepository>(::InMemoryRoomStateRepository)
         singleOf<TimelineEventRepository>(::InMemoryTimelineEventRepository)
         singleOf<TimelineEventRelationRepository>(::InMemoryTimelineEventRelationRepository)
+        @OptIn(MSC4354::class) singleOf<StickyEventRepository>(::InMemoryStickyEventRepository)
         singleOf<RoomOutboxMessageRepository>(::InMemoryRoomOutboxMessageRepository)
         singleOf<MediaCacheMappingRepository>(::InMemoryMediaCacheMappingRepository)
         singleOf<GlobalAccountDataRepository>(::InMemoryGlobalAccountDataRepository)

@@ -1,8 +1,8 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
+import de.connect2x.trixnity.idb.schemaexporter.exportSchema
 import io.kotest.assertions.json.shouldEqualJson
 import kotlinx.coroutines.test.runTest
-import de.connect2x.trixnity.idb.schemaexporter.exportSchema
 import kotlin.test.Test
 
 class IndexedDBRepositorySchemaTest {
@@ -12,7 +12,7 @@ class IndexedDBRepositorySchemaTest {
     private val schema = """
         {
           "name": "repository",
-          "version": 9,
+          "version": 10,
           "stores": {
             "account": {
               "keyPath": null,
@@ -280,6 +280,43 @@ class IndexedDBRepositorySchemaTest {
               "autoIncrement": false,
               "indexes": {}
             },
+            "sticky_event": {
+              "keyPath": [
+                "roomId",
+                "type",
+                "sender",
+                "stickyKey"
+              ],
+              "autoIncrement": false,
+              "indexes": {
+                "endTimeMs": {
+                  "keyPath": "endTimeMs",
+                  "unique": false,
+                  "multiEntry": false
+                },
+                "roomId": {
+                  "keyPath": "roomId",
+                  "unique": false,
+                  "multiEntry": false
+                },
+                "roomId|eventId": {
+                  "keyPath": [
+                    "roomId",
+                    "value.event.event_id"
+                  ],
+                  "unique": false,
+                  "multiEntry": false
+                },
+                "roomId|type": {
+                  "keyPath": [
+                    "roomId",
+                    "type"
+                  ],
+                  "unique": false,
+                  "multiEntry": false
+                }
+              }
+            },
             "timeline_event": {
               "keyPath": null,
               "autoIncrement": false,
@@ -332,6 +369,8 @@ class IndexedDBRepositorySchemaTest {
         exportSchema(databaseName) shouldEqualJson schema
     }
 
-    private suspend fun prepare() { createDatabase(databaseName) }
+    private suspend fun prepare() {
+        createDatabase(databaseName)
+    }
 
 }

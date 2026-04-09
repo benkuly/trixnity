@@ -3,6 +3,7 @@ package de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.key.KeyBackupService
 import de.connect2x.trixnity.client.key.OutgoingRoomKeyRequestEventHandler
 import de.connect2x.trixnity.core.EventHandler
+import de.connect2x.trixnity.core.MSC4354
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.named
 import org.koin.core.module.dsl.singleOf
@@ -51,11 +52,24 @@ fun createRoomModule() = module {
         bind<EventHandler>()
         named<RoomUpgradeHandler>()
     }
+    @OptIn(MSC4354::class)
     singleOf(::TimelineEventHandlerImpl) {
         bind<TimelineEventHandler>()
         bind<EventHandler>()
         named<TimelineEventHandlerImpl>()
     }
+    @OptIn(MSC4354::class)
+    single<EventHandler>(named<StickyEventHandler>()) {
+        StickyEventHandler(
+            api = get(),
+            stickyEventStore = get(),
+            roomEventEncryptionServices = getAll(),
+            clock = get(),
+            tm = get(),
+            config = get(),
+        )
+    }
+    @OptIn(MSC4354::class)
     singleOf(::ForgetRoomServiceImpl) {
         bind<ForgetRoomService>()
     }
@@ -74,6 +88,7 @@ fun createRoomModule() = module {
         bind<RoomEventEncryptionService>()
         named<UnencryptedRoomEventEncryptionService>()
     }
+    @OptIn(MSC4354::class)
     single<RoomService> {
         RoomServiceImpl(
             api = get(),
@@ -81,6 +96,7 @@ fun createRoomModule() = module {
             roomStateStore = get(),
             roomAccountDataStore = get(),
             roomTimelineStore = get(),
+            stickyEventStore = get(),
             roomOutboxMessageStore = get(),
             roomEventEncryptionServices = getAll(),
             forgetRoomService = get(),

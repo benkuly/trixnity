@@ -46,6 +46,7 @@ import de.connect2x.trixnity.client.verification.createVerificationModule
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.client.SyncApiClient
 import de.connect2x.trixnity.core.EventHandler
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.TypingEventContent
@@ -170,6 +171,7 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
                 bind<EventHandler>()
                 named<RoomUpgradeHandler>()
             }
+            @OptIn(MSC4354::class)
             singleOf(::ForgetRoomServiceImpl) {
                 bind<ForgetRoomService>()
             }
@@ -213,6 +215,7 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
                     clock = get(),
                 )
             }
+            @OptIn(MSC4354::class)
             single<RoomService> {
                 RoomServiceImpl(
                     api = get(),
@@ -220,6 +223,7 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
                     roomStateStore = get(),
                     roomAccountDataStore = get(),
                     roomTimelineStore = get(),
+                    stickyEventStore = get(),
                     roomOutboxMessageStore = get(),
                     roomEventEncryptionServices = getAll(),
                     forgetRoomService = get(),

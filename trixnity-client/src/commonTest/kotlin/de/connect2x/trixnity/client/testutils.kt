@@ -1,12 +1,66 @@
 package de.connect2x.trixnity.client
 
 import de.connect2x.trixnity.client.mocks.RepositoryTransactionManagerMock
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.Account
+import de.connect2x.trixnity.client.store.AccountStore
+import de.connect2x.trixnity.client.store.GlobalAccountDataStore
+import de.connect2x.trixnity.client.store.KeyStore
+import de.connect2x.trixnity.client.store.MediaCacheMappingStore
+import de.connect2x.trixnity.client.store.NotificationStore
+import de.connect2x.trixnity.client.store.OlmCryptoStore
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.RoomAccountDataStore
+import de.connect2x.trixnity.client.store.RoomOutboxMessageStore
+import de.connect2x.trixnity.client.store.RoomStateStore
+import de.connect2x.trixnity.client.store.RoomStore
+import de.connect2x.trixnity.client.store.RoomTimelineStore
+import de.connect2x.trixnity.client.store.RoomUserStore
+import de.connect2x.trixnity.client.store.ServerData
+import de.connect2x.trixnity.client.store.ServerDataStore
+import de.connect2x.trixnity.client.store.StickyEventStore
+import de.connect2x.trixnity.client.store.UserPresenceStore
 import de.connect2x.trixnity.client.store.cache.ObservableCacheStatisticCollector
-import de.connect2x.trixnity.client.store.repository.*
-import de.connect2x.trixnity.clientserverapi.client.*
+import de.connect2x.trixnity.client.store.repository.InMemoryAccountRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryCrossSigningKeysRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryDeviceKeysRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryGlobalAccountDataRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryInboundMegolmMessageIndexRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryInboundMegolmSessionRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryKeyChainLinkRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryKeyVerificationStateRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryMediaCacheMappingRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryNotificationRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryNotificationStateRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryNotificationUpdateRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryOlmAccountRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryOlmForgetFallbackKeyAfterRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryOlmSessionRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryOutboundMegolmSessionRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryOutdatedKeysRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryRoomAccountDataRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryRoomKeyRequestRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryRoomOutboxMessageRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryRoomRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryRoomStateRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryRoomUserReceiptsRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryRoomUserRepository
+import de.connect2x.trixnity.client.store.repository.InMemorySecretKeyRequestRepository
+import de.connect2x.trixnity.client.store.repository.InMemorySecretsRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryServerDataRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryStickyEventRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryTimelineEventRelationRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryTimelineEventRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryUserPresenceRepository
+import de.connect2x.trixnity.client.store.repository.NoOpRepositoryTransactionManager
+import de.connect2x.trixnity.clientserverapi.client.ClassicMatrixClientAuthProvider
+import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderData
+import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderDataStore
+import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import de.connect2x.trixnity.clientserverapi.client.SyncBatchTokenStore
+import de.connect2x.trixnity.clientserverapi.client.classic
 import de.connect2x.trixnity.clientserverapi.model.media.GetMediaConfig
 import de.connect2x.trixnity.clientserverapi.model.server.GetVersions
+import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
@@ -227,6 +281,23 @@ fun TrixnityBaseTest.getInMemoryRoomTimelineStore(setup: suspend RoomTimelineSto
         setup()
     }
 }
+
+@MSC4354
+fun TrixnityBaseTest.getInMemoryStickyEventStore(setup: suspend StickyEventStore.() -> Unit = {}) =
+    StickyEventStore(
+        InMemoryStickyEventRepository(),
+        RepositoryTransactionManagerMock(),
+        EventContentSerializerMappings.default,
+        MatrixClientConfiguration(),
+        ObservableCacheStatisticCollector(),
+        testScope.backgroundScope,
+        testScope.testClock,
+    ).apply {
+        scheduleSetup {
+            init(backgroundScope)
+            setup()
+        }
+    }
 
 fun TrixnityBaseTest.getInMemoryRoomStateStore(setup: suspend RoomStateStore.() -> Unit = {}) = RoomStateStore(
     InMemoryRoomStateRepository(),

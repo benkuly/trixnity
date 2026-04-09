@@ -1,5 +1,52 @@
 package de.connect2x.trixnity.client.room
 
+import de.connect2x.trixnity.client.MatrixClientConfiguration
+import de.connect2x.trixnity.client.flatten
+import de.connect2x.trixnity.client.flattenNotNull
+import de.connect2x.trixnity.client.getInMemoryRoomStore
+import de.connect2x.trixnity.client.getInMemoryRoomTimelineStore
+import de.connect2x.trixnity.client.getInMemoryStickyEventStore
+import de.connect2x.trixnity.client.mockMatrixClientServerApiClient
+import de.connect2x.trixnity.client.mocks.TransactionManagerMock
+import de.connect2x.trixnity.client.simpleRoom
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.StoredStickyEvent
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.TimelineEvent.TimelineEventContentError
+import de.connect2x.trixnity.client.store.TimelineEventRelation
+import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.roomId
+import de.connect2x.trixnity.clientserverapi.client.SyncEvents
+import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
+import de.connect2x.trixnity.clientserverapi.model.sync.Sync
+import de.connect2x.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
+import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4354
+import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import de.connect2x.trixnity.core.model.events.RedactedEventContent
+import de.connect2x.trixnity.core.model.events.StickyEventContent
+import de.connect2x.trixnity.core.model.events.StickyEventData
+import de.connect2x.trixnity.core.model.events.UnsignedRoomEventData
+import de.connect2x.trixnity.core.model.events.m.RelatesTo
+import de.connect2x.trixnity.core.model.events.m.RelationType
+import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
+import de.connect2x.trixnity.core.model.events.m.room.Membership
+import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
+import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
+import de.connect2x.trixnity.core.serialization.createMatrixEventJson
+import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import de.connect2x.trixnity.core.serialization.events.default
+import de.connect2x.trixnity.test.utils.TrixnityBaseTest
+import de.connect2x.trixnity.test.utils.runTest
+import de.connect2x.trixnity.testutils.PortableMockEngineConfig
+import de.connect2x.trixnity.testutils.matrixJsonEndpoint
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -10,36 +57,10 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
-import de.connect2x.trixnity.client.*
-import de.connect2x.trixnity.client.mocks.TransactionManagerMock
-import de.connect2x.trixnity.client.store.*
-import de.connect2x.trixnity.client.store.TimelineEvent.TimelineEventContentError
-import de.connect2x.trixnity.clientserverapi.client.SyncEvents
-import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
-import de.connect2x.trixnity.clientserverapi.model.sync.Sync
-import de.connect2x.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
-import de.connect2x.trixnity.clientserverapi.model.user.Filters
-import de.connect2x.trixnity.core.model.EventId
-import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.UserId
-import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
-import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
-import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import de.connect2x.trixnity.core.model.events.RedactedEventContent
-import de.connect2x.trixnity.core.model.events.UnsignedRoomEventData
-import de.connect2x.trixnity.core.model.events.m.RelatesTo
-import de.connect2x.trixnity.core.model.events.m.RelationType
-import de.connect2x.trixnity.core.model.events.m.room.*
-import de.connect2x.trixnity.core.serialization.createMatrixEventJson
-import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
-import de.connect2x.trixnity.core.serialization.events.default
-import de.connect2x.trixnity.test.utils.TrixnityBaseTest
-import de.connect2x.trixnity.test.utils.runTest
-import de.connect2x.trixnity.testutils.PortableMockEngineConfig
-import de.connect2x.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
+import kotlin.time.Instant
 
+@OptIn(MSC4354::class)
 class TimelineEventHandlerTest : TrixnityBaseTest() {
 
     private val alice = UserId("alice", "server")
@@ -52,25 +73,21 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
 
     private val roomStore = getInMemoryRoomStore()
     private val roomTimelineStore = getInMemoryRoomTimelineStore()
+    private val roomStickyEventStore = getInMemoryStickyEventStore()
 
     private val apiConfig = PortableMockEngineConfig()
     private val api = mockMatrixClientServerApiClient(config = apiConfig)
 
-    private val filter = run {
-        val baseFilter = MatrixClientConfiguration().syncFilter
-        val timelineFilter = (baseFilter.room?.timeline ?: Filters.RoomFilter.RoomEventFilter()).copy(
-            // Must match production ordering semantics.
-            types = (EventContentSerializerMappings.default.message + EventContentSerializerMappings.default.state)
-                .map { it.type }
-                .toSet(),
-        )
-        createMatrixEventJson().encodeToString(timelineFilter)
-    }
+    // Hardcode the exact JSON filter string. This is intentionally brittle so the test fails
+    // if the filter is changed (e.g. when EventContentSerializerMappings changes).
+    private val filter =
+        """{"types":["m.room.message","m.reaction","m.room.redaction","m.room.encrypted","m.key.verification.start","m.key.verification.ready","m.key.verification.done","m.key.verification.cancel","m.key.verification.accept","m.key.verification.key","m.key.verification.mac","m.call.invite","m.call.candidates","m.call.answer","m.call.hangup","m.call.negotiate","m.call.reject","m.call.select_answer","m.call.sdp_stream_metadata_changed","org.matrix.msc4143.rtc.member","m.rtc.member","m.room.avatar","m.room.canonical_alias","m.room.create","m.room.join_rules","m.room.member","m.room.name","m.room.pinned_events","m.room.power_levels","m.room.topic","m.room.encryption","m.room.history_visibility","m.room.third_party_invite","m.room.guest_access","m.room.server_acl","m.room.tombstone","m.policy.rule.user","m.policy.rule.room","m.policy.rule.server","m.space.parent","m.space.child","org.matrix.msc4143.rtc.slot","m.rtc.slot"]}"""
 
     private val cut = TimelineEventHandlerImpl(
         api,
         roomStore,
         roomTimelineStore,
+        roomStickyEventStore,
         createMatrixEventJson(),
         EventContentSerializerMappings.default,
         MatrixClientConfiguration(),
@@ -100,6 +117,18 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
             UserId("sender", "server"),
             room,
             i
+        )
+    }
+
+    @MSC4143
+    private fun stickyEvent(i: Long = 24): MessageEvent<StickyEventContent> {
+        return MessageEvent(
+            RtcMemberEventContent("sticky_key", "slot") as StickyEventContent,
+            EventId("\$event$i"),
+            UserId("sender", "server"),
+            room,
+            i,
+            sticky = StickyEventData(durationMs = 24_000),
         )
     }
 
@@ -160,6 +189,48 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
             previousEventId shouldBe event1.id
             nextEventId shouldBe event3.id
         }
+    }
+
+
+    @Test
+    @OptIn(MSC4143::class)
+    fun `handleRedactions » redact sticky event`() = runTest {
+        val event1 = stickyEvent(1)
+        roomTimelineStore.addAll(
+            listOf(
+                TimelineEvent(
+                    event = event1,
+                    content = null,
+                    previousEventId = null,
+                    nextEventId = event2.id,
+                    gap = null
+                ),
+            )
+        )
+        roomStickyEventStore.save(
+            StoredStickyEvent(
+                event = event1,
+                startTime = Instant.fromEpochMilliseconds(24),
+                endTime = Instant.fromEpochMilliseconds(24)
+            )
+        )
+        val redactionEvent = MessageEvent(
+            content = RedactionEventContent(reason = "Spamming", redacts = event1.id),
+            id = EventId("\$redact"),
+            sender = alice,
+            roomId = room,
+            originTimestamp = 3
+        )
+        with(cut) {
+            listOf(redactionEvent).handleRedactions()
+        }
+        roomStickyEventStore.getBySenderAndStickyKey(
+            room,
+            RtcMemberEventContent::class,
+            alice,
+            event1.content.stickyKey
+        )
+            .first() shouldBe null
     }
 
     @Test

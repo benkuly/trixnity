@@ -1012,6 +1012,29 @@ public final class de/connect2x/trixnity/client/store/repository/room/RoomStateD
 	public final fun getRequiredConverters ()Ljava/util/List;
 }
 
+public final class de/connect2x/trixnity/client/store/repository/room/RoomStickyEvent {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-7hZGZBE ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3-hu1aZbM ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5-33FGWrg ()Ljava/lang/String;
+	public final fun component6 ()J
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy-_BtfHHg (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)Lde/connect2x/trixnity/client/store/repository/room/RoomStickyEvent;
+	public static synthetic fun copy-_BtfHHg$default (Lde/connect2x/trixnity/client/store/repository/room/RoomStickyEvent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/client/store/repository/room/RoomStickyEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEndTimeMs ()J
+	public final fun getEventId-33FGWrg ()Ljava/lang/String;
+	public final fun getRoomId-7hZGZBE ()Ljava/lang/String;
+	public final fun getSender-hu1aZbM ()Ljava/lang/String;
+	public final fun getStickyKey ()Ljava/lang/String;
+	public final fun getType ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class de/connect2x/trixnity/client/store/repository/room/RoomTimelineEvent {
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-7hZGZBE ()Ljava/lang/String;
@@ -1185,6 +1208,34 @@ public final class de/connect2x/trixnity/client/store/repository/room/ServerData
 	public final fun getRequiredConverters ()Ljava/util/List;
 }
 
+public abstract interface class de/connect2x/trixnity/client/store/repository/room/StickyEventDao {
+	public abstract fun delete-oITkvlk (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteByRoomId-4A-6DIM (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun get-RNkTX0s (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun get-oITkvlk (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getByEndTimeBefore (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getByEventId-zaB9cDc (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun insert (Lde/connect2x/trixnity/client/store/repository/room/RoomStickyEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/client/store/repository/room/StickyEventDao_Impl : de/connect2x/trixnity/client/store/repository/room/StickyEventDao {
+	public static final field Companion Lde/connect2x/trixnity/client/store/repository/room/StickyEventDao_Impl$Companion;
+	public fun <init> (Landroidx/room/RoomDatabase;)V
+	public fun delete-oITkvlk (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteByRoomId-4A-6DIM (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get-RNkTX0s (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get-oITkvlk (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getByEndTimeBefore (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getByEventId-zaB9cDc (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun insert (Lde/connect2x/trixnity/client/store/repository/room/RoomStickyEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/client/store/repository/room/StickyEventDao_Impl$Companion {
+	public final fun getRequiredConverters ()Ljava/util/List;
+}
+
 public abstract interface class de/connect2x/trixnity/client/store/repository/room/TimelineEventDao {
 	public abstract fun delete-4A-6DIM (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun delete-zaB9cDc (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -1266,6 +1317,7 @@ public abstract class de/connect2x/trixnity/client/store/repository/room/Trixnit
 	public abstract fun secretKeyRequest ()Lde/connect2x/trixnity/client/store/repository/room/SecretKeyRequestDao;
 	public abstract fun secrets ()Lde/connect2x/trixnity/client/store/repository/room/SecretsDao;
 	public abstract fun serverData ()Lde/connect2x/trixnity/client/store/repository/room/ServerDataDao;
+	public abstract fun stickyRoomEvent ()Lde/connect2x/trixnity/client/store/repository/room/StickyEventDao;
 	public abstract fun timelineEvent ()Lde/connect2x/trixnity/client/store/repository/room/TimelineEventDao;
 	public abstract fun timelineEventRelation ()Lde/connect2x/trixnity/client/store/repository/room/TimelineEventRelationDao;
 	public abstract fun userPresence ()Lde/connect2x/trixnity/client/store/repository/room/UserPresenceDao;
@@ -1321,6 +1373,7 @@ public final class de/connect2x/trixnity/client/store/repository/room/TrixnityRo
 	public fun secretKeyRequest ()Lde/connect2x/trixnity/client/store/repository/room/SecretKeyRequestDao;
 	public fun secrets ()Lde/connect2x/trixnity/client/store/repository/room/SecretsDao;
 	public fun serverData ()Lde/connect2x/trixnity/client/store/repository/room/ServerDataDao;
+	public fun stickyRoomEvent ()Lde/connect2x/trixnity/client/store/repository/room/StickyEventDao;
 	public fun timelineEvent ()Lde/connect2x/trixnity/client/store/repository/room/TimelineEventDao;
 	public fun timelineEventRelation ()Lde/connect2x/trixnity/client/store/repository/room/TimelineEventRelationDao;
 	public fun userPresence ()Lde/connect2x/trixnity/client/store/repository/room/UserPresenceDao;

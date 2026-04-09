@@ -1,5 +1,3 @@
-@file:OptIn(de.connect2x.trixnity.core.MSC4143::class)
-
 package de.connect2x.trixnity.core.serialization.events
 
 import de.connect2x.trixnity.core.MSC4143

@@ -1,11 +1,45 @@
 package de.connect2x.trixnity.client.store.repository.indexeddb
 
 import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.trixnity.client.RepositoriesModule
+import de.connect2x.trixnity.client.store.repository.AccountRepository
+import de.connect2x.trixnity.client.store.repository.AuthenticationRepository
+import de.connect2x.trixnity.client.store.repository.CrossSigningKeysRepository
+import de.connect2x.trixnity.client.store.repository.DeviceKeysRepository
+import de.connect2x.trixnity.client.store.repository.GlobalAccountDataRepository
+import de.connect2x.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
+import de.connect2x.trixnity.client.store.repository.InboundMegolmSessionRepository
+import de.connect2x.trixnity.client.store.repository.KeyChainLinkRepository
+import de.connect2x.trixnity.client.store.repository.KeyVerificationStateRepository
+import de.connect2x.trixnity.client.store.repository.MediaCacheMappingRepository
+import de.connect2x.trixnity.client.store.repository.MigrationRepository
+import de.connect2x.trixnity.client.store.repository.NotificationRepository
+import de.connect2x.trixnity.client.store.repository.NotificationStateRepository
+import de.connect2x.trixnity.client.store.repository.NotificationUpdateRepository
+import de.connect2x.trixnity.client.store.repository.OlmAccountRepository
+import de.connect2x.trixnity.client.store.repository.OlmForgetFallbackKeyAfterRepository
+import de.connect2x.trixnity.client.store.repository.OlmSessionRepository
+import de.connect2x.trixnity.client.store.repository.OutboundMegolmSessionRepository
+import de.connect2x.trixnity.client.store.repository.OutdatedKeysRepository
+import de.connect2x.trixnity.client.store.repository.RepositoryTransactionManager
+import de.connect2x.trixnity.client.store.repository.RoomAccountDataRepository
+import de.connect2x.trixnity.client.store.repository.RoomKeyRequestRepository
+import de.connect2x.trixnity.client.store.repository.RoomOutboxMessageRepository
+import de.connect2x.trixnity.client.store.repository.RoomRepository
+import de.connect2x.trixnity.client.store.repository.RoomStateRepository
+import de.connect2x.trixnity.client.store.repository.RoomUserReceiptsRepository
+import de.connect2x.trixnity.client.store.repository.RoomUserRepository
+import de.connect2x.trixnity.client.store.repository.SecretKeyRequestRepository
+import de.connect2x.trixnity.client.store.repository.SecretsRepository
+import de.connect2x.trixnity.client.store.repository.ServerDataRepository
+import de.connect2x.trixnity.client.store.repository.StickyEventRepository
+import de.connect2x.trixnity.client.store.repository.TimelineEventRelationRepository
+import de.connect2x.trixnity.client.store.repository.TimelineEventRepository
+import de.connect2x.trixnity.client.store.repository.UserPresenceRepository
+import de.connect2x.trixnity.core.MSC4354
+import de.connect2x.trixnity.idb.utils.IDBUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
-import de.connect2x.trixnity.client.RepositoriesModule
-import de.connect2x.trixnity.client.store.repository.*
-import de.connect2x.trixnity.idb.utils.IDBUtils
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
@@ -57,6 +91,8 @@ fun RepositoriesModule.Companion.indexedDB(databaseName: String = "trixnity"): R
         singleOf(::IndexedDBNotificationStateRepository) { bind<NotificationStateRepository>() }
         singleOf(::IndexedDBNotificationUpdateRepository) { bind<NotificationUpdateRepository>() }
         singleOf(::IndexedDBMigrationRepository) { bind<MigrationRepository>() }
+        @OptIn(MSC4354::class)
+        singleOf(::IndexedDBStickyEventRepository) { bind<StickyEventRepository>() }
     }
 }
 
@@ -93,10 +129,11 @@ internal val allStoreNames = arrayOf(
     IndexedDBNotificationStateRepository.objectStoreName,
     IndexedDBNotificationUpdateRepository.objectStoreName,
     IndexedDBMigrationRepository.objectStoreName,
+    IndexedDBStickyEventRepository.objectStoreName,
 )
 
 internal suspend fun createDatabase(databaseName: String) =
-    IDBUtils.openDatabase(databaseName, 9) { database, oldVersion, _ ->
+    IDBUtils.openDatabase(databaseName, 10) { database, oldVersion, _ ->
         IndexedDBAccountRepository.apply { migrate(database, oldVersion) }
         IndexedDBAuthenticationRepository.apply { migrate(database, oldVersion) }
         IndexedServerDataRepository.apply { migrate(database, oldVersion) }
@@ -129,4 +166,5 @@ internal suspend fun createDatabase(databaseName: String) =
         IndexedDBNotificationStateRepository.apply { migrate(database, oldVersion) }
         IndexedDBNotificationUpdateRepository.apply { migrate(database, oldVersion) }
         IndexedDBMigrationRepository.apply { migrate(database, oldVersion) }
+        IndexedDBStickyEventRepository.apply { migrate(database, oldVersion) }
     }

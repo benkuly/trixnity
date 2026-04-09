@@ -3,6 +3,7 @@ package de.connect2x.trixnity.client.store
 import de.connect2x.trixnity.client.media.MediaStore
 import de.connect2x.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import de.connect2x.trixnity.core.EventHandler
+import de.connect2x.trixnity.core.MSC4354
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
@@ -42,6 +43,8 @@ fun createStoreModule() = module {
     singleOf(::RoomStateStore)
     singleOf(::RoomStore)
     singleOf(::RoomTimelineStore)
+    @OptIn(MSC4354::class)
+    singleOf(::StickyEventStore)
     singleOf(::RoomUserStore)
     singleOf(::UserPresenceStore)
     singleOf(::NotificationStore)
@@ -62,6 +65,8 @@ fun createStoreModule() = module {
                 getOrNull<RoomStateStore>(),
                 getOrNull<RoomStore>(),
                 getOrNull<RoomTimelineStore>(),
+                @OptIn(MSC4354::class)
+                getOrNull<StickyEventStore>(),
                 getOrNull<RoomUserStore>(),
                 getOrNull<UserPresenceStore>(),
                 getOrNull<NotificationStore>(),
