@@ -35,95 +35,95 @@ const config = {
 
     presets: [
         [
-            'classic',
-            /** @type {import('@docusaurus/preset-classic').Options} */
-            ({
+            '@docusaurus/preset-classic',
+            {
+                pages: {
+                    editUrl: 'https://gitlab.com/connect2x/trixnity/trixnity/-/tree/main/website',
+                    showLastUpdateTime: true,
+                },
                 docs: {
                     sidebarPath: require.resolve('./sidebars.js'),
-                    // Please change this to your repo.
-                    // Remove this to remove the "edit this page" links.
-                    editUrl: 'https://gitlab.com/connect2x/trixnity/trixnity/-/tree/main/website',
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css'),
                 },
-            }),
+            },
         ],
     ],
 
     themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-        ({
-            // Replace with your project's social card
-            image: 'img/docusaurus-social-card.jpg',
-            navbar: {
-                title: 'Trixnity',
-                logo: {
-                    alt: 'My Site Logo',
-                    src: 'img/logo.png',
+            ({
+                // Replace with your project's social card
+                image: 'img/docusaurus-social-card.jpg',
+                navbar: {
+                    title: 'Trixnity',
+                    logo: {
+                        alt: 'My Site Logo',
+                        src: 'img/logo.png',
+                    },
+                    items: [
+                        {
+                            type: 'docSidebar',
+                            sidebarId: 'documentationSidebar',
+                            position: 'left',
+                            label: 'Documentation',
+                        },
+                        {
+                            href: 'pathname:///api',
+                            label: 'API',
+                            position: 'left',
+                        },
+                        {
+                            href: 'https://gitlab.com/connect2x/trixnity/trixnity',
+                            label: 'Repository',
+                            position: 'right',
+                        },
+                    ],
                 },
-                items: [
-                    {
-                        type: 'docSidebar',
-                        sidebarId: 'documentationSidebar',
-                        position: 'left',
-                        label: 'Documentation',
-                    },
-                    {
-                        href: 'pathname:///api',
-                        label: 'API',
-                        position: 'left',
-                    },
-                    {
-                        href: 'https://gitlab.com/connect2x/trixnity/trixnity',
-                        label: 'Repository',
-                        position: 'right',
-                    },
-                ],
-            },
-            footer: {
-                style: 'dark',
-                links: [
-                    {
-                        title: 'Docs',
-                        items: [
-                            {
-                                label: 'Documentation',
-                                to: '/docs',
-                            },
-                            {
-                                label: 'API',
-                                href: 'pathname:///api',
-                            },
-                        ],
-                    },
-                    {
-                        title: 'Community',
-                        items: [
-                            {
-                                label: 'Matrix',
-                                href: 'matrix:r/trixnity:imbitbu.de',
-                            },
-                        ],
-                    },
-                    {
-                        title: 'More',
-                        items: [
-                            {
-                                label: 'Repository',
-                                href: 'https://gitlab.com/connect2x/trixnity/trixnity',
-                            },
-                        ],
-                    },
-                ],
-                copyright: `Copyright © ${new Date().getFullYear()} Trixnity`,
-            },
-            prism: {
-                theme: lightTheme,
-                darkTheme: darkTheme,
-                additionalLanguages: ['kotlin'],
-            },
-        }),
+                footer: {
+                    style: 'dark',
+                    links: [
+                        {
+                            title: 'Docs',
+                            items: [
+                                {
+                                    label: 'Documentation',
+                                    to: '/docs',
+                                },
+                                {
+                                    label: 'API',
+                                    href: 'pathname:///api',
+                                },
+                            ],
+                        },
+                        {
+                            title: 'Community',
+                            items: [
+                                {
+                                    label: 'Matrix',
+                                    href: 'matrix:r/trixnity:imbitbu.de',
+                                },
+                            ],
+                        },
+                        {
+                            title: 'More',
+                            items: [
+                                {
+                                    label: 'Repository',
+                                    href: 'https://gitlab.com/connect2x/trixnity/trixnity',
+                                },
+                            ],
+                        },
+                    ],
+                    copyright: `Copyright © ${new Date().getFullYear()} Trixnity`,
+                },
+                prism: {
+                    theme: lightTheme,
+                    darkTheme: darkTheme,
+                    additionalLanguages: ['kotlin'],
+                },
+            }),
 };
 
 module.exports = config;
