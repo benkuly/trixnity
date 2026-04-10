@@ -157,7 +157,12 @@ abstract interface de.connect2x.trixnity.client.media/MediaStore : de.connect2x.
 
 abstract interface de.connect2x.trixnity.client.media/PlatformMedia : kotlinx.coroutines.flow/Flow<kotlin/ByteArray> { // de.connect2x.trixnity.client.media/PlatformMedia|null[0]
     abstract fun transformByteArrayFlow(kotlin/Function1<kotlinx.coroutines.flow/Flow<kotlin/ByteArray>, kotlinx.coroutines.flow/Flow<kotlin/ByteArray>>): de.connect2x.trixnity.client.media/PlatformMedia // de.connect2x.trixnity.client.media/PlatformMedia.transformByteArrayFlow|transformByteArrayFlow(kotlin.Function1<kotlinx.coroutines.flow.Flow<kotlin.ByteArray>,kotlinx.coroutines.flow.Flow<kotlin.ByteArray>>){}[0]
+    abstract suspend fun getTemporaryFile(): kotlin/Result<de.connect2x.trixnity.client.media/PlatformMedia.TemporaryFile> // de.connect2x.trixnity.client.media/PlatformMedia.getTemporaryFile|getTemporaryFile(){}[0]
     abstract suspend fun toByteArray(kotlinx.coroutines/CoroutineScope? = ..., kotlin/Long? = ..., kotlin/Long? = ...): kotlin/ByteArray? // de.connect2x.trixnity.client.media/PlatformMedia.toByteArray|toByteArray(kotlinx.coroutines.CoroutineScope?;kotlin.Long?;kotlin.Long?){}[0]
+
+    abstract interface TemporaryFile { // de.connect2x.trixnity.client.media/PlatformMedia.TemporaryFile|null[0]
+        abstract suspend fun delete() // de.connect2x.trixnity.client.media/PlatformMedia.TemporaryFile.delete|delete(){}[0]
+    }
 }
 
 abstract interface de.connect2x.trixnity.client.notification/EventsToNotificationUpdates { // de.connect2x.trixnity.client.notification/EventsToNotificationUpdates|null[0]
