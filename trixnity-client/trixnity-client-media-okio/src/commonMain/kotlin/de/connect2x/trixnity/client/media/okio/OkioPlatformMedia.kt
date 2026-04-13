@@ -6,10 +6,9 @@ import okio.Path
 
 interface OkioPlatformMedia : PlatformMedia {
     override fun transformByteArrayFlow(transformer: (ByteArrayFlow) -> ByteArrayFlow): OkioPlatformMedia
-    suspend fun getTemporaryFile(): Result<TemporaryFile>
+    override suspend fun getTemporaryFile(): Result<TemporaryFile>
 
-    interface TemporaryFile {
+    interface TemporaryFile : PlatformMedia.TemporaryFile {
         val path: Path
-        suspend fun delete()
     }
 }

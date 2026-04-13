@@ -1,7 +1,7 @@
 package de.connect2x.trixnity.client.media
 
-import kotlinx.coroutines.CoroutineScope
 import de.connect2x.trixnity.utils.ByteArrayFlow
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Depending on the configured [MediaStore] you may have access to more than the [ByteArrayFlow]. For example:
@@ -29,4 +29,15 @@ interface PlatformMedia : ByteArrayFlow {
         expectedSize: Long? = null,
         maxSize: Long? = null
     ): ByteArray?
+
+    /**
+     * Returns a [TemporaryFile] that can be used to get a file representation of the media.
+     * This is stored unencrypted, so be careful to [TemporaryFile.delete] it, when not needed anymore.
+     *
+     * Be aware to catch exceptions when using this method.
+     */
+    suspend fun getTemporaryFile(): Result<TemporaryFile>
+    interface TemporaryFile {
+        suspend fun delete()
+    }
 }

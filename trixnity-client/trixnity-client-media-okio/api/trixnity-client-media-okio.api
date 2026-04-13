@@ -8,8 +8,7 @@ public abstract interface class de/connect2x/trixnity/client/media/okio/OkioPlat
 	public abstract fun transformByteArrayFlow (Lkotlin/jvm/functions/Function1;)Lde/connect2x/trixnity/client/media/okio/OkioPlatformMedia;
 }
 
-public abstract interface class de/connect2x/trixnity/client/media/okio/OkioPlatformMedia$TemporaryFile {
-	public abstract fun delete (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+public abstract interface class de/connect2x/trixnity/client/media/okio/OkioPlatformMedia$TemporaryFile : de/connect2x/trixnity/client/media/PlatformMedia$TemporaryFile {
 	public abstract fun getPath ()Lokio/Path;
 }
 
