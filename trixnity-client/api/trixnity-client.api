@@ -114,6 +114,7 @@ public final class de/connect2x/trixnity/client/MatrixClientAuthProviderDataSeri
 public final class de/connect2x/trixnity/client/MatrixClientAuthProviderDataSerializerMappingsKt {
 	public static final fun createMatrixClientAuthProviderSerializerMappings (Lkotlin/jvm/functions/Function1;)Lde/connect2x/trixnity/client/MatrixClientAuthProviderDataSerializerMappings;
 	public static final fun getDefault (Lde/connect2x/trixnity/client/MatrixClientAuthProviderDataSerializerMappings$Companion;)Lde/connect2x/trixnity/client/MatrixClientAuthProviderDataSerializerMappings;
+	public static final fun invoke (Lde/connect2x/trixnity/client/MatrixClientAuthProviderDataSerializerMappings$Companion;Lkotlin/jvm/functions/Function1;)Lde/connect2x/trixnity/client/MatrixClientAuthProviderDataSerializerMappings;
 }
 
 public final class de/connect2x/trixnity/client/MatrixClientConfiguration {
@@ -880,7 +881,7 @@ public abstract interface class de/connect2x/trixnity/client/room/ForgetRoomServ
 }
 
 public final class de/connect2x/trixnity/client/room/ForgetRoomServiceImpl : de/connect2x/trixnity/client/room/ForgetRoomService {
-	public fun <init> (Lde/connect2x/trixnity/client/store/RoomStore;Lde/connect2x/trixnity/client/store/RoomUserStore;Lde/connect2x/trixnity/client/store/RoomStateStore;Lde/connect2x/trixnity/client/store/RoomAccountDataStore;Lde/connect2x/trixnity/client/store/RoomTimelineStore;Lde/connect2x/trixnity/client/store/StickyEventStore;Lde/connect2x/trixnity/client/store/RoomOutboxMessageStore;Lde/connect2x/trixnity/client/store/NotificationStore;)V
+	public fun <init> (Lde/connect2x/trixnity/client/store/RoomStore;Lde/connect2x/trixnity/client/store/RoomUserStore;Lde/connect2x/trixnity/client/store/RoomStateStore;Lde/connect2x/trixnity/client/store/RoomAccountDataStore;Lde/connect2x/trixnity/client/store/RoomTimelineStore;Lde/connect2x/trixnity/client/store/StickyEventStore;Lde/connect2x/trixnity/client/store/RoomOutboxMessageStore;Lde/connect2x/trixnity/client/store/NotificationStore;Lde/connect2x/trixnity/client/store/TransactionManager;)V
 	public fun invoke-RNkTX0s (Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

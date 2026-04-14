@@ -8,6 +8,7 @@ import de.connect2x.trixnity.client.getInMemoryRoomStore
 import de.connect2x.trixnity.client.getInMemoryRoomTimelineStore
 import de.connect2x.trixnity.client.getInMemoryRoomUserStore
 import de.connect2x.trixnity.client.getInMemoryStickyEventStore
+import de.connect2x.trixnity.client.mocks.TransactionManagerMock
 import de.connect2x.trixnity.client.simpleRoom
 import de.connect2x.trixnity.client.store.RoomOutboxMessage
 import de.connect2x.trixnity.client.store.RoomUser
@@ -64,7 +65,8 @@ class ForgetRoomsTest : TrixnityBaseTest() {
         roomTimelineStore = roomTimelineStore,
         stickyEventStore = roomStickyEventStore,
         roomOutboxMessageStore = roomOutboxMessageStore,
-        notificationStore = notificationStore
+        notificationStore = notificationStore,
+        transactionManager = TransactionManagerMock(),
     )
 
     @Test
