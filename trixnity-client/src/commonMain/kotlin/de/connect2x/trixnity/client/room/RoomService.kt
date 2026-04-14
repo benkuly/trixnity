@@ -925,9 +925,10 @@ class RoomServiceImpl(
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun deleteDraftMessage(roomId: RoomId) {
         val draftMessages = roomOutboxMessageStore.getAll().flatMapLatest { outbox ->
-            if (outbox.isEmpty()) { flowOf(emptyList()) }
+            val outboxEventsForThisRoom = outbox.filterKeys { it.roomId == roomId }.values
+            if (outboxEventsForThisRoom.isEmpty()) { flowOf(emptyList()) }
             else {
-                combine(outbox.filterKeys { it.roomId == roomId }.values) {
+                combine(outboxEventsForThisRoom) {
                     it.filter { message -> message?.isDraft == true }
                 }
             }

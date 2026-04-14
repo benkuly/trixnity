@@ -678,6 +678,27 @@ class RoomServiceTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun `deleteDraftMessage » no draft message in my room but in other room`() = runTest {
+        val otherRoom = RoomId("!2")
+        val message1 = RoomOutboxMessage(
+            roomId = otherRoom,
+            transactionId = "1",
+            content = RoomMessageEventContent.TextBased.Text("hi"),
+            createdAt = Clock.System.now(),
+            sentAt = null,
+            eventId = null,
+            sendError = null,
+            keepMediaInCache = true,
+            isDraft = true,
+        )
+        roomOutboxMessageStore.update(otherRoom, "1") {
+            message1
+        }
+
+        cut.deleteDraftMessage(room)
+    }
+
+    @Test
     fun `deleteDraftMessage » all draft events are deleted`() = runTest {
         val content1 = RoomMessageEventContent.TextBased.Text("hi")
         val message1 = RoomOutboxMessage(
