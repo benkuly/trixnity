@@ -599,9 +599,109 @@ class RoomServiceTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun `getDraftMessage » no draft message anywhere`() = runTest {
+        val draft = cut.getDraftMessage(room)
+        draft.first() shouldBe null
+    }
+
+    @Test
+    fun `getDraftMessage » no draft message in queried room`() = runTest {
+        val otherRoom = RoomId("!2")
+        val message1 = RoomOutboxMessage(
+            roomId = otherRoom,
+            transactionId = "1",
+            content = RoomMessageEventContent.TextBased.Text("hi"),
+            createdAt = Clock.System.now(),
+            sentAt = null,
+            eventId = null,
+            sendError = null,
+            keepMediaInCache = true,
+            isDraft = true,
+        )
+        roomOutboxMessageStore.update(otherRoom, "1") {
+            message1
+        }
+
+        val draft = cut.getDraftMessage(room)
+        draft.first() shouldBe null
+    }
+
+    @Test
+    fun `getDraftMessage » get draft message for the room`() = runTest {
+        val message1 = RoomOutboxMessage(
+            roomId = room,
+            transactionId = "1",
+            content = RoomMessageEventContent.TextBased.Text("hi"),
+            createdAt = Clock.System.now(),
+            sentAt = null,
+            eventId = null,
+            sendError = null,
+            keepMediaInCache = true,
+            isDraft = true,
+        )
+        roomOutboxMessageStore.update(room, "1") {
+            message1
+        }
+
+        val draft = cut.getDraftMessage(room)
+        draft.first() shouldBe message1
+    }
+
+    @Test
+    fun `getDraftMessage » ignore non-drafts in the room`() = runTest {
+        val message1 = RoomOutboxMessage(
+            roomId = room,
+            transactionId = "1",
+            content = RoomMessageEventContent.TextBased.Text("hi"),
+            createdAt = Clock.System.now(),
+            sentAt = null,
+            eventId = null,
+            sendError = null,
+            keepMediaInCache = true,
+            isDraft = false, // <-- no draft
+        )
+        roomOutboxMessageStore.update(room, "1") {
+            message1
+        }
+
+        val draft = cut.getDraftMessage(room)
+        draft.first() shouldBe null
+    }
+
+    @Test
+    fun `deleteDraftMessage » no draft message`() = runTest {
+        cut.deleteDraftMessage(room)
+        retry(100, 3_000.milliseconds, 30.milliseconds) {
+            val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboundMessages shouldHaveSize 0
+        }
+    }
+
+    @Test
+    fun `deleteDraftMessage » no draft message in my room but in other room`() = runTest {
+        val otherRoom = RoomId("!2")
+        val message1 = RoomOutboxMessage(
+            roomId = otherRoom,
+            transactionId = "1",
+            content = RoomMessageEventContent.TextBased.Text("hi"),
+            createdAt = Clock.System.now(),
+            sentAt = null,
+            eventId = null,
+            sendError = null,
+            keepMediaInCache = true,
+            isDraft = true,
+        )
+        roomOutboxMessageStore.update(otherRoom, "1") {
+            message1
+        }
+
+        cut.deleteDraftMessage(room)
+    }
+
+    @Test
     fun `deleteDraftMessage » all draft events are deleted`() = runTest {
         val content1 = RoomMessageEventContent.TextBased.Text("hi")
-        val message1 = RoomOutboxMessage<RoomMessageEventContent.TextBased.Text>(
+        val message1 = RoomOutboxMessage(
             roomId = room,
             transactionId = "1",
             content = content1,
@@ -612,7 +712,7 @@ class RoomServiceTest : TrixnityBaseTest() {
             keepMediaInCache = true,
             isDraft = true,
         )
-        val message2 = RoomOutboxMessage<RoomMessageEventContent.TextBased.Text>(
+        val message2 = RoomOutboxMessage(
             roomId = room,
             transactionId = "2",
             content = content1,

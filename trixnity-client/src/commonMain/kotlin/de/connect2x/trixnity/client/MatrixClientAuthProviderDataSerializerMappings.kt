@@ -1,10 +1,10 @@
 package de.connect2x.trixnity.client
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.serializer
 import de.connect2x.trixnity.clientserverapi.client.ClassicMatrixClientAuthProviderData
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import de.connect2x.trixnity.clientserverapi.client.oauth2.OAuth2MatrixClientAuthProviderData
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
 
 interface MatrixClientAuthProviderDataSerializerMappings : Set<MatrixClientAuthProviderDataSerializerMapping<*>> {
@@ -24,6 +24,11 @@ class MatrixClientAuthProviderDataSerializerMappingsBuilder {
             Set<MatrixClientAuthProviderDataSerializerMapping<*>> by mappings {}
 }
 
+
+operator fun MatrixClientAuthProviderDataSerializerMappings.Companion.invoke(builder: MatrixClientAuthProviderDataSerializerMappingsBuilder.() -> Unit): MatrixClientAuthProviderDataSerializerMappings =
+    MatrixClientAuthProviderDataSerializerMappingsBuilder().apply(builder).build()
+
+@Deprecated("Use invoke instead", ReplaceWith("invoke(builder)"))
 fun createMatrixClientAuthProviderSerializerMappings(builder: MatrixClientAuthProviderDataSerializerMappingsBuilder.() -> Unit) =
     MatrixClientAuthProviderDataSerializerMappingsBuilder().apply(builder).build()
 
@@ -34,7 +39,7 @@ inline fun <reified C : MatrixClientAuthProviderData> MatrixClientAuthProviderDa
 }
 
 private val defaultMatrixClientAuthProviderDataSerializerMappings =
-    createMatrixClientAuthProviderSerializerMappings {
+    MatrixClientAuthProviderDataSerializerMappings {
         of<ClassicMatrixClientAuthProviderData>("classic")
         of<OAuth2MatrixClientAuthProviderData>("oAuth2")
     }
