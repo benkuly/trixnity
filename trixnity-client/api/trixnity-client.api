@@ -614,6 +614,7 @@ public final class de/connect2x/trixnity/client/media/MediaValidationException :
 }
 
 public abstract interface class de/connect2x/trixnity/client/media/PlatformMedia : kotlinx/coroutines/flow/Flow {
+	public abstract fun getTemporaryFile-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun toByteArray (Lkotlinx/coroutines/CoroutineScope;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun toByteArray$default (Lde/connect2x/trixnity/client/media/PlatformMedia;Lkotlinx/coroutines/CoroutineScope;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun transformByteArrayFlow (Lkotlin/jvm/functions/Function1;)Lde/connect2x/trixnity/client/media/PlatformMedia;
@@ -621,6 +622,10 @@ public abstract interface class de/connect2x/trixnity/client/media/PlatformMedia
 
 public final class de/connect2x/trixnity/client/media/PlatformMedia$DefaultImpls {
 	public static synthetic fun toByteArray$default (Lde/connect2x/trixnity/client/media/PlatformMedia;Lkotlinx/coroutines/CoroutineScope;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/client/media/PlatformMedia$TemporaryFile {
+	public abstract fun delete (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class de/connect2x/trixnity/client/notification/CreateNotificationModuleKt {

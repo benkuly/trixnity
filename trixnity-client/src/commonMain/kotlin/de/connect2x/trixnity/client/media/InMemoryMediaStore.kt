@@ -1,14 +1,14 @@
 package de.connect2x.trixnity.client.media
 
+import de.connect2x.trixnity.client.MatrixClientConfiguration
+import de.connect2x.trixnity.client.MediaStoreModule
+import de.connect2x.trixnity.utils.ByteArrayFlow
+import de.connect2x.trixnity.utils.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
-import de.connect2x.trixnity.client.MatrixClientConfiguration
-import de.connect2x.trixnity.client.MediaStoreModule
-import de.connect2x.trixnity.utils.ByteArrayFlow
-import de.connect2x.trixnity.utils.toByteArray
 import org.koin.dsl.module
 import kotlin.time.Clock
 
@@ -57,6 +57,11 @@ internal class InMemoryMediaStore(
         ): ByteArray? =
             toByteArray(url, delegate, coroutineScope, expectedSize, maxSize)
                 ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
+
+        override suspend fun getTemporaryFile(): Result<PlatformMedia.TemporaryFile> =
+            Result.success(object : PlatformMedia.TemporaryFile {
+                override suspend fun delete() {}
+            })
     }
 }
 
