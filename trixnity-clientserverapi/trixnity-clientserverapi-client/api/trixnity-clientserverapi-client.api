@@ -324,7 +324,6 @@ public final class de/connect2x/trixnity/clientserverapi/client/MatrixClientAuth
 }
 
 public final class de/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProviderKt {
-	public static final fun getAuthData (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProviderDataStore;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun useApi (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProviderData;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lde/connect2x/trixnity/clientserverapi/client/SyncBatchTokenStore;Lde/connect2x/trixnity/utils/RetryFlowDelayConfig;Lkotlin/coroutines/CoroutineContext;Lio/ktor/client/engine/HttpClientEngine;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun useApi$default (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientAuthProviderData;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lde/connect2x/trixnity/clientserverapi/client/SyncBatchTokenStore;Lde/connect2x/trixnity/utils/RetryFlowDelayConfig;Lkotlin/coroutines/CoroutineContext;Lio/ktor/client/engine/HttpClientEngine;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
