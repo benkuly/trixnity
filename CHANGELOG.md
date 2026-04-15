@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 5.5.0
+
+### Added
+
 - Added MSC4354 sticky event support
 - Allow for setting the `login_hint` query-parameter for OAuth2 login requests
 
@@ -17,17 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commonized PlatformMedia.TemporaryFile
 - Wrapped forget room in a transaction and make it NonCancellable
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Room not being marked as unread properly, when notifications for a room are turned off
 - Remove notifications of upgraded rooms
 - Draft removal could lead to infinite waiting when no drafts were to be deleted
-
-### Security
 
 ## 5.4.0
 
