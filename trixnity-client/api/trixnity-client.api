@@ -715,12 +715,14 @@ public abstract interface class de/connect2x/trixnity/client/notification/Notifi
 	public static synthetic fun getNotifications-VtjQ1oo$default (Lde/connect2x/trixnity/client/notification/NotificationService;JIILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public abstract fun isUnread-sZMse74 (Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
 	public abstract fun onPush-0owPF3Y (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun processPending (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun processPending (Lde/connect2x/trixnity/core/model/events/m/Presence;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun processPending$default (Lde/connect2x/trixnity/client/notification/NotificationService;Lde/connect2x/trixnity/core/model/events/m/Presence;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class de/connect2x/trixnity/client/notification/NotificationService$DefaultImpls {
 	public static synthetic fun getNotifications-HG0u8IE$default (Lde/connect2x/trixnity/client/notification/NotificationService;Lde/connect2x/trixnity/clientserverapi/model/sync/Sync$Response;JILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun getNotifications-VtjQ1oo$default (Lde/connect2x/trixnity/client/notification/NotificationService;JIILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun processPending$default (Lde/connect2x/trixnity/client/notification/NotificationService;Lde/connect2x/trixnity/core/model/events/m/Presence;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class de/connect2x/trixnity/client/notification/NotificationService$Notification {
@@ -749,7 +751,7 @@ public final class de/connect2x/trixnity/client/notification/NotificationService
 	public fun getNotifications-VtjQ1oo (JI)Lkotlinx/coroutines/flow/Flow;
 	public fun isUnread-sZMse74 (Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
 	public fun onPush-0owPF3Y (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun processPending (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun processPending (Lde/connect2x/trixnity/core/model/events/m/Presence;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun startInCoroutineScope (Lkotlinx/coroutines/CoroutineScope;)V
 }
 
