@@ -146,11 +146,10 @@ interface NotificationService {
     /**
      * Process possibly pending notifications from sync or push if needed.
      * This may suspend for a long time (e.g., when the network is not available but a sync is needed).
-     * If setPresence it null it will set the user's presence to Online, if a sync happens
      *
      * When [MatrixClientConfiguration.enableExternalNotifications] is enabled, this waits until [getAllUpdates] has collected all updates.
      */
-    suspend fun processPending(setPresence: Presence? = null)
+    suspend fun processPending(setPresence: Presence = Presence.OFFLINE)
 }
 
 class NotificationServiceImpl(
@@ -356,7 +355,7 @@ class NotificationServiceImpl(
     }
 
     private val processPendingMutex = Mutex()
-    override suspend fun processPending(setPresence: Presence?) {
+    override suspend fun processPending(setPresence: Presence) {
         processPendingMutex.withLock {
             matrixClientStarted.first { it }
             val notificationState = notificationStore.getAllState().first().values
