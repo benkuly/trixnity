@@ -181,7 +181,7 @@ abstract interface de.connect2x.trixnity.client.notification/NotificationService
     abstract suspend fun dismiss(kotlin/String) // de.connect2x.trixnity.client.notification/NotificationService.dismiss|dismiss(kotlin.String){}[0]
     abstract suspend fun dismissAll() // de.connect2x.trixnity.client.notification/NotificationService.dismissAll|dismissAll(){}[0]
     abstract suspend fun onPush(de.connect2x.trixnity.core.model/RoomId, de.connect2x.trixnity.core.model/EventId?): kotlin/Boolean // de.connect2x.trixnity.client.notification/NotificationService.onPush|onPush(de.connect2x.trixnity.core.model.RoomId;de.connect2x.trixnity.core.model.EventId?){}[0]
-    abstract suspend fun processPending(de.connect2x.trixnity.core.model.events.m/Presence? = ...) // de.connect2x.trixnity.client.notification/NotificationService.processPending|processPending(de.connect2x.trixnity.core.model.events.m.Presence?){}[0]
+    abstract suspend fun processPending(de.connect2x.trixnity.core.model.events.m/Presence = ...) // de.connect2x.trixnity.client.notification/NotificationService.processPending|processPending(de.connect2x.trixnity.core.model.events.m.Presence){}[0]
 
     final class Notification { // de.connect2x.trixnity.client.notification/NotificationService.Notification|null[0]
         constructor <init>(de.connect2x.trixnity.core.model.events/ClientEvent<*>, kotlin.collections/Set<de.connect2x.trixnity.core.model.push/PushAction>) // de.connect2x.trixnity.client.notification/NotificationService.Notification.<init>|<init>(de.connect2x.trixnity.core.model.events.ClientEvent<*>;kotlin.collections.Set<de.connect2x.trixnity.core.model.push.PushAction>){}[0]
@@ -2385,7 +2385,7 @@ final class de.connect2x.trixnity.client.notification/NotificationServiceImpl : 
     final suspend fun dismiss(kotlin/String) // de.connect2x.trixnity.client.notification/NotificationServiceImpl.dismiss|dismiss(kotlin.String){}[0]
     final suspend fun dismissAll() // de.connect2x.trixnity.client.notification/NotificationServiceImpl.dismissAll|dismissAll(){}[0]
     final suspend fun onPush(de.connect2x.trixnity.core.model/RoomId, de.connect2x.trixnity.core.model/EventId?): kotlin/Boolean // de.connect2x.trixnity.client.notification/NotificationServiceImpl.onPush|onPush(de.connect2x.trixnity.core.model.RoomId;de.connect2x.trixnity.core.model.EventId?){}[0]
-    final suspend fun processPending(de.connect2x.trixnity.core.model.events.m/Presence?) // de.connect2x.trixnity.client.notification/NotificationServiceImpl.processPending|processPending(de.connect2x.trixnity.core.model.events.m.Presence?){}[0]
+    final suspend fun processPending(de.connect2x.trixnity.core.model.events.m/Presence) // de.connect2x.trixnity.client.notification/NotificationServiceImpl.processPending|processPending(de.connect2x.trixnity.core.model.events.m.Presence){}[0]
 }
 
 final class de.connect2x.trixnity.client.notification/PushRuleConditionMatcherImpl : de.connect2x.trixnity.client.notification/PushRuleConditionMatcher { // de.connect2x.trixnity.client.notification/PushRuleConditionMatcherImpl|null[0]
