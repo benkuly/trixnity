@@ -7,8 +7,17 @@ import de.connect2x.trixnity.client.flatten
 import de.connect2x.trixnity.client.flattenValues
 import de.connect2x.trixnity.client.room.RoomService
 import de.connect2x.trixnity.client.room.firstWithContent
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.AccountStore
+import de.connect2x.trixnity.client.store.GlobalAccountDataStore
+import de.connect2x.trixnity.client.store.NotificationStore
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.RoomAccountDataStore
+import de.connect2x.trixnity.client.store.RoomStateStore
+import de.connect2x.trixnity.client.store.StoredNotification
+import de.connect2x.trixnity.client.store.StoredNotificationState
 import de.connect2x.trixnity.client.store.StoredNotificationState.SyncWithTimeline.IsRead
+import de.connect2x.trixnity.client.store.StoredNotificationUpdate
+import de.connect2x.trixnity.client.store.get
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.client.startOnce
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync
@@ -17,15 +26,34 @@ import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
+import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.push.PushAction
 import de.connect2x.trixnity.core.model.push.toList
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.subscribeAsFlow
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.WhileSubscribed
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import de.connect2x.trixnity.client.notification.Notification as Notification2
@@ -121,7 +149,7 @@ interface NotificationService {
      *
      * When [MatrixClientConfiguration.enableExternalNotifications] is enabled, this waits until [getAllUpdates] has collected all updates.
      */
-    suspend fun processPending()
+    suspend fun processPending(setPresence: Presence = Presence.OFFLINE)
 }
 
 class NotificationServiceImpl(
@@ -327,7 +355,7 @@ class NotificationServiceImpl(
     }
 
     private val processPendingMutex = Mutex()
-    override suspend fun processPending() {
+    override suspend fun processPending(setPresence: Presence) {
         processPendingMutex.withLock {
             matrixClientStarted.first { it }
             val notificationState = notificationStore.getAllState().first().values
@@ -341,6 +369,7 @@ class NotificationServiceImpl(
             if (needsSync) {
                 api.sync.startOnce(
                     filter = checkNotNull(accountStore.getAccount()?.filter?.syncOnceFilterId),
+                    setPresence = setPresence,
                     timeout = Duration.ZERO,
                 ).getOrThrow()
             }
