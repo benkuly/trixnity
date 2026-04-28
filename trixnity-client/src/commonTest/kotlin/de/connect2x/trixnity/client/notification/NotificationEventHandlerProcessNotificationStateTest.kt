@@ -18,6 +18,7 @@ import de.connect2x.trixnity.client.store.StoredNotificationUpdate
 import de.connect2x.trixnity.client.store.StoredNotificationUpdate.Content
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.clientserverapi.client.SyncState
+import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
@@ -40,13 +41,18 @@ import de.connect2x.trixnity.test.utils.scheduleSetup
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlin.test.Test
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() {
     private val userId = UserId("user1", "localhost")
@@ -58,6 +64,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
     private val roomService = RoomServiceMock().apply {
         scheduleSetup {
             returnGetTimelineEvents = flowOf()
+            returnGetTimelineEventsCallback = null
             getTimelineEventConfig = null
         }
     }
@@ -144,16 +151,20 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
             notification1,
             notification2
         ),
-        timeline: List<TimelineEvent> = listOf(
-            someTimelineEvent(3),
-            someTimelineEvent(2),
-            someTimelineEvent(1),
-            someTimelineEvent(0),
+        timeline: Flow<Flow<TimelineEvent>> = flowOf(
+            flowOf(someTimelineEvent(3)),
+            flowOf(someTimelineEvent(2)),
+            flowOf(someTimelineEvent(1)),
+            flowOf(someTimelineEvent(0)),
         ),
+        futureTimeline: Flow<Flow<TimelineEvent>> = MutableSharedFlow(),
     ) {
         notifications.forEach { notificationStore.save(it) }
         notificationStore.updateState(roomId1) { notificationState }
-        roomService.returnGetTimelineEvents = timeline.map { flowOf(it) }.asFlow()
+        roomService.returnGetTimelineEventsCallback = { direction ->
+            if (direction == GetEvents.Direction.BACKWARDS) timeline
+            else futureTimeline
+        }
         cut.processNotificationState(
             notificationState,
             NotificationEventHandler.PushRulesCache(PushRulesEventContent())
@@ -483,7 +494,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 roomId = roomId1,
                 needsSync = true,
                 notificationsDisabled = true,
-                readReceipts = setOf(),
+                readReceipts = setOf(eventId(4)),
                 lastEventId = eventId(3),
                 lastRelevantEventId = eventId(2),
                 lastProcessedEventId = eventId(1),
@@ -496,7 +507,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 roomId = roomId1,
                 needsSync = true,
                 notificationsDisabled = true,
-                readReceipts = setOf(),
+                readReceipts = setOf(eventId(4)),
                 lastEventId = eventId(3),
                 lastRelevantEventId = eventId(2),
                 lastProcessedEventId = eventId(3),
@@ -514,7 +525,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                     roomId = roomId1,
                     needsSync = true,
                     notificationsDisabled = true,
-                    readReceipts = setOf(),
+                    readReceipts = setOf(eventId(4)),
                     lastEventId = eventId(3),
                     lastRelevantEventId = eventId(3),
                     lastProcessedEventId = null,
@@ -527,7 +538,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                     roomId = roomId1,
                     needsSync = true,
                     notificationsDisabled = true,
-                    readReceipts = setOf(),
+                    readReceipts = setOf(eventId(4)),
                     lastEventId = eventId(3),
                     lastRelevantEventId = eventId(3),
                     lastProcessedEventId = eventId(3),
@@ -568,6 +579,43 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 lastProcessedEventId = eventId(3),
                 expectedMaxNotificationCount = 3,
                 isRead = IsRead.TRUE,
+            )
+        )
+        eventsToNotificationUpdates.removeStale shouldBe false
+    }
+
+
+    @Test
+    fun `SyncWithTimeline - receipts not set - do nothing`() = runTest {
+        processNotificationStateWith(
+            notificationState = StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = true,
+                notificationsDisabled = false,
+                readReceipts = setOf(),
+                lastEventId = eventId(3),
+                lastRelevantEventId = null,
+                lastProcessedEventId = eventId(1),
+                expectedMaxNotificationCount = null,
+                isRead = IsRead.FALSE,
+            ),
+        )
+
+        notificationStore.getAll().first().values.map { it.first() } shouldBe listOf(
+            notification1,
+            notification2
+        )
+        notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf(
+            StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = true,
+                notificationsDisabled = false,
+                readReceipts = setOf(),
+                lastEventId = eventId(3),
+                lastRelevantEventId = null,
+                lastProcessedEventId = eventId(3),
+                expectedMaxNotificationCount = null,
+                isRead = IsRead.FALSE,
             )
         )
         eventsToNotificationUpdates.removeStale shouldBe false
@@ -679,7 +727,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 roomId = roomId1,
                 needsSync = true,
                 notificationsDisabled = false,
-                readReceipts = setOf(),
+                readReceipts = setOf(eventId(4)),
                 lastEventId = eventId(3),
                 lastRelevantEventId = null,
                 lastProcessedEventId = eventId(1),
@@ -695,7 +743,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 roomId = roomId1,
                 needsSync = true,
                 notificationsDisabled = false,
-                readReceipts = setOf(),
+                readReceipts = setOf(eventId(4)),
                 lastEventId = eventId(3),
                 lastRelevantEventId = null,
                 lastProcessedEventId = eventId(3),
@@ -712,7 +760,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 roomId = roomId1,
                 needsSync = true,
                 notificationsDisabled = false,
-                readReceipts = setOf(),
+                readReceipts = setOf(eventId(4)),
                 lastEventId = eventId(3),
                 lastRelevantEventId = null,
                 lastProcessedEventId = eventId(1),
@@ -728,7 +776,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 roomId = roomId1,
                 needsSync = true,
                 notificationsDisabled = false,
-                readReceipts = setOf(),
+                readReceipts = setOf(eventId(4)),
                 lastEventId = eventId(3),
                 lastRelevantEventId = null,
                 lastProcessedEventId = eventId(3),
@@ -739,7 +787,77 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
     }
 
     @Test
-    fun `SyncWithTimeline - last processed event was reset - ask for removing existing notifications`() = runTest {
+    fun `SyncWithTimeline - abort when event marked as receipt is in future sync`() = runTest {
+        val futureTimeline = MutableSharedFlow<Flow<TimelineEvent>>()
+        val processJob = backgroundScope.launch {
+            processNotificationStateWith(
+                notificationState = StoredNotificationState.SyncWithTimeline(
+                    roomId = roomId1,
+                    needsSync = true,
+                    notificationsDisabled = false,
+                    readReceipts = setOf(eventId(4)),
+                    lastEventId = eventId(3),
+                    lastRelevantEventId = null,
+                    lastProcessedEventId = eventId(1),
+                    expectedMaxNotificationCount = null,
+                    isRead = IsRead.TRUE,
+                ),
+                notifications = listOf(notification2),
+                timeline = flow {
+                    emit(flowOf(someTimelineEvent(3)))
+                    emit(flowOf(someTimelineEvent(2)))
+                    delay(Duration.INFINITE) // emulate fetching past events
+                },
+                futureTimeline = futureTimeline,
+            )
+        }
+        val futureSyncNotificationStateUpdate =
+            StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = true,
+                notificationsDisabled = false,
+                readReceipts = setOf(eventId(4)),
+                lastEventId = eventId(4),
+                lastRelevantEventId = null,
+                lastProcessedEventId = eventId(1),
+                expectedMaxNotificationCount = null,
+                isRead = IsRead.TRUE,
+            )
+
+        delay(1.seconds)
+        notificationStore.updateState(roomId1) { futureSyncNotificationStateUpdate }
+        futureTimeline.emit(flowOf(someTimelineEvent(3)))
+        futureTimeline.emit(flowOf(someTimelineEvent(4)))
+        processJob.join()
+
+        eventsToNotificationUpdates.events shouldBe listOf()
+        notificationStore.getAll().first().values.map { it.first() } shouldBe listOf(notification2)
+        notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf(
+            futureSyncNotificationStateUpdate
+        )
+    }
+
+    @Test
+    fun `SyncWithTimeline - last processed event was reset - remove stale`() = runTest {
+        processNotificationStateWith(
+            notificationState = StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = true,
+                notificationsDisabled = false,
+                readReceipts = setOf(eventId(0)),
+                lastEventId = eventId(3),
+                lastRelevantEventId = null,
+                lastProcessedEventId = null,
+                expectedMaxNotificationCount = 2,
+                isRead = IsRead.CHECK,
+            ),
+        )
+
+        eventsToNotificationUpdates.removeStale shouldBe true
+    }
+
+    @Test
+    fun `SyncWithTimeline - read receipts empty and not yet processed - remove stale`() = runTest {
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
@@ -755,6 +873,25 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         )
 
         eventsToNotificationUpdates.removeStale shouldBe true
+    }
+
+    @Test
+    fun `SyncWithTimeline - read receipts empty but already processed events - don't remove stale`() = runTest {
+        processNotificationStateWith(
+            notificationState = StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                needsSync = true,
+                notificationsDisabled = false,
+                readReceipts = setOf(),
+                lastEventId = eventId(3),
+                lastRelevantEventId = null,
+                lastProcessedEventId = eventId(2),
+                expectedMaxNotificationCount = 2,
+                isRead = IsRead.CHECK,
+            ),
+        )
+
+        eventsToNotificationUpdates.removeStale shouldBe false
     }
 
     @Test
@@ -942,7 +1079,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 roomId = roomId1,
                 needsSync = true,
                 notificationsDisabled = false,
-                readReceipts = setOf(),
+                readReceipts = setOf(eventId(4)),
                 lastEventId = eventId(3),
                 lastRelevantEventId = eventId(2),
                 lastProcessedEventId = eventId(1),
@@ -955,7 +1092,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 roomId = roomId1,
                 needsSync = true,
                 notificationsDisabled = false,
-                readReceipts = setOf(),
+                readReceipts = setOf(eventId(4)),
                 lastEventId = eventId(3),
                 lastRelevantEventId = eventId(2),
                 lastProcessedEventId = eventId(3),

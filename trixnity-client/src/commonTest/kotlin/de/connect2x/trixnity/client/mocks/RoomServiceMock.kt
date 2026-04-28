@@ -79,6 +79,9 @@ class RoomServiceMock : RoomService {
 
     var returnGetTimelineEventsDisableDrop = false
     var returnGetTimelineEvents: Flow<Flow<TimelineEvent>> = flowOf()
+    var returnGetTimelineEventsCallback: ((
+        direction: GetEvents.Direction,
+    ) -> Flow<Flow<TimelineEvent>>)? = null
     var getTimelineEventConfig: GetTimelineEventsConfig? = null
 
     override fun getTimelineEvents(
@@ -87,9 +90,16 @@ class RoomServiceMock : RoomService {
         direction: GetEvents.Direction,
         config: GetTimelineEventsConfig.() -> Unit
     ): Flow<Flow<TimelineEvent>> {
-        getTimelineEventConfig = GetTimelineEventsConfig().apply(config)
-        return if (returnGetTimelineEventsDisableDrop) returnGetTimelineEvents
-        else returnGetTimelineEvents
+        getTimelineEventConfig =
+            if (direction == GetEvents.Direction.BACKWARDS) GetTimelineEventsConfig().apply(config)
+            else getTimelineEventConfig
+        val returnGetTimelineEventsCallbackTmp = returnGetTimelineEventsCallback
+        val timelineEvents =
+            if (returnGetTimelineEventsCallbackTmp != null)
+                returnGetTimelineEventsCallbackTmp(direction)
+            else returnGetTimelineEvents
+        return if (returnGetTimelineEventsDisableDrop) timelineEvents
+        else timelineEvents
             .dropWhile { it.firstOrNull()?.eventId != startFrom }
     }
 

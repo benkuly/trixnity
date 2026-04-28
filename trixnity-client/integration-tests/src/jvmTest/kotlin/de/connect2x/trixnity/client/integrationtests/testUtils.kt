@@ -27,11 +27,10 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.java.*
 import io.ktor.http.*
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -155,16 +154,31 @@ suspend fun RoomService.waitForOutboxSent() =
 suspend fun <T> Flow<T>.firstWithTimeout(
     timeout: Duration = 5.seconds,
     predicate: suspend (T) -> Boolean = { true }
-): T = channelFlow {
+): T = coroutineScope {
     var currentValue: T? = null
     val timeoutJob = launch {
         delay(timeout)
-        close(CancellationException("timed out after $timeout with value $currentValue", null))
+        throw AssertionError("timed out after $timeout with last value $currentValue", null)
     }
     val result = onEach { currentValue = it }.first(predicate)
     timeoutJob.cancel()
-    send(result)
-}.first()
+    result
+}
+
+@OptIn(FlowPreview::class)
+suspend fun <T> Flow<T>.firstWithTimeout(
+    expected: T,
+    timeout: Duration = 5.seconds,
+): T = coroutineScope {
+    var currentValue: T? = null
+    val timeoutJob = launch {
+        delay(timeout)
+        throw AssertionError("timed out after $timeout with last value $currentValue expected to be $expected", null)
+    }
+    val result = onEach { currentValue = it }.first { it == expected }
+    timeoutJob.cancel()
+    result
+}
 
 val clueLog = Logger("de.connect2x.trixnity.client.integrationtests.clues")
 inline fun <R> withCluePrintln(clue: Any?, thunk: () -> R): R {
