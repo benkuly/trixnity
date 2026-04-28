@@ -26,6 +26,7 @@ import de.connect2x.trixnity.client.takeWhileInclusive
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.client.SyncEvents
 import de.connect2x.trixnity.clientserverapi.client.SyncState
+import de.connect2x.trixnity.clientserverapi.model.room.GetEvents.Direction.FORWARDS
 import de.connect2x.trixnity.core.EventHandler
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.EventId
@@ -231,7 +232,6 @@ class NotificationEventHandler(
                             lastEventId = lastEventId,
                             lastRelevantEventId = unreadRoom.lastRelevantEventId,
                             lastProcessedEventId = when {
-                                oldTimelineState == null && unreadRoom.readReceipts.isEmpty() -> lastEventId
                                 receiptsChanged || notificationsDisabledChanged -> null
                                 else -> oldState.lastProcessedEventId
                             },
@@ -244,6 +244,7 @@ class NotificationEventHandler(
                             },
                             isRead = when {
                                 unreadRoom.readReceipts.contains(unreadRoom.lastRelevantEventId) -> IsRead.TRUE
+                                unreadRoom.readReceipts.isEmpty() -> IsRead.FALSE
                                 oldTimelineState?.isRead == IsRead.TRUE && lastRelevantEventIdChanged.not() -> IsRead.TRUE
                                 oldTimelineState?.isRead == IsRead.FALSE && receiptsChanged.not() -> IsRead.FALSE
                                 oldTimelineState?.isRead == IsRead.TRUE -> IsRead.TRUE_BUT_CHECK
@@ -342,64 +343,68 @@ class NotificationEventHandler(
 
 
             is StoredNotificationState.SyncWithTimeline -> {
-                if (notificationState.notificationsDisabled) {
-                    log.debug { "notification removing with $notificationState" }
-                    notificationStore.deleteNotificationsByRoomId(roomId)
+                try {
+                    if (notificationState.notificationsDisabled) {
+                        log.debug { "notification removing with $notificationState" }
+                        notificationStore.deleteNotificationsByRoomId(roomId)
 
-                    val isRead =
-                        if (notificationState.isRead.needsCheck) {
-                            getRelevantEventsFromTimeline(notificationState, roomId).run {
-                                if (notificationState.lastRelevantEventId == null) {
-                                    firstOrNull { config.lastRelevantEventFilter(it) }
-                                } else {
-                                    firstOrNull { it.id == notificationState.lastRelevantEventId }
-                                }
-                            }.let { if (it == null || it.sender == userInfo.userId) IsRead.TRUE else IsRead.FALSE }
-                        } else notificationState.isRead
-                    notificationStore.updateState(roomId) { oldState ->
-                        when (oldState) {
-                            notificationState if isRead == IsRead.TRUE -> null
-                            is StoredNotificationState.SyncWithTimeline -> {
-                                oldState.copy(
-                                    lastProcessedEventId = notificationState.lastEventId,
-                                    isRead = isRead
-                                )
-                            }
-
-                            else -> oldState
-                        }
-                    }
-                } else if (notificationState.needsProcess) {
-                    log.debug { "notification processing with $notificationState" }
-
-                    var isRead: IsRead = IsRead.TRUE
-                    val eventFlow =
-                        if (notificationState.isRead.needsCheck) {
-                            getRelevantEventsFromTimeline(notificationState, roomId)
-                                .onEach {
-                                    if (it.id == notificationState.lastRelevantEventId && it.sender != userInfo.userId) {
-                                        isRead = IsRead.FALSE
+                        val isRead =
+                            if (notificationState.isRead.needsCheck) {
+                                getRelevantEventsFromTimeline(notificationState, roomId).run {
+                                    if (notificationState.lastRelevantEventId == null) {
+                                        firstOrNull { config.lastRelevantEventFilter(it) }
+                                    } else {
+                                        firstOrNull { it.id == notificationState.lastRelevantEventId }
                                     }
+                                }.let { if (it == null || it.sender == userInfo.userId) IsRead.TRUE else IsRead.FALSE }
+                            } else notificationState.isRead
+                        notificationStore.updateState(roomId) { oldState ->
+                            when (oldState) {
+                                notificationState if isRead == IsRead.TRUE -> null
+                                is StoredNotificationState.SyncWithTimeline -> {
+                                    oldState.copy(
+                                        lastProcessedEventId = notificationState.lastEventId,
+                                        isRead = isRead
+                                    )
                                 }
-                        } else {
-                            isRead = notificationState.isRead
-                            getRelevantEventsFromTimeline(notificationState, roomId)
+
+                                else -> oldState
+                            }
                         }
-                    val notificationUpdates = eventsToNotificationUpdates(
-                        roomId = roomId,
-                        eventFlow = eventFlow,
-                        pushRules = pushRulesCache.pushRules,
-                        existingNotifications = getAllNotifications(roomId),
-                        removeStale = notificationState.readReceipts.isEmpty() || notificationState.lastProcessedEventId == null,
-                    )
-                    notificationUpdates.apply(roomId)
-                    notificationStore.updateState(roomId) {
-                        if (it is StoredNotificationState.SyncWithTimeline) it.copy(
-                            lastProcessedEventId = notificationState.lastEventId,
-                            isRead = isRead,
+                    } else if (notificationState.needsProcess) {
+                        log.debug { "notification processing with $notificationState" }
+
+                        var isRead: IsRead = IsRead.TRUE
+                        val eventFlow =
+                            if (notificationState.isRead.needsCheck) {
+                                getRelevantEventsFromTimeline(notificationState, roomId)
+                                    .onEach {
+                                        if (it.id == notificationState.lastRelevantEventId && it.sender != userInfo.userId) {
+                                            isRead = IsRead.FALSE
+                                        }
+                                    }
+                            } else {
+                                isRead = notificationState.isRead
+                                getRelevantEventsFromTimeline(notificationState, roomId)
+                            }
+                        val notificationUpdates = eventsToNotificationUpdates(
+                            roomId = roomId,
+                            eventFlow = eventFlow,
+                            pushRules = pushRulesCache.pushRules,
+                            existingNotifications = getAllNotifications(roomId),
+                            removeStale = notificationState.lastProcessedEventId == null,
                         )
-                        else it
+                        notificationUpdates.apply(roomId)
+                        notificationStore.updateState(roomId) {
+                            if (it is StoredNotificationState.SyncWithTimeline) it.copy(
+                                lastProcessedEventId = notificationState.lastEventId,
+                                isRead = isRead,
+                            )
+                            else it
+                        }
                     }
+                } catch (_: ReadReceiptEventInFutureSyncException) {
+                    log.warn { "the read receipt event was in the future, so we restart notification processing for $roomId" }
                 }
             }
         }
@@ -480,6 +485,8 @@ class NotificationEventHandler(
             .filter { it.roomId == roomId }
             .associate { it.id to it.sortKey }
 
+    private class ReadReceiptEventInFutureSyncException : IllegalStateException("Read receipt event was is in future")
+
     private suspend fun getRelevantEventsFromTimeline(
         notificationState: StoredNotificationState.SyncWithTimeline,
         roomId: RoomId,
@@ -488,7 +495,11 @@ class NotificationEventHandler(
 
         val lastProcessedEventId = notificationState.lastProcessedEventId
         if (lastProcessedEventId == lastEventId) {
-            log.trace { "skip getting timeline events in $roomId, because already processed all events in $roomId" }
+            log.trace { "skip getting timeline events in $roomId, because already processed all events" }
+            return emptyFlow()
+        }
+        if (notificationState.readReceipts.isEmpty()) {
+            log.trace { "skip getting timeline events in $roomId, because no read receipts" }
             return emptyFlow()
         }
 
@@ -502,50 +513,64 @@ class NotificationEventHandler(
                             notificationState.lastProcessedEventId == null// process has been reset and stale notifications will be removed (see eventsToNotificationUpdates)
                 }
 
-        return if (expectedMaxNotificationCount == null) {
-            log.trace { "get decrypted timeline events without max notification count in $roomId" }
-            roomService.getTimelineEvents(roomId, lastEventId) {
-                decryptionTimeout = 2.seconds
-                allowReplaceContent = false
-            }.takeWhile {
-                notificationState.isNotProcessedOrRead(it.first().eventId)
-            }.decrypt()
-        } else flow {
-            var currentEventId: EventId = lastEventId
-            if (!notificationState.notificationsDisabled && expectedMaxNotificationCount > 0) {
-                log.trace { "get decrypted timeline events with max notification count $expectedMaxNotificationCount for notification and read processing in $roomId" }
-                emitAll(
-                    roomService.getTimelineEvents(roomId, currentEventId) {
-                        decryptionTimeout = 2.seconds
-                        maxSize = expectedMaxNotificationCount
-                        allowReplaceContent = false
-                    }.takeWhile {
-                        currentEventId = it.first().eventId
-                        notificationState.isNotProcessedOrRead(currentEventId)
-                    }.decrypt()
-                )
-            }
-            if (notificationState.isRead.needsCheck) {
-                log.trace { "get not decrypted timeline events for read processing in $roomId" }
-                emitAll(
-                    roomService.getTimelineEvents(roomId, currentEventId) {
+        return flow {
+            coroutineScope {
+                val futureSyncJob = launch {
+                    roomService.getTimelineEvents(roomId, lastEventId, FORWARDS) {
                         decryptionTimeout = Duration.ZERO
                         allowReplaceContent = false
-                    }.takeWhile {
-                        currentEventId = it.first().eventId
-                        notificationState.isNotProcessedOrRead(currentEventId)
-                    }.run {
-                        if (notificationState.lastRelevantEventId == null) {
-                            takeWhileInclusive {
-                                config.lastRelevantEventFilter(it.first().event)
-                            }
-                        } else {
-                            takeWhileInclusive {
-                                it.first().eventId != notificationState.lastRelevantEventId
-                            }
-                        }
-                    }.map { it.first().event }
-                )
+                    }.first { notificationState.readReceipts.contains(it.first().eventId) }
+                    throw ReadReceiptEventInFutureSyncException()
+                }
+                if (expectedMaxNotificationCount == null) {
+                    log.trace { "get decrypted timeline events without max notification count in $roomId" }
+                    emitAll(
+                        roomService.getTimelineEvents(roomId, lastEventId) {
+                            decryptionTimeout = 2.seconds
+                            allowReplaceContent = false
+                        }.takeWhile {
+                            notificationState.isNotProcessedOrRead(it.first().eventId)
+                        }.decrypt()
+                    )
+                } else {
+                    var currentEventId: EventId = lastEventId
+                    if (!notificationState.notificationsDisabled && expectedMaxNotificationCount > 0) {
+                        log.trace { "get decrypted timeline events with max notification count $expectedMaxNotificationCount for notification and read processing in $roomId" }
+                        emitAll(
+                            roomService.getTimelineEvents(roomId, currentEventId) {
+                                decryptionTimeout = 2.seconds
+                                maxSize = expectedMaxNotificationCount
+                                allowReplaceContent = false
+                            }.takeWhile {
+                                currentEventId = it.first().eventId
+                                notificationState.isNotProcessedOrRead(currentEventId)
+                            }.decrypt()
+                        )
+                    }
+                    if (notificationState.isRead.needsCheck) {
+                        log.trace { "get not decrypted timeline events for read processing in $roomId" }
+                        emitAll(
+                            roomService.getTimelineEvents(roomId, currentEventId) {
+                                decryptionTimeout = Duration.ZERO
+                                allowReplaceContent = false
+                            }.takeWhile {
+                                currentEventId = it.first().eventId
+                                notificationState.isNotProcessedOrRead(currentEventId)
+                            }.run {
+                                if (notificationState.lastRelevantEventId == null) {
+                                    takeWhileInclusive {
+                                        config.lastRelevantEventFilter(it.first().event)
+                                    }
+                                } else {
+                                    takeWhileInclusive {
+                                        it.first().eventId != notificationState.lastRelevantEventId
+                                    }
+                                }
+                            }.map { it.first().event }
+                        )
+                    }
+                }
+                futureSyncJob.cancel()
             }
         }
     }

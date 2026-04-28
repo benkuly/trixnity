@@ -1,13 +1,20 @@
 package de.connect2x.trixnity.client.integrationtests
 
-import de.connect2x.trixnity.client.*
+import de.connect2x.trixnity.client.RepositoriesModule
+import de.connect2x.trixnity.client.flatten
+import de.connect2x.trixnity.client.notification
 import de.connect2x.trixnity.client.notification.Notification
 import de.connect2x.trixnity.client.notification.NotificationService
+import de.connect2x.trixnity.client.room
+import de.connect2x.trixnity.client.room.firstWithContent
+import de.connect2x.trixnity.client.room.getTimeline
 import de.connect2x.trixnity.client.room.message.mentions
 import de.connect2x.trixnity.client.room.message.replace
 import de.connect2x.trixnity.client.room.message.text
 import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.membership
 import de.connect2x.trixnity.client.store.repository.exposed.exposed
+import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.client.user.getAccountData
 import de.connect2x.trixnity.clientserverapi.model.push.SetPushRule
 import de.connect2x.trixnity.core.model.EventId
@@ -18,6 +25,7 @@ import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership.INVITE
+import de.connect2x.trixnity.core.model.events.m.room.Membership.JOIN
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.push.PushCondition
 import de.connect2x.trixnity.core.model.push.PushRuleKind
@@ -29,16 +37,22 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class NotificationIT : TrixnityBaseTest() {
@@ -74,8 +88,90 @@ class NotificationIT : TrixnityBaseTest() {
     }
 
     @Test
-    fun notifications(): Unit = runBlocking(Dispatchers.Default) {
-        withTimeout(30_000) {
+    fun simpleNotifications(): Unit = runBlocking(Dispatchers.Default) {
+        withTimeout(30.seconds) {
+            val room =
+                startedClient1.client.api.room.createRoom(
+                    initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), "")),
+                    invite = setOf(startedClient2.client.userId)
+                ).getOrThrow()
+            startedClient2.client.api.room.joinRoom(room).getOrThrow()
+            startedClient1.client.user.getById(room, startedClient2.client.userId)
+                .first { it?.membership == JOIN }
+            startedClient2.client.room.getById(room)
+                .first { it?.membership == JOIN }
+            startedClient2.client.syncOnce()
+
+            val notifications = startedClient2.client.notification.getAll().flatten().stateIn(scope)
+            suspend fun checkNotifications(vararg expected: String) {
+                startedClient2.client.syncOnce()
+                startedClient2.client.room.getById(room).first()?.lastEventId?.let {
+                    val timeline = startedClient2.client.room.getTimeline()
+                    timeline.init(room, it)
+                    timeline.state.first().elements
+                        .map { it.firstWithContent() }
+                        .map { it.eventId.full + ": " + it.content?.getOrNull() }
+                        .forEach { println(it) }
+                }
+                startedClient2.client.notification.processPending()
+                notifications.map { notifications ->
+                    notifications
+                        .filterIsInstance<Notification.Message>()
+                        .mapNotNull { it.timelineEvent.content?.getOrNull() }
+                        .filterIsInstance<RoomMessageEventContent.TextBased.Text>()
+                        .map { it.body }
+                }.firstWithTimeout(expected.toList())
+            }
+
+            withCluePrintln("no initial notifications") {
+                startedClient1.client.room.sendMessage(room) { text("0") }
+                startedClient1.client.room.sendMessage(room) { text("1") }
+                startedClient1.client.room.waitForOutboxSent()
+
+                checkNotifications()
+            }
+
+            withCluePrintln("initial notifications") {
+                startedClient2.client.api.room.setReadMarkers(
+                    room,
+                    null,
+                    startedClient2.client.room.getById(room).first()?.lastEventId
+                ).getOrThrow()
+                startedClient1.client.room.sendMessage(room) { text("2") }
+                startedClient1.client.room.sendMessage(room) { text("3") }
+                startedClient1.client.room.waitForOutboxSent()
+
+                checkNotifications("2", "3")
+            }
+
+            withCluePrintln("read notifications") {
+                startedClient2.client.api.room.setReadMarkers(
+                    room,
+                    null,
+                    startedClient2.client.room.getById(room).first()?.lastEventId
+                ).getOrThrow()
+
+                checkNotifications()
+            }
+
+            withCluePrintln("fake read notifications") {
+                startedClient1.client.room.sendMessage(room) { text("2") }
+                startedClient1.client.room.waitForOutboxSent()
+
+                startedClient2.client.api.room.setReadMarkers(
+                    room,
+                    null,
+                    EventId("\$fantasy")
+                ).getOrThrow()
+
+                checkNotifications("2")
+            }
+        }
+    }
+
+    @Test
+    fun complexNotifications(): Unit = runBlocking(Dispatchers.Default) {
+        withTimeout(30.seconds) {
             val notifications = startedClient2.client.notification.getAll().flatten().stateIn(scope)
 
             suspend fun checkNotifications(check: (List<Notification>) -> Boolean): List<Notification> {
@@ -171,6 +267,16 @@ class NotificationIT : TrixnityBaseTest() {
                 checkNotifications { it.isEmpty() }
             }
 
+            withCluePrintln("set initial receipt") {
+                rooms.forEach { room ->
+                    startedClient2.client.api.room.setReadMarkers(
+                        room,
+                        null,
+                        startedClient2.client.room.getById(room).first()?.lastEventId
+                    ).getOrThrow()
+                }
+            }
+
             val helloMessage = "Hello!"
 
             withCluePrintln("no notifications from us") {
@@ -263,6 +369,7 @@ class NotificationIT : TrixnityBaseTest() {
                 withCluePrintln("send receipt") {
                     rooms.forEachIndexed { index, room ->
                         startedClient2.client.api.room.setReadMarkers(room, null, notificationMessages[index])
+                            .getOrThrow()
                     }
                 }
 
@@ -309,7 +416,7 @@ class NotificationIT : TrixnityBaseTest() {
     @Test
     @Suppress("DEPRECATION")
     fun testPushNotificationForNormalMessageLegacy(): Unit = runBlocking(Dispatchers.Default) {
-        withTimeout(30_000) {
+        withTimeout(30.seconds) {
             val notifications = startedClient2.client.notification.getNotifications()
                 .scan(listOf<NotificationService.Notification>()) { old, new -> old + new }
                 .stateIn(scope)
