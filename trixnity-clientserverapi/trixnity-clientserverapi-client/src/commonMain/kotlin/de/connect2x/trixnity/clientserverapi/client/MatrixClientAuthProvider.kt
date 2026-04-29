@@ -44,7 +44,7 @@ interface MatrixClientAuthProviderDataStore {
 }
 
 @Suppress("UNCHECKED_CAST")
-suspend inline fun <T : MatrixClientAuthProviderData> MatrixClientAuthProviderDataStore.getAuthData(): T? =
+internal suspend inline fun <T : MatrixClientAuthProviderData> MatrixClientAuthProviderDataStore.getAuthData(): T? =
     getAuthData()?.let { it as T }
 
 interface MatrixClientAuthProviderData {

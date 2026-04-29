@@ -9,9 +9,10 @@ sidebar_position: 21
 Here is a typical example, how to create a `MatrixClientServerApiClient`:
 
 ```kotlin
+val authData = MatrixClientAuthProviderData.classic(baseUrl, accessToken)
 val matrixApiClient = MatrixClientServerApiClientImpl(
-    authProvider = MatrixClientAuthProviderData.classic(baseUrl, accessToken).createAuthProvider(
-        MatrixClientAuthProviderDataStore.inMemory(),
+    authProvider = authData.createAuthProvider(
+        MatrixClientAuthProviderDataStore.inMemory(authData)
     ),
 )
 ```
