@@ -9,11 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added setPresence argument to NotificationService's processPending
-
 ### Changed
-
-- Made an API internal, that was not intended to be public.
 
 ### Deprecated
 
@@ -21,10 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+### Security
+
+## 5.5.1
+
+### Added
+
+- Added setPresence argument to NotificationService's processPending
+
+### Changed
+
+- Made an API internal, that was not intended to be public.
+
+### Fixed
+
 - Skip notification processing when no read receipt is set
 - Restart notification processing for a room when the read receipt event is in a future sync
-
-### Security
 
 ## 5.5.0
 
