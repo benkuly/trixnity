@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix missing transaction when redacting sticky event
+
 ### Security
 
 ## 5.5.1

@@ -55,7 +55,7 @@ class StickyEventStore(
     }
 
     suspend fun deleteByEventId(roomId: RoomId, eventId: EventId) {
-        val key = stickyEventRepository.getByEventId(roomId, eventId)
+        val key = tm.readTransaction { stickyEventRepository.getByEventId(roomId, eventId) }
         if (key != null) {
             stickyEventCache.set(MapRepositoryCoroutinesCacheKey(key.first, key.second), null)
         }
