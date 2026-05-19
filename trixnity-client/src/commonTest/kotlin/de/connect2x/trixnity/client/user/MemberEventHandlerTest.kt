@@ -1,22 +1,19 @@
 package de.connect2x.trixnity.client.user
 
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.flow.first
-import de.connect2x.trixnity.client.getInMemoryAccountStore
 import de.connect2x.trixnity.client.getInMemoryRoomUserStore
 import de.connect2x.trixnity.client.mockMatrixClientServerApiClient
 import de.connect2x.trixnity.client.mocks.TransactionManagerMock
 import de.connect2x.trixnity.client.store.RoomUser
-import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
-import de.connect2x.trixnity.core.model.keys.Key
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.first
 import kotlin.test.Test
 
 class MemberEventHandlerTest : TrixnityBaseTest() {
@@ -71,9 +68,7 @@ class MemberEventHandlerTest : TrixnityBaseTest() {
 
     private val cut = UserMemberEventHandler(
         mockMatrixClientServerApiClient(),
-        getInMemoryAccountStore(),
         roomUserStore,
-        UserInfo(UserId("alice", "server"), "a", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
         TransactionManagerMock(),
     )
 

@@ -2,6 +2,7 @@ package de.connect2x.trixnity.client.room
 
 import de.connect2x.trixnity.client.key.KeyBackupService
 import de.connect2x.trixnity.client.key.OutgoingRoomKeyRequestEventHandler
+import de.connect2x.trixnity.client.user.ProfileEventHandler
 import de.connect2x.trixnity.core.EventHandler
 import de.connect2x.trixnity.core.MSC4354
 import org.koin.core.module.dsl.bind
@@ -51,6 +52,10 @@ fun createRoomModule() = module {
     singleOf(::RoomUpgradeHandler) {
         bind<EventHandler>()
         named<RoomUpgradeHandler>()
+    }
+    singleOf(::ProfileEventHandler) {
+        bind<EventHandler>()
+        named<ProfileEventHandler>()
     }
     @OptIn(MSC4354::class)
     singleOf(::TimelineEventHandlerImpl) {
