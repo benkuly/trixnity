@@ -40,6 +40,7 @@ public abstract interface class de/connect2x/trixnity/client/MatrixClient : java
 	public abstract fun clearCache-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun clearMediaCache-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun closeSuspending (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteProfileField-gIAlu-s (Lde/connect2x/trixnity/clientserverapi/model/user/ProfileField$Key;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getApi ()Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiClient;
 	public abstract fun getBaseUrl ()Lio/ktor/http/Url;
 	public abstract fun getDeviceId ()Ljava/lang/String;
@@ -282,6 +283,7 @@ public final class de/connect2x/trixnity/client/MatrixClientImpl : de/connect2x/
 	public fun clearMediaCache-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
 	public fun closeSuspending (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteProfileField-gIAlu-s (Lde/connect2x/trixnity/clientserverapi/model/user/ProfileField$Key;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getApi ()Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiClient;
 	public fun getBaseUrl ()Lio/ktor/http/Url;
 	public fun getDeviceId ()Ljava/lang/String;
@@ -4295,13 +4297,18 @@ public final class de/connect2x/trixnity/client/user/PowerLevel$User : de/connec
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class de/connect2x/trixnity/client/user/ProfileEventHandler : de/connect2x/trixnity/core/EventHandler {
+	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiClient;Lde/connect2x/trixnity/client/store/AccountStore;Lde/connect2x/trixnity/core/UserInfo;Lde/connect2x/trixnity/client/CurrentSyncState;)V
+	public fun startInCoroutineScope (Lkotlinx/coroutines/CoroutineScope;)V
+}
+
 public final class de/connect2x/trixnity/client/user/ReceiptEventHandler : de/connect2x/trixnity/core/EventHandler {
 	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiClient;Lde/connect2x/trixnity/client/store/RoomUserStore;Lde/connect2x/trixnity/client/store/TransactionManager;)V
 	public fun startInCoroutineScope (Lkotlinx/coroutines/CoroutineScope;)V
 }
 
 public final class de/connect2x/trixnity/client/user/UserMemberEventHandler : de/connect2x/trixnity/client/user/LazyMemberEventHandler, de/connect2x/trixnity/core/EventHandler {
-	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiClient;Lde/connect2x/trixnity/client/store/AccountStore;Lde/connect2x/trixnity/client/store/RoomUserStore;Lde/connect2x/trixnity/core/UserInfo;Lde/connect2x/trixnity/client/store/TransactionManager;)V
+	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiClient;Lde/connect2x/trixnity/client/store/RoomUserStore;Lde/connect2x/trixnity/client/store/TransactionManager;)V
 	public fun handleLazyMemberEvents (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun startInCoroutineScope (Lkotlinx/coroutines/CoroutineScope;)V
 }

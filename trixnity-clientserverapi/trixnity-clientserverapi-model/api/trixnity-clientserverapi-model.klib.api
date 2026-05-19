@@ -995,21 +995,22 @@ sealed interface de.connect2x.trixnity.clientserverapi.model.server/Capability {
     }
 
     final class ProfileFields : de.connect2x.trixnity.clientserverapi.model.server/Capability { // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields|null[0]
-        constructor <init>(kotlin/Boolean, kotlin.collections/Set<kotlin/String>? = ..., kotlin.collections/Set<kotlin/String>? = ...) // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.<init>|<init>(kotlin.Boolean;kotlin.collections.Set<kotlin.String>?;kotlin.collections.Set<kotlin.String>?){}[0]
+        constructor <init>(kotlin/Boolean, kotlin.collections/Set<de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>>? = ..., kotlin.collections/Set<de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>>? = ...) // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.<init>|<init>(kotlin.Boolean;kotlin.collections.Set<de.connect2x.trixnity.clientserverapi.model.user.ProfileField.Key<*>>?;kotlin.collections.Set<de.connect2x.trixnity.clientserverapi.model.user.ProfileField.Key<*>>?){}[0]
 
         final val allowed // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.allowed|{}allowed[0]
-            final fun <get-allowed>(): kotlin.collections/Set<kotlin/String>? // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.allowed.<get-allowed>|<get-allowed>(){}[0]
+            final fun <get-allowed>(): kotlin.collections/Set<de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>>? // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.allowed.<get-allowed>|<get-allowed>(){}[0]
         final val disallowed // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.disallowed|{}disallowed[0]
-            final fun <get-disallowed>(): kotlin.collections/Set<kotlin/String>? // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.disallowed.<get-disallowed>|<get-disallowed>(){}[0]
+            final fun <get-disallowed>(): kotlin.collections/Set<de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>>? // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.disallowed.<get-disallowed>|<get-disallowed>(){}[0]
         final val enabled // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.enabled|{}enabled[0]
             final fun <get-enabled>(): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.enabled.<get-enabled>|<get-enabled>(){}[0]
 
         final fun component1(): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.component1|component1(){}[0]
-        final fun component2(): kotlin.collections/Set<kotlin/String>? // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.component2|component2(){}[0]
-        final fun component3(): kotlin.collections/Set<kotlin/String>? // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.component3|component3(){}[0]
-        final fun copy(kotlin/Boolean = ..., kotlin.collections/Set<kotlin/String>? = ..., kotlin.collections/Set<kotlin/String>? = ...): de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.copy|copy(kotlin.Boolean;kotlin.collections.Set<kotlin.String>?;kotlin.collections.Set<kotlin.String>?){}[0]
+        final fun component2(): kotlin.collections/Set<de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>>? // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/Set<de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>>? // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.component3|component3(){}[0]
+        final fun copy(kotlin/Boolean = ..., kotlin.collections/Set<de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>>? = ..., kotlin.collections/Set<de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>>? = ...): de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.copy|copy(kotlin.Boolean;kotlin.collections.Set<de.connect2x.trixnity.clientserverapi.model.user.ProfileField.Key<*>>?;kotlin.collections.Set<de.connect2x.trixnity.clientserverapi.model.user.ProfileField.Key<*>>?){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.hashCode|hashCode(){}[0]
+        final fun isChangeAllowed(de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.isChangeAllowed|isChangeAllowed(de.connect2x.trixnity.clientserverapi.model.user.ProfileField.Key<*>){}[0]
         final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.toString|toString(){}[0]
 
         final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields> { // de.connect2x.trixnity.clientserverapi.model.server/Capability.ProfileFields.$serializer|null[0]
@@ -9101,6 +9102,7 @@ final value class de.connect2x.trixnity.clientserverapi.model.user/Profile { // 
     final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.user/Profile.hashCode|hashCode(){}[0]
     final fun isEmpty(): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.user/Profile.isEmpty|isEmpty(){}[0]
     final fun minus(de.connect2x.trixnity.clientserverapi.model.user/ProfileField): de.connect2x.trixnity.clientserverapi.model.user/Profile // de.connect2x.trixnity.clientserverapi.model.user/Profile.minus|minus(de.connect2x.trixnity.clientserverapi.model.user.ProfileField){}[0]
+    final fun minus(de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>): de.connect2x.trixnity.clientserverapi.model.user/Profile // de.connect2x.trixnity.clientserverapi.model.user/Profile.minus|minus(de.connect2x.trixnity.clientserverapi.model.user.ProfileField.Key<*>){}[0]
     final fun plus(de.connect2x.trixnity.clientserverapi.model.user/ProfileField): de.connect2x.trixnity.clientserverapi.model.user/Profile // de.connect2x.trixnity.clientserverapi.model.user/Profile.plus|plus(de.connect2x.trixnity.clientserverapi.model.user.ProfileField){}[0]
     final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.user/Profile.toString|toString(){}[0]
 
