@@ -5,7 +5,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import kotlin.jvm.JvmInline
 
 @Serializable(with = Profile.Serializer::class)
@@ -28,6 +33,7 @@ value class Profile private constructor(
 
     operator fun plus(other: ProfileField): Profile = Profile(profileFields + (other.key to other))
     operator fun minus(other: ProfileField): Profile = Profile(profileFields - other.key)
+    operator fun minus(key: ProfileField.Key<*>): Profile = Profile(profileFields - key)
 
     val size: Int get() = profileFields.size
     fun isEmpty(): Boolean = profileFields.isEmpty()
