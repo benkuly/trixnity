@@ -26,7 +26,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
@@ -87,7 +86,6 @@ class ActiveUserVerificationImpl(
     override suspend fun lifecycle() = coroutineScope {
         val timelineJob = launch {
             room.getTimelineEvents(roomId, requestEventId, FORWARDS)
-                .onCompletion { println("NEEEEEEEEEEEEEEEEEEEEEEEEEEEEEVER!!!!!") }
                 .collect { timelineEvent ->
                     val searchResult = timelineEvent.filterNotNull().map {
                         val contentResult = it.content
