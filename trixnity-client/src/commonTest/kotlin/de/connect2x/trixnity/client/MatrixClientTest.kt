@@ -606,7 +606,7 @@ class MatrixClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `deleteProfileField » server has no capability » delete and update displayname`() = runTest {
+    fun `deleteProfileField » server has no capability » make displayname empty`() = runTest {
         val cut = deleteProfileFieldTestSetup(
             profile = Profile(
                 ProfileField.DisplayName("bob"),
@@ -629,7 +629,7 @@ class MatrixClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `deleteProfileField » server has no capability » delete and update avatar_url`() = runTest {
+    fun `deleteProfileField » server has no capability » make avatar_url empty`() = runTest {
         val cut = deleteProfileFieldTestSetup(
             profile = Profile(
                 ProfileField.DisplayName("bob"),

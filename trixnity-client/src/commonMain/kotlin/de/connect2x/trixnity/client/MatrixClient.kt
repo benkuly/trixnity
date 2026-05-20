@@ -31,6 +31,7 @@ import de.connect2x.trixnity.clientserverapi.client.SyncBatchTokenStore
 import de.connect2x.trixnity.clientserverapi.client.SyncEvents
 import de.connect2x.trixnity.clientserverapi.client.SyncState
 import de.connect2x.trixnity.clientserverapi.client.useApi
+import de.connect2x.trixnity.clientserverapi.model.server.Capability
 import de.connect2x.trixnity.clientserverapi.model.server.profileFields
 import de.connect2x.trixnity.clientserverapi.model.user.Filters
 import de.connect2x.trixnity.clientserverapi.model.user.Profile
@@ -139,8 +140,20 @@ interface MatrixClient : AutoCloseable {
 
     suspend fun cancelSync()
 
+    /**
+     * Beforehand it should be checked, if the server has the capability to set the [profileField].
+     * Use [serverData] to get [Capability.ProfileFields] and check with [Capability.ProfileFields.isChangeAllowed].
+     * If [Capability.ProfileFields] is not preset, check for [Capability.SetDisplayName] or [Capability.SetAvatarUrl].
+     * Otherwise, it is allowed.
+     */
     suspend fun setProfileField(profileField: ProfileField): Result<Unit>
 
+    /**
+     * Beforehand it should be checked, if the server has the capability to delete the [key].
+     * Use [serverData] to get [Capability.ProfileFields] and check with [Capability.ProfileFields.isChangeAllowed].
+     * If [Capability.ProfileFields] is not preset, check for [Capability.SetDisplayName] or [Capability.SetAvatarUrl].
+     * Otherwise, it is allowed.
+     */
     suspend fun deleteProfileField(key: ProfileField.Key<*>): Result<Unit>
 
     suspend fun closeSuspending()
@@ -679,6 +692,7 @@ class MatrixClientImpl internal constructor(
             api.user.deleteProfileField(userId, key)
                 .map { accountStore.updateAccount { it?.copy(profile = (it.profile ?: Profile()) - key) } }
         } else {
+            // the old spec only allows "deleting" the displayname and avatar_url by emptying the String.
             when (key) {
                 ProfileField.DisplayName -> setProfileField(ProfileField.DisplayName(""))
                 ProfileField.AvatarUrl -> setProfileField(ProfileField.AvatarUrl(""))
