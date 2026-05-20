@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.client.user
 
 import de.connect2x.lognity.api.logger.Logger
+import de.connect2x.lognity.api.logger.warn
 import de.connect2x.trixnity.client.CurrentSyncState
 import de.connect2x.trixnity.client.store.AccountStore
 import de.connect2x.trixnity.client.utils.retryLoop
@@ -51,7 +52,9 @@ class ProfileEventHandler(
 
     @OptIn(FlowPreview::class)
     internal suspend fun updateProfile() {
-        currentSyncState.retryLoop {
+        currentSyncState.retryLoop(
+            onError = { error, delay -> log.warn(error) { "failed retrieve current profile, try again in $delay" } },
+        ) {
             coroutineScope {
                 select {
                     launch {
