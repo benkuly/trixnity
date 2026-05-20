@@ -4,29 +4,71 @@ import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.error
 import de.connect2x.lognity.api.logger.warn
 import de.connect2x.trixnity.client.MatrixClient.LoginState
-import de.connect2x.trixnity.client.MatrixClient.LoginState.*
+import de.connect2x.trixnity.client.MatrixClient.LoginState.LOCKED
+import de.connect2x.trixnity.client.MatrixClient.LoginState.LOGGED_IN
+import de.connect2x.trixnity.client.MatrixClient.LoginState.LOGGED_OUT
+import de.connect2x.trixnity.client.MatrixClient.LoginState.LOGGED_OUT_SOFT
 import de.connect2x.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import de.connect2x.trixnity.client.media.MediaStore
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.Account
+import de.connect2x.trixnity.client.store.AccountStore
+import de.connect2x.trixnity.client.store.Authentication
+import de.connect2x.trixnity.client.store.AuthenticationStore
+import de.connect2x.trixnity.client.store.KeyStore
+import de.connect2x.trixnity.client.store.KeyVerificationState
+import de.connect2x.trixnity.client.store.MediaCacheMappingStore
+import de.connect2x.trixnity.client.store.OlmCryptoStore
+import de.connect2x.trixnity.client.store.RootStore
+import de.connect2x.trixnity.client.store.ServerData
+import de.connect2x.trixnity.client.store.ServerDataStore
 import de.connect2x.trixnity.client.store.repository.RepositoryMigration
-import de.connect2x.trixnity.clientserverapi.client.*
+import de.connect2x.trixnity.clientserverapi.client.ClassicMatrixClientAuthProviderData
+import de.connect2x.trixnity.clientserverapi.client.LogoutInfo
+import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderData
+import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderDataStore
+import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import de.connect2x.trixnity.clientserverapi.client.SyncBatchTokenStore
+import de.connect2x.trixnity.clientserverapi.client.SyncEvents
+import de.connect2x.trixnity.clientserverapi.client.SyncState
+import de.connect2x.trixnity.clientserverapi.client.useApi
+import de.connect2x.trixnity.clientserverapi.model.server.Capability
+import de.connect2x.trixnity.clientserverapi.model.server.profileFields
 import de.connect2x.trixnity.clientserverapi.model.user.Filters
 import de.connect2x.trixnity.clientserverapi.model.user.Profile
 import de.connect2x.trixnity.clientserverapi.model.user.ProfileField
-import de.connect2x.trixnity.core.*
+import de.connect2x.trixnity.core.ClientEventEmitter
+import de.connect2x.trixnity.core.EventHandler
+import de.connect2x.trixnity.core.MatrixServerException
+import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.keys.Key
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import de.connect2x.trixnity.core.subscribeAsFlow
 import de.connect2x.trixnity.crypto.driver.CryptoDriver
 import de.connect2x.trixnity.crypto.driver.useAll
 import de.connect2x.trixnity.crypto.of
 import de.connect2x.trixnity.crypto.sign.SignService
 import de.connect2x.trixnity.utils.retry
 import io.ktor.http.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import okio.ByteString.Companion.toByteString
@@ -98,7 +140,21 @@ interface MatrixClient : AutoCloseable {
 
     suspend fun cancelSync()
 
+    /**
+     * Beforehand it should be checked, if the server has the capability to set the [profileField].
+     * Use [serverData] to get [Capability.ProfileFields] and check with [Capability.ProfileFields.isChangeAllowed].
+     * If [Capability.ProfileFields] is not preset, check for [Capability.SetDisplayName] or [Capability.SetAvatarUrl].
+     * Otherwise, it is allowed.
+     */
     suspend fun setProfileField(profileField: ProfileField): Result<Unit>
+
+    /**
+     * Beforehand it should be checked, if the server has the capability to delete the [key].
+     * Use [serverData] to get [Capability.ProfileFields] and check with [Capability.ProfileFields.isChangeAllowed].
+     * If [Capability.ProfileFields] is not preset, check for [Capability.SetDisplayName] or [Capability.SetAvatarUrl].
+     * Otherwise, it is allowed.
+     */
+    suspend fun deleteProfileField(key: ProfileField.Key<*>): Result<Unit>
 
     suspend fun closeSuspending()
 }
@@ -627,6 +683,22 @@ class MatrixClientImpl internal constructor(
     override suspend fun setProfileField(profileField: ProfileField): Result<Unit> {
         return api.user.setProfileField(userId, profileField).map {
             accountStore.updateAccount { it?.copy(profile = (it.profile ?: Profile()) + profileField) }
+        }
+    }
+
+    override suspend fun deleteProfileField(key: ProfileField.Key<*>): Result<Unit> {
+        val profileFieldsCapabilities = serverData.value?.capabilities?.capabilities?.profileFields
+        return if (profileFieldsCapabilities != null) {
+            api.user.deleteProfileField(userId, key)
+                .map { accountStore.updateAccount { it?.copy(profile = (it.profile ?: Profile()) - key) } }
+        } else {
+            // the old spec only allows "deleting" the displayname and avatar_url by emptying the String.
+            when (key) {
+                ProfileField.DisplayName -> setProfileField(ProfileField.DisplayName(""))
+                ProfileField.AvatarUrl -> setProfileField(ProfileField.AvatarUrl(""))
+                else -> api.user.deleteProfileField(userId, key)
+                    .map { accountStore.updateAccount { it?.copy(profile = (it.profile ?: Profile()) - key) } }
+            }
         }
     }
 }

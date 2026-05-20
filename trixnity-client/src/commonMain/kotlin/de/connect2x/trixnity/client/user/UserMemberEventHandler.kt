@@ -1,16 +1,14 @@
 package de.connect2x.trixnity.client.user
 
 import de.connect2x.lognity.api.logger.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.*
-import de.connect2x.trixnity.client.store.*
+import de.connect2x.trixnity.client.store.RoomUser
+import de.connect2x.trixnity.client.store.RoomUserStore
+import de.connect2x.trixnity.client.store.TransactionManager
+import de.connect2x.trixnity.client.store.membership
+import de.connect2x.trixnity.client.store.originalName
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.core.ClientEventEmitter.Priority
 import de.connect2x.trixnity.core.EventHandler
-import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
@@ -20,20 +18,27 @@ import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.roomIdOrNull
 import de.connect2x.trixnity.core.subscribeEventList
 import de.connect2x.trixnity.core.unsubscribeOnCompletion
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.toList
 
 private val log = Logger("de.connect2x.trixnity.client.user.UserMemberEventHandler")
 
 class UserMemberEventHandler(
     private val api: MatrixClientServerApiClient,
-    private val accountStore: AccountStore,
     private val roomUserStore: RoomUserStore,
-    private val userInfo: UserInfo,
     private val tm: TransactionManager,
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeEventList(Priority.STORE_EVENTS, ::setRoomUser).unsubscribeOnCompletion(scope)
-        api.sync.subscribeEventList(Priority.DEFAULT, ::reloadOwnProfile).unsubscribeOnCompletion(scope)
     }
 
     override suspend fun handleLazyMemberEvents(memberEvents: List<StateEvent<MemberEventContent>>) {
@@ -176,17 +181,4 @@ class UserMemberEventHandler(
             isUnique -> displayName
             else -> "$displayName (${userId.full})"
         }
-
-    internal suspend fun reloadOwnProfile(events: List<StateBaseEvent<MemberEventContent>>) {
-        // TODO could be optimized by checking if displayname or avatarUrl has been changed
-        if (events.any { it.stateKey == userInfo.userId.full }) {
-            log.debug { "reload own profile as there has been member events of us" }
-            api.user.getProfile(userInfo.userId)
-                .onSuccess { profile ->
-                    accountStore.updateAccount { account ->
-                        account?.copy(profile = profile)
-                    }
-                }.getOrThrow()
-        }
-    }
 }

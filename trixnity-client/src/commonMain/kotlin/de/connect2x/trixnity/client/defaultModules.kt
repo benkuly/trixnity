@@ -38,6 +38,7 @@ import de.connect2x.trixnity.client.user.GetPowerLevelImpl
 import de.connect2x.trixnity.client.user.GlobalAccountDataEventHandler
 import de.connect2x.trixnity.client.user.LoadMembersService
 import de.connect2x.trixnity.client.user.LoadMembersServiceImpl
+import de.connect2x.trixnity.client.user.ProfileEventHandler
 import de.connect2x.trixnity.client.user.UserService
 import de.connect2x.trixnity.client.user.UserServiceImpl
 import de.connect2x.trixnity.client.user.createUserModule
@@ -170,6 +171,10 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
             singleOf(::RoomUpgradeHandler) {
                 bind<EventHandler>()
                 named<RoomUpgradeHandler>()
+            }
+            singleOf(::ProfileEventHandler) {
+                bind<EventHandler>()
+                named<ProfileEventHandler>()
             }
             @OptIn(MSC4354::class)
             singleOf(::ForgetRoomServiceImpl) {

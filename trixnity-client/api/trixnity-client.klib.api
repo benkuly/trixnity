@@ -585,6 +585,7 @@ abstract interface de.connect2x.trixnity.client/MatrixClient : kotlin/AutoClosea
     abstract suspend fun clearCache(): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClient.clearCache|clearCache(){}[0]
     abstract suspend fun clearMediaCache(): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClient.clearMediaCache|clearMediaCache(){}[0]
     abstract suspend fun closeSuspending() // de.connect2x.trixnity.client/MatrixClient.closeSuspending|closeSuspending(){}[0]
+    abstract suspend fun deleteProfileField(de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClient.deleteProfileField|deleteProfileField(de.connect2x.trixnity.clientserverapi.model.user.ProfileField.Key<*>){}[0]
     abstract suspend fun logout(): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClient.logout|logout(){}[0]
     abstract suspend fun setProfileField(de.connect2x.trixnity.clientserverapi.model.user/ProfileField): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClient.setProfileField|setProfileField(de.connect2x.trixnity.clientserverapi.model.user.ProfileField){}[0]
     abstract suspend fun startSync(de.connect2x.trixnity.core.model.events.m/Presence? = ...) // de.connect2x.trixnity.client/MatrixClient.startSync|startSync(de.connect2x.trixnity.core.model.events.m.Presence?){}[0]
@@ -4184,6 +4185,12 @@ final class de.connect2x.trixnity.client.user/LoadMembersServiceImpl : de.connec
     final suspend fun invoke(de.connect2x.trixnity.core.model/RoomId, kotlin/Boolean) // de.connect2x.trixnity.client.user/LoadMembersServiceImpl.invoke|invoke(de.connect2x.trixnity.core.model.RoomId;kotlin.Boolean){}[0]
 }
 
+final class de.connect2x.trixnity.client.user/ProfileEventHandler : de.connect2x.trixnity.core/EventHandler { // de.connect2x.trixnity.client.user/ProfileEventHandler|null[0]
+    constructor <init>(de.connect2x.trixnity.clientserverapi.client/MatrixClientServerApiClient, de.connect2x.trixnity.client.store/AccountStore, de.connect2x.trixnity.core/UserInfo, de.connect2x.trixnity.client/CurrentSyncState) // de.connect2x.trixnity.client.user/ProfileEventHandler.<init>|<init>(de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient;de.connect2x.trixnity.client.store.AccountStore;de.connect2x.trixnity.core.UserInfo;de.connect2x.trixnity.client.CurrentSyncState){}[0]
+
+    final fun startInCoroutineScope(kotlinx.coroutines/CoroutineScope) // de.connect2x.trixnity.client.user/ProfileEventHandler.startInCoroutineScope|startInCoroutineScope(kotlinx.coroutines.CoroutineScope){}[0]
+}
+
 final class de.connect2x.trixnity.client.user/ReceiptEventHandler : de.connect2x.trixnity.core/EventHandler { // de.connect2x.trixnity.client.user/ReceiptEventHandler|null[0]
     constructor <init>(de.connect2x.trixnity.clientserverapi.client/MatrixClientServerApiClient, de.connect2x.trixnity.client.store/RoomUserStore, de.connect2x.trixnity.client.store/TransactionManager) // de.connect2x.trixnity.client.user/ReceiptEventHandler.<init>|<init>(de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient;de.connect2x.trixnity.client.store.RoomUserStore;de.connect2x.trixnity.client.store.TransactionManager){}[0]
 
@@ -4191,7 +4198,7 @@ final class de.connect2x.trixnity.client.user/ReceiptEventHandler : de.connect2x
 }
 
 final class de.connect2x.trixnity.client.user/UserMemberEventHandler : de.connect2x.trixnity.client.user/LazyMemberEventHandler, de.connect2x.trixnity.core/EventHandler { // de.connect2x.trixnity.client.user/UserMemberEventHandler|null[0]
-    constructor <init>(de.connect2x.trixnity.clientserverapi.client/MatrixClientServerApiClient, de.connect2x.trixnity.client.store/AccountStore, de.connect2x.trixnity.client.store/RoomUserStore, de.connect2x.trixnity.core/UserInfo, de.connect2x.trixnity.client.store/TransactionManager) // de.connect2x.trixnity.client.user/UserMemberEventHandler.<init>|<init>(de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient;de.connect2x.trixnity.client.store.AccountStore;de.connect2x.trixnity.client.store.RoomUserStore;de.connect2x.trixnity.core.UserInfo;de.connect2x.trixnity.client.store.TransactionManager){}[0]
+    constructor <init>(de.connect2x.trixnity.clientserverapi.client/MatrixClientServerApiClient, de.connect2x.trixnity.client.store/RoomUserStore, de.connect2x.trixnity.client.store/TransactionManager) // de.connect2x.trixnity.client.user/UserMemberEventHandler.<init>|<init>(de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient;de.connect2x.trixnity.client.store.RoomUserStore;de.connect2x.trixnity.client.store.TransactionManager){}[0]
 
     final fun startInCoroutineScope(kotlinx.coroutines/CoroutineScope) // de.connect2x.trixnity.client.user/UserMemberEventHandler.startInCoroutineScope|startInCoroutineScope(kotlinx.coroutines.CoroutineScope){}[0]
     final suspend fun handleLazyMemberEvents(kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.StateEvent<de.connect2x.trixnity.core.model.events.m.room/MemberEventContent>>) // de.connect2x.trixnity.client.user/UserMemberEventHandler.handleLazyMemberEvents|handleLazyMemberEvents(kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent<de.connect2x.trixnity.core.model.events.m.room.MemberEventContent>>){}[0]
@@ -4519,6 +4526,7 @@ final class de.connect2x.trixnity.client/MatrixClientImpl : de.connect2x.trixnit
     final suspend fun clearCache(): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClientImpl.clearCache|clearCache(){}[0]
     final suspend fun clearMediaCache(): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClientImpl.clearMediaCache|clearMediaCache(){}[0]
     final suspend fun closeSuspending() // de.connect2x.trixnity.client/MatrixClientImpl.closeSuspending|closeSuspending(){}[0]
+    final suspend fun deleteProfileField(de.connect2x.trixnity.clientserverapi.model.user/ProfileField.Key<*>): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClientImpl.deleteProfileField|deleteProfileField(de.connect2x.trixnity.clientserverapi.model.user.ProfileField.Key<*>){}[0]
     final suspend fun logout(): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClientImpl.logout|logout(){}[0]
     final suspend fun setProfileField(de.connect2x.trixnity.clientserverapi.model.user/ProfileField): kotlin/Result<kotlin/Unit> // de.connect2x.trixnity.client/MatrixClientImpl.setProfileField|setProfileField(de.connect2x.trixnity.clientserverapi.model.user.ProfileField){}[0]
     final suspend fun startSync(de.connect2x.trixnity.core.model.events.m/Presence?) // de.connect2x.trixnity.client/MatrixClientImpl.startSync|startSync(de.connect2x.trixnity.core.model.events.m.Presence?){}[0]

@@ -1,14 +1,23 @@
 package de.connect2x.trixnity.client
 
 import de.connect2x.lognity.api.logger.Logger
-import de.connect2x.trixnity.client.MatrixClient.LoginState.*
+import de.connect2x.trixnity.client.MatrixClient.LoginState.LOCKED
+import de.connect2x.trixnity.client.MatrixClient.LoginState.LOGGED_IN
+import de.connect2x.trixnity.client.MatrixClient.LoginState.LOGGED_OUT
+import de.connect2x.trixnity.client.MatrixClient.LoginState.LOGGED_OUT_SOFT
 import de.connect2x.trixnity.client.MatrixClientImpl.Companion.filterHash
 import de.connect2x.trixnity.client.media.inMemory
 import de.connect2x.trixnity.client.store.Account
 import de.connect2x.trixnity.client.store.AccountStore
 import de.connect2x.trixnity.client.store.Authentication
 import de.connect2x.trixnity.client.store.AuthenticationStore
-import de.connect2x.trixnity.client.store.repository.*
+import de.connect2x.trixnity.client.store.repository.AccountRepository
+import de.connect2x.trixnity.client.store.repository.AuthenticationRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryAccountRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryAuthenticationRepository
+import de.connect2x.trixnity.client.store.repository.InMemoryOlmAccountRepository
+import de.connect2x.trixnity.client.store.repository.OlmAccountRepository
+import de.connect2x.trixnity.client.store.repository.inMemory
 import de.connect2x.trixnity.clientserverapi.client.ClassicMatrixClientAuthProviderData
 import de.connect2x.trixnity.clientserverapi.client.LogoutInfo
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderData
@@ -47,6 +56,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -389,6 +400,256 @@ class MatrixClientTest : TrixnityBaseTest() {
             cut.close()
         }
 
+    private suspend fun TestScope.deleteProfileFieldTestSetup(
+        profile: Profile,
+        hasCapability: Boolean,
+    ): MatrixClient {
+        val accountRepository = InMemoryAccountRepository().apply {
+            save(
+                1, Account(
+                    olmPickleKey = null,
+                    accessToken = "abcdef",
+                    refreshToken = "ghijk",
+                    userId = userId,
+                    deviceId = "deviceId",
+                    baseUrl = "http://localhost",
+                    filter = Account.Filter(
+                        syncFilterId = "someFilter",
+                        syncOnceFilterId = "someFilter",
+                        eventTypesHash = with(mappings) { filterHash() },
+                    ),
+                    profile = profile,
+                    syncBatchToken = null,
+                )
+            )
+        }
+        val authenticationRepository = InMemoryAuthenticationRepository().apply {
+            save(
+                1, Authentication(
+                    providerId = "classic",
+                    providerData = Json.encodeToString(
+                        ClassicMatrixClientAuthProviderData(
+                            baseUrl = Url("http://localhost"),
+                            accessToken = "abcdef",
+                            accessTokenExpiresInMs = null,
+                            refreshToken = "ghijk",
+                        )
+                    ),
+                    logoutInfo = null,
+                )
+            )
+        }
+        val olmAccountRepository = InMemoryOlmAccountRepository().apply {
+            save(1, accountPickle)
+        }
+        val repositoriesModule =
+            RepositoriesModule {
+                val delegate = RepositoriesModule.inMemory().create()
+                module {
+                    includes(module {
+                        single<AccountRepository> { accountRepository }
+                        single<AuthenticationRepository> { authenticationRepository }
+                        single<OlmAccountRepository> { olmAccountRepository }
+                    }, delegate)
+
+                }
+            }
+        val log = Logger("MatrixClientImplTest")
+        val cut = MatrixClient.create(
+            repositoriesModule = repositoriesModule,
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = cryptoDriverModule,
+            coroutineContext = backgroundScope.coroutineContext,
+            configuration = {
+                httpClientEngine = backgroundScope.scopedMockEngine(false) {
+                    addHandler { request ->
+                        val path = request.url.fullPath
+                        log.debug { "path: $path" }
+                        when {
+                            path.startsWith("/_matrix/client/v3/sync?filter=someFilter&use_state_after=true") -> {
+                                assertEquals(HttpMethod.Get, request.method)
+                                respond(
+                                    json.encodeToString(
+                                        syncResponseSerializer,
+                                        serverResponse
+                                    ),
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/client/v3/profile/${userId.full}/available" -> {
+                                assertEquals(HttpMethod.Delete, request.method)
+                                respond(
+                                    """{}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString(),
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/client/v3/profile/${userId.full}/displayname" -> {
+                                assertEquals(HttpMethod.Put, request.method)
+                                respond(
+                                    """{}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString(),
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/client/v3/profile/${userId.full}/avatar_url" -> {
+                                assertEquals(HttpMethod.Put, request.method)
+                                respond(
+                                    """{}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString(),
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/client/v3/keys/upload" -> {
+                                assertEquals(HttpMethod.Post, request.method)
+                                respond(
+                                    """{"one_time_key_counts":{"ed25519":1}}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/client/versions" -> {
+                                respond(
+                                    """{}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/client/v3/capabilities" -> {
+                                respond(
+                                    if (hasCapability) """{"capabilities":{"m.profile_fields":{"enabled":true}}}"""
+                                    else """{"capabilities":{}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/media/v3/config" -> {
+                                respond(
+                                    """{"m.upload.size":24}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
+                                    )
+                                )
+                            }
+
+                            else -> {
+                                throw IllegalStateException(path)
+                            }
+                        }
+                    }
+                }
+            },
+        ).getOrThrow().shouldNotBeNull()
+
+        cut.profile.filterNotNull().first() shouldBe profile
+        return cut
+    }
+
+    @Test
+    fun `deleteProfileField » server has capability » delete and update profile field`() = runTest {
+        val availableProfileField = ProfileField.Unknown("available", JsonObject(buildMap {
+            set("from", JsonPrimitive("monday"))
+            set("to", JsonPrimitive("friday"))
+        }))
+
+        val cut = deleteProfileFieldTestSetup(
+            profile = Profile(
+                ProfileField.DisplayName("bob"),
+                ProfileField.AvatarUrl("mxc://localhost/123456"),
+                availableProfileField,
+            ),
+            hasCapability = true
+        )
+
+        cut.deleteProfileField(availableProfileField.key).getOrThrow()
+
+        cut.syncOnce().getOrThrow()
+        cut.profile.first {
+            it == Profile(
+                ProfileField.DisplayName("bob"),
+                ProfileField.AvatarUrl("mxc://localhost/123456"),
+            )
+        }
+
+        cut.close()
+    }
+
+    @Test
+    fun `deleteProfileField » server has no capability » make displayname empty`() = runTest {
+        val cut = deleteProfileFieldTestSetup(
+            profile = Profile(
+                ProfileField.DisplayName("bob"),
+                ProfileField.AvatarUrl("mxc://localhost/123456"),
+            ),
+            hasCapability = false,
+        )
+
+        cut.deleteProfileField(ProfileField.DisplayName).getOrThrow()
+
+        cut.syncOnce().getOrThrow()
+        cut.profile.first {
+            it == Profile(
+                ProfileField.DisplayName(""),
+                ProfileField.AvatarUrl("mxc://localhost/123456"),
+            )
+        }
+
+        cut.close()
+    }
+
+    @Test
+    fun `deleteProfileField » server has no capability » make avatar_url empty`() = runTest {
+        val cut = deleteProfileFieldTestSetup(
+            profile = Profile(
+                ProfileField.DisplayName("bob"),
+                ProfileField.AvatarUrl("mxc://localhost/123456"),
+            ),
+            hasCapability = false,
+        )
+
+        cut.deleteProfileField(ProfileField.AvatarUrl).getOrThrow()
+
+        cut.syncOnce().getOrThrow()
+        cut.profile.first {
+            it == Profile(
+                ProfileField.DisplayName("bob"),
+                ProfileField.AvatarUrl(""),
+            )
+        }
+
+        cut.close()
+    }
 
     @Test
     fun `loginState » be LOGGED_IN when access token is not null`() = runTest {

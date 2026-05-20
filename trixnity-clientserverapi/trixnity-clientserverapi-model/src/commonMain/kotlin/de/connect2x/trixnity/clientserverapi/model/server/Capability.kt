@@ -1,5 +1,6 @@
 package de.connect2x.trixnity.clientserverapi.model.server
 
+import de.connect2x.trixnity.clientserverapi.model.user.ProfileField
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -8,7 +9,12 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlin.jvm.JvmInline
 
 sealed interface Capability {
@@ -63,12 +69,18 @@ sealed interface Capability {
     @Serializable
     data class ProfileFields(
         @SerialName("enabled") val enabled: Boolean,
-        @SerialName("allowed") val allowed: Set<String>? = null,
-        @SerialName("disallowed") val disallowed: Set<String>? = null
+        @SerialName("allowed") val allowed: Set<ProfileField.Key<*>>? = null,
+        @SerialName("disallowed") val disallowed: Set<ProfileField.Key<*>>? = null
     ) : Capability {
         companion object {
             const val name = "m.profile_fields"
         }
+
+        fun isChangeAllowed(key: ProfileField.Key<*>): Boolean =
+            enabled &&
+                    (allowed != null && allowed.contains(key) ||
+                            allowed == null && (disallowed == null || !disallowed.contains(key)))
+
     }
 
     @Serializable

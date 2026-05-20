@@ -76,7 +76,6 @@ class RoomUpgradeHandler(
                 }.onJoin { }
                 launch {
                     delay(initialDelay)
-
                 }.onJoin { }
             }.also {
                 currentCoroutineContext().cancelChildren()

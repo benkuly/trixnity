@@ -8704,6 +8704,7 @@ public final class de/connect2x/trixnity/clientserverapi/model/server/Capability
 	public final fun getDisallowed ()Ljava/util/Set;
 	public final fun getEnabled ()Z
 	public fun hashCode ()I
+	public final fun isChangeAllowed (Lde/connect2x/trixnity/clientserverapi/model/user/ProfileField$Key;)Z
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -11462,6 +11463,7 @@ public final class de/connect2x/trixnity/clientserverapi/model/user/Profile {
 	public fun hashCode ()I
 	public static fun hashCode-impl (Ljava/util/Map;)I
 	public static final fun isEmpty-impl (Ljava/util/Map;)Z
+	public static final fun minus-Cxv5Kf0 (Ljava/util/Map;Lde/connect2x/trixnity/clientserverapi/model/user/ProfileField$Key;)Ljava/util/Map;
 	public static final fun minus-Cxv5Kf0 (Ljava/util/Map;Lde/connect2x/trixnity/clientserverapi/model/user/ProfileField;)Ljava/util/Map;
 	public static final fun plus-Cxv5Kf0 (Ljava/util/Map;Lde/connect2x/trixnity/clientserverapi/model/user/ProfileField;)Ljava/util/Map;
 	public fun toString ()Ljava/lang/String;
