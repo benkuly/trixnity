@@ -175,10 +175,12 @@ public abstract interface class de/connect2x/trixnity/clientserverapi/server/Pus
 public abstract interface class de/connect2x/trixnity/clientserverapi/server/RoomApiHandler {
 	public abstract fun banUser (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun createRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun delayedEventAction (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun deleteRoomAlias (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun deleteTag (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun forgetRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getAccountData (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDelayedEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getDirectoryVisibility (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getEventContext (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -208,6 +210,7 @@ public abstract interface class de/connect2x/trixnity/clientserverapi/server/Roo
 	public abstract fun redactEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun reportEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun reportRoom (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendDelayedEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun sendMessageEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun sendStateEvent (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun setAccountData (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

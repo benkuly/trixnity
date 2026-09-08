@@ -1,5 +1,6 @@
 package de.connect2x.trixnity.core.serialization.events
 
+import de.connect2x.trixnity.core.MSC4140
 import de.connect2x.trixnity.core.model.events.EventContent
 import de.connect2x.trixnity.core.model.events.block.EventContentBlocks
 import kotlinx.serialization.modules.SerializersModule
@@ -14,6 +15,10 @@ fun createMatrixEventSerializersModule(mappings: EventContentSerializerMappings)
     val strippedStateEventSerializer = StrippedStateEventSerializer(mappings.state)
     val stateBaseEventSerializer = StateBaseEventSerializer(stateEventSerializer, strippedStateEventSerializer)
     val initialStateEventSerializer = InitialStateEventSerializer(mappings.state)
+    @OptIn(MSC4140::class) val delayedMessageEventSerializer = DelayedMessageEventSerializer(mappings.message)
+    @OptIn(MSC4140::class) val delayedStateEventSerializer = DelayedStateEventSerializer(mappings.state)
+    @OptIn(MSC4140::class)
+    val delayedRoomEventSerializer = DelayedEventSerializer(delayedMessageEventSerializer, delayedStateEventSerializer)
     val ephemeralEventSerializer = EphemeralEventSerializer(mappings.ephemeral)
     val toDeviceEventSerializer = ToDeviceEventSerializer(mappings.toDevice)
     val decryptedOlmEventSerializer =
@@ -36,6 +41,9 @@ fun createMatrixEventSerializersModule(mappings: EventContentSerializerMappings)
         contextual(strippedStateEventSerializer)
         contextual(stateBaseEventSerializer)
         contextual(initialStateEventSerializer)
+        @OptIn(MSC4140::class) contextual(delayedMessageEventSerializer)
+        @OptIn(MSC4140::class) contextual(delayedStateEventSerializer)
+        @OptIn(MSC4140::class) contextual(delayedRoomEventSerializer)
         contextual(ephemeralEventSerializer)
         contextual(toDeviceEventSerializer)
         contextual(decryptedOlmEventSerializer)

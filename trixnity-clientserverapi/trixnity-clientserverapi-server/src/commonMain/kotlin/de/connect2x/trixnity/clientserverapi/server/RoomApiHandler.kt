@@ -3,9 +3,11 @@ package de.connect2x.trixnity.clientserverapi.server
 import de.connect2x.trixnity.api.server.MatrixEndpointContext
 import de.connect2x.trixnity.clientserverapi.model.room.BanUser
 import de.connect2x.trixnity.clientserverapi.model.room.CreateRoom
+import de.connect2x.trixnity.clientserverapi.model.room.DelayedEventAction
 import de.connect2x.trixnity.clientserverapi.model.room.DeleteRoomAlias
 import de.connect2x.trixnity.clientserverapi.model.room.DeleteRoomTag
 import de.connect2x.trixnity.clientserverapi.model.room.ForgetRoom
+import de.connect2x.trixnity.clientserverapi.model.room.GetDelayedEvent
 import de.connect2x.trixnity.clientserverapi.model.room.GetDirectoryVisibility
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvent
 import de.connect2x.trixnity.clientserverapi.model.room.GetEventContext
@@ -38,6 +40,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.LeaveRoom
 import de.connect2x.trixnity.clientserverapi.model.room.RedactEvent
 import de.connect2x.trixnity.clientserverapi.model.room.ReportEvent
 import de.connect2x.trixnity.clientserverapi.model.room.ReportRoom
+import de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent
 import de.connect2x.trixnity.clientserverapi.model.room.SendEventResponse
 import de.connect2x.trixnity.clientserverapi.model.room.SendMessageEvent
 import de.connect2x.trixnity.clientserverapi.model.room.SendStateEvent
@@ -51,8 +54,10 @@ import de.connect2x.trixnity.clientserverapi.model.room.SetTyping
 import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
 import de.connect2x.trixnity.clientserverapi.model.room.UnbanUser
 import de.connect2x.trixnity.clientserverapi.model.room.UpgradeRoom
+import de.connect2x.trixnity.core.MSC4140
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import de.connect2x.trixnity.core.model.events.DelayedEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
@@ -108,6 +113,19 @@ interface RoomApiHandler {
     suspend fun sendMessageEvent(
         context: MatrixEndpointContext<SendMessageEvent, MessageEventContent, SendEventResponse>
     ): SendEventResponse
+
+    /** @see [SendDelayedEvent] */
+    @MSC4140
+    suspend fun sendDelayedEvent(
+        context: MatrixEndpointContext<SendDelayedEvent, SendDelayedEvent.Request, SendDelayedEvent.Response>
+    ): SendDelayedEvent.Response
+
+    /** @see [DelayedEventAction] */
+    @MSC4140 suspend fun delayedEventAction(context: MatrixEndpointContext<DelayedEventAction, Unit, Unit>)
+
+    /** @see [GetDelayedEvent] */
+    @MSC4140
+    suspend fun getDelayedEvent(context: MatrixEndpointContext<GetDelayedEvent, Unit, DelayedEvent<*>>): DelayedEvent<*>
 
     /** @see [RedactEvent] */
     suspend fun redactEvent(

@@ -2,10 +2,12 @@ package de.connect2x.trixnity.clientserverapi.client
 
 import de.connect2x.trixnity.clientserverapi.model.room.BanUser
 import de.connect2x.trixnity.clientserverapi.model.room.CreateRoom
+import de.connect2x.trixnity.clientserverapi.model.room.DelayedEventAction
 import de.connect2x.trixnity.clientserverapi.model.room.DeleteRoomAlias
 import de.connect2x.trixnity.clientserverapi.model.room.DeleteRoomTag
 import de.connect2x.trixnity.clientserverapi.model.room.DirectoryVisibility
 import de.connect2x.trixnity.clientserverapi.model.room.ForgetRoom
+import de.connect2x.trixnity.clientserverapi.model.room.GetDelayedEvent
 import de.connect2x.trixnity.clientserverapi.model.room.GetDirectoryVisibility
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvent
 import de.connect2x.trixnity.clientserverapi.model.room.GetEventContext
@@ -38,6 +40,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.LeaveRoom
 import de.connect2x.trixnity.clientserverapi.model.room.RedactEvent
 import de.connect2x.trixnity.clientserverapi.model.room.ReportEvent
 import de.connect2x.trixnity.clientserverapi.model.room.ReportRoom
+import de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent
 import de.connect2x.trixnity.clientserverapi.model.room.SendMessageEvent
 import de.connect2x.trixnity.clientserverapi.model.room.SendStateEvent
 import de.connect2x.trixnity.clientserverapi.model.room.SetDirectoryVisibility
@@ -51,6 +54,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.ThirdPartySigned
 import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
 import de.connect2x.trixnity.clientserverapi.model.room.UnbanUser
 import de.connect2x.trixnity.clientserverapi.model.room.UpgradeRoom
+import de.connect2x.trixnity.core.MSC4140
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
@@ -59,6 +63,7 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import de.connect2x.trixnity.core.model.events.DelayedEvent
 import de.connect2x.trixnity.core.model.events.InitialStateEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
@@ -191,6 +196,33 @@ interface RoomApiClient {
         ts: Long? = null,
         stickyDurationMs: Long? = null,
     ): Result<EventId>
+
+    /** @see [SendDelayedEvent] */
+    @MSC4140
+    suspend fun sendDelayedStateEvent(
+        roomId: RoomId,
+        eventContent: StateEventContent,
+        stateKey: String = "",
+        txnId: String = Random.nextString(22),
+        delayMs: Long,
+        ts: Long? = null,
+    ): Result<String>
+
+    /** @see [SendDelayedEvent] */
+    @MSC4140
+    suspend fun sendDelayedMessageEvent(
+        roomId: RoomId,
+        eventContent: MessageEventContent,
+        txnId: String = Random.nextString(22),
+        delayMs: Long,
+        ts: Long? = null,
+    ): Result<String>
+
+    /** @see [DelayedEventAction] */
+    @MSC4140 suspend fun delayedEventAction(delayId: String, action: DelayedEventAction.Action): Result<Unit>
+
+    /** @see [GetDelayedEvent] */
+    @MSC4140 suspend fun getDelayedEvent(delayId: String): Result<DelayedEvent<*>>
 
     /** @see [RedactEvent] */
     suspend fun redactEvent(
@@ -520,6 +552,49 @@ class RoomApiClientImpl(
         txnId: String,
         ts: Long?,
     ): Result<EventId> = sendMessageEvent(roomId, eventContent, txnId, ts, null)
+
+    @MSC4140
+    override suspend fun sendDelayedStateEvent(
+        roomId: RoomId,
+        eventContent: StateEventContent,
+        stateKey: String,
+        txnId: String,
+        delayMs: Long,
+        ts: Long?,
+    ): Result<String> {
+        val eventType = contentMappings.state.contentType(eventContent)
+        return baseClient
+            .request(
+                SendDelayedEvent(roomId, eventType, txnId, ts),
+                SendDelayedEvent.Request.State(eventContent, delayMs, stateKey),
+            )
+            .mapCatching { it.delayId }
+    }
+
+    @MSC4140
+    override suspend fun sendDelayedMessageEvent(
+        roomId: RoomId,
+        eventContent: MessageEventContent,
+        txnId: String,
+        delayMs: Long,
+        ts: Long?,
+    ): Result<String> {
+        val eventType = contentMappings.message.contentType(eventContent)
+        return baseClient
+            .request(
+                SendDelayedEvent(roomId, eventType, txnId, ts),
+                SendDelayedEvent.Request.Message(eventContent, delayMs),
+            )
+            .mapCatching { it.delayId }
+    }
+
+    @MSC4140
+    override suspend fun delayedEventAction(delayId: String, action: DelayedEventAction.Action): Result<Unit> =
+        baseClient.request(DelayedEventAction(delayId, action))
+
+    @MSC4140
+    override suspend fun getDelayedEvent(delayId: String): Result<DelayedEvent<*>> =
+        baseClient.request(GetDelayedEvent(delayId))
 
     override suspend fun redactEvent(
         roomId: RoomId,
