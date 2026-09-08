@@ -3,7 +3,19 @@ package de.connect2x.trixnity.core.model.events.m.rtc
 import de.connect2x.trixnity.core.MSC4143
 import kotlinx.serialization.json.JsonObject
 
-/** @see <a href="https://github.com/matrix-org/matrix-spec-proposals/pull/4143">MSC4143</a> */
-@MSC4143 interface RtcApplication
+@MSC4143
+interface RtcApplicationSlot {
+    @MSC4143 data class Unknown(val type: String, val raw: JsonObject) : RtcApplicationSlot
+}
 
-@MSC4143 data class UnknownRtcApplication(val raw: JsonObject) : RtcApplication
+@MSC4143
+interface RtcApplicationMember {
+    @MSC4143
+    enum class DefaultLeaveReasonCode(val value: String) {
+        LEAVE("leave"),
+        DELAYED_LEAVE("delayed_leave"),
+        SLOT_CLOSED("slot_closed"),
+    }
+
+    @MSC4143 data class Unknown(val type: String, val raw: JsonObject) : RtcApplicationMember
+}

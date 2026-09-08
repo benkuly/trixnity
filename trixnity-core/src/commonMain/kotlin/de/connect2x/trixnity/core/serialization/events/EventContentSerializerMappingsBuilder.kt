@@ -1,7 +1,18 @@
 package de.connect2x.trixnity.core.serialization.events
 
-import de.connect2x.trixnity.core.model.events.*
+import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.model.events.EphemeralDataUnitContent
+import de.connect2x.trixnity.core.model.events.EphemeralEventContent
+import de.connect2x.trixnity.core.model.events.GlobalAccountDataEventContent
+import de.connect2x.trixnity.core.model.events.MessageEventContent
+import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
+import de.connect2x.trixnity.core.model.events.StateEventContent
+import de.connect2x.trixnity.core.model.events.ToDeviceEventContent
 import de.connect2x.trixnity.core.model.events.block.EventContentBlock
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationMember
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationSlot
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcEncryption
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 
@@ -14,8 +25,13 @@ class EventContentSerializerMappingsBuilder {
     val globalAccountData = mutableSetOf<EventContentSerializerMapping<GlobalAccountDataEventContent>>()
     val roomAccountData = mutableSetOf<EventContentSerializerMapping<RoomAccountDataEventContent>>()
 
+    @MSC4143 val rtcApplication = mutableSetOf<RtcApplicationSerializerMapping<*, *>>()
+    @MSC4143 val rtcTransport = mutableSetOf<RtcTransportSerializerMapping<*>>()
+    @MSC4143 val rtcEncryption = mutableSetOf<RtcEncryptionSerializerMapping<*>>()
+
     val block = mutableSetOf<EventContentBlockSerializerMapping<*>>()
 
+    @OptIn(MSC4143::class)
     fun build(): EventContentSerializerMappings =
         object : EventContentSerializerMappings {
             override val message = this@EventContentSerializerMappingsBuilder.message.toSet()
@@ -25,6 +41,9 @@ class EventContentSerializerMappingsBuilder {
             override val toDevice = this@EventContentSerializerMappingsBuilder.toDevice.toSet()
             override val globalAccountData = this@EventContentSerializerMappingsBuilder.globalAccountData.toSet()
             override val roomAccountData = this@EventContentSerializerMappingsBuilder.roomAccountData.toSet()
+            override val rtcApplication = this@EventContentSerializerMappingsBuilder.rtcApplication.toSet()
+            override val rtcTransport = this@EventContentSerializerMappingsBuilder.rtcTransport.toSet()
+            override val rtcEncryption = this@EventContentSerializerMappingsBuilder.rtcEncryption.toSet()
             override val block = this@EventContentSerializerMappingsBuilder.block.toSet()
         }
 }
@@ -121,6 +140,30 @@ inline fun <reified C : EventContentBlock> EventContentSerializerMappingsBuilder
     serializer: KSerializer<C>,
 ) {
     block.add(EventContentBlockSerializerMappingImpl(type, C::class, serializer))
+}
+
+@MSC4143
+inline fun <reified S : RtcApplicationSlot, reified M : RtcApplicationMember> EventContentSerializerMappingsBuilder
+    .rtcApplicationOf(type: String) {
+    rtcApplication.add(
+        RtcApplicationSerializerMappingImpl(
+            type = type,
+            applicationClass = S::class,
+            applicationSerializer = serializer<S>(),
+            memberClass = M::class,
+            memberSerializer = serializer<M>(),
+        )
+    )
+}
+
+@MSC4143
+inline fun <reified C : RtcTransport> EventContentSerializerMappingsBuilder.rtcTransportOf(type: String) {
+    rtcTransport.add(RtcTransportSerializerMappingImpl(type, C::class, serializer<C>()))
+}
+
+@MSC4143
+inline fun <reified C : RtcEncryption> EventContentSerializerMappingsBuilder.rtcEncryptionOf(type: String) {
+    rtcEncryption.add(RtcEncryptionSerializerMappingImpl(type, C::class, serializer<C>()))
 }
 
 inline fun <reified C : EventContentBlock> EventContentSerializerMappingsBuilder.blockOf(

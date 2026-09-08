@@ -1,6 +1,6 @@
 [versions]
 
-trixnity = "5.8.2"
+trixnity = "5.9.0"
 
 ### build ###
 downloadGradlePlugin = "5.7.0" # https://github.com/michel-kraemer/gradle-download-task/releases

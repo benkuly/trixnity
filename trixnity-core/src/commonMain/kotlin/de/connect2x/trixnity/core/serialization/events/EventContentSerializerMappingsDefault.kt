@@ -2,6 +2,7 @@ package de.connect2x.trixnity.core.serialization.events
 
 import de.connect2x.trixnity.core.MSC3814
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4193
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.events.block.m.TextContentBlock
 import de.connect2x.trixnity.core.model.events.block.m.TopicContentBlock
@@ -59,6 +60,8 @@ import de.connect2x.trixnity.core.model.events.m.room.ServerACLEventContent
 import de.connect2x.trixnity.core.model.events.m.room.ThirdPartyInviteEventContent
 import de.connect2x.trixnity.core.model.events.m.room.TombstoneEventContent
 import de.connect2x.trixnity.core.model.events.m.room.TopicEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
+import de.connect2x.trixnity.core.model.events.m.rtc.PerMemberRtcEncryption
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotEventContent
 import de.connect2x.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
@@ -88,10 +91,8 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     messageOf<CallEventContent.Reject>("m.call.reject")
     messageOf<CallEventContent.SelectAnswer>("m.call.select_answer")
     messageOf<CallEventContent.SdpStreamMetadataChanged>("m.call.sdp_stream_metadata_changed")
-    @OptIn(MSC4143::class, MSC4354::class)
-    messageOf<RtcMemberEventContent>("org.matrix.msc4143.rtc.member", RtcMemberEventContentSerializer())
-    @OptIn(MSC4143::class, MSC4354::class)
-    messageOf<RtcMemberEventContent>("m.rtc.member", RtcMemberEventContentSerializer())
+    @OptIn(MSC4143::class, MSC4354::class) messageOf<RtcMemberEventContent>("org.matrix.msc4143.rtc.member")
+    @OptIn(MSC4143::class, MSC4354::class) messageOf<RtcMemberEventContent>("m.rtc.member")
 
     stateOf<AvatarEventContent>("m.room.avatar")
     stateOf<CanonicalAliasEventContent>("m.room.canonical_alias")
@@ -114,8 +115,8 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     stateOf<ParentEventContent>("m.space.parent")
     stateOf<ChildEventContent>("m.space.child")
     stateOf<PolicyEventContent>("m.room.policy")
-    @OptIn(MSC4143::class) stateOf<RtcSlotEventContent>("org.matrix.msc4143.rtc.slot", RtcSlotEventContentSerializer())
-    @OptIn(MSC4143::class) stateOf<RtcSlotEventContent>("m.rtc.slot", RtcSlotEventContentSerializer())
+    @OptIn(MSC4143::class) stateOf<RtcSlotEventContent>("org.matrix.msc4143.rtc.slot")
+    @OptIn(MSC4143::class) stateOf<RtcSlotEventContent>("m.rtc.slot")
 
     ephemeralOf<PresenceEventContent>("m.presence")
     ephemeralOf<TypingEventContent>("m.typing")
@@ -154,6 +155,10 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     roomAccountDataOf<FullyReadEventContent>("m.fully_read")
     roomAccountDataOf<MarkedUnreadEventContent>("m.marked_unread")
     roomAccountDataOf<TagEventContent>("m.tag")
+
+    @OptIn(MSC4193::class, MSC4143::class)
+    rtcApplicationOf<CallRtcApplication.Slot, CallRtcApplication.Member>(CallRtcApplication.APPLICATION_TYPE)
+    @OptIn(MSC4193::class, MSC4143::class) rtcEncryptionOf<PerMemberRtcEncryption>("m.per_member")
 
     blockOf(TextContentBlock)
     blockOf(TopicContentBlock)
