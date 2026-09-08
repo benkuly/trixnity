@@ -9,7 +9,6 @@ import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.contentSerializer
 import io.ktor.resources.*
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -28,10 +27,7 @@ data class SendMessageEvent(
     @SerialName("type") val type: String,
     @SerialName("txnId") val txnId: String,
     @SerialName("ts") val ts: Long? = null,
-    @OptIn(ExperimentalSerializationApi::class)
-    @MSC4354
-    @SerialName("sticky_duration_ms")
-    private val stickyDurationMsStable: Long? = null,
+    @MSC4354 @SerialName("sticky_duration_ms") private val stickyDurationMsStable: Long? = null,
     @MSC4354 @SerialName("org.matrix.msc4354.sticky_duration_ms") private val stickyDurationMsUnstable: Long? = null,
 ) : MatrixEndpoint<MessageEventContent, SendEventResponse> {
     @MSC4354

@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.clientserverapi.model.server
 
 import de.connect2x.trixnity.clientserverapi.model.user.ProfileField
+import de.connect2x.trixnity.core.MSC4140
 import kotlin.jvm.JvmInline
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -104,6 +105,17 @@ sealed interface Capability {
         }
     }
 
+    @Serializable
+    @MSC4140
+    data class DelayedEvents(
+        @SerialName("max_delay_ms") val maxDelayMs: Long? = null,
+        @SerialName("max_scheduled") val maxScheduled: Long? = null,
+    ) : Capability {
+        companion object {
+            const val name = "org.matrix.msc4140.delayed_events"
+        }
+    }
+
     data class Unknown(val name: String, val raw: JsonElement) : Capability
 }
 
@@ -120,7 +132,7 @@ value class Capabilities(private val delegate: Set<Capability>) : Set<Capability
             return Capabilities(
                 jsonObject
                     .map { (key, value) ->
-                        @Suppress("DEPRECATION")
+                        @Suppress("DEPRECATION") @OptIn(MSC4140::class)
                         when (key) {
                             Capability.ChangePassword.name ->
                                 decoder.json.decodeFromJsonElement<Capability.ChangePassword>(value)
@@ -149,6 +161,9 @@ value class Capabilities(private val delegate: Set<Capability>) : Set<Capability
                             Capability.AccountModeration.name ->
                                 decoder.json.decodeFromJsonElement<Capability.AccountModeration>(value)
 
+                            Capability.DelayedEvents.name ->
+                                decoder.json.decodeFromJsonElement<Capability.DelayedEvents>(value)
+
                             else -> Capability.Unknown(key, value)
                         }
                     }
@@ -161,7 +176,7 @@ value class Capabilities(private val delegate: Set<Capability>) : Set<Capability
             encoder.encodeJsonElement(
                 encoder.json.encodeToJsonElement(
                     value.associate { element ->
-                        @Suppress("DEPRECATION")
+                        @Suppress("DEPRECATION") @OptIn(MSC4140::class)
                         when (element) {
                             is Capability.ChangePassword ->
                                 Capability.ChangePassword.name to encoder.json.encodeToJsonElement(element)
@@ -189,6 +204,9 @@ value class Capabilities(private val delegate: Set<Capability>) : Set<Capability
 
                             is Capability.AccountModeration ->
                                 Capability.AccountModeration.name to encoder.json.encodeToJsonElement(element)
+
+                            is Capability.DelayedEvents ->
+                                Capability.DelayedEvents.name to encoder.json.encodeToJsonElement(element)
 
                             is Capability.Unknown -> element.name to element.raw
                         }

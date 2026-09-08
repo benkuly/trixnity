@@ -6075,6 +6075,55 @@ public final class de/connect2x/trixnity/clientserverapi/model/room/CreateRoom$R
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class de/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction : de/connect2x/trixnity/core/MatrixEndpoint {
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Companion;
+	public fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;
+	public final fun copy (Ljava/lang/String;Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;)Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction;Ljava/lang/String;Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;
+	public final fun getDelayId ()Ljava/lang/String;
+	public fun getRequestContentType ()Lio/ktor/http/ContentType;
+	public fun getResponseContentType ()Lio/ktor/http/ContentType;
+	public fun hashCode ()I
+	public synthetic fun requestSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Ljava/lang/Object;)Lkotlinx/serialization/KSerializer;
+	public fun requestSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lkotlin/Unit;)Lkotlinx/serialization/KSerializer;
+	public synthetic fun responseSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Ljava/lang/Object;)Lkotlinx/serialization/KSerializer;
+	public fun responseSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lkotlin/Unit;)Lkotlinx/serialization/KSerializer;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action : java/lang/Enum {
+	public static final field CANCEL Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action$Companion;
+	public static final field RESTART Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;
+	public static final field SEND Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;
+	public static fun values ()[Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class de/connect2x/trixnity/clientserverapi/model/room/DeleteRoomAlias : de/connect2x/trixnity/core/MatrixEndpoint {
 	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/DeleteRoomAlias$Companion;
 	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -6188,6 +6237,39 @@ public final synthetic class de/connect2x/trixnity/clientserverapi/model/room/Fo
 }
 
 public final class de/connect2x/trixnity/clientserverapi/model/room/ForgetRoom$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent : de/connect2x/trixnity/core/MatrixEndpoint {
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lde/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelayId ()Ljava/lang/String;
+	public fun getRequestContentType ()Lio/ktor/http/ContentType;
+	public fun getResponseContentType ()Lio/ktor/http/ContentType;
+	public fun hashCode ()I
+	public synthetic fun requestSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Ljava/lang/Object;)Lkotlinx/serialization/KSerializer;
+	public fun requestSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lkotlin/Unit;)Lkotlinx/serialization/KSerializer;
+	public fun responseSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lde/connect2x/trixnity/core/model/events/DelayedEvent;)Lkotlinx/serialization/KSerializer;
+	public synthetic fun responseSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Ljava/lang/Object;)Lkotlinx/serialization/KSerializer;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/GetDelayedEvent$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -8320,6 +8402,197 @@ public final class de/connect2x/trixnity/clientserverapi/model/room/ReportRoom$R
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent : de/connect2x/trixnity/core/MatrixEndpoint {
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-7hZGZBE ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun copy-nnwLeS4 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent;
+	public static synthetic fun copy-nnwLeS4$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getRequestContentType ()Lio/ktor/http/ContentType;
+	public fun getResponseContentType ()Lio/ktor/http/ContentType;
+	public final fun getRoomId-7hZGZBE ()Ljava/lang/String;
+	public final fun getTs ()Ljava/lang/Long;
+	public final fun getTxnId ()Ljava/lang/String;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun requestSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request;)Lkotlinx/serialization/KSerializer;
+	public synthetic fun requestSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Ljava/lang/Object;)Lkotlinx/serialization/KSerializer;
+	public fun responseSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response;)Lkotlinx/serialization/KSerializer;
+	public synthetic fun responseSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Ljava/lang/Object;)Lkotlinx/serialization/KSerializer;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request {
+	public abstract fun getContent ()Lde/connect2x/trixnity/core/model/events/RoomEventContent;
+	public abstract fun getDelayMs ()J
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message : de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request {
+	public fun <init> (Lde/connect2x/trixnity/core/model/events/MessageEventContent;J)V
+	public final fun component1 ()Lde/connect2x/trixnity/core/model/events/MessageEventContent;
+	public final fun component2 ()J
+	public final fun copy (Lde/connect2x/trixnity/core/model/events/MessageEventContent;J)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message;Lde/connect2x/trixnity/core/model/events/MessageEventContent;JILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getContent ()Lde/connect2x/trixnity/core/model/events/MessageEventContent;
+	public synthetic fun getContent ()Lde/connect2x/trixnity/core/model/events/RoomEventContent;
+	public fun getDelayMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$SerializableMessage {
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$SerializableMessage$Companion;
+	public fun <init> (Lde/connect2x/trixnity/core/model/events/MessageEventContent;J)V
+	public final fun component1 ()Lde/connect2x/trixnity/core/model/events/MessageEventContent;
+	public final fun component2 ()J
+	public final fun copy (Lde/connect2x/trixnity/core/model/events/MessageEventContent;J)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$SerializableMessage;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$SerializableMessage;Lde/connect2x/trixnity/core/model/events/MessageEventContent;JILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$SerializableMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContent ()Lde/connect2x/trixnity/core/model/events/MessageEventContent;
+	public final fun getDelayMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$SerializableMessage$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public fun <init> (Lkotlinx/serialization/KSerializer;)V
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$SerializableMessage;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$SerializableMessage;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$SerializableMessage$Companion {
+	public final fun serializer (Lkotlinx/serialization/KSerializer;)Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message$Serializer : kotlinx/serialization/KSerializer {
+	public fun <init> (Lkotlinx/serialization/KSerializer;)V
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDelegateSerializer ()Lkotlinx/serialization/KSerializer;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Message;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$Serializer : kotlinx/serialization/KSerializer {
+	public fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;)V
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State : de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request {
+	public fun <init> (Lde/connect2x/trixnity/core/model/events/StateEventContent;JLjava/lang/String;)V
+	public final fun component1 ()Lde/connect2x/trixnity/core/model/events/StateEventContent;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lde/connect2x/trixnity/core/model/events/StateEventContent;JLjava/lang/String;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State;Lde/connect2x/trixnity/core/model/events/StateEventContent;JLjava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State;
+	public fun equals (Ljava/lang/Object;)Z
+	public synthetic fun getContent ()Lde/connect2x/trixnity/core/model/events/RoomEventContent;
+	public fun getContent ()Lde/connect2x/trixnity/core/model/events/StateEventContent;
+	public fun getDelayMs ()J
+	public final fun getStateKey ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$SerializableState {
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$SerializableState$Companion;
+	public fun <init> (Lde/connect2x/trixnity/core/model/events/StateEventContent;JLjava/lang/String;)V
+	public final fun component1 ()Lde/connect2x/trixnity/core/model/events/StateEventContent;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lde/connect2x/trixnity/core/model/events/StateEventContent;JLjava/lang/String;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$SerializableState;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$SerializableState;Lde/connect2x/trixnity/core/model/events/StateEventContent;JLjava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$SerializableState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContent ()Lde/connect2x/trixnity/core/model/events/StateEventContent;
+	public final fun getDelayMs ()J
+	public final fun getStateKey ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$SerializableState$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public fun <init> (Lkotlinx/serialization/KSerializer;)V
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$SerializableState;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$SerializableState;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$SerializableState$Companion {
+	public final fun serializer (Lkotlinx/serialization/KSerializer;)Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State$Serializer : kotlinx/serialization/KSerializer {
+	public fun <init> (Lkotlinx/serialization/KSerializer;)V
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDelegateSerializer ()Lkotlinx/serialization/KSerializer;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Request$State;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response {
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelayId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/room/SendDelayedEvent$Response$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class de/connect2x/trixnity/clientserverapi/model/room/SendEventResponse {
 	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/room/SendEventResponse$Companion;
 	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -9189,6 +9462,38 @@ public final synthetic class de/connect2x/trixnity/clientserverapi/model/server/
 }
 
 public final class de/connect2x/trixnity/clientserverapi/model/server/Capability$ChangePassword$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents : de/connect2x/trixnity/clientserverapi/model/server/Capability {
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents$Companion;
+	public static final field name Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/Long;)Lde/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxDelayMs ()Ljava/lang/Long;
+	public final fun getMaxScheduled ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/server/Capability$DelayedEvents$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 

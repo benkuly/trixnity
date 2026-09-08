@@ -28,6 +28,10 @@ open annotation class de.connect2x.trixnity.core/MSC3814 : kotlin/Annotation { /
     constructor <init>() // de.connect2x.trixnity.core/MSC3814.<init>|<init>(){}[0]
 }
 
+open annotation class de.connect2x.trixnity.core/MSC4140 : kotlin/Annotation { // de.connect2x.trixnity.core/MSC4140|null[0]
+    constructor <init>() // de.connect2x.trixnity.core/MSC4140.<init>|<init>(){}[0]
+}
+
 open annotation class de.connect2x.trixnity.core/MSC4143 : kotlin/Annotation { // de.connect2x.trixnity.core/MSC4143|null[0]
     constructor <init>() // de.connect2x.trixnity.core/MSC4143.<init>|<init>(){}[0]
 }
@@ -1221,6 +1225,196 @@ sealed interface <#A: de.connect2x.trixnity.core.model.events/EventContent> de.c
 
         final object Companion { // de.connect2x.trixnity.core.model.events/PersistentDataUnit.UnsignedData.Companion|null[0]
             final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/PersistentDataUnit.UnsignedData> // de.connect2x.trixnity.core.model.events/PersistentDataUnit.UnsignedData.Companion.serializer|serializer(){}[0]
+        }
+    }
+}
+
+sealed interface <#A: de.connect2x.trixnity.core.model.events/RoomEventContent> de.connect2x.trixnity.core.model.events/DelayedEvent : de.connect2x.trixnity.core.model.events/Event<#A> { // de.connect2x.trixnity.core.model.events/DelayedEvent|null[0]
+    abstract val delayId // de.connect2x.trixnity.core.model.events/DelayedEvent.delayId|{}delayId[0]
+        abstract fun <get-delayId>(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.delayId.<get-delayId>|<get-delayId>(){}[0]
+    abstract val delayMs // de.connect2x.trixnity.core.model.events/DelayedEvent.delayMs|{}delayMs[0]
+        abstract fun <get-delayMs>(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.delayMs.<get-delayMs>|<get-delayMs>(){}[0]
+    abstract val delayedSinceTs // de.connect2x.trixnity.core.model.events/DelayedEvent.delayedSinceTs|{}delayedSinceTs[0]
+        abstract fun <get-delayedSinceTs>(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.delayedSinceTs.<get-delayedSinceTs>|<get-delayedSinceTs>(){}[0]
+    abstract val finalized // de.connect2x.trixnity.core.model.events/DelayedEvent.finalized|{}finalized[0]
+        abstract fun <get-finalized>(): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized? // de.connect2x.trixnity.core.model.events/DelayedEvent.finalized.<get-finalized>|<get-finalized>(){}[0]
+    abstract val roomId // de.connect2x.trixnity.core.model.events/DelayedEvent.roomId|{}roomId[0]
+        abstract fun <get-roomId>(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.core.model.events/DelayedEvent.roomId.<get-roomId>|<get-roomId>(){}[0]
+
+    sealed interface Finalized { // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized|null[0]
+        abstract val finalizedTs // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.finalizedTs|{}finalizedTs[0]
+            abstract fun <get-finalizedTs>(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.finalizedTs.<get-finalizedTs>|<get-finalizedTs>(){}[0]
+
+        final class Error : de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized { // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error|null[0]
+            constructor <init>(kotlin/Long, de.connect2x.trixnity.core/ErrorResponse) // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.<init>|<init>(kotlin.Long;de.connect2x.trixnity.core.ErrorResponse){}[0]
+
+            final val error // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.error|{}error[0]
+                final fun <get-error>(): de.connect2x.trixnity.core/ErrorResponse // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.error.<get-error>|<get-error>(){}[0]
+            final val finalizedTs // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.finalizedTs|{}finalizedTs[0]
+                final fun <get-finalizedTs>(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.finalizedTs.<get-finalizedTs>|<get-finalizedTs>(){}[0]
+
+            final fun component1(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.component1|component1(){}[0]
+            final fun component2(): de.connect2x.trixnity.core/ErrorResponse // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.component2|component2(){}[0]
+            final fun copy(kotlin/Long = ..., de.connect2x.trixnity.core/ErrorResponse = ...): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.copy|copy(kotlin.Long;de.connect2x.trixnity.core.ErrorResponse){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.toString|toString(){}[0]
+
+            final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error> { // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.$serializer|null[0]
+                final val descriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.$serializer.descriptor|{}descriptor[0]
+                    final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+                final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.$serializer.childSerializers|childSerializers(){}[0]
+                final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+                final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error) // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.DelayedEvent.Finalized.Error){}[0]
+            }
+
+            final object Companion { // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.Companion|null[0]
+                final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error> // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Error.Companion.serializer|serializer(){}[0]
+            }
+        }
+
+        final class Success : de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized { // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success|null[0]
+            constructor <init>(kotlin/Long, de.connect2x.trixnity.core.model/EventId) // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.<init>|<init>(kotlin.Long;de.connect2x.trixnity.core.model.EventId){}[0]
+
+            final val eventId // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.eventId|{}eventId[0]
+                final fun <get-eventId>(): de.connect2x.trixnity.core.model/EventId // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.eventId.<get-eventId>|<get-eventId>(){}[0]
+            final val finalizedTs // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.finalizedTs|{}finalizedTs[0]
+                final fun <get-finalizedTs>(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.finalizedTs.<get-finalizedTs>|<get-finalizedTs>(){}[0]
+
+            final fun component1(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.component1|component1(){}[0]
+            final fun component2(): de.connect2x.trixnity.core.model/EventId // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.component2|component2(){}[0]
+            final fun copy(kotlin/Long = ..., de.connect2x.trixnity.core.model/EventId = ...): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.copy|copy(kotlin.Long;de.connect2x.trixnity.core.model.EventId){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.toString|toString(){}[0]
+
+            final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success> { // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.$serializer|null[0]
+                final val descriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.$serializer.descriptor|{}descriptor[0]
+                    final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+                final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.$serializer.childSerializers|childSerializers(){}[0]
+                final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+                final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success) // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.DelayedEvent.Finalized.Success){}[0]
+            }
+
+            final object Companion { // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.Companion|null[0]
+                final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success> // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Success.Companion.serializer|serializer(){}[0]
+            }
+        }
+
+        final object Companion : kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized> // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Companion.serializer|serializer(){}[0]
+            final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Companion.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+        }
+
+        final object Serializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized> { // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized) // de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized.Serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.DelayedEvent.Finalized){}[0]
+        }
+    }
+
+    final class <#A1: de.connect2x.trixnity.core.model.events/MessageEventContent> DelayedMessageEvent : de.connect2x.trixnity.core.model.events/DelayedEvent<#A1> { // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent|null[0]
+        constructor <init>(kotlin/String, de.connect2x.trixnity.core.model/RoomId, kotlin/Long, kotlin/Long, #A1, de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized? = ...) // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.<init>|<init>(kotlin.String;de.connect2x.trixnity.core.model.RoomId;kotlin.Long;kotlin.Long;1:0;de.connect2x.trixnity.core.model.events.DelayedEvent.Finalized?){}[0]
+
+        final val content // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.content|{}content[0]
+            final fun <get-content>(): #A1 // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.content.<get-content>|<get-content>(){}[0]
+        final val delayId // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.delayId|{}delayId[0]
+            final fun <get-delayId>(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.delayId.<get-delayId>|<get-delayId>(){}[0]
+        final val delayMs // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.delayMs|{}delayMs[0]
+            final fun <get-delayMs>(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.delayMs.<get-delayMs>|<get-delayMs>(){}[0]
+        final val delayedSinceTs // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.delayedSinceTs|{}delayedSinceTs[0]
+            final fun <get-delayedSinceTs>(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.delayedSinceTs.<get-delayedSinceTs>|<get-delayedSinceTs>(){}[0]
+        final val finalized // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.finalized|{}finalized[0]
+            final fun <get-finalized>(): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized? // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.finalized.<get-finalized>|<get-finalized>(){}[0]
+        final val roomId // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.roomId|{}roomId[0]
+            final fun <get-roomId>(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.roomId.<get-roomId>|<get-roomId>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.component2|component2(){}[0]
+        final fun component3(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.component3|component3(){}[0]
+        final fun component4(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.component4|component4(){}[0]
+        final fun component5(): #A1 // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.component5|component5(){}[0]
+        final fun component6(): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized? // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.component6|component6(){}[0]
+        final fun copy(kotlin/String = ..., de.connect2x.trixnity.core.model/RoomId = ..., kotlin/Long = ..., kotlin/Long = ..., #A1 = ..., de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized? = ...): de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent<#A1> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.copy|copy(kotlin.String;de.connect2x.trixnity.core.model.RoomId;kotlin.Long;kotlin.Long;1:0;de.connect2x.trixnity.core.model.events.DelayedEvent.Finalized?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.toString|toString(){}[0]
+
+        final class <#A2: kotlin/Any?> $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent<#A2>> { // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.$serializer|null[0]
+            constructor <init>(kotlinx.serialization/KSerializer<#A2>) // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.$serializer.<init>|<init>(kotlinx.serialization.KSerializer<1:0>){}[0]
+
+            final val descriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+            final val typeSerial0 // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.$serializer.typeSerial0|{}typeSerial0[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent<#A2> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent<#A2>) // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.DelayedEvent.DelayedMessageEvent<1:0>){}[0]
+            final fun typeParametersSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.$serializer.typeParametersSerializers|typeParametersSerializers(){}[0]
+        }
+
+        final object Companion : kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.Companion|null[0]
+            final val $cachedDescriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.Companion.$cachedDescriptor|{}$cachedDescriptor[0]
+                final fun <get-$cachedDescriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.Companion.$cachedDescriptor.<get-$cachedDescriptor>|<get-$cachedDescriptor>(){}[0]
+
+            final fun <#A3: kotlin/Any?> serializer(kotlinx.serialization/KSerializer<#A3>): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent<#A3>> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.Companion.serializer|serializer(kotlinx.serialization.KSerializer<0:0>){0§<kotlin.Any?>}[0]
+            final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent.Companion.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+        }
+    }
+
+    final class <#A1: de.connect2x.trixnity.core.model.events/StateEventContent> DelayedStateEvent : de.connect2x.trixnity.core.model.events/DelayedEvent<#A1> { // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent|null[0]
+        constructor <init>(kotlin/String, de.connect2x.trixnity.core.model/RoomId, kotlin/String, kotlin/Long, kotlin/Long, #A1, de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized? = ...) // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.<init>|<init>(kotlin.String;de.connect2x.trixnity.core.model.RoomId;kotlin.String;kotlin.Long;kotlin.Long;1:0;de.connect2x.trixnity.core.model.events.DelayedEvent.Finalized?){}[0]
+
+        final val content // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.content|{}content[0]
+            final fun <get-content>(): #A1 // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.content.<get-content>|<get-content>(){}[0]
+        final val delayId // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.delayId|{}delayId[0]
+            final fun <get-delayId>(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.delayId.<get-delayId>|<get-delayId>(){}[0]
+        final val delayMs // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.delayMs|{}delayMs[0]
+            final fun <get-delayMs>(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.delayMs.<get-delayMs>|<get-delayMs>(){}[0]
+        final val delayedSinceTs // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.delayedSinceTs|{}delayedSinceTs[0]
+            final fun <get-delayedSinceTs>(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.delayedSinceTs.<get-delayedSinceTs>|<get-delayedSinceTs>(){}[0]
+        final val finalized // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.finalized|{}finalized[0]
+            final fun <get-finalized>(): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized? // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.finalized.<get-finalized>|<get-finalized>(){}[0]
+        final val roomId // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.roomId|{}roomId[0]
+            final fun <get-roomId>(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.roomId.<get-roomId>|<get-roomId>(){}[0]
+        final val stateKey // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.stateKey|{}stateKey[0]
+            final fun <get-stateKey>(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.stateKey.<get-stateKey>|<get-stateKey>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.component2|component2(){}[0]
+        final fun component3(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.component3|component3(){}[0]
+        final fun component4(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.component4|component4(){}[0]
+        final fun component5(): kotlin/Long // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.component5|component5(){}[0]
+        final fun component6(): #A1 // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.component6|component6(){}[0]
+        final fun component7(): de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized? // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.component7|component7(){}[0]
+        final fun copy(kotlin/String = ..., de.connect2x.trixnity.core.model/RoomId = ..., kotlin/String = ..., kotlin/Long = ..., kotlin/Long = ..., #A1 = ..., de.connect2x.trixnity.core.model.events/DelayedEvent.Finalized? = ...): de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent<#A1> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.copy|copy(kotlin.String;de.connect2x.trixnity.core.model.RoomId;kotlin.String;kotlin.Long;kotlin.Long;1:0;de.connect2x.trixnity.core.model.events.DelayedEvent.Finalized?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.toString|toString(){}[0]
+
+        final class <#A2: kotlin/Any?> $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent<#A2>> { // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.$serializer|null[0]
+            constructor <init>(kotlinx.serialization/KSerializer<#A2>) // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.$serializer.<init>|<init>(kotlinx.serialization.KSerializer<1:0>){}[0]
+
+            final val descriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+            final val typeSerial0 // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.$serializer.typeSerial0|{}typeSerial0[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent<#A2> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent<#A2>) // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.DelayedEvent.DelayedStateEvent<1:0>){}[0]
+            final fun typeParametersSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.$serializer.typeParametersSerializers|typeParametersSerializers(){}[0]
+        }
+
+        final object Companion : kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.Companion|null[0]
+            final val $cachedDescriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.Companion.$cachedDescriptor|{}$cachedDescriptor[0]
+                final fun <get-$cachedDescriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.Companion.$cachedDescriptor.<get-$cachedDescriptor>|<get-$cachedDescriptor>(){}[0]
+
+            final fun <#A3: kotlin/Any?> serializer(kotlinx.serialization/KSerializer<#A3>): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent<#A3>> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.Companion.serializer|serializer(kotlinx.serialization.KSerializer<0:0>){0§<kotlin.Any?>}[0]
+            final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent.Companion.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
         }
     }
 }
@@ -3461,6 +3655,8 @@ sealed interface de.connect2x.trixnity.core.model.events/RoomEventContent : de.c
 sealed interface de.connect2x.trixnity.core.model.events/UnsignedRoomEventData { // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData|null[0]
     abstract val age // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.age|{}age[0]
         abstract fun <get-age>(): kotlin/Long? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.age.<get-age>|<get-age>(){}[0]
+    abstract val delayId // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.delayId|{}delayId[0]
+        abstract fun <get-delayId>(): kotlin/String? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.delayId.<get-delayId>|<get-delayId>(){}[0]
     abstract val membership // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.membership|{}membership[0]
         abstract fun <get-membership>(): de.connect2x.trixnity.core.model.events.m.room/Membership? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.membership.<get-membership>|<get-membership>(){}[0]
     abstract val redactedBecause // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.redactedBecause|{}redactedBecause[0]
@@ -3473,10 +3669,12 @@ sealed interface de.connect2x.trixnity.core.model.events/UnsignedRoomEventData {
         abstract fun <get-transactionId>(): kotlin/String? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.transactionId.<get-transactionId>|<get-transactionId>(){}[0]
 
     final class UnsignedMessageEventData : de.connect2x.trixnity.core.model.events/UnsignedRoomEventData { // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData|null[0]
-        constructor <init>(kotlin/Long? = ..., de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.MessageEvent<*>? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model.events.m/Relations? = ..., de.connect2x.trixnity.core.model.events.m.room/Membership? = ..., kotlin/Long? = ...) // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.<init>|<init>(kotlin.Long?;de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent<*>?;kotlin.String?;de.connect2x.trixnity.core.model.events.m.Relations?;de.connect2x.trixnity.core.model.events.m.room.Membership?;kotlin.Long?){}[0]
+        constructor <init>(kotlin/Long? = ..., de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.MessageEvent<*>? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model.events.m/Relations? = ..., de.connect2x.trixnity.core.model.events.m.room/Membership? = ..., kotlin/Long? = ..., kotlin/String? = ...) // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.<init>|<init>(kotlin.Long?;de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent<*>?;kotlin.String?;de.connect2x.trixnity.core.model.events.m.Relations?;de.connect2x.trixnity.core.model.events.m.room.Membership?;kotlin.Long?;kotlin.String?){}[0]
 
         final val age // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.age|{}age[0]
             final fun <get-age>(): kotlin/Long? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.age.<get-age>|<get-age>(){}[0]
+        final val delayId // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.delayId|{}delayId[0]
+            final fun <get-delayId>(): kotlin/String? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.delayId.<get-delayId>|<get-delayId>(){}[0]
         final val membership // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.membership|{}membership[0]
             final fun <get-membership>(): de.connect2x.trixnity.core.model.events.m.room/Membership? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.membership.<get-membership>|<get-membership>(){}[0]
         final val redactedBecause // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.redactedBecause|{}redactedBecause[0]
@@ -3494,7 +3692,8 @@ sealed interface de.connect2x.trixnity.core.model.events/UnsignedRoomEventData {
         final fun component4(): de.connect2x.trixnity.core.model.events.m/Relations? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.component4|component4(){}[0]
         final fun component5(): de.connect2x.trixnity.core.model.events.m.room/Membership? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.component5|component5(){}[0]
         final fun component6(): kotlin/Long? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.component6|component6(){}[0]
-        final fun copy(kotlin/Long? = ..., de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.MessageEvent<*>? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model.events.m/Relations? = ..., de.connect2x.trixnity.core.model.events.m.room/Membership? = ..., kotlin/Long? = ...): de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.copy|copy(kotlin.Long?;de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent<*>?;kotlin.String?;de.connect2x.trixnity.core.model.events.m.Relations?;de.connect2x.trixnity.core.model.events.m.room.Membership?;kotlin.Long?){}[0]
+        final fun component7(): kotlin/String? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.component7|component7(){}[0]
+        final fun copy(kotlin/Long? = ..., de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.MessageEvent<*>? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model.events.m/Relations? = ..., de.connect2x.trixnity.core.model.events.m.room/Membership? = ..., kotlin/Long? = ..., kotlin/String? = ...): de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.copy|copy(kotlin.Long?;de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent<*>?;kotlin.String?;de.connect2x.trixnity.core.model.events.m.Relations?;de.connect2x.trixnity.core.model.events.m.room.Membership?;kotlin.Long?;kotlin.String?){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedMessageEventData.toString|toString(){}[0]
@@ -3516,10 +3715,12 @@ sealed interface de.connect2x.trixnity.core.model.events/UnsignedRoomEventData {
     }
 
     final class UnsignedStateEventData : de.connect2x.trixnity.core.model.events/UnsignedRoomEventData { // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData|null[0]
-        constructor <init>(kotlin/Long? = ..., de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.MessageEvent<*>? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model.events/StateEventContent? = ..., de.connect2x.trixnity.core.model.events.m/Relations? = ..., de.connect2x.trixnity.core.model.events.m.room/Membership? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? = ..., kotlin/Long? = ...) // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.<init>|<init>(kotlin.Long?;de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent<*>?;kotlin.String?;de.connect2x.trixnity.core.model.events.StateEventContent?;de.connect2x.trixnity.core.model.events.m.Relations?;de.connect2x.trixnity.core.model.events.m.room.Membership?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent<*>>?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent<*>>?;kotlin.Long?){}[0]
+        constructor <init>(kotlin/Long? = ..., de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.MessageEvent<*>? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model.events/StateEventContent? = ..., de.connect2x.trixnity.core.model.events.m/Relations? = ..., de.connect2x.trixnity.core.model.events.m.room/Membership? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? = ..., kotlin/Long? = ..., kotlin/String? = ...) // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.<init>|<init>(kotlin.Long?;de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent<*>?;kotlin.String?;de.connect2x.trixnity.core.model.events.StateEventContent?;de.connect2x.trixnity.core.model.events.m.Relations?;de.connect2x.trixnity.core.model.events.m.room.Membership?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent<*>>?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent<*>>?;kotlin.Long?;kotlin.String?){}[0]
 
         final val age // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.age|{}age[0]
             final fun <get-age>(): kotlin/Long? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.age.<get-age>|<get-age>(){}[0]
+        final val delayId // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.delayId|{}delayId[0]
+            final fun <get-delayId>(): kotlin/String? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.delayId.<get-delayId>|<get-delayId>(){}[0]
         final val inviteRoomState // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.inviteRoomState|{}inviteRoomState[0]
             final fun <get-inviteRoomState>(): kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.inviteRoomState.<get-inviteRoomState>|<get-inviteRoomState>(){}[0]
         final val knockRoomState // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.knockRoomState|{}knockRoomState[0]
@@ -3538,6 +3739,7 @@ sealed interface de.connect2x.trixnity.core.model.events/UnsignedRoomEventData {
             final fun <get-transactionId>(): kotlin/String? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.transactionId.<get-transactionId>|<get-transactionId>(){}[0]
 
         final fun component1(): kotlin/Long? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.component1|component1(){}[0]
+        final fun component10(): kotlin/String? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.component10|component10(){}[0]
         final fun component2(): de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.MessageEvent<*>? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.component2|component2(){}[0]
         final fun component3(): kotlin/String? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.component3|component3(){}[0]
         final fun component4(): de.connect2x.trixnity.core.model.events/StateEventContent? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.component4|component4(){}[0]
@@ -3546,7 +3748,7 @@ sealed interface de.connect2x.trixnity.core.model.events/UnsignedRoomEventData {
         final fun component7(): kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.component7|component7(){}[0]
         final fun component8(): kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.component8|component8(){}[0]
         final fun component9(): kotlin/Long? // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.component9|component9(){}[0]
-        final fun copy(kotlin/Long? = ..., de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.MessageEvent<*>? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model.events/StateEventContent? = ..., de.connect2x.trixnity.core.model.events.m/Relations? = ..., de.connect2x.trixnity.core.model.events.m.room/Membership? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? = ..., kotlin/Long? = ...): de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.copy|copy(kotlin.Long?;de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent<*>?;kotlin.String?;de.connect2x.trixnity.core.model.events.StateEventContent?;de.connect2x.trixnity.core.model.events.m.Relations?;de.connect2x.trixnity.core.model.events.m.room.Membership?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent<*>>?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent<*>>?;kotlin.Long?){}[0]
+        final fun copy(kotlin/Long? = ..., de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent.MessageEvent<*>? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model.events/StateEventContent? = ..., de.connect2x.trixnity.core.model.events.m/Relations? = ..., de.connect2x.trixnity.core.model.events.m.room/Membership? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events/ClientEvent.StrippedStateEvent<*>>? = ..., kotlin/Long? = ..., kotlin/String? = ...): de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.copy|copy(kotlin.Long?;de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent<*>?;kotlin.String?;de.connect2x.trixnity.core.model.events.StateEventContent?;de.connect2x.trixnity.core.model.events.m.Relations?;de.connect2x.trixnity.core.model.events.m.room.Membership?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent<*>>?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent<*>>?;kotlin.Long?;kotlin.String?){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events/UnsignedRoomEventData.UnsignedStateEventData.toString|toString(){}[0]
@@ -9730,6 +9932,24 @@ final class de.connect2x.trixnity.core.serialization.events/DecryptedMegolmEvent
 
 final class de.connect2x.trixnity.core.serialization.events/DecryptedOlmEventSerializer : de.connect2x.trixnity.core.serialization.events/BaseEventSerializer<de.connect2x.trixnity.core.model.events/EventContent, de.connect2x.trixnity.core.model.events/PlaintextOlmEvent<*>> { // de.connect2x.trixnity.core.serialization.events/DecryptedOlmEventSerializer|null[0]
     constructor <init>(kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/EventContentSerializerMapping<de.connect2x.trixnity.core.model.events/EventContent>>) // de.connect2x.trixnity.core.serialization.events/DecryptedOlmEventSerializer.<init>|<init>(kotlin.collections.Set<de.connect2x.trixnity.core.serialization.events.EventContentSerializerMapping<de.connect2x.trixnity.core.model.events.EventContent>>){}[0]
+}
+
+final class de.connect2x.trixnity.core.serialization.events/DelayedEventSerializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent<*>> { // de.connect2x.trixnity.core.serialization.events/DelayedEventSerializer|null[0]
+    constructor <init>(kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent<*>>, kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent<*>>) // de.connect2x.trixnity.core.serialization.events/DelayedEventSerializer.<init>|<init>(kotlinx.serialization.KSerializer<de.connect2x.trixnity.core.model.events.DelayedEvent.DelayedMessageEvent<*>>;kotlinx.serialization.KSerializer<de.connect2x.trixnity.core.model.events.DelayedEvent.DelayedStateEvent<*>>){}[0]
+
+    final val descriptor // de.connect2x.trixnity.core.serialization.events/DelayedEventSerializer.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.serialization.events/DelayedEventSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events/DelayedEvent<*> // de.connect2x.trixnity.core.serialization.events/DelayedEventSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events/DelayedEvent<*>) // de.connect2x.trixnity.core.serialization.events/DelayedEventSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.DelayedEvent<*>){}[0]
+}
+
+final class de.connect2x.trixnity.core.serialization.events/DelayedMessageEventSerializer : de.connect2x.trixnity.core.serialization.events/BaseEventSerializer<de.connect2x.trixnity.core.model.events/MessageEventContent, de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedMessageEvent<*>> { // de.connect2x.trixnity.core.serialization.events/DelayedMessageEventSerializer|null[0]
+    constructor <init>(kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/EventContentSerializerMapping<de.connect2x.trixnity.core.model.events/MessageEventContent>>) // de.connect2x.trixnity.core.serialization.events/DelayedMessageEventSerializer.<init>|<init>(kotlin.collections.Set<de.connect2x.trixnity.core.serialization.events.EventContentSerializerMapping<de.connect2x.trixnity.core.model.events.MessageEventContent>>){}[0]
+}
+
+final class de.connect2x.trixnity.core.serialization.events/DelayedStateEventSerializer : de.connect2x.trixnity.core.serialization.events/BaseEventSerializer<de.connect2x.trixnity.core.model.events/StateEventContent, de.connect2x.trixnity.core.model.events/DelayedEvent.DelayedStateEvent<*>> { // de.connect2x.trixnity.core.serialization.events/DelayedStateEventSerializer|null[0]
+    constructor <init>(kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/EventContentSerializerMapping<de.connect2x.trixnity.core.model.events/StateEventContent>>) // de.connect2x.trixnity.core.serialization.events/DelayedStateEventSerializer.<init>|<init>(kotlin.collections.Set<de.connect2x.trixnity.core.serialization.events.EventContentSerializerMapping<de.connect2x.trixnity.core.model.events.StateEventContent>>){}[0]
 }
 
 final class de.connect2x.trixnity.core.serialization.events/EphemeralDataUnitSerializer : de.connect2x.trixnity.core.serialization.events/BaseEventSerializer<de.connect2x.trixnity.core.model.events/EphemeralDataUnitContent, de.connect2x.trixnity.core.model.events/EphemeralDataUnit<*>> { // de.connect2x.trixnity.core.serialization.events/EphemeralDataUnitSerializer|null[0]

@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.clientserverapi.client
 
 import de.connect2x.trixnity.clientserverapi.model.room.CreateRoom
+import de.connect2x.trixnity.clientserverapi.model.room.DelayedEventAction
 import de.connect2x.trixnity.clientserverapi.model.room.DirectoryVisibility
 import de.connect2x.trixnity.clientserverapi.model.room.GetEventContext
 import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
@@ -19,6 +20,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.KnockRoom
 import de.connect2x.trixnity.clientserverapi.model.room.SendEventResponse
 import de.connect2x.trixnity.clientserverapi.model.room.ThirdParty
 import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
+import de.connect2x.trixnity.core.MSC4140
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
@@ -27,6 +29,7 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent
+import de.connect2x.trixnity.core.model.events.DelayedEvent
 import de.connect2x.trixnity.core.model.events.Event
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
@@ -37,6 +40,7 @@ import de.connect2x.trixnity.core.model.events.m.Mentions
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.TagEventContent
+import de.connect2x.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
 import de.connect2x.trixnity.core.model.events.m.room.FileInfo
 import de.connect2x.trixnity.core.model.events.m.room.ImageInfo
@@ -699,7 +703,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun shouldSendRoomEvent() = runTest {
+    fun shouldSendMessageEvent() = runTest {
         val response = SendEventResponse(EventId("event"))
         val matrixRestClient =
             MatrixClientServerApiClientImpl(
@@ -738,7 +742,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun shouldHaveErrorWhenNoEventTypeFoundOnSendingRoomEvent() = runTest {
+    fun shouldHaveErrorWhenNoEventTypeFoundOnSendingMessageEvent() = runTest {
         val matrixRestClient =
             MatrixClientServerApiClientImpl(
                 baseUrl = Url("https://matrix.host"),
@@ -763,6 +767,222 @@ class RoomApiClientTest : TrixnityBaseTest() {
                 fail("error should be of type ${IllegalArgumentException::class} but was ${error::class}")
             }
         }
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldSendDelayedStateEvent() = runTest {
+        val matrixRestClient =
+            MatrixClientServerApiClientImpl(
+                baseUrl = Url("https://matrix.host"),
+                httpClientEngine =
+                    scopedMockEngine {
+                        addHandler { request ->
+                            assertEquals(
+                                "/_matrix/client/unstable/org.matrix.msc4140/rooms/!room:server/delayed_event/m.room.name/someTxnId",
+                                request.url.fullPath,
+                            )
+                            assertEquals(HttpMethod.Put, request.method)
+                            assertEquals(
+                                """{"content":{"name":"name"},"delay_ms":60000,"state_key":"someStateKey"}""",
+                                request.body.toByteArray().decodeToString(),
+                            )
+                            respond(
+                                """{"delay_id":"someDelayId"}""",
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString()),
+                            )
+                        }
+                    },
+            )
+        val eventContent = NameEventContent("name")
+
+        val result =
+            matrixRestClient.room
+                .sendDelayedStateEvent(
+                    roomId = RoomId("!room:server"),
+                    eventContent = eventContent,
+                    stateKey = "someStateKey",
+                    txnId = "someTxnId",
+                    delayMs = 60000,
+                )
+                .getOrThrow()
+        assertEquals("someDelayId", result)
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldHaveErrorWhenNoEventTypeFoundOnSendingDelayedStateEvent() = runTest {
+        val matrixRestClient =
+            MatrixClientServerApiClientImpl(
+                baseUrl = Url("https://matrix.host"),
+                httpClientEngine = scopedMockEngine { addHandler { respondOk() } },
+            )
+        val eventContent =
+            object : StateEventContent {
+                val banana: String = "yeah"
+                override val externalUrl = null
+            }
+
+        try {
+            matrixRestClient.room
+                .sendDelayedStateEvent(
+                    roomId = RoomId("!room:server"),
+                    eventContent = eventContent,
+                    stateKey = "someStateKey",
+                    delayMs = 123,
+                )
+                .getOrThrow()
+        } catch (error: Throwable) {
+            if (error !is IllegalArgumentException) {
+                fail("error should be of type ${IllegalArgumentException::class} but was ${error::class}")
+            }
+        }
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldSendDelayedMessageEvent() = runTest {
+        val matrixRestClient =
+            MatrixClientServerApiClientImpl(
+                baseUrl = Url("https://matrix.host"),
+                httpClientEngine =
+                    scopedMockEngine {
+                        addHandler { request ->
+                            assertEquals(
+                                "/_matrix/client/unstable/org.matrix.msc4140/rooms/!room:server/delayed_event/m.room.message/someTxnId",
+                                request.url.fullPath,
+                            )
+                            assertEquals(HttpMethod.Put, request.method)
+                            assertEquals(
+                                """{"content":{"body":"hi","msgtype":"m.text"},"delay_ms":60000}""",
+                                request.body.toByteArray().decodeToString(),
+                            )
+                            respond(
+                                """{"delay_id":"someDelayId"}""",
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString()),
+                            )
+                        }
+                    },
+            )
+        val eventContent = RoomMessageEventContent.TextBased.Text("hi")
+
+        val result =
+            matrixRestClient.room
+                .sendDelayedMessageEvent(
+                    roomId = RoomId("!room:server"),
+                    eventContent = eventContent,
+                    txnId = "someTxnId",
+                    delayMs = 60000,
+                )
+                .getOrThrow()
+        assertEquals("someDelayId", result)
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldHaveErrorWhenNoEventTypeFoundOnSendingDelayedMessageEvent() = runTest {
+        val matrixRestClient =
+            MatrixClientServerApiClientImpl(
+                baseUrl = Url("https://matrix.host"),
+                httpClientEngine = scopedMockEngine { addHandler { respondOk() } },
+            )
+        val eventContent =
+            object : MessageEventContent {
+                val banana: String = "yeah"
+                override val externalUrl = null
+                override val relatesTo: RelatesTo? = null
+                override val mentions: Mentions? = null
+
+                override fun copyWith(relatesTo: RelatesTo?) = this
+            }
+
+        try {
+            matrixRestClient.room
+                .sendDelayedMessageEvent(roomId = RoomId("!room:server"), eventContent = eventContent, delayMs = 123)
+                .getOrThrow()
+        } catch (error: Throwable) {
+            if (error !is IllegalArgumentException) {
+                fail("error should be of type ${IllegalArgumentException::class} but was ${error::class}")
+            }
+        }
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldDelayedEventAction() = runTest {
+        val matrixRestClient =
+            MatrixClientServerApiClientImpl(
+                baseUrl = Url("https://matrix.host"),
+                httpClientEngine =
+                    scopedMockEngine {
+                        addHandler { request ->
+                            assertEquals(
+                                "/_matrix/client/unstable/org.matrix.msc4140/delayed_events/someDelayId/restart",
+                                request.url.fullPath,
+                            )
+                            assertEquals(HttpMethod.Post, request.method)
+                            assertEquals("""{}""", request.body.toByteArray().decodeToString())
+                            respond(
+                                """{}""",
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString()),
+                            )
+                        }
+                    },
+            )
+        matrixRestClient.room
+            .delayedEventAction(delayId = "someDelayId", action = DelayedEventAction.Action.RESTART)
+            .getOrThrow()
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldGetDelayedEvent() = runTest {
+        val matrixRestClient =
+            MatrixClientServerApiClientImpl(
+                baseUrl = Url("https://matrix.host"),
+                httpClientEngine =
+                    scopedMockEngine {
+                        addHandler { request ->
+                            assertEquals(
+                                "/_matrix/client/unstable/org.matrix.msc4140/delayed_events/someDelayId",
+                                request.url.fullPath,
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+                            respond(
+                                """
+                                {
+                                    "content": {
+                                        "alias":"#somewhere:example.org"
+                                    },
+                                    "delay_id": "delay123",
+                                    "delay_ms": 1000,
+                                    "delayed_since_ts":987654321,
+                                    "finalized":{"event_id":"eventId","finalised_ts":123},
+                                    "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+                                    "state_key": "",
+                                    "type": "m.room.canonical_alias"
+                                } 
+                                """,
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString()),
+                            )
+                        }
+                    },
+            )
+        val result = matrixRestClient.room.getDelayedEvent(delayId = "someDelayId").getOrThrow()
+        result shouldBe
+            DelayedEvent.DelayedStateEvent(
+                content = CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
+                delayId = "delay123",
+                roomId = RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
+                stateKey = "",
+                delayMs = 1000,
+                delayedSinceTs = 987654321,
+                finalized = DelayedEvent.Finalized.Success(123, EventId("eventId")),
+            )
     }
 
     @Test

@@ -1005,6 +1005,38 @@ sealed interface de.connect2x.trixnity.clientserverapi.model.server/Capability {
         }
     }
 
+    final class DelayedEvents : de.connect2x.trixnity.clientserverapi.model.server/Capability { // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents|null[0]
+        constructor <init>(kotlin/Long? = ..., kotlin/Long? = ...) // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.<init>|<init>(kotlin.Long?;kotlin.Long?){}[0]
+
+        final val maxDelayMs // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.maxDelayMs|{}maxDelayMs[0]
+            final fun <get-maxDelayMs>(): kotlin/Long? // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.maxDelayMs.<get-maxDelayMs>|<get-maxDelayMs>(){}[0]
+        final val maxScheduled // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.maxScheduled|{}maxScheduled[0]
+            final fun <get-maxScheduled>(): kotlin/Long? // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.maxScheduled.<get-maxScheduled>|<get-maxScheduled>(){}[0]
+
+        final fun component1(): kotlin/Long? // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.component1|component1(){}[0]
+        final fun component2(): kotlin/Long? // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.component2|component2(){}[0]
+        final fun copy(kotlin/Long? = ..., kotlin/Long? = ...): de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.copy|copy(kotlin.Long?;kotlin.Long?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents> { // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents) // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.server.Capability.DelayedEvents){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.Companion|null[0]
+            final const val name // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.Companion.name|{}name[0]
+                final fun <get-name>(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.Companion.name.<get-name>|<get-name>(){}[0]
+
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents> // de.connect2x.trixnity.clientserverapi.model.server/Capability.DelayedEvents.Companion.serializer|serializer(){}[0]
+        }
+    }
+
     final class ForgetForcedUponLeave : de.connect2x.trixnity.clientserverapi.model.server/Capability { // de.connect2x.trixnity.clientserverapi.model.server/Capability.ForgetForcedUponLeave|null[0]
         constructor <init>(kotlin/Boolean) // de.connect2x.trixnity.clientserverapi.model.server/Capability.ForgetForcedUponLeave.<init>|<init>(kotlin.Boolean){}[0]
 
@@ -4569,6 +4601,54 @@ final class de.connect2x.trixnity.clientserverapi.model.room/BanUser : de.connec
     }
 }
 
+final class de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction : de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, kotlin/Unit> { // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction|null[0]
+    constructor <init>(kotlin/String, de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action) // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.<init>|<init>(kotlin.String;de.connect2x.trixnity.clientserverapi.model.room.DelayedEventAction.Action){}[0]
+
+    final val action // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.action|{}action[0]
+        final fun <get-action>(): de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.action.<get-action>|<get-action>(){}[0]
+    final val delayId // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.delayId|{}delayId[0]
+        final fun <get-delayId>(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.delayId.<get-delayId>|<get-delayId>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.component1|component1(){}[0]
+    final fun component2(): de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action = ...): de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.copy|copy(kotlin.String;de.connect2x.trixnity.clientserverapi.model.room.DelayedEventAction.Action){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.toString|toString(){}[0]
+
+    final enum class Action : kotlin/Enum<de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action> { // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action|null[0]
+        enum entry CANCEL // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.CANCEL|null[0]
+        enum entry RESTART // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.RESTART|null[0]
+        enum entry SEND // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.SEND|null[0]
+
+        final val entries // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action> // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action> // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.values|values#static(){}[0]
+
+        final object Companion : kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action> // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.Companion.serializer|serializer(){}[0]
+            final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Action.Companion.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+        }
+    }
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction> { // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction) // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.room.DelayedEventAction){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Companion|null[0]
+        final val $childSerializers // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Companion.$childSerializers|{}$childSerializers[0]
+
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction> // de.connect2x.trixnity.clientserverapi.model.room/DelayedEventAction.Companion.serializer|serializer(){}[0]
+    }
+}
+
 final class de.connect2x.trixnity.clientserverapi.model.room/DeleteRoomAlias : de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, kotlin/Unit> { // de.connect2x.trixnity.clientserverapi.model.room/DeleteRoomAlias|null[0]
     constructor <init>(de.connect2x.trixnity.core.model/RoomAliasId) // de.connect2x.trixnity.clientserverapi.model.room/DeleteRoomAlias.<init>|<init>(de.connect2x.trixnity.core.model.RoomAliasId){}[0]
 
@@ -4650,6 +4730,33 @@ final class de.connect2x.trixnity.clientserverapi.model.room/ForgetRoom : de.con
 
     final object Companion { // de.connect2x.trixnity.clientserverapi.model.room/ForgetRoom.Companion|null[0]
         final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/ForgetRoom> // de.connect2x.trixnity.clientserverapi.model.room/ForgetRoom.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent : de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, de.connect2x.trixnity.core.model.events/DelayedEvent<*>> { // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent|null[0]
+    constructor <init>(kotlin/String) // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.<init>|<init>(kotlin.String){}[0]
+
+    final val delayId // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.delayId|{}delayId[0]
+        final fun <get-delayId>(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.delayId.<get-delayId>|<get-delayId>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.component1|component1(){}[0]
+    final fun copy(kotlin/String = ...): de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.copy|copy(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.hashCode|hashCode(){}[0]
+    final fun responseSerializerBuilder(de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings, kotlinx.serialization.json/Json, de.connect2x.trixnity.core.model.events/DelayedEvent<*>?): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/DelayedEvent<*>> // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.responseSerializerBuilder|responseSerializerBuilder(de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings;kotlinx.serialization.json.Json;de.connect2x.trixnity.core.model.events.DelayedEvent<*>?){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent> { // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent) // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.room.GetDelayedEvent){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent> // de.connect2x.trixnity.clientserverapi.model.room/GetDelayedEvent.Companion.serializer|serializer(){}[0]
     }
 }
 
@@ -6626,6 +6733,221 @@ final class de.connect2x.trixnity.clientserverapi.model.room/ReportRoom : de.con
 
     final object Companion { // de.connect2x.trixnity.clientserverapi.model.room/ReportRoom.Companion|null[0]
         final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/ReportRoom> // de.connect2x.trixnity.clientserverapi.model.room/ReportRoom.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent : de.connect2x.trixnity.core/MatrixEndpoint<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response> { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent|null[0]
+    constructor <init>(de.connect2x.trixnity.core.model/RoomId, kotlin/String, kotlin/String, kotlin/Long? = ...) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.<init>|<init>(de.connect2x.trixnity.core.model.RoomId;kotlin.String;kotlin.String;kotlin.Long?){}[0]
+
+    final val roomId // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.roomId|{}roomId[0]
+        final fun <get-roomId>(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.roomId.<get-roomId>|<get-roomId>(){}[0]
+    final val ts // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.ts|{}ts[0]
+        final fun <get-ts>(): kotlin/Long? // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.ts.<get-ts>|<get-ts>(){}[0]
+    final val txnId // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.txnId|{}txnId[0]
+        final fun <get-txnId>(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.txnId.<get-txnId>|<get-txnId>(){}[0]
+    final val type // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.type|{}type[0]
+        final fun <get-type>(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.type.<get-type>|<get-type>(){}[0]
+
+    final fun component1(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.component1|component1(){}[0]
+    final fun component2(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.component2|component2(){}[0]
+    final fun component3(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.component3|component3(){}[0]
+    final fun component4(): kotlin/Long? // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.component4|component4(){}[0]
+    final fun copy(de.connect2x.trixnity.core.model/RoomId = ..., kotlin/String = ..., kotlin/String = ..., kotlin/Long? = ...): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.copy|copy(de.connect2x.trixnity.core.model.RoomId;kotlin.String;kotlin.String;kotlin.Long?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.hashCode|hashCode(){}[0]
+    final fun requestSerializerBuilder(de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings, kotlinx.serialization.json/Json, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request?): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.requestSerializerBuilder|requestSerializerBuilder(de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings;kotlinx.serialization.json.Json;de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent.Request?){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.toString|toString(){}[0]
+
+    sealed interface Request { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request|null[0]
+        abstract val content // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.content|{}content[0]
+            abstract fun <get-content>(): de.connect2x.trixnity.core.model.events/RoomEventContent // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.content.<get-content>|<get-content>(){}[0]
+        abstract val delayMs // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.delayMs|{}delayMs[0]
+            abstract fun <get-delayMs>(): kotlin/Long // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.delayMs.<get-delayMs>|<get-delayMs>(){}[0]
+
+        final class Message : de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message|null[0]
+            constructor <init>(de.connect2x.trixnity.core.model.events/MessageEventContent, kotlin/Long) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.<init>|<init>(de.connect2x.trixnity.core.model.events.MessageEventContent;kotlin.Long){}[0]
+
+            final val content // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.content|{}content[0]
+                final fun <get-content>(): de.connect2x.trixnity.core.model.events/MessageEventContent // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.content.<get-content>|<get-content>(){}[0]
+            final val delayMs // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.delayMs|{}delayMs[0]
+                final fun <get-delayMs>(): kotlin/Long // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.delayMs.<get-delayMs>|<get-delayMs>(){}[0]
+
+            final fun component1(): de.connect2x.trixnity.core.model.events/MessageEventContent // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.component1|component1(){}[0]
+            final fun component2(): kotlin/Long // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.component2|component2(){}[0]
+            final fun copy(de.connect2x.trixnity.core.model.events/MessageEventContent = ..., kotlin/Long = ...): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.copy|copy(de.connect2x.trixnity.core.model.events.MessageEventContent;kotlin.Long){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.toString|toString(){}[0]
+
+            final class <#A3: de.connect2x.trixnity.core.model.events/MessageEventContent> SerializableMessage { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage|null[0]
+                constructor <init>(#A3, kotlin/Long) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.<init>|<init>(1:0;kotlin.Long){}[0]
+
+                final val content // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.content|{}content[0]
+                    final fun <get-content>(): #A3 // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.content.<get-content>|<get-content>(){}[0]
+                final val delayMs // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.delayMs|{}delayMs[0]
+                    final fun <get-delayMs>(): kotlin/Long // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.delayMs.<get-delayMs>|<get-delayMs>(){}[0]
+
+                final fun component1(): #A3 // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.component1|component1(){}[0]
+                final fun component2(): kotlin/Long // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.component2|component2(){}[0]
+                final fun copy(#A3 = ..., kotlin/Long = ...): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage<#A3> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.copy|copy(1:0;kotlin.Long){}[0]
+                final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.equals|equals(kotlin.Any?){}[0]
+                final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.hashCode|hashCode(){}[0]
+                final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.toString|toString(){}[0]
+
+                final class <#A4: kotlin/Any?> $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage<#A4>> { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.$serializer|null[0]
+                    constructor <init>(kotlinx.serialization/KSerializer<#A4>) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.$serializer.<init>|<init>(kotlinx.serialization.KSerializer<1:0>){}[0]
+
+                    final val descriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.$serializer.descriptor|{}descriptor[0]
+                        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+                    final val typeSerial0 // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.$serializer.typeSerial0|{}typeSerial0[0]
+
+                    final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.$serializer.childSerializers|childSerializers(){}[0]
+                    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage<#A4> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+                    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage<#A4>) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent.Request.Message.SerializableMessage<1:0>){}[0]
+                    final fun typeParametersSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.$serializer.typeParametersSerializers|typeParametersSerializers(){}[0]
+                }
+
+                final object Companion : kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.Companion|null[0]
+                    final val $cachedDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.Companion.$cachedDescriptor|{}$cachedDescriptor[0]
+                        final fun <get-$cachedDescriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.Companion.$cachedDescriptor.<get-$cachedDescriptor>|<get-$cachedDescriptor>(){}[0]
+
+                    final fun <#A5: kotlin/Any?> serializer(kotlinx.serialization/KSerializer<#A5>): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage<#A5>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.Companion.serializer|serializer(kotlinx.serialization.KSerializer<0:0>){0§<kotlin.Any?>}[0]
+                    final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage.Companion.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+                }
+            }
+
+            final class Serializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message> { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.Serializer|null[0]
+                constructor <init>(kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/MessageEventContent>) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.Serializer.<init>|<init>(kotlinx.serialization.KSerializer<de.connect2x.trixnity.core.model.events.MessageEventContent>){}[0]
+
+                final val delegateSerializer // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.Serializer.delegateSerializer|{}delegateSerializer[0]
+                    final fun <get-delegateSerializer>(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.SerializableMessage<de.connect2x.trixnity.core.model.events/MessageEventContent>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.Serializer.delegateSerializer.<get-delegateSerializer>|<get-delegateSerializer>(){}[0]
+                final val descriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.Serializer.descriptor|{}descriptor[0]
+                    final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.Serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+                final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.Serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+                final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Message.Serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent.Request.Message){}[0]
+            }
+        }
+
+        final class Serializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request> { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Serializer|null[0]
+            constructor <init>(kotlin/String, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request?, de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Serializer.<init>|<init>(kotlin.String;de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent.Request?;de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings){}[0]
+
+            final val descriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.Serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent.Request){}[0]
+        }
+
+        final class State : de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State|null[0]
+            constructor <init>(de.connect2x.trixnity.core.model.events/StateEventContent, kotlin/Long, kotlin/String) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.<init>|<init>(de.connect2x.trixnity.core.model.events.StateEventContent;kotlin.Long;kotlin.String){}[0]
+
+            final val content // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.content|{}content[0]
+                final fun <get-content>(): de.connect2x.trixnity.core.model.events/StateEventContent // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.content.<get-content>|<get-content>(){}[0]
+            final val delayMs // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.delayMs|{}delayMs[0]
+                final fun <get-delayMs>(): kotlin/Long // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.delayMs.<get-delayMs>|<get-delayMs>(){}[0]
+            final val stateKey // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.stateKey|{}stateKey[0]
+                final fun <get-stateKey>(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.stateKey.<get-stateKey>|<get-stateKey>(){}[0]
+
+            final fun component1(): de.connect2x.trixnity.core.model.events/StateEventContent // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.component1|component1(){}[0]
+            final fun component2(): kotlin/Long // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.component2|component2(){}[0]
+            final fun component3(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.component3|component3(){}[0]
+            final fun copy(de.connect2x.trixnity.core.model.events/StateEventContent = ..., kotlin/Long = ..., kotlin/String = ...): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.copy|copy(de.connect2x.trixnity.core.model.events.StateEventContent;kotlin.Long;kotlin.String){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.toString|toString(){}[0]
+
+            final class <#A3: de.connect2x.trixnity.core.model.events/StateEventContent> SerializableState { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState|null[0]
+                constructor <init>(#A3, kotlin/Long, kotlin/String) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.<init>|<init>(1:0;kotlin.Long;kotlin.String){}[0]
+
+                final val content // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.content|{}content[0]
+                    final fun <get-content>(): #A3 // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.content.<get-content>|<get-content>(){}[0]
+                final val delayMs // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.delayMs|{}delayMs[0]
+                    final fun <get-delayMs>(): kotlin/Long // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.delayMs.<get-delayMs>|<get-delayMs>(){}[0]
+                final val stateKey // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.stateKey|{}stateKey[0]
+                    final fun <get-stateKey>(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.stateKey.<get-stateKey>|<get-stateKey>(){}[0]
+
+                final fun component1(): #A3 // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.component1|component1(){}[0]
+                final fun component2(): kotlin/Long // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.component2|component2(){}[0]
+                final fun component3(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.component3|component3(){}[0]
+                final fun copy(#A3 = ..., kotlin/Long = ..., kotlin/String = ...): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState<#A3> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.copy|copy(1:0;kotlin.Long;kotlin.String){}[0]
+                final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.equals|equals(kotlin.Any?){}[0]
+                final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.hashCode|hashCode(){}[0]
+                final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.toString|toString(){}[0]
+
+                final class <#A4: kotlin/Any?> $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState<#A4>> { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.$serializer|null[0]
+                    constructor <init>(kotlinx.serialization/KSerializer<#A4>) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.$serializer.<init>|<init>(kotlinx.serialization.KSerializer<1:0>){}[0]
+
+                    final val descriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.$serializer.descriptor|{}descriptor[0]
+                        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+                    final val typeSerial0 // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.$serializer.typeSerial0|{}typeSerial0[0]
+
+                    final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.$serializer.childSerializers|childSerializers(){}[0]
+                    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState<#A4> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+                    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState<#A4>) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent.Request.State.SerializableState<1:0>){}[0]
+                    final fun typeParametersSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.$serializer.typeParametersSerializers|typeParametersSerializers(){}[0]
+                }
+
+                final object Companion : kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.Companion|null[0]
+                    final val $cachedDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.Companion.$cachedDescriptor|{}$cachedDescriptor[0]
+                        final fun <get-$cachedDescriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.Companion.$cachedDescriptor.<get-$cachedDescriptor>|<get-$cachedDescriptor>(){}[0]
+
+                    final fun <#A5: kotlin/Any?> serializer(kotlinx.serialization/KSerializer<#A5>): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState<#A5>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.Companion.serializer|serializer(kotlinx.serialization.KSerializer<0:0>){0§<kotlin.Any?>}[0]
+                    final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState.Companion.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+                }
+            }
+
+            final class Serializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State> { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.Serializer|null[0]
+                constructor <init>(kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/StateEventContent>) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.Serializer.<init>|<init>(kotlinx.serialization.KSerializer<de.connect2x.trixnity.core.model.events.StateEventContent>){}[0]
+
+                final val delegateSerializer // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.Serializer.delegateSerializer|{}delegateSerializer[0]
+                    final fun <get-delegateSerializer>(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.SerializableState<de.connect2x.trixnity.core.model.events/StateEventContent>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.Serializer.delegateSerializer.<get-delegateSerializer>|<get-delegateSerializer>(){}[0]
+                final val descriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.Serializer.descriptor|{}descriptor[0]
+                    final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.Serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+                final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.Serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+                final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Request.State.Serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent.Request.State){}[0]
+            }
+        }
+    }
+
+    final class Response { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response|null[0]
+        constructor <init>(kotlin/String) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.<init>|<init>(kotlin.String){}[0]
+
+        final val delayId // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.delayId|{}delayId[0]
+            final fun <get-delayId>(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.delayId.<get-delayId>|<get-delayId>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response> { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent.Response){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Response.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent> { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent) // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent> // de.connect2x.trixnity.clientserverapi.model.room/SendDelayedEvent.Companion.serializer|serializer(){}[0]
     }
 }
 

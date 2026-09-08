@@ -1318,6 +1318,9 @@ public abstract interface annotation class de/connect2x/trixnity/core/MSC2448 : 
 public abstract interface annotation class de/connect2x/trixnity/core/MSC3814 : java/lang/annotation/Annotation {
 }
 
+public abstract interface annotation class de/connect2x/trixnity/core/MSC4140 : java/lang/annotation/Annotation {
+}
+
 public abstract interface annotation class de/connect2x/trixnity/core/MSC4143 : java/lang/annotation/Annotation {
 }
 
@@ -1814,6 +1817,170 @@ public final synthetic class de/connect2x/trixnity/core/model/events/DecryptedMe
 
 public final class de/connect2x/trixnity/core/model/events/DecryptedMegolmEvent$Companion {
 	public final fun serializer (Lkotlinx/serialization/KSerializer;)Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class de/connect2x/trixnity/core/model/events/DelayedEvent : de/connect2x/trixnity/core/model/events/Event {
+	public abstract fun getDelayId ()Ljava/lang/String;
+	public abstract fun getDelayMs ()J
+	public abstract fun getDelayedSinceTs ()J
+	public abstract fun getFinalized ()Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;
+	public abstract fun getRoomId-7hZGZBE ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$DelayedMessageEvent : de/connect2x/trixnity/core/model/events/DelayedEvent {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedMessageEvent$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JJLde/connect2x/trixnity/core/model/events/MessageEventContent;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JJLde/connect2x/trixnity/core/model/events/MessageEventContent;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2-7hZGZBE ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()Lde/connect2x/trixnity/core/model/events/MessageEventContent;
+	public final fun component6 ()Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;
+	public final fun copy-Tr2lM24 (Ljava/lang/String;Ljava/lang/String;JJLde/connect2x/trixnity/core/model/events/MessageEventContent;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedMessageEvent;
+	public static synthetic fun copy-Tr2lM24$default (Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedMessageEvent;Ljava/lang/String;Ljava/lang/String;JJLde/connect2x/trixnity/core/model/events/MessageEventContent;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedMessageEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public synthetic fun getContent ()Lde/connect2x/trixnity/core/model/events/EventContent;
+	public fun getContent ()Lde/connect2x/trixnity/core/model/events/MessageEventContent;
+	public fun getDelayId ()Ljava/lang/String;
+	public fun getDelayMs ()J
+	public fun getDelayedSinceTs ()J
+	public fun getFinalized ()Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;
+	public fun getRoomId-7hZGZBE ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/core/model/events/DelayedEvent$DelayedMessageEvent$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public fun <init> (Lkotlinx/serialization/KSerializer;)V
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedMessageEvent;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedMessageEvent;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$DelayedMessageEvent$Companion {
+	public final fun serializer (Lkotlinx/serialization/KSerializer;)Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$DelayedStateEvent : de/connect2x/trixnity/core/model/events/DelayedEvent {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedStateEvent$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJLde/connect2x/trixnity/core/model/events/StateEventContent;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJLde/connect2x/trixnity/core/model/events/StateEventContent;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2-7hZGZBE ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()Lde/connect2x/trixnity/core/model/events/StateEventContent;
+	public final fun component7 ()Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;
+	public final fun copy-74qmn8Q (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJLde/connect2x/trixnity/core/model/events/StateEventContent;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedStateEvent;
+	public static synthetic fun copy-74qmn8Q$default (Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedStateEvent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJLde/connect2x/trixnity/core/model/events/StateEventContent;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedStateEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public synthetic fun getContent ()Lde/connect2x/trixnity/core/model/events/EventContent;
+	public fun getContent ()Lde/connect2x/trixnity/core/model/events/StateEventContent;
+	public fun getDelayId ()Ljava/lang/String;
+	public fun getDelayMs ()J
+	public fun getDelayedSinceTs ()J
+	public fun getFinalized ()Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;
+	public fun getRoomId-7hZGZBE ()Ljava/lang/String;
+	public final fun getStateKey ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/core/model/events/DelayedEvent$DelayedStateEvent$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public fun <init> (Lkotlinx/serialization/KSerializer;)V
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedStateEvent;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/DelayedEvent$DelayedStateEvent;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$DelayedStateEvent$Companion {
+	public final fun serializer (Lkotlinx/serialization/KSerializer;)Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Companion;
+	public abstract fun getFinalizedTs ()J
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error : de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error$Companion;
+	public fun <init> (JLde/connect2x/trixnity/core/ErrorResponse;)V
+	public final fun component1 ()J
+	public final fun component2 ()Lde/connect2x/trixnity/core/ErrorResponse;
+	public final fun copy (JLde/connect2x/trixnity/core/ErrorResponse;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error;JLde/connect2x/trixnity/core/ErrorResponse;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lde/connect2x/trixnity/core/ErrorResponse;
+	public fun getFinalizedTs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Error$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Serializer : kotlinx/serialization/KSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Serializer;
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success : de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success$Companion;
+	public synthetic fun <init> (JLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2-33FGWrg ()Ljava/lang/String;
+	public final fun copy-e5Yuz5w (JLjava/lang/String;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success;
+	public static synthetic fun copy-e5Yuz5w$default (Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success;JLjava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEventId-33FGWrg ()Ljava/lang/String;
+	public fun getFinalizedTs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/DelayedEvent$Finalized$Success$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
 public final class de/connect2x/trixnity/core/model/events/EmptyEventContent : de/connect2x/trixnity/core/model/events/EphemeralDataUnitContent, de/connect2x/trixnity/core/model/events/EphemeralEventContent, de/connect2x/trixnity/core/model/events/EventContent, de/connect2x/trixnity/core/model/events/GlobalAccountDataEventContent, de/connect2x/trixnity/core/model/events/MessageEventContent, de/connect2x/trixnity/core/model/events/RoomAccountDataEventContent, de/connect2x/trixnity/core/model/events/RoomEventContent, de/connect2x/trixnity/core/model/events/StateEventContent, de/connect2x/trixnity/core/model/events/ToDeviceEventContent {
@@ -2513,6 +2680,7 @@ public final class de/connect2x/trixnity/core/model/events/UnknownEventContent :
 
 public abstract interface class de/connect2x/trixnity/core/model/events/UnsignedRoomEventData {
 	public abstract fun getAge ()Ljava/lang/Long;
+	public abstract fun getDelayId ()Ljava/lang/String;
 	public abstract fun getMembership ()Lde/connect2x/trixnity/core/model/events/m/room/Membership;
 	public abstract fun getRedactedBecause ()Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;
 	public abstract fun getRelations-T1jyR3U ()Ljava/util/Map;
@@ -2522,18 +2690,20 @@ public abstract interface class de/connect2x/trixnity/core/model/events/Unsigned
 
 public final class de/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedMessageEventData : de/connect2x/trixnity/core/model/events/UnsignedRoomEventData {
 	public static final field Companion Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedMessageEventData$Companion;
-	public synthetic fun <init> (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/lang/Long;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/lang/Long;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/Long;
 	public final fun component2 ()Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4-T1jyR3U ()Ljava/util/Map;
 	public final fun component5 ()Lde/connect2x/trixnity/core/model/events/m/room/Membership;
 	public final fun component6 ()Ljava/lang/Long;
-	public final fun copy-pPtlYrY (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/lang/Long;)Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedMessageEventData;
-	public static synthetic fun copy-pPtlYrY$default (Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedMessageEventData;Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/lang/Long;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedMessageEventData;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy-GnYFoUc (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/lang/Long;Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedMessageEventData;
+	public static synthetic fun copy-GnYFoUc$default (Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedMessageEventData;Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/lang/Long;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedMessageEventData;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getAge ()Ljava/lang/Long;
+	public fun getDelayId ()Ljava/lang/String;
 	public fun getMembership ()Lde/connect2x/trixnity/core/model/events/m/room/Membership;
 	public fun getRedactedBecause ()Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;
 	public fun getRelations-T1jyR3U ()Ljava/util/Map;
@@ -2560,9 +2730,10 @@ public final class de/connect2x/trixnity/core/model/events/UnsignedRoomEventData
 
 public final class de/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedStateEventData : de/connect2x/trixnity/core/model/events/UnsignedRoomEventData {
 	public static final field Companion Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedStateEventData$Companion;
-	public synthetic fun <init> (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/StateEventContent;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/StateEventContent;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/StateEventContent;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/StateEventContent;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/Long;
+	public final fun component10 ()Ljava/lang/String;
 	public final fun component2 ()Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Lde/connect2x/trixnity/core/model/events/StateEventContent;
@@ -2571,10 +2742,11 @@ public final class de/connect2x/trixnity/core/model/events/UnsignedRoomEventData
 	public final fun component7 ()Ljava/util/List;
 	public final fun component8 ()Ljava/util/List;
 	public final fun component9 ()Ljava/lang/Long;
-	public final fun copy-X1Zyj3g (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/StateEventContent;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;)Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedStateEventData;
-	public static synthetic fun copy-X1Zyj3g$default (Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedStateEventData;Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/StateEventContent;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedStateEventData;
+	public final fun copy-jgHpIS0 (Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/StateEventContent;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedStateEventData;
+	public static synthetic fun copy-jgHpIS0$default (Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedStateEventData;Ljava/lang/Long;Lde/connect2x/trixnity/core/model/events/ClientEvent$RoomEvent$MessageEvent;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/StateEventContent;Ljava/util/Map;Lde/connect2x/trixnity/core/model/events/m/room/Membership;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/UnsignedRoomEventData$UnsignedStateEventData;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getAge ()Ljava/lang/Long;
+	public fun getDelayId ()Ljava/lang/String;
 	public final fun getInviteRoomState ()Ljava/util/List;
 	public final fun getKnockRoomState ()Ljava/util/List;
 	public fun getMembership ()Lde/connect2x/trixnity/core/model/events/m/room/Membership;
@@ -9971,6 +10143,23 @@ public final class de/connect2x/trixnity/core/serialization/events/DecryptedMego
 }
 
 public final class de/connect2x/trixnity/core/serialization/events/DecryptedOlmEventSerializer : de/connect2x/trixnity/core/serialization/events/BaseEventSerializer {
+	public fun <init> (Ljava/util/Set;)V
+}
+
+public final class de/connect2x/trixnity/core/serialization/events/DelayedEventSerializer : kotlinx/serialization/KSerializer {
+	public fun <init> (Lkotlinx/serialization/KSerializer;Lkotlinx/serialization/KSerializer;)V
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/DelayedEvent;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/DelayedEvent;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/core/serialization/events/DelayedMessageEventSerializer : de/connect2x/trixnity/core/serialization/events/BaseEventSerializer {
+	public fun <init> (Ljava/util/Set;)V
+}
+
+public final class de/connect2x/trixnity/core/serialization/events/DelayedStateEventSerializer : de/connect2x/trixnity/core/serialization/events/BaseEventSerializer {
 	public fun <init> (Ljava/util/Set;)V
 }
 

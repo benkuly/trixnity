@@ -3,6 +3,7 @@ package de.connect2x.trixnity.clientserverapi.server
 import de.connect2x.trixnity.api.server.matrixApiServer
 import de.connect2x.trixnity.clientserverapi.model.room.BanUser
 import de.connect2x.trixnity.clientserverapi.model.room.CreateRoom
+import de.connect2x.trixnity.clientserverapi.model.room.DelayedEventAction
 import de.connect2x.trixnity.clientserverapi.model.room.DirectoryVisibility
 import de.connect2x.trixnity.clientserverapi.model.room.GetDirectoryVisibility
 import de.connect2x.trixnity.clientserverapi.model.room.GetEventContext
@@ -31,6 +32,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.LeaveRoom
 import de.connect2x.trixnity.clientserverapi.model.room.RedactEvent
 import de.connect2x.trixnity.clientserverapi.model.room.ReportEvent
 import de.connect2x.trixnity.clientserverapi.model.room.ReportRoom
+import de.connect2x.trixnity.clientserverapi.model.room.SendDelayedEvent
 import de.connect2x.trixnity.clientserverapi.model.room.SendEventResponse
 import de.connect2x.trixnity.clientserverapi.model.room.SetDirectoryVisibility
 import de.connect2x.trixnity.clientserverapi.model.room.SetReadMarkers
@@ -40,6 +42,7 @@ import de.connect2x.trixnity.clientserverapi.model.room.ThirdParty
 import de.connect2x.trixnity.clientserverapi.model.room.TimestampToEvent
 import de.connect2x.trixnity.clientserverapi.model.room.UnbanUser
 import de.connect2x.trixnity.clientserverapi.model.room.UpgradeRoom
+import de.connect2x.trixnity.core.MSC4140
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
@@ -48,6 +51,7 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent
+import de.connect2x.trixnity.core.model.events.DelayedEvent
 import de.connect2x.trixnity.core.model.events.UnknownEventContent
 import de.connect2x.trixnity.core.model.events.UnsignedRoomEventData
 import de.connect2x.trixnity.core.model.events.block.EventContentBlock
@@ -56,6 +60,7 @@ import de.connect2x.trixnity.core.model.events.m.FullyReadEventContent
 import de.connect2x.trixnity.core.model.events.m.ReceiptType
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.TagEventContent
+import de.connect2x.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
 import de.connect2x.trixnity.core.model.events.m.room.FileInfo
 import de.connect2x.trixnity.core.model.events.m.room.ImageInfo
@@ -85,7 +90,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
-import io.ktor.utils.io.charsets.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlinx.serialization.json.JsonObject
@@ -911,6 +915,150 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                 }
             )
         }
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldSendDelayedMessageEvent() = testApplication {
+        initCut()
+        everySuspend { handlerMock.sendDelayedEvent(any()) }.returns(SendDelayedEvent.Response("someDelayId"))
+        val response =
+            client.put(
+                "/_matrix/client/unstable/org.matrix.msc4140/rooms/!room:server/delayed_event/m.room.message/someTxnId"
+            ) {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"content":{"body":"hi","msgtype":"m.text"},"delay_ms":60000}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json
+            this.body<String>() shouldBe
+                """
+               {
+                  "delay_id":"someDelayId"
+               }
+            """
+                    .trimToFlatJson()
+        }
+        verifySuspend {
+            handlerMock.sendDelayedEvent(
+                assert {
+                    it.endpoint.roomId shouldBe RoomId("!room:server")
+                    it.endpoint.txnId shouldBe "someTxnId"
+                    it.endpoint.type shouldBe "m.room.message"
+                    it.requestBody shouldBe
+                        SendDelayedEvent.Request.Message(RoomMessageEventContent.TextBased.Text("hi"), 60_000)
+                }
+            )
+        }
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldSendDelayedStateEvent() = testApplication {
+        initCut()
+        everySuspend { handlerMock.sendDelayedEvent(any()) }.returns(SendDelayedEvent.Response("someDelayId"))
+        val response =
+            client.put(
+                "/_matrix/client/unstable/org.matrix.msc4140/rooms/!room:server/delayed_event/m.room.name/someTxnId"
+            ) {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"content":{"name":"name"},"delay_ms":60000,"state_key":"someStateKey"}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json
+            this.body<String>() shouldBe
+                """
+               {
+                  "delay_id":"someDelayId"
+               }
+            """
+                    .trimToFlatJson()
+        }
+        verifySuspend {
+            handlerMock.sendDelayedEvent(
+                assert {
+                    it.endpoint.roomId shouldBe RoomId("!room:server")
+                    it.endpoint.txnId shouldBe "someTxnId"
+                    it.endpoint.type shouldBe "m.room.name"
+                    it.requestBody shouldBe
+                        SendDelayedEvent.Request.State(NameEventContent("name"), 60_000, "someStateKey")
+                }
+            )
+        }
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldDelayedEventAction() = testApplication {
+        initCut()
+        everySuspend { handlerMock.delayedEventAction(any()) }.returns(Unit)
+        val response =
+            client.post("/_matrix/client/unstable/org.matrix.msc4140/delayed_events/someDelayId/restart") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json
+            this.body<String>() shouldBe "{}"
+        }
+        verifySuspend {
+            handlerMock.delayedEventAction(
+                assert {
+                    it.endpoint.delayId shouldBe "someDelayId"
+                    it.endpoint.action shouldBe DelayedEventAction.Action.RESTART
+                }
+            )
+        }
+    }
+
+    @Test
+    @OptIn(MSC4140::class)
+    fun shouldGetDelayedEvent() = testApplication {
+        initCut()
+        everySuspend { handlerMock.getDelayedEvent(any()) }
+            .returns(
+                DelayedEvent.DelayedStateEvent(
+                    content = CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
+                    delayId = "delay123",
+                    roomId = RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
+                    stateKey = "",
+                    delayMs = 1000,
+                    delayedSinceTs = 987654321,
+                    finalized = DelayedEvent.Finalized.Success(123, EventId("eventId")),
+                )
+            )
+        val response =
+            client.get("/_matrix/client/unstable/org.matrix.msc4140/delayed_events/someDelayId") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json
+            this.body<String>() shouldBe
+                """
+                {
+                    "content": {
+                        "alias":"#somewhere:example.org"
+                    },
+                    "delay_id": "delay123",
+                    "delay_ms": 1000,
+                    "delayed_since_ts":987654321,
+                    "finalized":{"event_id":"eventId","finalised_ts":123},
+                    "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+                    "state_key": "",
+                    "type": "m.room.canonical_alias"
+                } 
+            """
+                    .trimToFlatJson()
+        }
+        verifySuspend { handlerMock.getDelayedEvent(assert { it.endpoint.delayId shouldBe "someDelayId" }) }
     }
 
     @Test

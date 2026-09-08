@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.clientserverapi.server
 
 import de.connect2x.trixnity.api.server.matrixEndpoint
+import de.connect2x.trixnity.core.MSC4140
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
@@ -18,6 +19,9 @@ internal fun Route.roomApiRoutes(handler: RoomApiHandler, json: Json, contentMap
     matrixEndpoint(json, contentMappings, handler::getThreads)
     matrixEndpoint(json, contentMappings, handler::sendStateEvent)
     matrixEndpoint(json, contentMappings, handler::sendMessageEvent)
+    @OptIn(MSC4140::class) matrixEndpoint(json, contentMappings, handler::sendDelayedEvent)
+    @OptIn(MSC4140::class) matrixEndpoint(json, contentMappings, handler::delayedEventAction)
+    @OptIn(MSC4140::class) matrixEndpoint(json, contentMappings, handler::getDelayedEvent)
     matrixEndpoint(json, contentMappings, handler::redactEvent)
     matrixEndpoint(json, contentMappings, handler::createRoom)
     matrixEndpoint(json, contentMappings, handler::setRoomAlias)

@@ -1,5 +1,6 @@
 package de.connect2x.trixnity.core.model.events
 
+import de.connect2x.trixnity.core.MSC4140
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent
@@ -17,7 +18,8 @@ sealed interface UnsignedRoomEventData {
     val transactionId: String?
     val relations: Relations?
     val membership: Membership?
-    val stickyDurationTtlMs: Long?
+    @MSC4354 val stickyDurationTtlMs: Long?
+    @MSC4140 val delayId: String?
 
     @Serializable
     data class UnsignedMessageEventData(
@@ -31,6 +33,11 @@ sealed interface UnsignedRoomEventData {
         @JsonNames("sticky_duration_ttl_ms")
         @SerialName("msc4354_sticky_duration_ttl_ms")
         override val stickyDurationTtlMs: Long? = null,
+        @MSC4140
+        @OptIn(ExperimentalSerializationApi::class)
+        @JsonNames("delay_id")
+        @SerialName("org.matrix.msc4140.delay_id")
+        override val delayId: String? = null,
     ) : UnsignedRoomEventData
 
     @Serializable
@@ -48,5 +55,10 @@ sealed interface UnsignedRoomEventData {
         @JsonNames("sticky_duration_ttl_ms")
         @SerialName("msc4354_sticky_duration_ttl_ms")
         override val stickyDurationTtlMs: Long? = null,
+        @MSC4140
+        @OptIn(ExperimentalSerializationApi::class)
+        @JsonNames("delay_id")
+        @SerialName("org.matrix.msc4140.delay_id")
+        override val delayId: String? = null,
     ) : UnsignedRoomEventData
 }
