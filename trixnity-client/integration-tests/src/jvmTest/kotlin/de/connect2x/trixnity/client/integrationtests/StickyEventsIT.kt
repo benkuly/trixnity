@@ -16,6 +16,7 @@ import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import io.ktor.http.*
 import kotlin.test.AfterTest
@@ -102,7 +103,7 @@ class StickyEventsIT : TrixnityBaseTest() {
                     RtcMemberEventContent.Join(
                         slotId = CallRtcApplication.SLOT_ID,
                         application = CallRtcApplication.Member(),
-                        member = RtcMemberEventContent.Member(id = "{member_id}"),
+                        member = RtcMemberEventContent.Member(id = RtcMemberId("{member_id}")),
                         stickyKey = "{member_id}",
                     )
                 startedClient1.client.room.sendMessage(roomId, stickyDuration = 1.minutes) {

@@ -17,6 +17,7 @@ import de.connect2x.trixnity.core.model.events.StickyEventContent
 import de.connect2x.trixnity.core.model.events.StickyEventData
 import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
@@ -58,7 +59,7 @@ class StickyEventStoreTest : TrixnityBaseTest() {
             content =
                 RtcMemberEventContent.Join(
                     CallRtcApplication.SLOT_ID,
-                    RtcMemberEventContent.Member("memberId"),
+                    RtcMemberEventContent.Member(RtcMemberId("memberId")),
                     CallRtcApplication.Member(),
                     null,
                     "sticky_key",

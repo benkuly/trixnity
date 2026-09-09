@@ -78,7 +78,7 @@ sealed interface RtcMemberEventContent : StickyEventContent {
         data class Reason(@SerialName("code") val code: String, @SerialName("reason") val reason: String? = null)
     }
 
-    @MSC4143 @Serializable data class Member(@SerialName("id") val id: String)
+    @MSC4143 @Serializable data class Member(@SerialName("id") val id: RtcMemberId)
 
     @MSC4143
     @Serializable

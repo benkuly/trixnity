@@ -98,6 +98,7 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent.Fi
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased
 import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import de.connect2x.trixnity.core.model.keys.Key
 import de.connect2x.trixnity.core.model.keys.KeyAlgorithm
@@ -1691,7 +1692,7 @@ abstract class RepositoryTestSuite(private val repositoriesModule: RepositoriesM
                     MessageEvent(
                         RtcMemberEventContent.Join(
                             CallRtcApplication.SLOT_ID,
-                            RtcMemberEventContent.Member("memberId1"),
+                            RtcMemberEventContent.Member(RtcMemberId("memberId1")),
                             CallRtcApplication.Member(),
                             null,
                             stickyKey1,
@@ -1710,7 +1711,7 @@ abstract class RepositoryTestSuite(private val repositoriesModule: RepositoriesM
                     MessageEvent(
                         RtcMemberEventContent.Join(
                             CallRtcApplication.SLOT_ID,
-                            RtcMemberEventContent.Member("memberId2"),
+                            RtcMemberEventContent.Member(RtcMemberId("memberId2")),
                             CallRtcApplication.Member(),
                             null,
                             stickyKey2,
@@ -1729,7 +1730,7 @@ abstract class RepositoryTestSuite(private val repositoriesModule: RepositoriesM
                     MessageEvent(
                         RtcMemberEventContent.Join(
                             CallRtcApplication.SLOT_ID,
-                            RtcMemberEventContent.Member("memberId1"),
+                            RtcMemberEventContent.Member(RtcMemberId("memberId1")),
                             CallRtcApplication.Member(),
                             null,
                             stickyKey1,
@@ -1748,7 +1749,7 @@ abstract class RepositoryTestSuite(private val repositoriesModule: RepositoriesM
                     MessageEvent(
                         RtcMemberEventContent.Join(
                             CallRtcApplication.SLOT_ID,
-                            RtcMemberEventContent.Member("memberId"),
+                            RtcMemberEventContent.Member(RtcMemberId("memberId")),
                             CallRtcApplication.Member(),
                             null,
                             stickyKey1,
