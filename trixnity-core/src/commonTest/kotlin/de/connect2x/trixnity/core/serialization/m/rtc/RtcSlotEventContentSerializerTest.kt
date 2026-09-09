@@ -32,7 +32,7 @@ class RtcSlotEventContentSerializerTest : TrixnityBaseTest() {
               "type": "m.call"
             },
             "encryption": {
-              "type":"m.per_member"
+              "type":"org.matrix.msc4143.per_member"
             },
             "status": "open"
           },

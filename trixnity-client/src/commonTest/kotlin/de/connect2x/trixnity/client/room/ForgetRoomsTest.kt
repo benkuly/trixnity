@@ -34,6 +34,7 @@ import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
@@ -130,7 +131,7 @@ class ForgetRoomsTest : TrixnityBaseTest() {
                     content =
                         RtcMemberEventContent.Leave(
                             slotId = RtcSlotId("appl", "slot"),
-                            member = RtcMemberEventContent.Member("memberId"),
+                            member = RtcMemberEventContent.Member(RtcMemberId("memberId")),
                             stickyKey = "sticky_key",
                         ) as StickyEventContent,
                     id = EventId("${'$'}sticky"),

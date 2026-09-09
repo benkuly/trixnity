@@ -11,6 +11,7 @@ import de.connect2x.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMes
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -74,7 +75,7 @@ class RtcMemberEventContentSerializerTest : TrixnityBaseTest() {
                 RtcMemberEventContent.Join(
                     slotId = CallRtcApplication.SLOT_ID,
                     application = CallRtcApplication.Member(),
-                    member = RtcMemberEventContent.Member(id = "{member_id}"),
+                    member = RtcMemberEventContent.Member(id = RtcMemberId("{member_id}")),
                     relatesTo = RelatesTo.Reference(EventId("$125")),
                     transports =
                         RtcMemberEventContent.RtcTransports(
@@ -147,7 +148,7 @@ class RtcMemberEventContentSerializerTest : TrixnityBaseTest() {
             content =
                 RtcMemberEventContent.Leave(
                     slotId = CallRtcApplication.SLOT_ID,
-                    member = RtcMemberEventContent.Member(id = "{member_id}"),
+                    member = RtcMemberEventContent.Member(id = RtcMemberId("{member_id}")),
                     relatesTo = RelatesTo.Reference(EventId("$125")),
                     reason = RtcMemberEventContent.Leave.Reason("err", "blub"),
                     stickyKey = "{member_id}",

@@ -62,6 +62,7 @@ import de.connect2x.trixnity.core.model.events.m.room.TombstoneEventContent
 import de.connect2x.trixnity.core.model.events.m.room.TopicEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.PerMemberRtcEncryption
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcEncryptionKeyEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotEventContent
 import de.connect2x.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
@@ -137,6 +138,8 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     toDeviceOf<SasMacEventContent>("m.key.verification.mac")
     toDeviceOf<SecretKeyRequestEventContent>("m.secret.request")
     toDeviceOf<SecretKeySendEventContent>("m.secret.send")
+    @OptIn(MSC4143::class) toDeviceOf<RtcEncryptionKeyEventContent>("org.matrix.msc4143.rtc.encryption_key")
+    @OptIn(MSC4143::class) toDeviceOf<RtcEncryptionKeyEventContent>("m.rtc.encryption_key")
 
     globalAccountDataOf<IdentityServerEventContent>("m.identity_server")
     globalAccountDataOf<DirectEventContent>("m.direct")
@@ -158,6 +161,7 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
 
     @OptIn(MSC4193::class, MSC4143::class)
     rtcApplicationOf<CallRtcApplication.Slot, CallRtcApplication.Member>(CallRtcApplication.APPLICATION_TYPE)
+    @OptIn(MSC4193::class, MSC4143::class) rtcEncryptionOf<PerMemberRtcEncryption>("org.matrix.msc4143.per_member")
     @OptIn(MSC4193::class, MSC4143::class) rtcEncryptionOf<PerMemberRtcEncryption>("m.per_member")
 
     blockOf(TextContentBlock)

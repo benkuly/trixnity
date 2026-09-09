@@ -43,6 +43,7 @@ import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
@@ -136,7 +137,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
         return MessageEvent(
             RtcMemberEventContent.Join(
                 CallRtcApplication.SLOT_ID,
-                RtcMemberEventContent.Member("memberId"),
+                RtcMemberEventContent.Member(RtcMemberId("memberId")),
                 CallRtcApplication.Member(),
                 null,
                 "sticky_key",

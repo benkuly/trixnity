@@ -19,6 +19,7 @@ import de.connect2x.trixnity.core.model.events.m.room.EncryptedMessageEventConte
 import de.connect2x.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import de.connect2x.trixnity.core.model.keys.MegolmMessageValue
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
@@ -73,7 +74,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                 content =
                     RtcMemberEventContent.Join(
                         CallRtcApplication.SLOT_ID,
-                        RtcMemberEventContent.Member("memberId"),
+                        RtcMemberEventContent.Member(RtcMemberId("memberId")),
                         CallRtcApplication.Member(),
                         null,
                         "sticky",
@@ -97,7 +98,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                 content =
                     RtcMemberEventContent.Join(
                         CallRtcApplication.SLOT_ID,
-                        RtcMemberEventContent.Member("memberId"),
+                        RtcMemberEventContent.Member(RtcMemberId("memberId")),
                         CallRtcApplication.Member(),
                         null,
                         "sticky1",
@@ -114,7 +115,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                 content =
                     RtcMemberEventContent.Join(
                         CallRtcApplication.SLOT_ID,
-                        RtcMemberEventContent.Member("memberId"),
+                        RtcMemberEventContent.Member(RtcMemberId("memberId")),
                         CallRtcApplication.Member(),
                         null,
                         "sticky2",
@@ -147,7 +148,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                 content =
                     RtcMemberEventContent.Join(
                         CallRtcApplication.SLOT_ID,
-                        RtcMemberEventContent.Member("memberId"),
+                        RtcMemberEventContent.Member(RtcMemberId("memberId")),
                         CallRtcApplication.Member(),
                         null,
                         "sticky1",
@@ -164,7 +165,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                 content =
                     RtcMemberEventContent.Join(
                         CallRtcApplication.SLOT_ID,
-                        RtcMemberEventContent.Member("memberId"),
+                        RtcMemberEventContent.Member(RtcMemberId("memberId")),
                         CallRtcApplication.Member(),
                         null,
                         "sticky2",
@@ -181,7 +182,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                 content =
                     RtcMemberEventContent.Join(
                         CallRtcApplication.SLOT_ID,
-                        RtcMemberEventContent.Member("memberId"),
+                        RtcMemberEventContent.Member(RtcMemberId("memberId")),
                         CallRtcApplication.Member(),
                         null,
                         "sticky3",
@@ -247,7 +248,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
         val decryptedContent =
             RtcMemberEventContent.Join(
                 CallRtcApplication.SLOT_ID,
-                RtcMemberEventContent.Member("memberId"),
+                RtcMemberEventContent.Member(RtcMemberId("memberId")),
                 CallRtcApplication.Member(),
                 null,
                 "sticky",
@@ -275,7 +276,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                             content =
                                 RtcMemberEventContent.Join(
                                     CallRtcApplication.SLOT_ID,
-                                    RtcMemberEventContent.Member("memberId"),
+                                    RtcMemberEventContent.Member(RtcMemberId("memberId")),
                                     CallRtcApplication.Member(),
                                     null,
                                     "sticky1",
@@ -297,7 +298,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                             content =
                                 RtcMemberEventContent.Join(
                                     CallRtcApplication.SLOT_ID,
-                                    RtcMemberEventContent.Member("memberId"),
+                                    RtcMemberEventContent.Member(RtcMemberId("memberId")),
                                     CallRtcApplication.Member(),
                                     null,
                                     "sticky2",
