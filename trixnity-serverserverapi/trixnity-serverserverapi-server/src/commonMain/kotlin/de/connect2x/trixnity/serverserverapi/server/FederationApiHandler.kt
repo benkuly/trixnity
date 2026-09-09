@@ -1,10 +1,12 @@
 package de.connect2x.trixnity.serverserverapi.server
 
 import de.connect2x.trixnity.api.server.MatrixEndpointContext
+import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.model.events.PersistentDataUnit.PersistentStateDataUnit
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.keys.Signed
 import de.connect2x.trixnity.serverserverapi.model.federation.*
+import de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit.GetLiveKitToken
 
 interface FederationApiHandler {
     /** @see [SendTransaction] */
@@ -138,4 +140,10 @@ interface FederationApiHandler {
 
     /** @see [DownloadThumbnail] */
     suspend fun downloadThumbnail(context: MatrixEndpointContext<DownloadThumbnail, Unit, Media>): Media
+
+    /** @see [GetLiveKitToken] * */
+    @MSC4195
+    suspend fun getLiveKitToken(
+        context: MatrixEndpointContext<GetLiveKitToken, GetLiveKitToken.Request, GetLiveKitToken.Response>
+    ): GetLiveKitToken.Response
 }

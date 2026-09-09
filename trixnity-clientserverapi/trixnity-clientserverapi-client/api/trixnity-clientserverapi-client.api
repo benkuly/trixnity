@@ -550,14 +550,14 @@ public abstract interface class de/connect2x/trixnity/clientserverapi/client/Roo
 	public static synthetic fun banUser-REn5ilA$default (Lde/connect2x/trixnity/clientserverapi/client/RoomApiClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun createRoom-b7Yk04k (Lde/connect2x/trixnity/clientserverapi/model/room/DirectoryVisibility;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/room/CreateEventContent;Ljava/util/List;Lde/connect2x/trixnity/clientserverapi/model/room/CreateRoom$Request$Preset;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/room/PowerLevelsEventContent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun createRoom-b7Yk04k$default (Lde/connect2x/trixnity/clientserverapi/client/RoomApiClient;Lde/connect2x/trixnity/clientserverapi/model/room/DirectoryVisibility;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/room/CreateEventContent;Ljava/util/List;Lde/connect2x/trixnity/clientserverapi/model/room/CreateRoom$Request$Preset;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/room/PowerLevelsEventContent;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public abstract fun delayedEventAction-0E7RQCE (Ljava/lang/String;Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun delayedEventAction-PdJZ5vM (Ljava/lang/String;Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun deleteRoomAlias-eNaWWN8 (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun deleteTag-Ii23rvs (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun forgetRoom-8ygoEXc (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getAccountData-SA-gL1w (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun getAccountData-SA-gL1w$default (Lde/connect2x/trixnity/clientserverapi/client/RoomApiClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun getContentMappings ()Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;
-	public abstract fun getDelayedEvent-gIAlu-s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDelayedEvent-nynv8Do (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getDirectoryVisibility-8ygoEXc (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getEvent-pn02gmk (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getEventContext-WMgdw6M (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -690,13 +690,13 @@ public final class de/connect2x/trixnity/clientserverapi/client/RoomApiClientImp
 	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiBaseClient;Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;)V
 	public fun banUser-REn5ilA (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun createRoom-b7Yk04k (Lde/connect2x/trixnity/clientserverapi/model/room/DirectoryVisibility;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/room/CreateEventContent;Ljava/util/List;Lde/connect2x/trixnity/clientserverapi/model/room/CreateRoom$Request$Preset;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/room/PowerLevelsEventContent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun delayedEventAction-0E7RQCE (Ljava/lang/String;Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun delayedEventAction-PdJZ5vM (Ljava/lang/String;Lde/connect2x/trixnity/clientserverapi/model/room/DelayedEventAction$Action;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun deleteRoomAlias-eNaWWN8 (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun deleteTag-Ii23rvs (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun forgetRoom-8ygoEXc (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getAccountData-SA-gL1w (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getContentMappings ()Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;
-	public fun getDelayedEvent-gIAlu-s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDelayedEvent-nynv8Do (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getDirectoryVisibility-8ygoEXc (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getEvent-pn02gmk (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getEventContext-WMgdw6M (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -748,11 +748,15 @@ public final class de/connect2x/trixnity/clientserverapi/client/RoomApiClientImp
 }
 
 public abstract interface class de/connect2x/trixnity/clientserverapi/client/RtcApiClient {
+	public abstract fun delegateDelayedLeave-qVVo6Y0 (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getLiveKitToken-TUYMkeY (Ljava/lang/String;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getTransports-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class de/connect2x/trixnity/clientserverapi/client/RtcApiClientImpl : de/connect2x/trixnity/clientserverapi/client/RtcApiClient {
 	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiBaseClient;)V
+	public fun delegateDelayedLeave-qVVo6Y0 (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getLiveKitToken-TUYMkeY (Ljava/lang/String;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getTransports-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

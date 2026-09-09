@@ -1,14 +1,18 @@
 package de.connect2x.trixnity.serverserverapi.client
 
 import de.connect2x.trixnity.api.client.MatrixApiClient
+import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.PersistentDataUnit
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId
 import de.connect2x.trixnity.core.model.keys.Signed
 import de.connect2x.trixnity.serverserverapi.model.federation.*
+import de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit.GetLiveKitToken
 import io.ktor.client.plugins.*
 import io.ktor.http.*
 import kotlin.time.Duration
@@ -173,6 +177,16 @@ interface FederationApiClient {
         timeout: Duration? = null,
         downloadHandler: suspend (Media) -> Unit,
     ): Result<Unit>
+
+    /** @see [GetLiveKitToken] * */
+    @MSC4195
+    suspend fun getLiveKitToken(
+        userId: UserId,
+        url: Url,
+        roomId: RoomId,
+        slotId: RtcSlotId,
+        memberId: RtcMemberId,
+    ): Result<String>
 }
 
 class FederationApiClientImpl(private val baseClient: MatrixApiClient) : FederationApiClient {
@@ -358,4 +372,16 @@ class FederationApiClientImpl(private val baseClient: MatrixApiClient) : Federat
             },
             responseHandler = downloadHandler,
         )
+
+    @MSC4195
+    override suspend fun getLiveKitToken(
+        userId: UserId,
+        url: Url,
+        roomId: RoomId,
+        slotId: RtcSlotId,
+        memberId: RtcMemberId,
+    ): Result<String> =
+        baseClient.request(GetLiveKitToken, GetLiveKitToken.Request(userId, url, roomId, slotId, memberId)).map {
+            it.jwt
+        }
 }

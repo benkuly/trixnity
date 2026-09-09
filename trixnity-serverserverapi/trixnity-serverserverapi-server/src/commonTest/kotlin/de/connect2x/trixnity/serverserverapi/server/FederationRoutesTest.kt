@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.serverserverapi.server
 
 import de.connect2x.trixnity.api.server.matrixApiServer
+import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
@@ -61,6 +62,7 @@ import de.connect2x.trixnity.serverserverapi.model.federation.SendTransaction
 import de.connect2x.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
 import de.connect2x.trixnity.serverserverapi.model.federation.ThumbnailResizingMethod.SCALE
 import de.connect2x.trixnity.serverserverapi.model.federation.TimestampToEvent
+import de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit.GetLiveKitToken
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
@@ -2244,5 +2246,36 @@ class FederationRoutesTest : TrixnityBaseTest() {
                 }
             )
         }
+    }
+
+    @Test
+    @MSC4195
+    fun shouldGetLiveKitToken() = testApplication {
+        initCut()
+        everySuspend { handlerMock.getLiveKitToken(any()) }.returns(GetLiveKitToken.Response("abc.woof.abc"))
+        val response =
+            client.post("/_matrix/federation/unstable/io.element.msc4195/rtc/livekit/get_token") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody(
+                    """
+                    {
+                        "user_id": "@livekit:matrix.host",
+                        "url": "wss://livekit.matrix2.host",
+                        "room_id": "!room:matrix2.host",
+                        "slot_id": "call#123",
+                        "member_id": "member-123"
+                    }
+                    """
+                        .trimIndent()
+                )
+            }
+
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json
+            this.body<String>() shouldBe """{"jwt": "abc.woof.abc"}""".trimToFlatJson()
+        }
+        verifySuspend { handlerMock.getLiveKitToken(any()) }
     }
 }

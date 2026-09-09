@@ -1,6 +1,7 @@
 package de.connect2x.trixnity.serverserverapi.server
 
 import de.connect2x.trixnity.api.server.matrixEndpoint
+import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
@@ -38,4 +39,5 @@ internal fun Route.federationApiRoutes(
     matrixEndpoint(json, contentMappings, handler::timestampToEvent)
     matrixEndpoint(json, contentMappings, handler::downloadMedia)
     matrixEndpoint(json, contentMappings, handler::downloadThumbnail)
+    @OptIn(MSC4195::class) matrixEndpoint(json, contentMappings, handler::getLiveKitToken)
 }

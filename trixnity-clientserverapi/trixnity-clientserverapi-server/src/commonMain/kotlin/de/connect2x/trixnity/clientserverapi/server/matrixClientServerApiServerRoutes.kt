@@ -1,13 +1,14 @@
 package de.connect2x.trixnity.clientserverapi.server
 
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 
-@OptIn(MSC4143::class)
+@OptIn(MSC4143::class, MSC4195::class)
 fun Route.matrixClientServerApiServerRoutes(
     adminApiHandler: AdminApiHandler,
     appserviceApiHandler: AppserviceApiHandler,

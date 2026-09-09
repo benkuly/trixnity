@@ -3,6 +3,7 @@ package de.connect2x.trixnity.core.serialization.events
 import de.connect2x.trixnity.core.MSC3814
 import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.MSC4193
+import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.events.block.m.TextContentBlock
 import de.connect2x.trixnity.core.model.events.block.m.TopicContentBlock
@@ -61,6 +62,7 @@ import de.connect2x.trixnity.core.model.events.m.room.ThirdPartyInviteEventConte
 import de.connect2x.trixnity.core.model.events.m.room.TombstoneEventContent
 import de.connect2x.trixnity.core.model.events.m.room.TopicEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
+import de.connect2x.trixnity.core.model.events.m.rtc.LiveKitRtcTransport
 import de.connect2x.trixnity.core.model.events.m.rtc.PerMemberRtcEncryption
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcEncryptionKeyEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
@@ -163,6 +165,7 @@ private val eventContentSerializerMappingsDefault = EventContentSerializerMappin
     rtcApplicationOf<CallRtcApplication.Slot, CallRtcApplication.Member>(CallRtcApplication.APPLICATION_TYPE)
     @OptIn(MSC4193::class, MSC4143::class) rtcEncryptionOf<PerMemberRtcEncryption>("org.matrix.msc4143.per_member")
     @OptIn(MSC4193::class, MSC4143::class) rtcEncryptionOf<PerMemberRtcEncryption>("m.per_member")
+    @OptIn(MSC4195::class, MSC4143::class) rtcTransportOf<LiveKitRtcTransport>("m.livekit")
 
     blockOf(TextContentBlock)
     blockOf(TopicContentBlock)

@@ -5,6 +5,7 @@ import de.connect2x.trixnity.core.HttpMethodType.PUT
 import de.connect2x.trixnity.core.MSC4140
 import de.connect2x.trixnity.core.MatrixEndpoint
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.DelayId
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.StateEventContent
@@ -135,7 +136,7 @@ data class SendDelayedEvent(
         }
     }
 
-    @Serializable data class Response(@SerialName("delay_id") val delayId: String)
+    @Serializable data class Response(@SerialName("delay_id") val delayId: DelayId)
 
     override fun requestSerializerBuilder(
         mappings: EventContentSerializerMappings,

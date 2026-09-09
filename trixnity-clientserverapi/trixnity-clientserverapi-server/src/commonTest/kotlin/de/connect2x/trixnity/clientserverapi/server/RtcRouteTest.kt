@@ -2,7 +2,9 @@ package de.connect2x.trixnity.clientserverapi.server
 
 import de.connect2x.trixnity.api.server.matrixApiServer
 import de.connect2x.trixnity.clientserverapi.model.rtc.GetTransports
+import de.connect2x.trixnity.clientserverapi.model.rtc.livekit.GetLiveKitToken
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
@@ -28,6 +30,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 @MSC4143
+@MSC4195
 class RtcRouteTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
     private val mapping = EventContentSerializerMappings.default
@@ -78,5 +81,65 @@ class RtcRouteTest : TrixnityBaseTest() {
                     .trimToFlatJson()
         }
         verifySuspend { handlerMock.getTransports(any()) }
+    }
+
+    @Test
+    fun shouldGetLiveKitToken() = testApplication {
+        initCut()
+        everySuspend { handlerMock.getLiveKitToken(any()) }.returns(GetLiveKitToken.Response("abc.woof.abc"))
+        val response =
+            client.post("/_matrix/client/unstable/io.element.msc4195/rtc/livekit/get_token") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody(
+                    """
+                    {
+                        "server_name": "matrix2.host",
+                        "url": "wss://livekit.matrix2.host",
+                        "room_id": "!room:matrix2.host",
+                        "slot_id": "call#123",
+                        "member_id": "member-123"
+                    }
+                    """
+                        .trimIndent()
+                )
+            }
+
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json
+            this.body<String>() shouldBe """{"jwt": "abc.woof.abc"}""".trimToFlatJson()
+        }
+        verifySuspend { handlerMock.getLiveKitToken(any()) }
+    }
+
+    @Test
+    fun shouldDelegateDelayedLeave() = testApplication {
+        initCut()
+        everySuspend { handlerMock.delegateDelayedLeave(any()) }.returns(Unit)
+        val response =
+            client.post("/_matrix/client/v1/rtc/livekit/delegate_delayed_leave") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody(
+                    """
+                    {
+                        "url": "wss://livekit.matrix2.host",
+                        "room_id": "!room:matrix2.host",
+                        "slot_id": "call#123",
+                        "member_id": "member-123",
+                        "delay_id": "123"
+                    }
+                    """
+                        .trimIndent()
+                )
+            }
+
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json
+            this.body<String>() shouldBe """{}""".trimToFlatJson()
+        }
+        verifySuspend { handlerMock.delegateDelayedLeave(any()) }
     }
 }

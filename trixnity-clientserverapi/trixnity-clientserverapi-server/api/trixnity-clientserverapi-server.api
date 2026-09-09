@@ -226,6 +226,8 @@ public abstract interface class de/connect2x/trixnity/clientserverapi/server/Roo
 }
 
 public abstract interface class de/connect2x/trixnity/clientserverapi/server/RtcApiHandler {
+	public abstract fun delegateDelayedLeave (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getLiveKitToken (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getTransports (Lde/connect2x/trixnity/api/server/MatrixEndpointContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

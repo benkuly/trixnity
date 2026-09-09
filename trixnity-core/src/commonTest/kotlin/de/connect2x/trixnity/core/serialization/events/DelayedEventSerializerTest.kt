@@ -5,6 +5,7 @@ import de.connect2x.trixnity.core.MSC4140
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.DelayId
 import de.connect2x.trixnity.core.model.events.DelayedEvent
 import de.connect2x.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -21,7 +22,7 @@ class DelayedEventSerializerTest : TrixnityBaseTest() {
     val delayedStateEvent =
         DelayedEvent.DelayedStateEvent(
             content = CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
-            delayId = "delay123",
+            delayId = DelayId("delay123"),
             roomId = RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             stateKey = "",
             delayMs = 1000,
@@ -66,7 +67,7 @@ class DelayedEventSerializerTest : TrixnityBaseTest() {
     val scheduledDelayedMessageEvent =
         DelayedEvent.DelayedMessageEvent(
             content = RoomMessageEventContent.TextBased.Text("Hello world!"),
-            delayId = "delay456",
+            delayId = DelayId("delay456"),
             roomId = RoomId("!anotherRoom:example.org"),
             delayMs = 2000,
             delayedSinceTs = 987654321,
