@@ -11988,6 +11988,39 @@ final object de.connect2x.trixnity.clientserverapi.model.room/GetJoinedRooms : d
     }
 }
 
+final object de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports : de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response>, kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports|null[0]
+    final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports> // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.serializer|serializer(){}[0]
+    final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+
+    final class Response { // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response|null[0]
+        constructor <init>(kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport>) // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.<init>|<init>(kotlin.collections.List<de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport>){}[0]
+
+        final val transports // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.transports|{}transports[0]
+            final fun <get-transports>(): kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport> // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.transports.<get-transports>|<get-transports>(){}[0]
+
+        final fun component1(): kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport> // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.component1|component1(){}[0]
+        final fun copy(kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport> = ...): de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.copy|copy(kotlin.collections.List<de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response> { // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response) // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.clientserverapi.model.rtc.GetTransports.Response){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.Companion|null[0]
+            final val $childSerializers // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.Companion.$childSerializers|{}$childSerializers[0]
+
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response> // de.connect2x.trixnity.clientserverapi.model.rtc/GetTransports.Response.Companion.serializer|serializer(){}[0]
+        }
+    }
+}
+
 final object de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities : de.connect2x.trixnity.core/MatrixEndpoint<kotlin/Unit, de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities.Response>, kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities|null[0]
     final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities> // de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities.serializer|serializer(){}[0]
     final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]

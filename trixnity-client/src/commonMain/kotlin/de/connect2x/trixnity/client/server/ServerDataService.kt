@@ -9,6 +9,7 @@ import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.client.oauth2.OAuth2MatrixClientAuthProvider
 import de.connect2x.trixnity.clientserverapi.model.media.GetMediaConfig
 import de.connect2x.trixnity.core.EventHandler
+import de.connect2x.trixnity.core.MSC4143
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +31,7 @@ class ServerDataService(
         private const val MATRIX_SPEC_1_11 = "v1.11"
     }
 
+    @OptIn(MSC4143::class)
     override fun startInCoroutineScope(scope: CoroutineScope) {
         scope.launch {
             while (currentCoroutineContext().isActive) {
@@ -56,6 +58,18 @@ class ServerDataService(
                             .onFailure { log.warn(it) { "failed get media config" } }
                             .getOrNull()
                     }
+                    val newRtcTransportsAsync = async {
+                        if (newVersions == null) return@async null
+                        if (
+                            !newVersions.unstableFeatures.containsKey("org.matrix.msc4143") &&
+                                !newVersions.unstableFeatures.containsKey("org.matrix.msc4143.stable")
+                        )
+                            return@async null
+                        api.rtc
+                            .getTransports()
+                            .onFailure { log.warn(it) { "failed get server capabilities" } }
+                            .getOrNull()
+                    }
                     val newOAuth2ServerMetadataAsync = async {
                         if (api.authProviderType != OAuth2MatrixClientAuthProvider::class) return@async null
                         api.authentication
@@ -66,6 +80,7 @@ class ServerDataService(
                     val newMediaConfig = newMediaConfigAsync.await()
                     val newCapabilities = newCapabilitiesAsync.await()
                     val newOAuth2ServerMetadata = newOAuth2ServerMetadataAsync.await()
+                    val newRtcTransports = newRtcTransportsAsync.await()
                     if (newVersions != null && newMediaConfig != null && newCapabilities != null) {
                         tm.writeTransaction {
                             serverDataStore.setServerData(
@@ -74,6 +89,7 @@ class ServerDataService(
                                     mediaConfig = newMediaConfig,
                                     capabilities = newCapabilities,
                                     auth = newOAuth2ServerMetadata,
+                                    rtcTransports = newRtcTransports,
                                 )
                             )
                         }

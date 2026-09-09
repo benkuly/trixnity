@@ -3760,7 +3760,7 @@ final class de.connect2x.trixnity.client.store/RootStore : de.connect2x.trixnity
 }
 
 final class de.connect2x.trixnity.client.store/ServerData { // de.connect2x.trixnity.client.store/ServerData|null[0]
-    constructor <init>(de.connect2x.trixnity.clientserverapi.model.server/GetVersions.Response, de.connect2x.trixnity.clientserverapi.model.media/GetMediaConfig.Response, de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities.Response?, de.connect2x.trixnity.clientserverapi.model.authentication.oauth2/ServerMetadata? = ...) // de.connect2x.trixnity.client.store/ServerData.<init>|<init>(de.connect2x.trixnity.clientserverapi.model.server.GetVersions.Response;de.connect2x.trixnity.clientserverapi.model.media.GetMediaConfig.Response;de.connect2x.trixnity.clientserverapi.model.server.GetCapabilities.Response?;de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.ServerMetadata?){}[0]
+    constructor <init>(de.connect2x.trixnity.clientserverapi.model.server/GetVersions.Response, de.connect2x.trixnity.clientserverapi.model.media/GetMediaConfig.Response, de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities.Response?, de.connect2x.trixnity.clientserverapi.model.authentication.oauth2/ServerMetadata? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport>? = ...) // de.connect2x.trixnity.client.store/ServerData.<init>|<init>(de.connect2x.trixnity.clientserverapi.model.server.GetVersions.Response;de.connect2x.trixnity.clientserverapi.model.media.GetMediaConfig.Response;de.connect2x.trixnity.clientserverapi.model.server.GetCapabilities.Response?;de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.ServerMetadata?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport>?){}[0]
 
     final val auth // de.connect2x.trixnity.client.store/ServerData.auth|{}auth[0]
         final fun <get-auth>(): de.connect2x.trixnity.clientserverapi.model.authentication.oauth2/ServerMetadata? // de.connect2x.trixnity.client.store/ServerData.auth.<get-auth>|<get-auth>(){}[0]
@@ -3768,6 +3768,8 @@ final class de.connect2x.trixnity.client.store/ServerData { // de.connect2x.trix
         final fun <get-capabilities>(): de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities.Response? // de.connect2x.trixnity.client.store/ServerData.capabilities.<get-capabilities>|<get-capabilities>(){}[0]
     final val mediaConfig // de.connect2x.trixnity.client.store/ServerData.mediaConfig|{}mediaConfig[0]
         final fun <get-mediaConfig>(): de.connect2x.trixnity.clientserverapi.model.media/GetMediaConfig.Response // de.connect2x.trixnity.client.store/ServerData.mediaConfig.<get-mediaConfig>|<get-mediaConfig>(){}[0]
+    final val rtcTransports // de.connect2x.trixnity.client.store/ServerData.rtcTransports|{}rtcTransports[0]
+        final fun <get-rtcTransports>(): kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport>? // de.connect2x.trixnity.client.store/ServerData.rtcTransports.<get-rtcTransports>|<get-rtcTransports>(){}[0]
     final val versions // de.connect2x.trixnity.client.store/ServerData.versions|{}versions[0]
         final fun <get-versions>(): de.connect2x.trixnity.clientserverapi.model.server/GetVersions.Response // de.connect2x.trixnity.client.store/ServerData.versions.<get-versions>|<get-versions>(){}[0]
 
@@ -3775,7 +3777,8 @@ final class de.connect2x.trixnity.client.store/ServerData { // de.connect2x.trix
     final fun component2(): de.connect2x.trixnity.clientserverapi.model.media/GetMediaConfig.Response // de.connect2x.trixnity.client.store/ServerData.component2|component2(){}[0]
     final fun component3(): de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities.Response? // de.connect2x.trixnity.client.store/ServerData.component3|component3(){}[0]
     final fun component4(): de.connect2x.trixnity.clientserverapi.model.authentication.oauth2/ServerMetadata? // de.connect2x.trixnity.client.store/ServerData.component4|component4(){}[0]
-    final fun copy(de.connect2x.trixnity.clientserverapi.model.server/GetVersions.Response = ..., de.connect2x.trixnity.clientserverapi.model.media/GetMediaConfig.Response = ..., de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities.Response? = ..., de.connect2x.trixnity.clientserverapi.model.authentication.oauth2/ServerMetadata? = ...): de.connect2x.trixnity.client.store/ServerData // de.connect2x.trixnity.client.store/ServerData.copy|copy(de.connect2x.trixnity.clientserverapi.model.server.GetVersions.Response;de.connect2x.trixnity.clientserverapi.model.media.GetMediaConfig.Response;de.connect2x.trixnity.clientserverapi.model.server.GetCapabilities.Response?;de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.ServerMetadata?){}[0]
+    final fun component5(): kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport>? // de.connect2x.trixnity.client.store/ServerData.component5|component5(){}[0]
+    final fun copy(de.connect2x.trixnity.clientserverapi.model.server/GetVersions.Response = ..., de.connect2x.trixnity.clientserverapi.model.media/GetMediaConfig.Response = ..., de.connect2x.trixnity.clientserverapi.model.server/GetCapabilities.Response? = ..., de.connect2x.trixnity.clientserverapi.model.authentication.oauth2/ServerMetadata? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport>? = ...): de.connect2x.trixnity.client.store/ServerData // de.connect2x.trixnity.client.store/ServerData.copy|copy(de.connect2x.trixnity.clientserverapi.model.server.GetVersions.Response;de.connect2x.trixnity.clientserverapi.model.media.GetMediaConfig.Response;de.connect2x.trixnity.clientserverapi.model.server.GetCapabilities.Response?;de.connect2x.trixnity.clientserverapi.model.authentication.oauth2.ServerMetadata?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport>?){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.client.store/ServerData.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // de.connect2x.trixnity.client.store/ServerData.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // de.connect2x.trixnity.client.store/ServerData.toString|toString(){}[0]
@@ -3790,6 +3793,8 @@ final class de.connect2x.trixnity.client.store/ServerData { // de.connect2x.trix
     }
 
     final object Companion { // de.connect2x.trixnity.client.store/ServerData.Companion|null[0]
+        final val $childSerializers // de.connect2x.trixnity.client.store/ServerData.Companion.$childSerializers|{}$childSerializers[0]
+
         final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.client.store/ServerData> // de.connect2x.trixnity.client.store/ServerData.Companion.serializer|serializer(){}[0]
     }
 }

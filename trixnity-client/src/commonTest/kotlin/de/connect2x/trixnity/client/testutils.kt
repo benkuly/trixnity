@@ -59,6 +59,7 @@ import de.connect2x.trixnity.clientserverapi.client.SyncBatchTokenStore
 import de.connect2x.trixnity.clientserverapi.client.classic
 import de.connect2x.trixnity.clientserverapi.model.media.GetMediaConfig
 import de.connect2x.trixnity.clientserverapi.model.server.GetVersions
+import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.UserInfo
 import de.connect2x.trixnity.core.model.EventId
@@ -147,6 +148,7 @@ fun TrixnityBaseTest.getInMemoryAccountStore(setup: suspend AccountStore.() -> U
             }
         }
 
+@OptIn(MSC4143::class)
 fun TrixnityBaseTest.getInMemoryServerDataStore(setup: suspend ServerDataStore.() -> Unit = {}) =
     ServerDataStore(
             InMemoryServerDataRepository().apply {

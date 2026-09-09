@@ -1,5 +1,6 @@
 package de.connect2x.trixnity.clientserverapi.server
 
+import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import dev.mokkery.mock
@@ -18,6 +19,7 @@ import io.ktor.server.testing.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
+@MSC4143
 class MatrixClientServerApiServerTest : TrixnityBaseTest() {
     val adminApiHandlerMock = mock<AdminApiHandler>()
     val appserviceApiHandlerMock = mock<AppserviceApiHandler>()
@@ -31,6 +33,7 @@ class MatrixClientServerApiServerTest : TrixnityBaseTest() {
     val serverApiHandlerMock = mock<ServerApiHandler>()
     val syncApiHandlerMock = mock<SyncApiHandler>()
     val userApiHandlerMock = mock<UserApiHandler>()
+    val rtcApiHandlerMock = mock<RtcApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -55,6 +58,7 @@ class MatrixClientServerApiServerTest : TrixnityBaseTest() {
                     serverApiHandler = serverApiHandlerMock,
                     syncApiHandler = syncApiHandlerMock,
                     userApiHandler = userApiHandlerMock,
+                    rtcApiHandler = rtcApiHandlerMock,
                 )
             }
         }

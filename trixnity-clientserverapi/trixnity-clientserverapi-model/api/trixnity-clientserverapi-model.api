@@ -9354,6 +9354,44 @@ public final class de/connect2x/trixnity/clientserverapi/model/room/UpgradeRoom$
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class de/connect2x/trixnity/clientserverapi/model/rtc/GetTransports : de/connect2x/trixnity/core/MatrixEndpoint {
+	public static final field INSTANCE Lde/connect2x/trixnity/clientserverapi/model/rtc/GetTransports;
+	public fun getRequestContentType ()Lio/ktor/http/ContentType;
+	public fun getResponseContentType ()Lio/ktor/http/ContentType;
+	public synthetic fun requestSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Ljava/lang/Object;)Lkotlinx/serialization/KSerializer;
+	public fun requestSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lkotlin/Unit;)Lkotlinx/serialization/KSerializer;
+	public fun responseSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Lde/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response;)Lkotlinx/serialization/KSerializer;
+	public synthetic fun responseSerializerBuilder (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;Lkotlinx/serialization/json/Json;Ljava/lang/Object;)Lkotlinx/serialization/KSerializer;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response {
+	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response$Companion;
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lde/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response;Ljava/util/List;ILjava/lang/Object;)Lde/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTransports ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/model/rtc/GetTransports$Response$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class de/connect2x/trixnity/clientserverapi/model/server/Capabilities : java/util/Set, kotlin/jvm/internal/markers/KMappedMarker {
 	public static final field Companion Lde/connect2x/trixnity/clientserverapi/model/server/Capabilities$Companion;
 	public fun add (Lde/connect2x/trixnity/clientserverapi/model/server/Capability;)Z
