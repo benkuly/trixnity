@@ -10,10 +10,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ### Added
 
 - Support MSC4140 Cancellable delayed events
+- Support MSC4196 Voice and video calling application for MatrixRTC
 
 ### Changed
 
-- Updated MSC4143 MatrixRTC and MSC4197 Call Application model
+- Updated MSC4143 MatrixRTC model
 
 ### Deprecated
 
