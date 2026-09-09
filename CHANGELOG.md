@@ -13,6 +13,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ### Changed
 
+- Updated MSC4143 MatrixRTC and MSC4197 Call Application event types
+
 ### Deprecated
 
 ### Removed

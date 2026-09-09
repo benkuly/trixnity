@@ -1324,6 +1324,9 @@ public abstract interface annotation class de/connect2x/trixnity/core/MSC4140 : 
 public abstract interface annotation class de/connect2x/trixnity/core/MSC4143 : java/lang/annotation/Annotation {
 }
 
+public abstract interface annotation class de/connect2x/trixnity/core/MSC4193 : java/lang/annotation/Annotation {
+}
+
 public abstract interface annotation class de/connect2x/trixnity/core/MSC4354 : java/lang/annotation/Annotation {
 }
 
@@ -6925,7 +6928,6 @@ public final class de/connect2x/trixnity/core/model/events/m/room/Membership : j
 	public static final field KNOCK Lde/connect2x/trixnity/core/model/events/m/room/Membership;
 	public static final field LEAVE Lde/connect2x/trixnity/core/model/events/m/room/Membership;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public final fun getValue ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/room/Membership;
 	public static fun values ()[Lde/connect2x/trixnity/core/model/events/m/room/Membership;
 }
@@ -7877,132 +7879,271 @@ public final class de/connect2x/trixnity/core/model/events/m/room/VideoInfo$Comp
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class de/connect2x/trixnity/core/model/events/m/rtc/CallApplication : de/connect2x/trixnity/core/model/events/m/rtc/RtcApplication {
-	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/CallApplication$Companion;
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/CallApplication;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/CallApplication;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/CallApplication;
+public final class de/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication {
+	public static final field APPLICATION_TYPE Ljava/lang/String;
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCallId ()Ljava/lang/String;
-	public final fun getScope ()Ljava/lang/String;
+	public final fun getSLOT_ID-RBoLkIg ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/CallApplication$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/CallApplication$$serializer;
+public final class de/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member : de/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Companion;
+	public fun <init> ()V
+	public fun <init> (Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;)V
+	public synthetic fun <init> (Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;
+	public final fun copy (Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;)Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member;Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIntent ()Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/CallApplication;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/CallApplication;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class de/connect2x/trixnity/core/model/events/m/rtc/CallApplication$Companion {
+public final class de/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public abstract interface class de/connect2x/trixnity/core/model/events/m/rtc/RtcApplication {
+public final class de/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent : java/lang/Enum {
+	public static final field AUDIO Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent$Companion;
+	public static final field VIDEO Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;
+	public static fun values ()[Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent;
 }
 
-public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent : de/connect2x/trixnity/core/model/events/MessageEventContent, de/connect2x/trixnity/core/model/events/StickyEventContent {
-	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;
-	public final fun component4 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
-	public final fun component5 ()Ljava/util/List;
-	public final fun component6 ()Ljava/util/List;
-	public final fun component7 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;
-	public final fun component8 ()Ljava/lang/Boolean;
-	public final fun component9 ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;Ljava/lang/String;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/util/List;Ljava/util/List;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/Boolean;Lde/connect2x/trixnity/core/model/events/m/RelatesTo;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;
-	public fun copyWith (Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)Lde/connect2x/trixnity/core/model/events/MessageEventContent;
+public final class de/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$Intent$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$LeaveReasonCode : java/lang/Enum {
+	public static final field CODE_MISMATCH Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$LeaveReasonCode;
+	public static final field MEDIA_ERROR Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$LeaveReasonCode;
+	public static final field TRANSPORT_ERROR Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$LeaveReasonCode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$LeaveReasonCode;
+	public static fun values ()[Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Member$LeaveReasonCode;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Slot : de/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/CallRtcApplication$Slot;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getApplication ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;
-	public final fun getDisconnectReason ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;
-	public final fun getDisconnected ()Ljava/lang/Boolean;
-	public fun getExternalUrl ()Ljava/lang/String;
-	public final fun getMember ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
-	public fun getMentions ()Lde/connect2x/trixnity/core/model/events/m/Mentions;
-	public fun getRelatesTo ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo;
-	public final fun getRtcTransports ()Ljava/util/List;
-	public final fun getSlotId ()Ljava/lang/String;
-	public fun getStickyKey ()Ljava/lang/String;
-	public final fun getVersions ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/PerMemberRtcEncryption : de/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/PerMemberRtcEncryption;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember {
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$DefaultLeaveReasonCode : java/lang/Enum {
+	public static final field DELAYED_LEAVE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$DefaultLeaveReasonCode;
+	public static final field LEAVE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$DefaultLeaveReasonCode;
+	public static final field SLOT_CLOSED Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$DefaultLeaveReasonCode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$DefaultLeaveReasonCode;
+	public static fun values ()[Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$DefaultLeaveReasonCode;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$Unknown : de/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember {
+	public fun <init> (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun copy (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$Unknown;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$Unknown;Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember$Unknown;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRaw ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getType ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$$serializer;
-	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+public abstract interface class de/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot {
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot$Unknown : de/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot {
+	public fun <init> (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun copy (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot$Unknown;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot$Unknown;Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot$Unknown;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRaw ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption {
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption$Unknown : de/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption {
+	public fun <init> (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun copy (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption$Unknown;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption$Unknown;Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption$Unknown;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRaw ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent : de/connect2x/trixnity/core/model/events/StickyEventContent {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Companion;
+	public abstract fun getMember ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
+	public abstract fun getRelatesTo ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;
+	public abstract fun getSlotId-RBoLkIg ()Ljava/lang/String;
 }
 
 public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason {
-	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason$Companion;
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join : de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-RBoLkIg ()Ljava/lang/String;
+	public final fun component2 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
+	public final fun component3 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember;
+	public final fun component4 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;
+	public final fun copy-5Vstb08 (Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join;
+	public static synthetic fun copy-5Vstb08$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join;
+	public fun copyWith (Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)Lde/connect2x/trixnity/core/model/events/MessageEventContent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApplication ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember;
+	public fun getExternalUrl ()Ljava/lang/String;
+	public fun getMember ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
+	public fun getMentions ()Lde/connect2x/trixnity/core/model/events/m/Mentions;
+	public fun getRelatesTo ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;
+	public synthetic fun getRelatesTo ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo;
+	public fun getSlotId-RBoLkIg ()Ljava/lang/String;
+	public fun getStickyKey ()Ljava/lang/String;
+	public final fun getTransports ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Join$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave : de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-RBoLkIg ()Ljava/lang/String;
+	public final fun component2 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
+	public final fun component3 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;
+	public final fun copy-uLuCre0 (Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave;
+	public static synthetic fun copy-uLuCre0$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;Ljava/lang/String;Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave;
+	public fun copyWith (Lde/connect2x/trixnity/core/model/events/m/RelatesTo;)Lde/connect2x/trixnity/core/model/events/MessageEventContent;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getExternalUrl ()Ljava/lang/String;
+	public fun getMember ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
+	public fun getMentions ()Lde/connect2x/trixnity/core/model/events/m/Mentions;
+	public final fun getReason ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;
+	public fun getRelatesTo ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo$Reference;
+	public synthetic fun getRelatesTo ()Lde/connect2x/trixnity/core/model/events/m/RelatesTo;
+	public fun getSlotId-RBoLkIg ()Ljava/lang/String;
+	public fun getStickyKey ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDescription ()Ljava/lang/String;
-	public final fun getKlass ()Ljava/lang/String;
+	public final fun getCode ()Ljava/lang/String;
 	public final fun getReason ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason$$serializer;
+public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$DisconnectReason$Companion {
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Leave$Reason$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
 public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member {
 	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member$Companion;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3-DuKFSck ()Ljava/lang/String;
-	public final fun copy-kdD7ZMM (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
-	public static synthetic fun copy-kdD7ZMM$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
+	public final fun copy (Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Member;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getClaimedDeviceId ()Ljava/lang/String;
-	public final fun getClaimedUserId-DuKFSck ()Ljava/lang/String;
 	public final fun getId ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -8023,71 +8164,170 @@ public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventC
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport {
-	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport$Companion;
-	public fun <init> (Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport;
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;Ljava/util/List;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getType ()Ljava/lang/String;
+	public final fun getCanSubscribe ()Ljava/util/List;
+	public final fun getPublished ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport$$serializer;
+public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransport$Companion {
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$RtcTransports$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent : de/connect2x/trixnity/core/model/events/StateEventContent {
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Serializer : kotlinx/serialization/KSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent$Serializer;
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public abstract interface class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent : de/connect2x/trixnity/core/model/events/StateEventContent {
 	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Companion;
+	public abstract fun getApplication ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;
+	public abstract fun getEncryption ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed : de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed$Companion;
 	public fun <init> ()V
-	public fun <init> (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Ljava/lang/String;)V
-	public synthetic fun <init> (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;Ljava/lang/String;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent;
+	public fun <init> (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;)V
+	public synthetic fun <init> (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;
+	public final fun component2 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;
+	public final fun copy (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getApplication ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;
+	public fun getApplication ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;
+	public fun getEncryption ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;
 	public fun getExternalUrl ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$$serializer;
+public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Closed$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
 public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class de/connect2x/trixnity/core/model/events/m/rtc/UnknownRtcApplication : de/connect2x/trixnity/core/model/events/m/rtc/RtcApplication {
-	public fun <init> (Lkotlinx/serialization/json/JsonObject;)V
-	public final fun component1 ()Lkotlinx/serialization/json/JsonObject;
-	public final fun copy (Lkotlinx/serialization/json/JsonObject;)Lde/connect2x/trixnity/core/model/events/m/rtc/UnknownRtcApplication;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/UnknownRtcApplication;Lkotlinx/serialization/json/JsonObject;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/UnknownRtcApplication;
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open : de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open$Companion;
+	public fun <init> (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;)V
+	public synthetic fun <init> (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;
+	public final fun component2 ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;
+	public final fun copy (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getApplication ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;
+	public fun getEncryption ()Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;
+	public fun getExternalUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Open$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Serializer : kotlinx/serialization/KSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent$Serializer;
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotId {
+	public static final field Companion Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotId$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotId;
+	public static fun constructor-impl (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getFull ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final synthetic class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotId$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotId$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun deserialize-zGWJ8Os (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/String;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun serialize-jQcDNY8 (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/String;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcSlotId$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class de/connect2x/trixnity/core/model/events/m/rtc/RtcTransport {
+}
+
+public final class de/connect2x/trixnity/core/model/events/m/rtc/RtcTransport$Unknown : de/connect2x/trixnity/core/model/events/m/rtc/RtcTransport {
+	public fun <init> (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun copy (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcTransport$Unknown;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/model/events/m/rtc/RtcTransport$Unknown;Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;ILjava/lang/Object;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcTransport$Unknown;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getRaw ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getType ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -10223,6 +10463,9 @@ public abstract interface class de/connect2x/trixnity/core/serialization/events/
 	public abstract fun getGlobalAccountData ()Ljava/util/Set;
 	public abstract fun getMessage ()Ljava/util/Set;
 	public abstract fun getRoomAccountData ()Ljava/util/Set;
+	public abstract fun getRtcApplication ()Ljava/util/Set;
+	public abstract fun getRtcEncryption ()Ljava/util/Set;
+	public abstract fun getRtcTransport ()Ljava/util/Set;
 	public abstract fun getState ()Ljava/util/Set;
 	public abstract fun getToDevice ()Ljava/util/Set;
 	public fun minus (Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;)Lde/connect2x/trixnity/core/serialization/events/EventContentSerializerMappings;
@@ -10246,6 +10489,9 @@ public final class de/connect2x/trixnity/core/serialization/events/EventContentS
 	public final fun getGlobalAccountData ()Ljava/util/Set;
 	public final fun getMessage ()Ljava/util/Set;
 	public final fun getRoomAccountData ()Ljava/util/Set;
+	public final fun getRtcApplication ()Ljava/util/Set;
+	public final fun getRtcEncryption ()Ljava/util/Set;
+	public final fun getRtcTransport ()Ljava/util/Set;
 	public final fun getState ()Ljava/util/Set;
 	public final fun getToDevice ()Ljava/util/Set;
 }
@@ -10444,68 +10690,73 @@ public abstract interface class de/connect2x/trixnity/core/serialization/events/
 	public abstract fun setRoomVersion (Lde/connect2x/trixnity/core/model/events/PersistentDataUnit$PersistentStateDataUnit;Ljava/lang/String;)V
 }
 
-public final class de/connect2x/trixnity/core/serialization/events/RtcApplicationSerializer : kotlinx/serialization/KSerializer {
-	public fun <init> (Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings;)V
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplication;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+public abstract interface class de/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMapping {
+	public abstract fun getApplicationClass ()Lkotlin/reflect/KClass;
+	public abstract fun getApplicationSerializer ()Lkotlinx/serialization/KSerializer;
+	public abstract fun getMemberClass ()Lkotlin/reflect/KClass;
+	public abstract fun getMemberSerializer ()Lkotlinx/serialization/KSerializer;
+	public abstract fun getType ()Ljava/lang/String;
 }
 
-public final class de/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMapping {
-	public fun <init> (Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;)V
+public final class de/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappingImpl : de/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMapping {
+	public fun <init> (Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Lkotlin/reflect/KClass;
 	public final fun component3 ()Lkotlinx/serialization/KSerializer;
-	public final fun copy (Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;)Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMapping;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMapping;Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;ILjava/lang/Object;)Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMapping;
+	public final fun component4 ()Lkotlin/reflect/KClass;
+	public final fun component5 ()Lkotlinx/serialization/KSerializer;
+	public final fun copy (Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;)Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappingImpl;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappingImpl;Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;ILjava/lang/Object;)Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappingImpl;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getKClass ()Lkotlin/reflect/KClass;
-	public final fun getSerializer ()Lkotlinx/serialization/KSerializer;
-	public final fun getType ()Ljava/lang/String;
+	public fun getApplicationClass ()Lkotlin/reflect/KClass;
+	public fun getApplicationSerializer ()Lkotlinx/serialization/KSerializer;
+	public fun getMemberClass ()Lkotlin/reflect/KClass;
+	public fun getMemberSerializer ()Lkotlinx/serialization/KSerializer;
+	public fun getType ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class de/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings : java/util/Set, kotlin/jvm/internal/markers/KMappedMarker {
-	public static final field Companion Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings$Companion;
+public abstract interface class de/connect2x/trixnity/core/serialization/events/RtcEncryptionSerializerMapping {
+	public abstract fun getKClass ()Lkotlin/reflect/KClass;
+	public abstract fun getSerializer ()Lkotlinx/serialization/KSerializer;
+	public abstract fun getType ()Ljava/lang/String;
 }
 
-public final class de/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings$Companion {
+public final class de/connect2x/trixnity/core/serialization/events/RtcEncryptionSerializerMappingImpl : de/connect2x/trixnity/core/serialization/events/RtcEncryptionSerializerMapping {
+	public fun <init> (Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlin/reflect/KClass;
+	public final fun component3 ()Lkotlinx/serialization/KSerializer;
+	public final fun copy (Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;)Lde/connect2x/trixnity/core/serialization/events/RtcEncryptionSerializerMappingImpl;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/serialization/events/RtcEncryptionSerializerMappingImpl;Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;ILjava/lang/Object;)Lde/connect2x/trixnity/core/serialization/events/RtcEncryptionSerializerMappingImpl;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKClass ()Lkotlin/reflect/KClass;
+	public fun getSerializer ()Lkotlinx/serialization/KSerializer;
+	public fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
-public final class de/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappingsBuilder {
-	public fun <init> ()V
-	public final fun build ()Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings;
-	public final fun getMappings ()Ljava/util/Set;
+public abstract interface class de/connect2x/trixnity/core/serialization/events/RtcTransportSerializerMapping {
+	public abstract fun getKClass ()Lkotlin/reflect/KClass;
+	public abstract fun getSerializer ()Lkotlinx/serialization/KSerializer;
+	public abstract fun getType ()Ljava/lang/String;
 }
 
-public final class de/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappingsKt {
-	public static final fun getDefault (Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings$Companion;)Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings;
-	public static final fun invoke (Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings$Companion;Lkotlin/jvm/functions/Function1;)Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings;
-}
-
-public final class de/connect2x/trixnity/core/serialization/events/RtcMemberEventContentSerializer : kotlinx/serialization/KSerializer {
-	public fun <init> ()V
-	public fun <init> (Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings;)V
-	public synthetic fun <init> (Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcMemberEventContent;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-}
-
-public final class de/connect2x/trixnity/core/serialization/events/RtcSlotEventContentSerializer : kotlinx/serialization/KSerializer {
-	public fun <init> ()V
-	public fun <init> (Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings;)V
-	public synthetic fun <init> (Lde/connect2x/trixnity/core/serialization/events/RtcApplicationSerializerMappings;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcSlotEventContent;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+public final class de/connect2x/trixnity/core/serialization/events/RtcTransportSerializerMappingImpl : de/connect2x/trixnity/core/serialization/events/RtcTransportSerializerMapping {
+	public fun <init> (Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlin/reflect/KClass;
+	public final fun component3 ()Lkotlinx/serialization/KSerializer;
+	public final fun copy (Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;)Lde/connect2x/trixnity/core/serialization/events/RtcTransportSerializerMappingImpl;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/core/serialization/events/RtcTransportSerializerMappingImpl;Ljava/lang/String;Lkotlin/reflect/KClass;Lkotlinx/serialization/KSerializer;ILjava/lang/Object;)Lde/connect2x/trixnity/core/serialization/events/RtcTransportSerializerMappingImpl;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKClass ()Lkotlin/reflect/KClass;
+	public fun getSerializer ()Lkotlinx/serialization/KSerializer;
+	public fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class de/connect2x/trixnity/core/serialization/events/StateBaseEventSerializer : kotlinx/serialization/KSerializer {
@@ -10567,6 +10818,42 @@ public final class de/connect2x/trixnity/core/serialization/events/UnknownPersis
 
 public final class de/connect2x/trixnity/core/serialization/events/UnsupportedEventContentTypeException : java/lang/IllegalArgumentException {
 	public fun <init> (Lkotlin/reflect/KClass;)V
+}
+
+public final class de/connect2x/trixnity/core/serialization/events/m/rtc/RtcApplicationMemberSerializer : kotlinx/serialization/KSerializer {
+	public fun <init> (Ljava/util/Set;)V
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationMember;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/core/serialization/events/m/rtc/RtcApplicationSlotSerializer : kotlinx/serialization/KSerializer {
+	public fun <init> (Ljava/util/Set;)V
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcApplicationSlot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/core/serialization/events/m/rtc/RtcEncryptionSerializer : kotlinx/serialization/KSerializer {
+	public fun <init> (Ljava/util/Set;)V
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcEncryption;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class de/connect2x/trixnity/core/serialization/events/m/rtc/RtcTransportSerializer : kotlinx/serialization/KSerializer {
+	public fun <init> (Ljava/util/Set;)V
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lde/connect2x/trixnity/core/model/events/m/rtc/RtcTransport;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lde/connect2x/trixnity/core/model/events/m/rtc/RtcTransport;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 }
 
 public abstract interface class de/connect2x/trixnity/core/util/Reference {

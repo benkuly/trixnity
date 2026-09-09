@@ -76,7 +76,7 @@ class StickyEventStore(
         val eventType =
             when (val content = event.content) {
                 is UnknownEventContent -> content.eventType
-                else -> findType(event.content::class)
+                else -> findType(event.content)
             }
         stickyEventCache.update(
             MapRepositoryCoroutinesCacheKey(
@@ -167,6 +167,14 @@ class StickyEventStore(
     private fun <C : RoomEventContent> findType(eventContentClass: KClass<C>): String {
         return contentMappings.message.find { it.kClass == eventContentClass }?.type
             ?: contentMappings.state.find { it.kClass == eventContentClass }?.type
+            ?: throw IllegalArgumentException(
+                "Cannot find sticky event type, because it is not supported. You need to register it first."
+            )
+    }
+
+    private fun <C : RoomEventContent> findType(eventContent: C): String {
+        return contentMappings.message.find { it.kClass.isInstance(eventContent) }?.type
+            ?: contentMappings.state.find { it.kClass.isInstance(eventContent) }?.type
             ?: throw IllegalArgumentException(
                 "Cannot find sticky event type, because it is not supported. You need to register it first."
             )

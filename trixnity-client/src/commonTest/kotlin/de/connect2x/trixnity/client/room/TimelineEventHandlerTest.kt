@@ -22,6 +22,7 @@ import de.connect2x.trixnity.clientserverapi.model.sync.Sync
 import de.connect2x.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import de.connect2x.trixnity.clientserverapi.model.user.Filters
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4193
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
@@ -40,6 +41,7 @@ import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -128,10 +130,17 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
         )
     }
 
+    @OptIn(MSC4193::class)
     @MSC4143
     private fun stickyEvent(i: Long = 24): MessageEvent<StickyEventContent> {
         return MessageEvent(
-            RtcMemberEventContent("sticky_key", "slot") as StickyEventContent,
+            RtcMemberEventContent.Join(
+                CallRtcApplication.SLOT_ID,
+                RtcMemberEventContent.Member("memberId"),
+                CallRtcApplication.Member(),
+                null,
+                "sticky_key",
+            ) as StickyEventContent,
             EventId("\$event$i"),
             UserId("sender", "server"),
             room,

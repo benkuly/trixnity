@@ -7,6 +7,7 @@ import de.connect2x.trixnity.client.store.repository.NoOpStoreTransactionManager
 import de.connect2x.trixnity.client.store.repository.StickyEventRepositoryFirstKey
 import de.connect2x.trixnity.client.store.repository.StickyEventRepositorySecondKey
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4193
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
@@ -14,6 +15,7 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
 import de.connect2x.trixnity.core.model.events.StickyEventContent
 import de.connect2x.trixnity.core.model.events.StickyEventData
+import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.default
@@ -50,9 +52,17 @@ class StickyEventStoreTest : TrixnityBaseTest() {
     private val sender = UserId("alice", "server")
     private val firstKey = StickyEventRepositoryFirstKey(roomId, "org.matrix.msc4143.rtc.member")
     private val secondKey = StickyEventRepositorySecondKey(sender, "sticky_key")
+    @OptIn(MSC4193::class)
     private val event =
         RoomEvent.MessageEvent(
-            content = RtcMemberEventContent(stickyKey = "sticky_key", slotId = "1") as StickyEventContent,
+            content =
+                RtcMemberEventContent.Join(
+                    CallRtcApplication.SLOT_ID,
+                    RtcMemberEventContent.Member("memberId"),
+                    CallRtcApplication.Member(),
+                    null,
+                    "sticky_key",
+                ) as StickyEventContent,
             id = eventId,
             sender = sender,
             roomId = roomId,

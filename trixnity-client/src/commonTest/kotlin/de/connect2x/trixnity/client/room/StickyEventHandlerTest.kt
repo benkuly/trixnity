@@ -7,6 +7,7 @@ import de.connect2x.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import de.connect2x.trixnity.client.store.StoredStickyEvent
 import de.connect2x.trixnity.client.store.repository.NoOpStoreTransactionManager
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4193
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
@@ -16,6 +17,7 @@ import de.connect2x.trixnity.core.model.events.StickyEventContent
 import de.connect2x.trixnity.core.model.events.StickyEventData
 import de.connect2x.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import de.connect2x.trixnity.core.model.keys.MegolmMessageValue
@@ -63,11 +65,19 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
             config = MatrixClientConfiguration().apply { experimentalFeatures.enableMSC4354 = true },
         )
 
+    @OptIn(MSC4193::class)
     @Test
     fun `setStickyEvents - skip when not sticky`() = runTest {
         val event =
             RoomEvent.MessageEvent(
-                content = RtcMemberEventContent(stickyKey = "sticky", slotId = "1") as StickyEventContent,
+                content =
+                    RtcMemberEventContent.Join(
+                        CallRtcApplication.SLOT_ID,
+                        RtcMemberEventContent.Member("memberId"),
+                        CallRtcApplication.Member(),
+                        null,
+                        "sticky",
+                    ) as StickyEventContent,
                 id = EventId("\$event"),
                 sender = alice,
                 roomId = roomId,
@@ -78,12 +88,20 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
         store.getBySenderAndStickyKey(roomId, RtcMemberEventContent::class, alice, "sticky").first() shouldBe null
     }
 
+    @OptIn(MSC4193::class)
     @Test
     fun `setStickyEvents - set start time based on min`() = runTest {
         // originTimestamp < now
         val event1 =
             RoomEvent.MessageEvent(
-                content = RtcMemberEventContent(stickyKey = "sticky1", slotId = "1") as StickyEventContent,
+                content =
+                    RtcMemberEventContent.Join(
+                        CallRtcApplication.SLOT_ID,
+                        RtcMemberEventContent.Member("memberId"),
+                        CallRtcApplication.Member(),
+                        null,
+                        "sticky1",
+                    ) as StickyEventContent,
                 id = EventId("\$event1"),
                 sender = alice,
                 roomId = roomId,
@@ -93,7 +111,14 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
         // originTimestamp > now
         val event2 =
             RoomEvent.MessageEvent(
-                content = RtcMemberEventContent(stickyKey = "sticky2", slotId = "2") as StickyEventContent,
+                content =
+                    RtcMemberEventContent.Join(
+                        CallRtcApplication.SLOT_ID,
+                        RtcMemberEventContent.Member("memberId"),
+                        CallRtcApplication.Member(),
+                        null,
+                        "sticky2",
+                    ) as StickyEventContent,
                 id = EventId("\$event2"),
                 sender = alice,
                 roomId = roomId,
@@ -113,12 +138,20 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
             ?.startTime shouldBe Instant.fromEpochMilliseconds(0) + 2.seconds
     }
 
+    @OptIn(MSC4193::class)
     @Test
     fun `setStickyEvents - set send time based on start time and bounds`() = runTest {
         // negative duration
         val event1 =
             RoomEvent.MessageEvent(
-                content = RtcMemberEventContent(stickyKey = "sticky1", slotId = "1") as StickyEventContent,
+                content =
+                    RtcMemberEventContent.Join(
+                        CallRtcApplication.SLOT_ID,
+                        RtcMemberEventContent.Member("memberId"),
+                        CallRtcApplication.Member(),
+                        null,
+                        "sticky1",
+                    ) as StickyEventContent,
                 id = EventId("\$event1"),
                 sender = alice,
                 roomId = roomId,
@@ -128,7 +161,14 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
         // normal duration
         val event2 =
             RoomEvent.MessageEvent(
-                content = RtcMemberEventContent(stickyKey = "sticky2", slotId = "2") as StickyEventContent,
+                content =
+                    RtcMemberEventContent.Join(
+                        CallRtcApplication.SLOT_ID,
+                        RtcMemberEventContent.Member("memberId"),
+                        CallRtcApplication.Member(),
+                        null,
+                        "sticky2",
+                    ) as StickyEventContent,
                 id = EventId("\$event2"),
                 sender = alice,
                 roomId = roomId,
@@ -138,7 +178,14 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
         // over 1 hour
         val event3 =
             RoomEvent.MessageEvent(
-                content = RtcMemberEventContent(stickyKey = "sticky3", slotId = "3") as StickyEventContent,
+                content =
+                    RtcMemberEventContent.Join(
+                        CallRtcApplication.SLOT_ID,
+                        RtcMemberEventContent.Member("memberId"),
+                        CallRtcApplication.Member(),
+                        null,
+                        "sticky3",
+                    ) as StickyEventContent,
                 id = EventId("\$event3"),
                 sender = alice,
                 roomId = roomId,
@@ -178,6 +225,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
         encryptionService.decryptCounter shouldBe 0
     }
 
+    @OptIn(MSC4193::class)
     @Test
     fun `setEncryptedStickyEvents - decrypt`() = runTest {
         val eventContent =
@@ -196,7 +244,14 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                 originTimestamp = 1000L,
                 sticky = StickyEventData(durationMs = 1000L),
             )
-        val decryptedContent = RtcMemberEventContent(stickyKey = "sticky", slotId = "1")
+        val decryptedContent =
+            RtcMemberEventContent.Join(
+                CallRtcApplication.SLOT_ID,
+                RtcMemberEventContent.Member("memberId"),
+                CallRtcApplication.Member(),
+                null,
+                "sticky",
+            )
         encryptionService.returnDecrypt = Result.success(decryptedContent)
 
         cut.setEncryptedStickyEvents(listOf(encryptedEvent))
@@ -209,6 +264,7 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
             .content shouldBe decryptedContent
     }
 
+    @OptIn(MSC4193::class)
     @Test
     fun `removeInvalidStickyEvents - periodically`() = runTest {
         tm.writeTransaction {
@@ -216,7 +272,14 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                 StoredStickyEvent(
                     event =
                         RoomEvent.MessageEvent(
-                            content = RtcMemberEventContent(stickyKey = "sticky1", slotId = "1") as StickyEventContent,
+                            content =
+                                RtcMemberEventContent.Join(
+                                    CallRtcApplication.SLOT_ID,
+                                    RtcMemberEventContent.Member("memberId"),
+                                    CallRtcApplication.Member(),
+                                    null,
+                                    "sticky1",
+                                ) as StickyEventContent,
                             id = EventId("\$event"),
                             sender = alice,
                             roomId = roomId,
@@ -231,7 +294,14 @@ class StickyEventHandlerTest : TrixnityBaseTest() {
                 StoredStickyEvent(
                     event =
                         RoomEvent.MessageEvent(
-                            content = RtcMemberEventContent(stickyKey = "sticky2", slotId = "1") as StickyEventContent,
+                            content =
+                                RtcMemberEventContent.Join(
+                                    CallRtcApplication.SLOT_ID,
+                                    RtcMemberEventContent.Member("memberId"),
+                                    CallRtcApplication.Member(),
+                                    null,
+                                    "sticky2",
+                                ) as StickyEventContent,
                             id = EventId("\$event"),
                             sender = alice,
                             roomId = roomId,

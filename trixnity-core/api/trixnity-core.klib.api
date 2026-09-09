@@ -36,6 +36,10 @@ open annotation class de.connect2x.trixnity.core/MSC4143 : kotlin/Annotation { /
     constructor <init>() // de.connect2x.trixnity.core/MSC4143.<init>|<init>(){}[0]
 }
 
+open annotation class de.connect2x.trixnity.core/MSC4193 : kotlin/Annotation { // de.connect2x.trixnity.core/MSC4193|null[0]
+    constructor <init>() // de.connect2x.trixnity.core/MSC4193.<init>|<init>(){}[0]
+}
+
 open annotation class de.connect2x.trixnity.core/MSC4354 : kotlin/Annotation { // de.connect2x.trixnity.core/MSC4354|null[0]
     constructor <init>() // de.connect2x.trixnity.core/MSC4354.<init>|<init>(){}[0]
 }
@@ -65,8 +69,6 @@ final enum class de.connect2x.trixnity.core.model.events.m.room/Membership : kot
 
     final val entries // de.connect2x.trixnity.core.model.events.m.room/Membership.entries|#static{}entries[0]
         final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.core.model.events.m.room/Membership> // de.connect2x.trixnity.core.model.events.m.room/Membership.entries.<get-entries>|<get-entries>#static(){}[0]
-    final val value // de.connect2x.trixnity.core.model.events.m.room/Membership.value|{}value[0]
-        final fun <get-value>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.room/Membership.value.<get-value>|<get-value>(){}[0]
 
     final fun valueOf(kotlin/String): de.connect2x.trixnity.core.model.events.m.room/Membership // de.connect2x.trixnity.core.model.events.m.room/Membership.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<de.connect2x.trixnity.core.model.events.m.room/Membership> // de.connect2x.trixnity.core.model.events.m.room/Membership.values|values#static(){}[0]
@@ -174,6 +176,37 @@ abstract interface <#A: de.connect2x.trixnity.core.model.events.block/EventConte
         abstract fun <get-type>(): de.connect2x.trixnity.core.model.events.block/EventContentBlock.Type<#A> // de.connect2x.trixnity.core.serialization.events/EventContentBlockSerializerMapping.type.<get-type>|<get-type>(){}[0]
 }
 
+abstract interface <#A: de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot, #B: de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember> de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping { // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping|null[0]
+    abstract val applicationClass // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.applicationClass|{}applicationClass[0]
+        abstract fun <get-applicationClass>(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.applicationClass.<get-applicationClass>|<get-applicationClass>(){}[0]
+    abstract val applicationSerializer // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.applicationSerializer|{}applicationSerializer[0]
+        abstract fun <get-applicationSerializer>(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.applicationSerializer.<get-applicationSerializer>|<get-applicationSerializer>(){}[0]
+    abstract val memberClass // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.memberClass|{}memberClass[0]
+        abstract fun <get-memberClass>(): kotlin.reflect/KClass<out #B> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.memberClass.<get-memberClass>|<get-memberClass>(){}[0]
+    abstract val memberSerializer // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.memberSerializer|{}memberSerializer[0]
+        abstract fun <get-memberSerializer>(): kotlinx.serialization/KSerializer<#B> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.memberSerializer.<get-memberSerializer>|<get-memberSerializer>(){}[0]
+    abstract val type // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.type|{}type[0]
+        abstract fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.type.<get-type>|<get-type>(){}[0]
+}
+
+abstract interface <#A: de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption> de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping { // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping|null[0]
+    abstract val kClass // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping.kClass|{}kClass[0]
+        abstract fun <get-kClass>(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping.kClass.<get-kClass>|<get-kClass>(){}[0]
+    abstract val serializer // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping.serializer|{}serializer[0]
+        abstract fun <get-serializer>(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping.serializer.<get-serializer>|<get-serializer>(){}[0]
+    abstract val type // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping.type|{}type[0]
+        abstract fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping.type.<get-type>|<get-type>(){}[0]
+}
+
+abstract interface <#A: de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport> de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping { // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping|null[0]
+    abstract val kClass // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping.kClass|{}kClass[0]
+        abstract fun <get-kClass>(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping.kClass.<get-kClass>|<get-kClass>(){}[0]
+    abstract val serializer // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping.serializer|{}serializer[0]
+        abstract fun <get-serializer>(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping.serializer.<get-serializer>|<get-serializer>(){}[0]
+    abstract val type // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping.type|{}type[0]
+        abstract fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping.type.<get-type>|<get-type>(){}[0]
+}
+
 abstract interface <#A: de.connect2x.trixnity.core.model.events/EventContent> de.connect2x.trixnity.core.model.events/Event { // de.connect2x.trixnity.core.model.events/Event|null[0]
     abstract val content // de.connect2x.trixnity.core.model.events/Event.content|{}content[0]
         abstract fun <get-content>(): #A // de.connect2x.trixnity.core.model.events/Event.content.<get-content>|<get-content>(){}[0]
@@ -261,7 +294,91 @@ abstract interface de.connect2x.trixnity.core.model.events.m.room/FileBasedInfo 
         abstract fun <get-size>(): kotlin/Long? // de.connect2x.trixnity.core.model.events.m.room/FileBasedInfo.size.<get-size>|<get-size>(){}[0]
 }
 
-abstract interface de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication|null[0]
+abstract interface de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember { // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember|null[0]
+    final enum class DefaultLeaveReasonCode : kotlin/Enum<de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode|null[0]
+        enum entry DELAYED_LEAVE // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode.DELAYED_LEAVE|null[0]
+        enum entry LEAVE // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode.LEAVE|null[0]
+        enum entry SLOT_CLOSED // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode.SLOT_CLOSED|null[0]
+
+        final val entries // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode> // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode.entries.<get-entries>|<get-entries>#static(){}[0]
+        final val value // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode.value|{}value[0]
+            final fun <get-value>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode.value.<get-value>|<get-value>(){}[0]
+
+        final fun valueOf(kotlin/String): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode> // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.DefaultLeaveReasonCode.values|values#static(){}[0]
+    }
+
+    final class Unknown : de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember { // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown|null[0]
+        constructor <init>(kotlin/String, kotlinx.serialization.json/JsonObject) // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.<init>|<init>(kotlin.String;kotlinx.serialization.json.JsonObject){}[0]
+
+        final val raw // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.raw|{}raw[0]
+            final fun <get-raw>(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.raw.<get-raw>|<get-raw>(){}[0]
+        final val type // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.type|{}type[0]
+            final fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.type.<get-type>|<get-type>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.component1|component1(){}[0]
+        final fun component2(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlinx.serialization.json/JsonObject = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.copy|copy(kotlin.String;kotlinx.serialization.json.JsonObject){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember.Unknown.toString|toString(){}[0]
+    }
+}
+
+abstract interface de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot { // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot|null[0]
+    final class Unknown : de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot { // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown|null[0]
+        constructor <init>(kotlin/String, kotlinx.serialization.json/JsonObject) // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.<init>|<init>(kotlin.String;kotlinx.serialization.json.JsonObject){}[0]
+
+        final val raw // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.raw|{}raw[0]
+            final fun <get-raw>(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.raw.<get-raw>|<get-raw>(){}[0]
+        final val type // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.type|{}type[0]
+            final fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.type.<get-type>|<get-type>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.component1|component1(){}[0]
+        final fun component2(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlinx.serialization.json/JsonObject = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.copy|copy(kotlin.String;kotlinx.serialization.json.JsonObject){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot.Unknown.toString|toString(){}[0]
+    }
+}
+
+abstract interface de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption { // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption|null[0]
+    final class Unknown : de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption { // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown|null[0]
+        constructor <init>(kotlin/String, kotlinx.serialization.json/JsonObject) // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.<init>|<init>(kotlin.String;kotlinx.serialization.json.JsonObject){}[0]
+
+        final val raw // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.raw|{}raw[0]
+            final fun <get-raw>(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.raw.<get-raw>|<get-raw>(){}[0]
+        final val type // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.type|{}type[0]
+            final fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.type.<get-type>|<get-type>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.component1|component1(){}[0]
+        final fun component2(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlinx.serialization.json/JsonObject = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.copy|copy(kotlin.String;kotlinx.serialization.json.JsonObject){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption.Unknown.toString|toString(){}[0]
+    }
+}
+
+abstract interface de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport { // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport|null[0]
+    final class Unknown : de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport { // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown|null[0]
+        constructor <init>(kotlin/String, kotlinx.serialization.json/JsonObject) // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.<init>|<init>(kotlin.String;kotlinx.serialization.json.JsonObject){}[0]
+
+        final val raw // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.raw|{}raw[0]
+            final fun <get-raw>(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.raw.<get-raw>|<get-raw>(){}[0]
+        final val type // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.type|{}type[0]
+            final fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.type.<get-type>|<get-type>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.component1|component1(){}[0]
+        final fun component2(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlinx.serialization.json/JsonObject = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.copy|copy(kotlin.String;kotlinx.serialization.json.JsonObject){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport.Unknown.toString|toString(){}[0]
+    }
+}
 
 abstract interface de.connect2x.trixnity.core.model.events.m.secretstorage/SecretEventContent : de.connect2x.trixnity.core.model.events/GlobalAccountDataEventContent { // de.connect2x.trixnity.core.model.events.m.secretstorage/SecretEventContent|null[0]
     abstract val encrypted // de.connect2x.trixnity.core.model.events.m.secretstorage/SecretEventContent.encrypted|{}encrypted[0]
@@ -307,6 +424,12 @@ abstract interface de.connect2x.trixnity.core.serialization.events/EventContentS
         abstract fun <get-message>(): kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/MessageEventContentSerializerMapping> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.message.<get-message>|<get-message>(){}[0]
     abstract val roomAccountData // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.roomAccountData|{}roomAccountData[0]
         abstract fun <get-roomAccountData>(): kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/EventContentSerializerMapping<de.connect2x.trixnity.core.model.events/RoomAccountDataEventContent>> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.roomAccountData.<get-roomAccountData>|<get-roomAccountData>(){}[0]
+    abstract val rtcApplication // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.rtcApplication|{}rtcApplication[0]
+        abstract fun <get-rtcApplication>(): kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping<*, *>> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.rtcApplication.<get-rtcApplication>|<get-rtcApplication>(){}[0]
+    abstract val rtcEncryption // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.rtcEncryption|{}rtcEncryption[0]
+        abstract fun <get-rtcEncryption>(): kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping<*>> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.rtcEncryption.<get-rtcEncryption>|<get-rtcEncryption>(){}[0]
+    abstract val rtcTransport // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.rtcTransport|{}rtcTransport[0]
+        abstract fun <get-rtcTransport>(): kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping<*>> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.rtcTransport.<get-rtcTransport>|<get-rtcTransport>(){}[0]
     abstract val state // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.state|{}state[0]
         abstract fun <get-state>(): kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/StateEventContentSerializerMapping> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.state.<get-state>|<get-state>(){}[0]
     abstract val toDevice // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.toDevice|{}toDevice[0]
@@ -321,10 +444,6 @@ abstract interface de.connect2x.trixnity.core.serialization.events/EventContentS
 abstract interface de.connect2x.trixnity.core.serialization.events/RoomVersionStore { // de.connect2x.trixnity.core.serialization.events/RoomVersionStore|null[0]
     abstract fun getRoomVersion(de.connect2x.trixnity.core.model/RoomId): kotlin/String // de.connect2x.trixnity.core.serialization.events/RoomVersionStore.getRoomVersion|getRoomVersion(de.connect2x.trixnity.core.model.RoomId){}[0]
     abstract fun setRoomVersion(de.connect2x.trixnity.core.model.events/PersistentDataUnit.PersistentStateDataUnit<*>, kotlin/String) // de.connect2x.trixnity.core.serialization.events/RoomVersionStore.setRoomVersion|setRoomVersion(de.connect2x.trixnity.core.model.events.PersistentDataUnit.PersistentStateDataUnit<*>;kotlin.String){}[0]
-}
-
-abstract interface de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings : kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping<*>> { // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings|null[0]
-    final object Companion // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings.Companion|null[0]
 }
 
 abstract interface de.connect2x.trixnity.core/EventHandler { // de.connect2x.trixnity.core/EventHandler|null[0]
@@ -3085,6 +3204,291 @@ sealed interface de.connect2x.trixnity.core.model.events.m.room/RoomMessageEvent
 
         final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.room/RoomMessageEventContent // de.connect2x.trixnity.core.model.events.m.room/RoomMessageEventContent.Serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
         final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.room/RoomMessageEventContent) // de.connect2x.trixnity.core.model.events.m.room/RoomMessageEventContent.Serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent){}[0]
+    }
+}
+
+sealed interface de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent : de.connect2x.trixnity.core.model.events/StickyEventContent { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent|null[0]
+    abstract val member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.member|{}member[0]
+        abstract fun <get-member>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.member.<get-member>|<get-member>(){}[0]
+    abstract val relatesTo // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.relatesTo|{}relatesTo[0]
+        abstract fun <get-relatesTo>(): de.connect2x.trixnity.core.model.events.m/RelatesTo.Reference? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.relatesTo.<get-relatesTo>|<get-relatesTo>(){}[0]
+    abstract val slotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.slotId|{}slotId[0]
+        abstract fun <get-slotId>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.slotId.<get-slotId>|<get-slotId>(){}[0]
+
+    final class Join : de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join|null[0]
+        constructor <init>(de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member, de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports? = ..., kotlin/String, de.connect2x.trixnity.core.model.events.m/RelatesTo.Reference? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.<init>|<init>(de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Member;de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationMember;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.RtcTransports?;kotlin.String;de.connect2x.trixnity.core.model.events.m.RelatesTo.Reference?){}[0]
+
+        final val application // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.application|{}application[0]
+            final fun <get-application>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.application.<get-application>|<get-application>(){}[0]
+        final val externalUrl // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.externalUrl|{}externalUrl[0]
+            final fun <get-externalUrl>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.externalUrl.<get-externalUrl>|<get-externalUrl>(){}[0]
+        final val member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.member|{}member[0]
+            final fun <get-member>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.member.<get-member>|<get-member>(){}[0]
+        final val mentions // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.mentions|{}mentions[0]
+            final fun <get-mentions>(): de.connect2x.trixnity.core.model.events.m/Mentions? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.mentions.<get-mentions>|<get-mentions>(){}[0]
+        final val relatesTo // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.relatesTo|{}relatesTo[0]
+            final fun <get-relatesTo>(): de.connect2x.trixnity.core.model.events.m/RelatesTo.Reference? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.relatesTo.<get-relatesTo>|<get-relatesTo>(){}[0]
+        final val slotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.slotId|{}slotId[0]
+            final fun <get-slotId>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.slotId.<get-slotId>|<get-slotId>(){}[0]
+        final val stickyKey // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.stickyKey|{}stickyKey[0]
+            final fun <get-stickyKey>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.stickyKey.<get-stickyKey>|<get-stickyKey>(){}[0]
+        final val transports // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.transports|{}transports[0]
+            final fun <get-transports>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.transports.<get-transports>|<get-transports>(){}[0]
+
+        final fun component1(): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.component2|component2(){}[0]
+        final fun component3(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.component3|component3(){}[0]
+        final fun component4(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.component4|component4(){}[0]
+        final fun component5(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.component5|component5(){}[0]
+        final fun component6(): de.connect2x.trixnity.core.model.events.m/RelatesTo.Reference? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.component6|component6(){}[0]
+        final fun copy(de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports? = ..., kotlin/String = ..., de.connect2x.trixnity.core.model.events.m/RelatesTo.Reference? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.copy|copy(de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Member;de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationMember;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.RtcTransports?;kotlin.String;de.connect2x.trixnity.core.model.events.m.RelatesTo.Reference?){}[0]
+        final fun copyWith(de.connect2x.trixnity.core.model.events.m/RelatesTo?): de.connect2x.trixnity.core.model.events/MessageEventContent // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.copyWith|copyWith(de.connect2x.trixnity.core.model.events.m.RelatesTo?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Join){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.Companion|null[0]
+            final val $childSerializers // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.Companion.$childSerializers|{}$childSerializers[0]
+
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Join.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class Leave : de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave|null[0]
+        constructor <init>(de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason? = ..., kotlin/String, de.connect2x.trixnity.core.model.events.m/RelatesTo.Reference? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.<init>|<init>(de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Member;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Leave.Reason?;kotlin.String;de.connect2x.trixnity.core.model.events.m.RelatesTo.Reference?){}[0]
+
+        final val externalUrl // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.externalUrl|{}externalUrl[0]
+            final fun <get-externalUrl>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.externalUrl.<get-externalUrl>|<get-externalUrl>(){}[0]
+        final val member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.member|{}member[0]
+            final fun <get-member>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.member.<get-member>|<get-member>(){}[0]
+        final val mentions // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.mentions|{}mentions[0]
+            final fun <get-mentions>(): de.connect2x.trixnity.core.model.events.m/Mentions? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.mentions.<get-mentions>|<get-mentions>(){}[0]
+        final val reason // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.reason|{}reason[0]
+            final fun <get-reason>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.reason.<get-reason>|<get-reason>(){}[0]
+        final val relatesTo // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.relatesTo|{}relatesTo[0]
+            final fun <get-relatesTo>(): de.connect2x.trixnity.core.model.events.m/RelatesTo.Reference? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.relatesTo.<get-relatesTo>|<get-relatesTo>(){}[0]
+        final val slotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.slotId|{}slotId[0]
+            final fun <get-slotId>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.slotId.<get-slotId>|<get-slotId>(){}[0]
+        final val stickyKey // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.stickyKey|{}stickyKey[0]
+            final fun <get-stickyKey>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.stickyKey.<get-stickyKey>|<get-stickyKey>(){}[0]
+
+        final fun component1(): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.component2|component2(){}[0]
+        final fun component3(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.component3|component3(){}[0]
+        final fun component4(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.component4|component4(){}[0]
+        final fun component5(): de.connect2x.trixnity.core.model.events.m/RelatesTo.Reference? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.component5|component5(){}[0]
+        final fun copy(de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason? = ..., kotlin/String = ..., de.connect2x.trixnity.core.model.events.m/RelatesTo.Reference? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.copy|copy(de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Member;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Leave.Reason?;kotlin.String;de.connect2x.trixnity.core.model.events.m.RelatesTo.Reference?){}[0]
+        final fun copyWith(de.connect2x.trixnity.core.model.events.m/RelatesTo?): de.connect2x.trixnity.core.model.events/MessageEventContent // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.copyWith|copyWith(de.connect2x.trixnity.core.model.events.m.RelatesTo?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.toString|toString(){}[0]
+
+        final class Reason { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason|null[0]
+            constructor <init>(kotlin/String, kotlin/String? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.<init>|<init>(kotlin.String;kotlin.String?){}[0]
+
+            final val code // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.code|{}code[0]
+                final fun <get-code>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.code.<get-code>|<get-code>(){}[0]
+            final val reason // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.reason|{}reason[0]
+                final fun <get-reason>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.reason.<get-reason>|<get-reason>(){}[0]
+
+            final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.component1|component1(){}[0]
+            final fun component2(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.component2|component2(){}[0]
+            final fun copy(kotlin/String = ..., kotlin/String? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.copy|copy(kotlin.String;kotlin.String?){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.toString|toString(){}[0]
+
+            final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.$serializer|null[0]
+                final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.$serializer.descriptor|{}descriptor[0]
+                    final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+                final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.$serializer.childSerializers|childSerializers(){}[0]
+                final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+                final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Leave.Reason){}[0]
+            }
+
+            final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.Companion|null[0]
+                final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Reason.Companion.serializer|serializer(){}[0]
+            }
+        }
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Leave){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Leave.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class Member { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member|null[0]
+        constructor <init>(kotlin/String) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.<init>|<init>(kotlin.String){}[0]
+
+        final val id // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.id|{}id[0]
+            final fun <get-id>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.id.<get-id>|<get-id>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Member){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class RtcTransports { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports|null[0]
+        constructor <init>(kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport>? = ..., kotlin.collections/List<kotlin/String>? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.<init>|<init>(kotlin.collections.List<de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport>?;kotlin.collections.List<kotlin.String>?){}[0]
+
+        final val canSubscribe // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.canSubscribe|{}canSubscribe[0]
+            final fun <get-canSubscribe>(): kotlin.collections/List<kotlin/String>? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.canSubscribe.<get-canSubscribe>|<get-canSubscribe>(){}[0]
+        final val published // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.published|{}published[0]
+            final fun <get-published>(): kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport>? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.published.<get-published>|<get-published>(){}[0]
+
+        final fun component1(): kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport>? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/List<kotlin/String>? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.component2|component2(){}[0]
+        final fun copy(kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport>? = ..., kotlin.collections/List<kotlin/String>? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.copy|copy(kotlin.collections.List<de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport>?;kotlin.collections.List<kotlin.String>?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.RtcTransports){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.Companion|null[0]
+            final val $childSerializers // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.Companion.$childSerializers|{}$childSerializers[0]
+
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransports.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final object Companion : kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Companion.serializer|serializer(){}[0]
+        final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Companion.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+    }
+
+    final object Serializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent){}[0]
+    }
+}
+
+sealed interface de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent : de.connect2x.trixnity.core.model.events/StateEventContent { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent|null[0]
+    abstract val application // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.application|{}application[0]
+        abstract fun <get-application>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.application.<get-application>|<get-application>(){}[0]
+    abstract val encryption // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.encryption|{}encryption[0]
+        abstract fun <get-encryption>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.encryption.<get-encryption>|<get-encryption>(){}[0]
+
+    final class Closed : de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed|null[0]
+        constructor <init>(de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot? = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.<init>|<init>(de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationSlot?;de.connect2x.trixnity.core.model.events.m.rtc.RtcEncryption?){}[0]
+
+        final val application // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.application|{}application[0]
+            final fun <get-application>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.application.<get-application>|<get-application>(){}[0]
+        final val encryption // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.encryption|{}encryption[0]
+            final fun <get-encryption>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.encryption.<get-encryption>|<get-encryption>(){}[0]
+        final val externalUrl // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.externalUrl|{}externalUrl[0]
+            final fun <get-externalUrl>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.externalUrl.<get-externalUrl>|<get-externalUrl>(){}[0]
+
+        final fun component1(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.component2|component2(){}[0]
+        final fun copy(de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot? = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.copy|copy(de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationSlot?;de.connect2x.trixnity.core.model.events.m.rtc.RtcEncryption?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed) // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotEventContent.Closed){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.Companion|null[0]
+            final val $childSerializers // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.Companion.$childSerializers|{}$childSerializers[0]
+
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Closed.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class Open : de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open|null[0]
+        constructor <init>(de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot, de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.<init>|<init>(de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationSlot;de.connect2x.trixnity.core.model.events.m.rtc.RtcEncryption?){}[0]
+
+        final val application // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.application|{}application[0]
+            final fun <get-application>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.application.<get-application>|<get-application>(){}[0]
+        final val encryption // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.encryption|{}encryption[0]
+            final fun <get-encryption>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.encryption.<get-encryption>|<get-encryption>(){}[0]
+        final val externalUrl // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.externalUrl|{}externalUrl[0]
+            final fun <get-externalUrl>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.externalUrl.<get-externalUrl>|<get-externalUrl>(){}[0]
+
+        final fun component1(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.component1|component1(){}[0]
+        final fun component2(): de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.component2|component2(){}[0]
+        final fun copy(de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.copy|copy(de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationSlot;de.connect2x.trixnity.core.model.events.m.rtc.RtcEncryption?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open) // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotEventContent.Open){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.Companion|null[0]
+            final val $childSerializers // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.Companion.$childSerializers|{}$childSerializers[0]
+
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Open.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final object Companion : kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Companion.serializer|serializer(){}[0]
+        final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Companion.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+    }
+
+    final object Serializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent) // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotEventContent){}[0]
     }
 }
 
@@ -6190,23 +6594,67 @@ final class <#A: de.connect2x.trixnity.core.model.events.block/EventContentBlock
     final fun toString(): kotlin/String // de.connect2x.trixnity.core.serialization.events/EventContentBlockSerializerMappingImpl.toString|toString(){}[0]
 }
 
-final class <#A: de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication> de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping { // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping|null[0]
-    constructor <init>(kotlin/String, kotlin.reflect/KClass<out #A>, kotlinx.serialization/KSerializer<#A>) // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.<init>|<init>(kotlin.String;kotlin.reflect.KClass<out|1:0>;kotlinx.serialization.KSerializer<1:0>){}[0]
+final class <#A: de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot, #B: de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember> de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl : de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping<#A, #B> { // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl|null[0]
+    constructor <init>(kotlin/String, kotlin.reflect/KClass<out #A>, kotlinx.serialization/KSerializer<#A>, kotlin.reflect/KClass<out #B>, kotlinx.serialization/KSerializer<#B>) // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.<init>|<init>(kotlin.String;kotlin.reflect.KClass<out|1:0>;kotlinx.serialization.KSerializer<1:0>;kotlin.reflect.KClass<out|1:1>;kotlinx.serialization.KSerializer<1:1>){}[0]
 
-    final val kClass // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.kClass|{}kClass[0]
-        final fun <get-kClass>(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.kClass.<get-kClass>|<get-kClass>(){}[0]
-    final val serializer // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.serializer|{}serializer[0]
-        final fun <get-serializer>(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.serializer.<get-serializer>|<get-serializer>(){}[0]
-    final val type // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.type|{}type[0]
-        final fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.type.<get-type>|<get-type>(){}[0]
+    final val applicationClass // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.applicationClass|{}applicationClass[0]
+        final fun <get-applicationClass>(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.applicationClass.<get-applicationClass>|<get-applicationClass>(){}[0]
+    final val applicationSerializer // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.applicationSerializer|{}applicationSerializer[0]
+        final fun <get-applicationSerializer>(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.applicationSerializer.<get-applicationSerializer>|<get-applicationSerializer>(){}[0]
+    final val memberClass // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.memberClass|{}memberClass[0]
+        final fun <get-memberClass>(): kotlin.reflect/KClass<out #B> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.memberClass.<get-memberClass>|<get-memberClass>(){}[0]
+    final val memberSerializer // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.memberSerializer|{}memberSerializer[0]
+        final fun <get-memberSerializer>(): kotlinx.serialization/KSerializer<#B> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.memberSerializer.<get-memberSerializer>|<get-memberSerializer>(){}[0]
+    final val type // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.type|{}type[0]
+        final fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.type.<get-type>|<get-type>(){}[0]
 
-    final fun component1(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.component1|component1(){}[0]
-    final fun component2(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.component2|component2(){}[0]
-    final fun component3(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.component3|component3(){}[0]
-    final fun copy(kotlin/String = ..., kotlin.reflect/KClass<out #A> = ..., kotlinx.serialization/KSerializer<#A> = ...): de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping<#A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.copy|copy(kotlin.String;kotlin.reflect.KClass<out|1:0>;kotlinx.serialization.KSerializer<1:0>){}[0]
-    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.hashCode|hashCode(){}[0]
-    final fun toString(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping.toString|toString(){}[0]
+    final fun component1(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.component1|component1(){}[0]
+    final fun component2(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.component2|component2(){}[0]
+    final fun component3(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.component3|component3(){}[0]
+    final fun component4(): kotlin.reflect/KClass<out #B> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.component4|component4(){}[0]
+    final fun component5(): kotlinx.serialization/KSerializer<#B> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.component5|component5(){}[0]
+    final fun copy(kotlin/String = ..., kotlin.reflect/KClass<out #A> = ..., kotlinx.serialization/KSerializer<#A> = ..., kotlin.reflect/KClass<out #B> = ..., kotlinx.serialization/KSerializer<#B> = ...): de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl<#A, #B> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.copy|copy(kotlin.String;kotlin.reflect.KClass<out|1:0>;kotlinx.serialization.KSerializer<1:0>;kotlin.reflect.KClass<out|1:1>;kotlinx.serialization.KSerializer<1:1>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingImpl.toString|toString(){}[0]
+}
+
+final class <#A: de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption> de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl : de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping<#A> { // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl|null[0]
+    constructor <init>(kotlin/String, kotlin.reflect/KClass<out #A>, kotlinx.serialization/KSerializer<#A>) // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.<init>|<init>(kotlin.String;kotlin.reflect.KClass<out|1:0>;kotlinx.serialization.KSerializer<1:0>){}[0]
+
+    final val kClass // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.kClass|{}kClass[0]
+        final fun <get-kClass>(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.kClass.<get-kClass>|<get-kClass>(){}[0]
+    final val serializer // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.serializer|{}serializer[0]
+        final fun <get-serializer>(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.serializer.<get-serializer>|<get-serializer>(){}[0]
+    final val type // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.type|{}type[0]
+        final fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.type.<get-type>|<get-type>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.component1|component1(){}[0]
+    final fun component2(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.component2|component2(){}[0]
+    final fun component3(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin.reflect/KClass<out #A> = ..., kotlinx.serialization/KSerializer<#A> = ...): de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl<#A> // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.copy|copy(kotlin.String;kotlin.reflect.KClass<out|1:0>;kotlinx.serialization.KSerializer<1:0>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMappingImpl.toString|toString(){}[0]
+}
+
+final class <#A: de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport> de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl : de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping<#A> { // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl|null[0]
+    constructor <init>(kotlin/String, kotlin.reflect/KClass<out #A>, kotlinx.serialization/KSerializer<#A>) // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.<init>|<init>(kotlin.String;kotlin.reflect.KClass<out|1:0>;kotlinx.serialization.KSerializer<1:0>){}[0]
+
+    final val kClass // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.kClass|{}kClass[0]
+        final fun <get-kClass>(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.kClass.<get-kClass>|<get-kClass>(){}[0]
+    final val serializer // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.serializer|{}serializer[0]
+        final fun <get-serializer>(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.serializer.<get-serializer>|<get-serializer>(){}[0]
+    final val type // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.type|{}type[0]
+        final fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.type.<get-type>|<get-type>(){}[0]
+
+    final fun component1(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.component1|component1(){}[0]
+    final fun component2(): kotlin.reflect/KClass<out #A> // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.component2|component2(){}[0]
+    final fun component3(): kotlinx.serialization/KSerializer<#A> // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin.reflect/KClass<out #A> = ..., kotlinx.serialization/KSerializer<#A> = ...): de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl<#A> // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.copy|copy(kotlin.String;kotlin.reflect.KClass<out|1:0>;kotlinx.serialization.KSerializer<1:0>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMappingImpl.toString|toString(){}[0]
 }
 
 final class <#A: de.connect2x.trixnity.core.model.events/EphemeralDataUnitContent> de.connect2x.trixnity.core.model.events/EphemeralDataUnit : de.connect2x.trixnity.core.model.events/Event<#A> { // de.connect2x.trixnity.core.model.events/EphemeralDataUnit|null[0]
@@ -8329,226 +8777,6 @@ final class de.connect2x.trixnity.core.model.events.m.room/VideoInfo : de.connec
     }
 }
 
-final class de.connect2x.trixnity.core.model.events.m.rtc/CallApplication : de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication { // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication|null[0]
-    constructor <init>(kotlin/String? = ..., kotlin/String? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.<init>|<init>(kotlin.String?;kotlin.String?){}[0]
-
-    final val callId // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.callId|{}callId[0]
-        final fun <get-callId>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.callId.<get-callId>|<get-callId>(){}[0]
-    final val scope // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.scope|{}scope[0]
-        final fun <get-scope>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.scope.<get-scope>|<get-scope>(){}[0]
-
-    final fun component1(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.component1|component1(){}[0]
-    final fun component2(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.component2|component2(){}[0]
-    final fun copy(kotlin/String? = ..., kotlin/String? = ...): de.connect2x.trixnity.core.model.events.m.rtc/CallApplication // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.copy|copy(kotlin.String?;kotlin.String?){}[0]
-    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.hashCode|hashCode(){}[0]
-    final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.toString|toString(){}[0]
-
-    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/CallApplication> { // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.$serializer|null[0]
-        final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.$serializer.descriptor|{}descriptor[0]
-            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
-
-        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.$serializer.childSerializers|childSerializers(){}[0]
-        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/CallApplication // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
-        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/CallApplication) // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.CallApplication){}[0]
-    }
-
-    final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.Companion|null[0]
-        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/CallApplication> // de.connect2x.trixnity.core.model.events.m.rtc/CallApplication.Companion.serializer|serializer(){}[0]
-    }
-}
-
-final class de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent : de.connect2x.trixnity.core.model.events/MessageEventContent, de.connect2x.trixnity.core.model.events/StickyEventContent { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent|null[0]
-    constructor <init>(kotlin/String, kotlin/String, de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication? = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport>? = ..., kotlin.collections/List<kotlin/String>? = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason? = ..., kotlin/Boolean? = ..., de.connect2x.trixnity.core.model.events.m/RelatesTo? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.<init>|<init>(kotlin.String;kotlin.String;de.connect2x.trixnity.core.model.events.m.rtc.RtcApplication?;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Member?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.RtcTransport>?;kotlin.collections.List<kotlin.String>?;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.DisconnectReason?;kotlin.Boolean?;de.connect2x.trixnity.core.model.events.m.RelatesTo?){}[0]
-
-    final val application // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.application|{}application[0]
-        final fun <get-application>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.application.<get-application>|<get-application>(){}[0]
-    final val disconnectReason // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.disconnectReason|{}disconnectReason[0]
-        final fun <get-disconnectReason>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.disconnectReason.<get-disconnectReason>|<get-disconnectReason>(){}[0]
-    final val disconnected // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.disconnected|{}disconnected[0]
-        final fun <get-disconnected>(): kotlin/Boolean? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.disconnected.<get-disconnected>|<get-disconnected>(){}[0]
-    final val externalUrl // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.externalUrl|{}externalUrl[0]
-        final fun <get-externalUrl>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.externalUrl.<get-externalUrl>|<get-externalUrl>(){}[0]
-    final val member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.member|{}member[0]
-        final fun <get-member>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.member.<get-member>|<get-member>(){}[0]
-    final val mentions // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.mentions|{}mentions[0]
-        final fun <get-mentions>(): de.connect2x.trixnity.core.model.events.m/Mentions? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.mentions.<get-mentions>|<get-mentions>(){}[0]
-    final val relatesTo // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.relatesTo|{}relatesTo[0]
-        final fun <get-relatesTo>(): de.connect2x.trixnity.core.model.events.m/RelatesTo? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.relatesTo.<get-relatesTo>|<get-relatesTo>(){}[0]
-    final val rtcTransports // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.rtcTransports|{}rtcTransports[0]
-        final fun <get-rtcTransports>(): kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport>? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.rtcTransports.<get-rtcTransports>|<get-rtcTransports>(){}[0]
-    final val slotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.slotId|{}slotId[0]
-        final fun <get-slotId>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.slotId.<get-slotId>|<get-slotId>(){}[0]
-    final val stickyKey // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.stickyKey|{}stickyKey[0]
-        final fun <get-stickyKey>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.stickyKey.<get-stickyKey>|<get-stickyKey>(){}[0]
-    final val versions // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.versions|{}versions[0]
-        final fun <get-versions>(): kotlin.collections/List<kotlin/String>? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.versions.<get-versions>|<get-versions>(){}[0]
-
-    final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.component1|component1(){}[0]
-    final fun component2(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.component2|component2(){}[0]
-    final fun component3(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.component3|component3(){}[0]
-    final fun component4(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.component4|component4(){}[0]
-    final fun component5(): kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport>? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.component5|component5(){}[0]
-    final fun component6(): kotlin.collections/List<kotlin/String>? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.component6|component6(){}[0]
-    final fun component7(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.component7|component7(){}[0]
-    final fun component8(): kotlin/Boolean? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.component8|component8(){}[0]
-    final fun component9(): de.connect2x.trixnity.core.model.events.m/RelatesTo? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.component9|component9(){}[0]
-    final fun copy(kotlin/String = ..., kotlin/String = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication? = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member? = ..., kotlin.collections/List<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport>? = ..., kotlin.collections/List<kotlin/String>? = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason? = ..., kotlin/Boolean? = ..., de.connect2x.trixnity.core.model.events.m/RelatesTo? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.copy|copy(kotlin.String;kotlin.String;de.connect2x.trixnity.core.model.events.m.rtc.RtcApplication?;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Member?;kotlin.collections.List<de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.RtcTransport>?;kotlin.collections.List<kotlin.String>?;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.DisconnectReason?;kotlin.Boolean?;de.connect2x.trixnity.core.model.events.m.RelatesTo?){}[0]
-    final fun copyWith(de.connect2x.trixnity.core.model.events.m/RelatesTo?): de.connect2x.trixnity.core.model.events/MessageEventContent // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.copyWith|copyWith(de.connect2x.trixnity.core.model.events.m.RelatesTo?){}[0]
-    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.hashCode|hashCode(){}[0]
-    final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.toString|toString(){}[0]
-
-    final class DisconnectReason { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason|null[0]
-        constructor <init>(kotlin/String? = ..., kotlin/String? = ..., kotlin/String? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.<init>|<init>(kotlin.String?;kotlin.String?;kotlin.String?){}[0]
-
-        final val description // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.description|{}description[0]
-            final fun <get-description>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.description.<get-description>|<get-description>(){}[0]
-        final val klass // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.klass|{}klass[0]
-            final fun <get-klass>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.klass.<get-klass>|<get-klass>(){}[0]
-        final val reason // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.reason|{}reason[0]
-            final fun <get-reason>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.reason.<get-reason>|<get-reason>(){}[0]
-
-        final fun component1(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.component1|component1(){}[0]
-        final fun component2(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.component2|component2(){}[0]
-        final fun component3(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.component3|component3(){}[0]
-        final fun copy(kotlin/String? = ..., kotlin/String? = ..., kotlin/String? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.copy|copy(kotlin.String?;kotlin.String?;kotlin.String?){}[0]
-        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.equals|equals(kotlin.Any?){}[0]
-        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.hashCode|hashCode(){}[0]
-        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.toString|toString(){}[0]
-
-        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.$serializer|null[0]
-            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.$serializer.descriptor|{}descriptor[0]
-                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
-
-            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.$serializer.childSerializers|childSerializers(){}[0]
-            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
-            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.DisconnectReason){}[0]
-        }
-
-        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.Companion|null[0]
-            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.DisconnectReason.Companion.serializer|serializer(){}[0]
-        }
-    }
-
-    final class Member { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member|null[0]
-        constructor <init>(kotlin/String? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model/UserId? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.<init>|<init>(kotlin.String?;kotlin.String?;de.connect2x.trixnity.core.model.UserId?){}[0]
-
-        final val claimedDeviceId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.claimedDeviceId|{}claimedDeviceId[0]
-            final fun <get-claimedDeviceId>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.claimedDeviceId.<get-claimedDeviceId>|<get-claimedDeviceId>(){}[0]
-        final val claimedUserId // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.claimedUserId|{}claimedUserId[0]
-            final fun <get-claimedUserId>(): de.connect2x.trixnity.core.model/UserId? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.claimedUserId.<get-claimedUserId>|<get-claimedUserId>(){}[0]
-        final val id // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.id|{}id[0]
-            final fun <get-id>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.id.<get-id>|<get-id>(){}[0]
-
-        final fun component1(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.component1|component1(){}[0]
-        final fun component2(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.component2|component2(){}[0]
-        final fun component3(): de.connect2x.trixnity.core.model/UserId? // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.component3|component3(){}[0]
-        final fun copy(kotlin/String? = ..., kotlin/String? = ..., de.connect2x.trixnity.core.model/UserId? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.copy|copy(kotlin.String?;kotlin.String?;de.connect2x.trixnity.core.model.UserId?){}[0]
-        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.equals|equals(kotlin.Any?){}[0]
-        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.hashCode|hashCode(){}[0]
-        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.toString|toString(){}[0]
-
-        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer|null[0]
-            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.descriptor|{}descriptor[0]
-                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
-
-            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.childSerializers|childSerializers(){}[0]
-            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
-            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.Member){}[0]
-        }
-
-        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.Companion|null[0]
-            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Member.Companion.serializer|serializer(){}[0]
-        }
-    }
-
-    final class RtcTransport { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport|null[0]
-        constructor <init>(kotlin/String) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.<init>|<init>(kotlin.String){}[0]
-
-        final val type // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.type|{}type[0]
-            final fun <get-type>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.type.<get-type>|<get-type>(){}[0]
-
-        final fun component1(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.component1|component1(){}[0]
-        final fun copy(kotlin/String = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.copy|copy(kotlin.String){}[0]
-        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.equals|equals(kotlin.Any?){}[0]
-        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.hashCode|hashCode(){}[0]
-        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.toString|toString(){}[0]
-
-        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.$serializer|null[0]
-            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.$serializer.descriptor|{}descriptor[0]
-                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
-
-            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.$serializer.childSerializers|childSerializers(){}[0]
-            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
-            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent.RtcTransport){}[0]
-        }
-
-        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.Companion|null[0]
-            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.RtcTransport.Companion.serializer|serializer(){}[0]
-        }
-    }
-
-    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.$serializer|null[0]
-        final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.$serializer.descriptor|{}descriptor[0]
-            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
-
-        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.$serializer.childSerializers|childSerializers(){}[0]
-        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
-        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent) // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent){}[0]
-    }
-
-    final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Companion|null[0]
-        final val $childSerializers // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Companion.$childSerializers|{}$childSerializers[0]
-
-        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent> // de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent.Companion.serializer|serializer(){}[0]
-    }
-}
-
-final class de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent : de.connect2x.trixnity.core.model.events/StateEventContent { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent|null[0]
-    constructor <init>(de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication? = ..., kotlin/String? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.<init>|<init>(de.connect2x.trixnity.core.model.events.m.rtc.RtcApplication?;kotlin.String?){}[0]
-
-    final val application // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.application|{}application[0]
-        final fun <get-application>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.application.<get-application>|<get-application>(){}[0]
-    final val externalUrl // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.externalUrl|{}externalUrl[0]
-        final fun <get-externalUrl>(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.externalUrl.<get-externalUrl>|<get-externalUrl>(){}[0]
-
-    final fun component1(): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.component1|component1(){}[0]
-    final fun component2(): kotlin/String? // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.component2|component2(){}[0]
-    final fun copy(de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication? = ..., kotlin/String? = ...): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.copy|copy(de.connect2x.trixnity.core.model.events.m.rtc.RtcApplication?;kotlin.String?){}[0]
-    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.hashCode|hashCode(){}[0]
-    final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.toString|toString(){}[0]
-
-    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.$serializer|null[0]
-        final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.$serializer.descriptor|{}descriptor[0]
-            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
-
-        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.$serializer.childSerializers|childSerializers(){}[0]
-        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
-        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent) // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotEventContent){}[0]
-    }
-
-    final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Companion|null[0]
-        final val $childSerializers // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Companion.$childSerializers|{}$childSerializers[0]
-
-        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent.Companion.serializer|serializer(){}[0]
-    }
-}
-
-final class de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication : de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication { // de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication|null[0]
-    constructor <init>(kotlinx.serialization.json/JsonObject) // de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication.<init>|<init>(kotlinx.serialization.json.JsonObject){}[0]
-
-    final val raw // de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication.raw|{}raw[0]
-        final fun <get-raw>(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication.raw.<get-raw>|<get-raw>(){}[0]
-
-    final fun component1(): kotlinx.serialization.json/JsonObject // de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication.component1|component1(){}[0]
-    final fun copy(kotlinx.serialization.json/JsonObject = ...): de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication // de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication.copy|copy(kotlinx.serialization.json.JsonObject){}[0]
-    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication.hashCode|hashCode(){}[0]
-    final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/UnknownRtcApplication.toString|toString(){}[0]
-}
-
 final class de.connect2x.trixnity.core.model.events.m.secret/SecretKeyRequestEventContent : de.connect2x.trixnity.core.model.events/ToDeviceEventContent { // de.connect2x.trixnity.core.model.events.m.secret/SecretKeyRequestEventContent|null[0]
     constructor <init>(kotlin/String?, de.connect2x.trixnity.core.model.events.m/KeyRequestAction, kotlin/String, kotlin/String) // de.connect2x.trixnity.core.model.events.m.secret/SecretKeyRequestEventContent.<init>|<init>(kotlin.String?;de.connect2x.trixnity.core.model.events.m.KeyRequestAction;kotlin.String;kotlin.String){}[0]
 
@@ -9926,6 +10154,46 @@ final class de.connect2x.trixnity.core.model.push/PushRuleSet { // de.connect2x.
     }
 }
 
+final class de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationMemberSerializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember> { // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationMemberSerializer|null[0]
+    constructor <init>(kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping<*, *>>) // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationMemberSerializer.<init>|<init>(kotlin.collections.Set<de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMapping<*,*>>){}[0]
+
+    final val descriptor // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationMemberSerializer.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationMemberSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationMemberSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember) // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationMemberSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationMember){}[0]
+}
+
+final class de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationSlotSerializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot> { // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationSlotSerializer|null[0]
+    constructor <init>(kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping<*, *>>) // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationSlotSerializer.<init>|<init>(kotlin.collections.Set<de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMapping<*,*>>){}[0]
+
+    final val descriptor // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationSlotSerializer.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationSlotSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationSlotSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot) // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcApplicationSlotSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationSlot){}[0]
+}
+
+final class de.connect2x.trixnity.core.serialization.events.m.rtc/RtcEncryptionSerializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption> { // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcEncryptionSerializer|null[0]
+    constructor <init>(kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping<*>>) // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcEncryptionSerializer.<init>|<init>(kotlin.collections.Set<de.connect2x.trixnity.core.serialization.events.RtcEncryptionSerializerMapping<*>>){}[0]
+
+    final val descriptor // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcEncryptionSerializer.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcEncryptionSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcEncryptionSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption) // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcEncryptionSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcEncryption){}[0]
+}
+
+final class de.connect2x.trixnity.core.serialization.events.m.rtc/RtcTransportSerializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport> { // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcTransportSerializer|null[0]
+    constructor <init>(kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping<*>>) // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcTransportSerializer.<init>|<init>(kotlin.collections.Set<de.connect2x.trixnity.core.serialization.events.RtcTransportSerializerMapping<*>>){}[0]
+
+    final val descriptor // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcTransportSerializer.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcTransportSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcTransportSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport) // de.connect2x.trixnity.core.serialization.events.m.rtc/RtcTransportSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport){}[0]
+}
+
 final class de.connect2x.trixnity.core.serialization.events/DecryptedMegolmEventSerializer : de.connect2x.trixnity.core.serialization.events/BaseEventSerializer<de.connect2x.trixnity.core.model.events/MessageEventContent, de.connect2x.trixnity.core.model.events/DecryptedMegolmEvent<*>> { // de.connect2x.trixnity.core.serialization.events/DecryptedMegolmEventSerializer|null[0]
     constructor <init>(kotlin.collections/Set<de.connect2x.trixnity.core.serialization.events/EventContentSerializerMapping<de.connect2x.trixnity.core.model.events/MessageEventContent>>) // de.connect2x.trixnity.core.serialization.events/DecryptedMegolmEventSerializer.<init>|<init>(kotlin.collections.Set<de.connect2x.trixnity.core.serialization.events.EventContentSerializerMapping<de.connect2x.trixnity.core.model.events.MessageEventContent>>){}[0]
 }
@@ -9975,6 +10243,12 @@ final class de.connect2x.trixnity.core.serialization.events/EventContentSerializ
         final fun <get-message>(): kotlin.collections/MutableSet<de.connect2x.trixnity.core.serialization.events/MessageEventContentSerializerMapping> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.message.<get-message>|<get-message>(){}[0]
     final val roomAccountData // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.roomAccountData|{}roomAccountData[0]
         final fun <get-roomAccountData>(): kotlin.collections/MutableSet<de.connect2x.trixnity.core.serialization.events/EventContentSerializerMapping<de.connect2x.trixnity.core.model.events/RoomAccountDataEventContent>> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.roomAccountData.<get-roomAccountData>|<get-roomAccountData>(){}[0]
+    final val rtcApplication // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.rtcApplication|{}rtcApplication[0]
+        final fun <get-rtcApplication>(): kotlin.collections/MutableSet<de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping<*, *>> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.rtcApplication.<get-rtcApplication>|<get-rtcApplication>(){}[0]
+    final val rtcEncryption // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.rtcEncryption|{}rtcEncryption[0]
+        final fun <get-rtcEncryption>(): kotlin.collections/MutableSet<de.connect2x.trixnity.core.serialization.events/RtcEncryptionSerializerMapping<*>> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.rtcEncryption.<get-rtcEncryption>|<get-rtcEncryption>(){}[0]
+    final val rtcTransport // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.rtcTransport|{}rtcTransport[0]
+        final fun <get-rtcTransport>(): kotlin.collections/MutableSet<de.connect2x.trixnity.core.serialization.events/RtcTransportSerializerMapping<*>> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.rtcTransport.<get-rtcTransport>|<get-rtcTransport>(){}[0]
     final val state // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.state|{}state[0]
         final fun <get-state>(): kotlin.collections/MutableSet<de.connect2x.trixnity.core.serialization.events/StateEventContentSerializerMapping> // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.state.<get-state>|<get-state>(){}[0]
     final val toDevice // de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder.toDevice|{}toDevice[0]
@@ -10103,45 +10377,6 @@ final class de.connect2x.trixnity.core.serialization.events/RoomEventSerializer 
 
     final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*> // de.connect2x.trixnity.core.serialization.events/RoomEventSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
     final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events/ClientEvent.RoomEvent<*>) // de.connect2x.trixnity.core.serialization.events/RoomEventSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent<*>){}[0]
-}
-
-final class de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication> { // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializer|null[0]
-    constructor <init>(de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings) // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializer.<init>|<init>(de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMappings){}[0]
-
-    final val descriptor // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializer.descriptor|{}descriptor[0]
-        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
-
-    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
-    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication) // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcApplication){}[0]
-}
-
-final class de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingsBuilder { // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingsBuilder|null[0]
-    constructor <init>() // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingsBuilder.<init>|<init>(){}[0]
-
-    final val mappings // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingsBuilder.mappings|{}mappings[0]
-        final fun <get-mappings>(): kotlin.collections/MutableSet<de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMapping<*>> // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingsBuilder.mappings.<get-mappings>|<get-mappings>(){}[0]
-
-    final fun build(): de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings // de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingsBuilder.build|build(){}[0]
-}
-
-final class de.connect2x.trixnity.core.serialization.events/RtcMemberEventContentSerializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent> { // de.connect2x.trixnity.core.serialization.events/RtcMemberEventContentSerializer|null[0]
-    constructor <init>(de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings = ...) // de.connect2x.trixnity.core.serialization.events/RtcMemberEventContentSerializer.<init>|<init>(de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMappings){}[0]
-
-    final val descriptor // de.connect2x.trixnity.core.serialization.events/RtcMemberEventContentSerializer.descriptor|{}descriptor[0]
-        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.serialization.events/RtcMemberEventContentSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
-
-    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent // de.connect2x.trixnity.core.serialization.events/RtcMemberEventContentSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
-    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberEventContent) // de.connect2x.trixnity.core.serialization.events/RtcMemberEventContentSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent){}[0]
-}
-
-final class de.connect2x.trixnity.core.serialization.events/RtcSlotEventContentSerializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent> { // de.connect2x.trixnity.core.serialization.events/RtcSlotEventContentSerializer|null[0]
-    constructor <init>(de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings = ...) // de.connect2x.trixnity.core.serialization.events/RtcSlotEventContentSerializer.<init>|<init>(de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMappings){}[0]
-
-    final val descriptor // de.connect2x.trixnity.core.serialization.events/RtcSlotEventContentSerializer.descriptor|{}descriptor[0]
-        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.serialization.events/RtcSlotEventContentSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
-
-    final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent // de.connect2x.trixnity.core.serialization.events/RtcSlotEventContentSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
-    final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotEventContent) // de.connect2x.trixnity.core.serialization.events/RtcSlotEventContentSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotEventContent){}[0]
 }
 
 final class de.connect2x.trixnity.core.serialization.events/StateBaseEventSerializer : kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events/ClientEvent.StateBaseEvent<*>> { // de.connect2x.trixnity.core.serialization.events/StateBaseEventSerializer|null[0]
@@ -10371,6 +10606,30 @@ final value class de.connect2x.trixnity.core.model.events.block/EventContentBloc
 
         final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.block/EventContentBlocks // de.connect2x.trixnity.core.model.events.block/EventContentBlocks.Serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
         final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.block/EventContentBlocks) // de.connect2x.trixnity.core.model.events.block/EventContentBlocks.Serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.block.EventContentBlocks){}[0]
+    }
+}
+
+final value class de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId|null[0]
+    constructor <init>(kotlin/String, kotlin/String) // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val full // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.full|{}full[0]
+        final fun <get-full>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.full.<get-full>|<get-full>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId> { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.$serializer|null[0]
+        final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId) // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId){}[0]
+    }
+
+    final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId> // de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId.Companion.serializer|serializer(){}[0]
     }
 }
 
@@ -11200,6 +11459,92 @@ sealed class de.connect2x.trixnity.core.model.keys/RoomKeyBackupAlgorithm { // d
     }
 }
 
+final object de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication { // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication|null[0]
+    final const val APPLICATION_TYPE // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.APPLICATION_TYPE|{}APPLICATION_TYPE[0]
+        final fun <get-APPLICATION_TYPE>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.APPLICATION_TYPE.<get-APPLICATION_TYPE>|<get-APPLICATION_TYPE>(){}[0]
+
+    final val SLOT_ID // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.SLOT_ID|{}SLOT_ID[0]
+        final fun <get-SLOT_ID>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.SLOT_ID.<get-SLOT_ID>|<get-SLOT_ID>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.toString|toString(){}[0]
+
+    final class Member : de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember { // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member|null[0]
+        constructor <init>(de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent? = ...) // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.<init>|<init>(de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication.Member.Intent?){}[0]
+
+        final val intent // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.intent|{}intent[0]
+            final fun <get-intent>(): de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent? // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.intent.<get-intent>|<get-intent>(){}[0]
+
+        final fun component1(): de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent? // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.component1|component1(){}[0]
+        final fun copy(de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent? = ...): de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.copy|copy(de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication.Member.Intent?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.toString|toString(){}[0]
+
+        final enum class Intent : kotlin/Enum<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent> { // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent|null[0]
+            enum entry AUDIO // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent.AUDIO|null[0]
+            enum entry VIDEO // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent.VIDEO|null[0]
+
+            final val entries // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent.entries|#static{}entries[0]
+                final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent.entries.<get-entries>|<get-entries>#static(){}[0]
+
+            final fun valueOf(kotlin/String): de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent.valueOf|valueOf#static(kotlin.String){}[0]
+            final fun values(): kotlin/Array<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent.values|values#static(){}[0]
+
+            final object Companion : kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent.Companion|null[0]
+                final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent.Companion.serializer|serializer(){}[0]
+                final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Intent.Companion.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+            }
+        }
+
+        final enum class LeaveReasonCode : kotlin/Enum<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode> { // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode|null[0]
+            enum entry CODE_MISMATCH // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode.CODE_MISMATCH|null[0]
+            enum entry MEDIA_ERROR // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode.MEDIA_ERROR|null[0]
+            enum entry TRANSPORT_ERROR // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode.TRANSPORT_ERROR|null[0]
+
+            final val entries // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode.entries|#static{}entries[0]
+                final fun <get-entries>(): kotlin.enums/EnumEntries<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode.entries.<get-entries>|<get-entries>#static(){}[0]
+            final val value // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode.value|{}value[0]
+                final fun <get-value>(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode.value.<get-value>|<get-value>(){}[0]
+
+            final fun valueOf(kotlin/String): de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode.valueOf|valueOf#static(kotlin.String){}[0]
+            final fun values(): kotlin/Array<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.LeaveReasonCode.values|values#static(){}[0]
+        }
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member> { // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member) // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication.Member){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Companion|null[0]
+            final val $childSerializers // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Companion.$childSerializers|{}$childSerializers[0]
+
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Member.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final object Slot : de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot, kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Slot|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Slot.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Slot.hashCode|hashCode(){}[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Slot> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Slot.serializer|serializer(){}[0]
+        final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Slot.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/CallRtcApplication.Slot.toString|toString(){}[0]
+    }
+}
+
+final object de.connect2x.trixnity.core.model.events.m.rtc/PerMemberRtcEncryption : de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption, kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.core.model.events.m.rtc/PerMemberRtcEncryption|null[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m.rtc/PerMemberRtcEncryption.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m.rtc/PerMemberRtcEncryption.hashCode|hashCode(){}[0]
+    final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.core.model.events.m.rtc/PerMemberRtcEncryption> // de.connect2x.trixnity.core.model.events.m.rtc/PerMemberRtcEncryption.serializer|serializer(){}[0]
+    final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.core.model.events.m.rtc/PerMemberRtcEncryption.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+    final fun toString(): kotlin/String // de.connect2x.trixnity.core.model.events.m.rtc/PerMemberRtcEncryption.toString|toString(){}[0]
+}
+
 final object de.connect2x.trixnity.core.model.events.m/DummyEventContent : de.connect2x.trixnity.core.model.events/ToDeviceEventContent, kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.core.model.events.m/DummyEventContent|null[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.core.model.events.m/DummyEventContent.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // de.connect2x.trixnity.core.model.events.m/DummyEventContent.hashCode|hashCode(){}[0]
@@ -11254,8 +11599,6 @@ final val de.connect2x.trixnity.core.model.keys/valueOrNull // de.connect2x.trix
     final fun (de.connect2x.trixnity.core.model.keys/KeyValue).<get-valueOrNull>(): kotlin/String? // de.connect2x.trixnity.core.model.keys/valueOrNull.<get-valueOrNull>|<get-valueOrNull>@de.connect2x.trixnity.core.model.keys.KeyValue(){}[0]
 final val de.connect2x.trixnity.core.serialization.events/default // de.connect2x.trixnity.core.serialization.events/default|@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings.Companion{}default[0]
     final fun (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.Companion).<get-default>(): de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings // de.connect2x.trixnity.core.serialization.events/default.<get-default>|<get-default>@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings.Companion(){}[0]
-final val de.connect2x.trixnity.core.serialization.events/default // de.connect2x.trixnity.core.serialization.events/default|@de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMappings.Companion{}default[0]
-    final fun (de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings.Companion).<get-default>(): de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings // de.connect2x.trixnity.core.serialization.events/default.<get-default>|<get-default>@de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMappings.Companion(){}[0]
 final val de.connect2x.trixnity.core.serialization.events/defaultDataUnit // de.connect2x.trixnity.core.serialization.events/defaultDataUnit|@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings.Companion{}defaultDataUnit[0]
     final fun (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.Companion).<get-defaultDataUnit>(): de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings // de.connect2x.trixnity.core.serialization.events/defaultDataUnit.<get-defaultDataUnit>|<get-defaultDataUnit>@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings.Companion(){}[0]
 final val de.connect2x.trixnity.core.serialization.events/defaultEphemeralDataUnit // de.connect2x.trixnity.core.serialization.events/defaultEphemeralDataUnit|@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings.Companion{}defaultEphemeralDataUnit[0]
@@ -11266,7 +11609,6 @@ final fun (de.connect2x.trixnity.core.serialization.events/EventContentSerialize
 final fun (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.Companion).de.connect2x.trixnity.core.serialization.events/defaultDataUnit(de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings): de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings // de.connect2x.trixnity.core.serialization.events/defaultDataUnit|defaultDataUnit@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings.Companion(de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings){}[0]
 final fun (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.Companion).de.connect2x.trixnity.core.serialization.events/defaultEphemeralDataUnit(de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings): de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings // de.connect2x.trixnity.core.serialization.events/defaultEphemeralDataUnit|defaultEphemeralDataUnit@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings.Companion(de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings){}[0]
 final fun (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings.Companion).de.connect2x.trixnity.core.serialization.events/invoke(kotlin/Function1<de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder, kotlin/Unit>): de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings // de.connect2x.trixnity.core.serialization.events/invoke|invoke@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings.Companion(kotlin.Function1<de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder,kotlin.Unit>){}[0]
-final fun (de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings.Companion).de.connect2x.trixnity.core.serialization.events/invoke(kotlin/Function1<de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingsBuilder, kotlin/Unit>): de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappings // de.connect2x.trixnity.core.serialization.events/invoke|invoke@de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMappings.Companion(kotlin.Function1<de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMappingsBuilder,kotlin.Unit>){}[0]
 final fun (de.connect2x.trixnity.core/ClientEventEmitter<*>).de.connect2x.trixnity.core/subscribe(kotlin/Int = ..., kotlin.coroutines/SuspendFunction0<kotlin/Unit>): kotlin/Function0<kotlin/Unit> // de.connect2x.trixnity.core/subscribe|subscribe@de.connect2x.trixnity.core.ClientEventEmitter<*>(kotlin.Int;kotlin.coroutines.SuspendFunction0<kotlin.Unit>){}[0]
 final fun (de.connect2x.trixnity.core/ClientEventEmitter<*>).de.connect2x.trixnity.core/subscribeChangeAsFlow(kotlin/Int = ...): kotlinx.coroutines.flow/Flow<kotlin/Unit> // de.connect2x.trixnity.core/subscribeChangeAsFlow|subscribeChangeAsFlow@de.connect2x.trixnity.core.ClientEventEmitter<*>(kotlin.Int){}[0]
 final fun (de.connect2x.trixnity.core/ClientEventEmitter<*>).de.connect2x.trixnity.core/subscribeEachEvent(kotlin/Int = ..., kotlin.coroutines/SuspendFunction1<de.connect2x.trixnity.core.model.events/ClientEvent<*>, kotlin/Unit>): kotlin/Function0<kotlin/Unit> // de.connect2x.trixnity.core/subscribeEachEvent|subscribeEachEvent@de.connect2x.trixnity.core.ClientEventEmitter<*>(kotlin.Int;kotlin.coroutines.SuspendFunction1<de.connect2x.trixnity.core.model.events.ClientEvent<*>,kotlin.Unit>){}[0]
@@ -11303,7 +11645,9 @@ final fun de.connect2x.trixnity.core.serialization/createMatrixEventAndDataUnitJ
 final fun de.connect2x.trixnity.core.serialization/createMatrixEventJson(de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappings = ..., kotlinx.serialization.modules/SerializersModule? = ...): kotlinx.serialization.json/Json // de.connect2x.trixnity.core.serialization/createMatrixEventJson|createMatrixEventJson(de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings;kotlinx.serialization.modules.SerializersModule?){}[0]
 final inline fun <#A: reified de.connect2x.trixnity.core.model.events.block/EventContentBlock> (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder).de.connect2x.trixnity.core.serialization.events/blockOf(de.connect2x.trixnity.core.model.events.block/EventContentBlock.Type<#A>) // de.connect2x.trixnity.core.serialization.events/blockOf|blockOf@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder(de.connect2x.trixnity.core.model.events.block.EventContentBlock.Type<0:0>){0§<de.connect2x.trixnity.core.model.events.block.EventContentBlock>}[0]
 final inline fun <#A: reified de.connect2x.trixnity.core.model.events.block/EventContentBlock> (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder).de.connect2x.trixnity.core.serialization.events/blockOf(de.connect2x.trixnity.core.model.events.block/EventContentBlock.Type<#A>, kotlinx.serialization/KSerializer<#A>) // de.connect2x.trixnity.core.serialization.events/blockOf|blockOf@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder(de.connect2x.trixnity.core.model.events.block.EventContentBlock.Type<0:0>;kotlinx.serialization.KSerializer<0:0>){0§<de.connect2x.trixnity.core.model.events.block.EventContentBlock>}[0]
-final inline fun <#A: reified de.connect2x.trixnity.core.model.events.m.rtc/RtcApplication> (de.connect2x.trixnity.core.serialization.events/RtcApplicationSerializerMappingsBuilder).de.connect2x.trixnity.core.serialization.events/of(kotlin/String) // de.connect2x.trixnity.core.serialization.events/of|of@de.connect2x.trixnity.core.serialization.events.RtcApplicationSerializerMappingsBuilder(kotlin.String){0§<de.connect2x.trixnity.core.model.events.m.rtc.RtcApplication>}[0]
+final inline fun <#A: reified de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationSlot, #B: reified de.connect2x.trixnity.core.model.events.m.rtc/RtcApplicationMember> (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder).de.connect2x.trixnity.core.serialization.events/rtcApplicationOf(kotlin/String) // de.connect2x.trixnity.core.serialization.events/rtcApplicationOf|rtcApplicationOf@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder(kotlin.String){0§<de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationSlot>;1§<de.connect2x.trixnity.core.model.events.m.rtc.RtcApplicationMember>}[0]
+final inline fun <#A: reified de.connect2x.trixnity.core.model.events.m.rtc/RtcEncryption> (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder).de.connect2x.trixnity.core.serialization.events/rtcEncryptionOf(kotlin/String) // de.connect2x.trixnity.core.serialization.events/rtcEncryptionOf|rtcEncryptionOf@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder(kotlin.String){0§<de.connect2x.trixnity.core.model.events.m.rtc.RtcEncryption>}[0]
+final inline fun <#A: reified de.connect2x.trixnity.core.model.events.m.rtc/RtcTransport> (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder).de.connect2x.trixnity.core.serialization.events/rtcTransportOf(kotlin/String) // de.connect2x.trixnity.core.serialization.events/rtcTransportOf|rtcTransportOf@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder(kotlin.String){0§<de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport>}[0]
 final inline fun <#A: reified de.connect2x.trixnity.core.model.events/EphemeralDataUnitContent> (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder).de.connect2x.trixnity.core.serialization.events/ephemeralDataUnitOf(kotlin/String) // de.connect2x.trixnity.core.serialization.events/ephemeralDataUnitOf|ephemeralDataUnitOf@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder(kotlin.String){0§<de.connect2x.trixnity.core.model.events.EphemeralDataUnitContent>}[0]
 final inline fun <#A: reified de.connect2x.trixnity.core.model.events/EphemeralDataUnitContent> (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder).de.connect2x.trixnity.core.serialization.events/ephemeralDataUnitOf(kotlin/String, kotlinx.serialization/KSerializer<#A>) // de.connect2x.trixnity.core.serialization.events/ephemeralDataUnitOf|ephemeralDataUnitOf@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder(kotlin.String;kotlinx.serialization.KSerializer<0:0>){0§<de.connect2x.trixnity.core.model.events.EphemeralDataUnitContent>}[0]
 final inline fun <#A: reified de.connect2x.trixnity.core.model.events/EphemeralEventContent> (de.connect2x.trixnity.core.serialization.events/EventContentSerializerMappingsBuilder).de.connect2x.trixnity.core.serialization.events/ephemeralOf(kotlin/String) // de.connect2x.trixnity.core.serialization.events/ephemeralOf|ephemeralOf@de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder(kotlin.String){0§<de.connect2x.trixnity.core.model.events.EphemeralEventContent>}[0]

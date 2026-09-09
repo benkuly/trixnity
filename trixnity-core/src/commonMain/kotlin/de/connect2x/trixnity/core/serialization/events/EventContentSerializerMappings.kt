@@ -1,6 +1,12 @@
 package de.connect2x.trixnity.core.serialization.events
 
-import de.connect2x.trixnity.core.model.events.*
+import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.model.events.EphemeralDataUnitContent
+import de.connect2x.trixnity.core.model.events.EphemeralEventContent
+import de.connect2x.trixnity.core.model.events.EventContent
+import de.connect2x.trixnity.core.model.events.GlobalAccountDataEventContent
+import de.connect2x.trixnity.core.model.events.RoomAccountDataEventContent
+import de.connect2x.trixnity.core.model.events.ToDeviceEventContent
 import kotlin.jvm.JvmName
 
 interface EventContentSerializerMappings {
@@ -11,8 +17,12 @@ interface EventContentSerializerMappings {
     val toDevice: Set<EventContentSerializerMapping<ToDeviceEventContent>>
     val globalAccountData: Set<EventContentSerializerMapping<GlobalAccountDataEventContent>>
     val roomAccountData: Set<EventContentSerializerMapping<RoomAccountDataEventContent>>
+    @MSC4143 val rtcApplication: Set<RtcApplicationSerializerMapping<*, *>>
+    @MSC4143 val rtcTransport: Set<RtcTransportSerializerMapping<*>>
+    @MSC4143 val rtcEncryption: Set<RtcEncryptionSerializerMapping<*>>
     val block: Set<EventContentBlockSerializerMapping<*>>
 
+    @OptIn(MSC4143::class)
     operator fun plus(plus: EventContentSerializerMappings): EventContentSerializerMappings {
         val roomEventContentSerializerMappings = this.message + plus.message
         val stateEventContentSerializerMappings = this.state + plus.state
@@ -21,6 +31,9 @@ interface EventContentSerializerMappings {
         val toDeviceEventContentSerializerMappings = this.toDevice + plus.toDevice
         val globalAccountDataEventContentSerializerMappings = this.globalAccountData + plus.globalAccountData
         val roomAccountDataEventContentSerializerMappings = this.roomAccountData + plus.roomAccountData
+        val rtcApplicationSerializerMappings = this.rtcApplication + plus.rtcApplication
+        val rtcTransportSerializerMappings = this.rtcTransport + plus.rtcTransport
+        val rtcEncryptionSerializerMappings = this.rtcEncryption + plus.rtcEncryption
         val blockMappings = this.block + plus.block
         return object : EventContentSerializerMappings {
             override val message = roomEventContentSerializerMappings
@@ -30,10 +43,14 @@ interface EventContentSerializerMappings {
             override val toDevice = toDeviceEventContentSerializerMappings
             override val globalAccountData = globalAccountDataEventContentSerializerMappings
             override val roomAccountData = roomAccountDataEventContentSerializerMappings
+            override val rtcApplication = rtcApplicationSerializerMappings
+            override val rtcTransport = rtcTransportSerializerMappings
+            override val rtcEncryption = rtcEncryptionSerializerMappings
             override val block = blockMappings
         }
     }
 
+    @OptIn(MSC4143::class)
     operator fun minus(minus: EventContentSerializerMappings): EventContentSerializerMappings {
         val roomEventContentSerializerMappings = this.message - minus.message
         val stateEventContentSerializerMappings = this.state - minus.state
@@ -42,6 +59,9 @@ interface EventContentSerializerMappings {
         val toDeviceEventContentSerializerMappings = this.toDevice - minus.toDevice
         val globalAccountDataEventContentSerializerMappings = this.globalAccountData - minus.globalAccountData
         val roomAccountDataEventContentSerializerMappings = this.roomAccountData - minus.roomAccountData
+        val rtcApplicationSerializerMappings = this.rtcApplication - minus.rtcApplication
+        val rtcTransportSerializerMappings = this.rtcTransport - minus.rtcTransport
+        val rtcEncryptionSerializerMappings = this.rtcEncryption - minus.rtcEncryption
         val blockMappings = this.block - minus.block
         return object : EventContentSerializerMappings {
             override val message = roomEventContentSerializerMappings
@@ -51,6 +71,9 @@ interface EventContentSerializerMappings {
             override val toDevice = toDeviceEventContentSerializerMappings
             override val globalAccountData = globalAccountDataEventContentSerializerMappings
             override val roomAccountData = roomAccountDataEventContentSerializerMappings
+            override val rtcApplication = rtcApplicationSerializerMappings
+            override val rtcTransport = rtcTransportSerializerMappings
+            override val rtcEncryption = rtcEncryptionSerializerMappings
             override val block = blockMappings
         }
     }

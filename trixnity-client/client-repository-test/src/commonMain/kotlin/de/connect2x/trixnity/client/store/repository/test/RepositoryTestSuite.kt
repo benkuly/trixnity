@@ -67,6 +67,7 @@ import de.connect2x.trixnity.clientserverapi.client.LogoutInfo
 import de.connect2x.trixnity.clientserverapi.model.user.Profile
 import de.connect2x.trixnity.clientserverapi.model.user.ProfileField
 import de.connect2x.trixnity.core.MSC4143
+import de.connect2x.trixnity.core.MSC4193
 import de.connect2x.trixnity.core.MSC4354
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
@@ -95,6 +96,7 @@ import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent.FileBased
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased
+import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import de.connect2x.trixnity.core.model.keys.Key
@@ -118,6 +120,11 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.http.*
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -132,15 +139,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.koin.core.Koin
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.test.AfterTest
-import kotlin.test.Test
-import kotlin.time.Clock
-import kotlin.time.Instant
 
-abstract class RepositoryTestSuite(
-    private val repositoriesModule: RepositoriesModule
-) : TrixnityBaseTest() {
+abstract class RepositoryTestSuite(private val repositoriesModule: RepositoriesModule) : TrixnityBaseTest() {
     lateinit var di: Koin
     lateinit var rtm: StoreTransactionManager
     lateinit var coroutineScope: CoroutineScope
@@ -154,19 +154,21 @@ abstract class RepositoryTestSuite(
     private fun runTestWithSetup(testBody: suspend TestScope.() -> Unit) = runTest {
         val repositoriesModule = repositoriesModule.create()
         coroutineScope = CoroutineScope(Dispatchers.Default)
-        di = koinApplication {
-            modules(
-                listOf(
-                    repositoriesModule,
-                    module {
-                        single { MatrixClientConfiguration(storeTimelineEventContentUnencrypted = true) }
-                        single { coroutineScope }
-                    },
-                    createDefaultEventContentSerializerMappingsModule(),
-                    createDefaultMatrixJsonModule()
+        di =
+            koinApplication {
+                modules(
+                    listOf(
+                        repositoriesModule,
+                        module {
+                            single { MatrixClientConfiguration(storeTimelineEventContentUnencrypted = true) }
+                            single { coroutineScope }
+                        },
+                        createDefaultEventContentSerializerMappingsModule(),
+                        createDefaultMatrixJsonModule(),
+                    )
                 )
-            )
-        }.koin
+            }
+                .koin
         rtm = di.get()
         testBody()
     }
@@ -175,7 +177,8 @@ abstract class RepositoryTestSuite(
     private suspend fun rtmTestWrite(key: Int) {
         val cut = di.get<AccountRepository>()
         cut.save(
-            key.toLong(), Account(
+            key.toLong(),
+            Account(
                 olmPickleKey = null,
                 baseUrl = "",
                 userId = UserId("userId"),
@@ -185,7 +188,7 @@ abstract class RepositoryTestSuite(
                 syncBatchToken = null,
                 filter = null,
                 profile = null,
-            )
+            ),
         )
     }
 
@@ -321,24 +324,27 @@ abstract class RepositoryTestSuite(
     @Test
     fun `AccountRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<AccountRepository>()
-        val account = Account(
-            olmPickleKey = null,
-            baseUrl = "http://host",
-            userId = UserId("alice", "server"),
-            deviceId = "aliceDevice",
-            accessToken = "accessToken",
-            refreshToken = "refreshToken",
-            syncBatchToken = "syncToken",
-            filter = Account.Filter(
-                syncFilterId = "syncFilterId",
-                syncOnceFilterId = "syncOnceFilterId",
-                eventTypesHash = "eventTypesHash",
-            ),
-            profile = Profile(
-                ProfileField.DisplayName("displayName"),
-                ProfileField.AvatarUrl("mxc://localhost/123456")
-            ),
-        )
+        val account =
+            Account(
+                olmPickleKey = null,
+                baseUrl = "http://host",
+                userId = UserId("alice", "server"),
+                deviceId = "aliceDevice",
+                accessToken = "accessToken",
+                refreshToken = "refreshToken",
+                syncBatchToken = "syncToken",
+                filter =
+                    Account.Filter(
+                        syncFilterId = "syncFilterId",
+                        syncOnceFilterId = "syncOnceFilterId",
+                        eventTypesHash = "eventTypesHash",
+                    ),
+                profile =
+                    Profile(
+                        ProfileField.DisplayName("displayName"),
+                        ProfileField.AvatarUrl("mxc://localhost/123456"),
+                    ),
+            )
         rtm.writeTransaction {
             cut.save(1, account)
             cut.get(1) shouldBe account
@@ -353,11 +359,12 @@ abstract class RepositoryTestSuite(
     @Test
     fun `AuthenticationRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<AuthenticationRepository>()
-        val authentication = Authentication(
-            providerId = "provider.id",
-            providerData = """{"accessToken":"accessToken"}""",
-            logoutInfo = LogoutInfo(false, false)
-        )
+        val authentication =
+            Authentication(
+                providerId = "provider.id",
+                providerData = """{"accessToken":"accessToken"}""",
+                logoutInfo = LogoutInfo(false, false),
+            )
         rtm.writeTransaction {
             cut.save(1, authentication)
             cut.get(1) shouldBe authentication
@@ -374,42 +381,48 @@ abstract class RepositoryTestSuite(
         val cut = di.get<GlobalAccountDataRepository>()
         val key1 = "m.direct"
         val key2 = "org.example.mynamespace"
-        val accountDataEvent1 = GlobalAccountDataEvent(
-            DirectEventContent(
-                mapOf(
-                    UserId(
-                        "alice",
-                        "server.org"
-                    ) to setOf(RoomId("!!room:server"))
-                )
-            ), ""
-        )
-        val accountDataEvent2 = GlobalAccountDataEvent(
-            UnknownEventContent(
-                JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
-                EventContentBlocks(EventContentBlock.Unknown("value", JsonPrimitive("unicorn"))),
-                "org.example.mynamespace"
-            ),
-            ""
-        )
-        val accountDataEvent3 = GlobalAccountDataEvent(
-            UnknownEventContent(
-                JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
-                EventContentBlocks(EventContentBlock.Unknown("value", JsonPrimitive("unicorn"))),
-                "org.example.mynamespace.2"
-            ),
-            ""
-        )
-        val accountDataEvent1Copy = accountDataEvent1.copy(
-            content = DirectEventContent(
-                mapOf(
-                    UserId(
-                        "alice",
-                        "server.org"
-                    ) to null
-                )
+        val accountDataEvent1 =
+            GlobalAccountDataEvent(
+                DirectEventContent(
+                    mapOf(
+                        UserId(
+                            "alice",
+                            "server.org",
+                        ) to setOf(RoomId("!!room:server"))
+                    )
+                ),
+                "",
             )
-        )
+        val accountDataEvent2 =
+            GlobalAccountDataEvent(
+                UnknownEventContent(
+                    JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                    EventContentBlocks(EventContentBlock.Unknown("value", JsonPrimitive("unicorn"))),
+                    "org.example.mynamespace",
+                ),
+                "",
+            )
+        val accountDataEvent3 =
+            GlobalAccountDataEvent(
+                UnknownEventContent(
+                    JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                    EventContentBlocks(EventContentBlock.Unknown("value", JsonPrimitive("unicorn"))),
+                    "org.example.mynamespace.2",
+                ),
+                "",
+            )
+        val accountDataEvent1Copy =
+            accountDataEvent1.copy(
+                content =
+                    DirectEventContent(
+                        mapOf(
+                            UserId(
+                                "alice",
+                                "server.org",
+                            ) to null
+                        )
+                    )
+            )
 
         rtm.writeTransaction {
             cut.save(key1, "", accountDataEvent1)
@@ -421,10 +434,11 @@ abstract class RepositoryTestSuite(
             cut.get(key1, "") shouldBe accountDataEvent1Copy
             cut.delete(key1, "")
             cut.get(key1) shouldHaveSize 0
-            cut.get(key2) shouldBe mapOf(
-                "" to accountDataEvent2,
-                "3" to accountDataEvent3
-            )
+            cut.get(key2) shouldBe
+                mapOf(
+                    "" to accountDataEvent2,
+                    "3" to accountDataEvent3,
+                )
         }
     }
 
@@ -432,20 +446,24 @@ abstract class RepositoryTestSuite(
     fun `InboundMegolmMessageIndexRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<InboundMegolmMessageIndexRepository>()
         val roomId = RoomId("!room:server")
-        val messageIndexKey1 =
-            InboundMegolmMessageIndexRepositoryKey("session1", roomId, 24)
-        val messageIndexKey2 =
-            InboundMegolmMessageIndexRepositoryKey("session2", roomId, 12)
-        val messageIndex1 = StoredInboundMegolmMessageIndex(
-            "session1", roomId, 24,
-            EventId("event"),
-            1234
-        )
-        val messageIndex2 = StoredInboundMegolmMessageIndex(
-            "session2", roomId, 12,
-            EventId("event"),
-            1234
-        )
+        val messageIndexKey1 = InboundMegolmMessageIndexRepositoryKey("session1", roomId, 24)
+        val messageIndexKey2 = InboundMegolmMessageIndexRepositoryKey("session2", roomId, 12)
+        val messageIndex1 =
+            StoredInboundMegolmMessageIndex(
+                "session1",
+                roomId,
+                24,
+                EventId("event"),
+                1234,
+            )
+        val messageIndex2 =
+            StoredInboundMegolmMessageIndex(
+                "session2",
+                roomId,
+                12,
+                EventId("event"),
+                1234,
+            )
         val messageIndex2Copy = messageIndex2.copy(originTimestamp = 1235)
 
         rtm.writeTransaction {
@@ -475,11 +493,12 @@ abstract class RepositoryTestSuite(
                 hasBeenBackedUp = false,
                 isTrusted = false,
                 senderSigningKey = Ed25519KeyValue("ed1"),
-                forwardingCurve25519KeyChain = listOf(
-                    Curve25519KeyValue("curveExt1"),
-                    Curve25519KeyValue("curveExt2")
-                ),
-                pickled = "pickle1"
+                forwardingCurve25519KeyChain =
+                    listOf(
+                        Curve25519KeyValue("curveExt1"),
+                        Curve25519KeyValue("curveExt2"),
+                    ),
+                pickled = "pickle1",
             )
         val inboundSession2 =
             StoredInboundMegolmSession(
@@ -491,7 +510,7 @@ abstract class RepositoryTestSuite(
                 isTrusted = false,
                 senderSigningKey = Ed25519KeyValue("ed2"),
                 forwardingCurve25519KeyChain = listOf(),
-                pickled = "pickle2"
+                pickled = "pickle2",
             )
         val inboundSession2Copy = inboundSession2.copy(pickled = "pickle2Copy")
 
@@ -511,24 +530,27 @@ abstract class RepositoryTestSuite(
     @Test
     fun `KeyChainLinkRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<KeyChainLinkRepository>()
-        val link1 = KeyChainLink(
-            signingUserId = UserId("bob", "server"),
-            signingKey = Key.Ed25519Key("BOB_DEVICE", "keyValueB"),
-            signedUserId = UserId("alice", "server"),
-            signedKey = Key.Ed25519Key("ALICE_DEVICE", "keyValueA")
-        )
-        val link2 = KeyChainLink(
-            signingUserId = UserId("cedric", "server"),
-            signingKey = Key.Ed25519Key("CEDRIC_DEVICE", "keyValueC"),
-            signedUserId = UserId("alice", "server"),
-            signedKey = Key.Ed25519Key("ALICE_DEVICE", "keyValueA")
-        )
-        val link3 = KeyChainLink(
-            signingUserId = UserId("bob", "server"),
-            signingKey = Key.Ed25519Key("BOB_DEVICE", "keyValueB"),
-            signedUserId = UserId("cedric", "server"),
-            signedKey = Key.Ed25519Key("CEDRIC_DEVICE", "keyValueC")
-        )
+        val link1 =
+            KeyChainLink(
+                signingUserId = UserId("bob", "server"),
+                signingKey = Key.Ed25519Key("BOB_DEVICE", "keyValueB"),
+                signedUserId = UserId("alice", "server"),
+                signedKey = Key.Ed25519Key("ALICE_DEVICE", "keyValueA"),
+            )
+        val link2 =
+            KeyChainLink(
+                signingUserId = UserId("cedric", "server"),
+                signingKey = Key.Ed25519Key("CEDRIC_DEVICE", "keyValueC"),
+                signedUserId = UserId("alice", "server"),
+                signedKey = Key.Ed25519Key("ALICE_DEVICE", "keyValueA"),
+            )
+        val link3 =
+            KeyChainLink(
+                signingUserId = UserId("bob", "server"),
+                signingKey = Key.Ed25519Key("BOB_DEVICE", "keyValueB"),
+                signedUserId = UserId("cedric", "server"),
+                signedKey = Key.Ed25519Key("CEDRIC_DEVICE", "keyValueC"),
+            )
 
         rtm.writeTransaction {
             cut.save(link1)
@@ -536,15 +558,15 @@ abstract class RepositoryTestSuite(
             cut.save(link3)
             cut.getBySigningKey(
                 UserId("bob", "server"),
-                Key.Ed25519Key("BOB_DEVICE", "keyValueB")
+                Key.Ed25519Key("BOB_DEVICE", "keyValueB"),
             ) shouldBe setOf(link1, link3)
             cut.deleteBySignedKey(
                 UserId("alice", "server"),
-                Key.Ed25519Key("ALICE_DEVICE", "keyValueA")
+                Key.Ed25519Key("ALICE_DEVICE", "keyValueA"),
             )
             cut.getBySigningKey(
                 UserId("bob", "server"),
-                Key.Ed25519Key("BOB_DEVICE", "keyValueB")
+                Key.Ed25519Key("BOB_DEVICE", "keyValueB"),
             ) shouldBe setOf(link3)
         }
     }
@@ -552,14 +574,16 @@ abstract class RepositoryTestSuite(
     @Test
     fun `KeyVerificationStateRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<KeyVerificationStateRepository>()
-        val verifiedKey1Key = KeyVerificationStateKey(
-            keyId = "key1",
-            keyAlgorithm = KeyAlgorithm.Ed25519
-        )
-        val verifiedKey2Key = KeyVerificationStateKey(
-            keyId = "key2",
-            keyAlgorithm = KeyAlgorithm.Ed25519
-        )
+        val verifiedKey1Key =
+            KeyVerificationStateKey(
+                keyId = "key1",
+                keyAlgorithm = KeyAlgorithm.Ed25519,
+            )
+        val verifiedKey2Key =
+            KeyVerificationStateKey(
+                keyId = "key2",
+                keyAlgorithm = KeyAlgorithm.Ed25519,
+            )
 
         rtm.writeTransaction {
             cut.save(verifiedKey1Key, Verified("keyValue1"))
@@ -670,25 +694,30 @@ abstract class RepositoryTestSuite(
         val cut = di.get<OutboundMegolmSessionRepository>()
         val key1 = RoomId("!room1:server")
         val key2 = RoomId("!room2:server")
-        val session1 = StoredOutboundMegolmSession(
-            roomId = key1,
-            createdAt = testClock.now(),
-            encryptedMessageCount = 1,
-            newDevices = emptyMap(),
-            pickled = "1"
-        )
-        val session2 = StoredOutboundMegolmSession(
-            roomId = key2,
-            createdAt = testClock.now(),
-            encryptedMessageCount = 1,
-            newDevices = emptyMap(), pickled = "2"
-        )
-        val session2Copy = session2.copy(
-            newDevices = mapOf(
-                UserId("bob", "server") to setOf("Device1"),
-                UserId("alice", "server") to setOf("Device2", "Device3")
+        val session1 =
+            StoredOutboundMegolmSession(
+                roomId = key1,
+                createdAt = testClock.now(),
+                encryptedMessageCount = 1,
+                newDevices = emptyMap(),
+                pickled = "1",
             )
-        )
+        val session2 =
+            StoredOutboundMegolmSession(
+                roomId = key2,
+                createdAt = testClock.now(),
+                encryptedMessageCount = 1,
+                newDevices = emptyMap(),
+                pickled = "2",
+            )
+        val session2Copy =
+            session2.copy(
+                newDevices =
+                    mapOf(
+                        UserId("bob", "server") to setOf("Device1"),
+                        UserId("alice", "server") to setOf("Device2", "Device3"),
+                    )
+            )
 
         rtm.writeTransaction {
             cut.save(key1, session1)
@@ -726,15 +755,16 @@ abstract class RepositoryTestSuite(
         val key1 = RoomAccountDataRepositoryKey(roomId1, "m.fully_read")
         val key2 = RoomAccountDataRepositoryKey(roomId2, "org.example.mynamespace")
         val accountDataEvent1 = RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1, "")
-        val accountDataEvent2 = RoomAccountDataEvent(
-            UnknownEventContent(
-                JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
-                EventContentBlocks(EventContentBlock.Unknown("value", JsonPrimitive("unicorn"))),
-                "org.example.mynamespace"
-            ),
-            roomId2,
-            ""
-        )
+        val accountDataEvent2 =
+            RoomAccountDataEvent(
+                UnknownEventContent(
+                    JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                    EventContentBlocks(EventContentBlock.Unknown("value", JsonPrimitive("unicorn"))),
+                    "org.example.mynamespace",
+                ),
+                roomId2,
+                "",
+            )
         val accountDataEvent3 = RoomAccountDataEvent(FullyReadEventContent(EventId("event2")), roomId1, "bla")
         val accountDataEvent2Copy = accountDataEvent2.copy(roomId = roomId1)
 
@@ -748,10 +778,11 @@ abstract class RepositoryTestSuite(
             cut.get(key2, "") shouldBe accountDataEvent2Copy
             cut.delete(key1, "")
             cut.get(key1) shouldHaveSize 0
-            cut.get(key2) shouldBe mapOf(
-                "" to accountDataEvent2Copy,
-                "bla" to accountDataEvent3
-            )
+            cut.get(key2) shouldBe
+                mapOf(
+                    "" to accountDataEvent2Copy,
+                    "bla" to accountDataEvent3,
+                )
         }
     }
 
@@ -782,16 +813,18 @@ abstract class RepositoryTestSuite(
         val cut = di.get<RoomKeyRequestRepository>()
         val key1 = "key1"
         val key2 = "key2"
-        val roomKeyRequest1 = StoredRoomKeyRequest(
-            RoomKeyRequestEventContent(KeyRequestAction.REQUEST, "A", "r1"),
-            setOf("DEV1", "DEV2"),
-            Instant.fromEpochMilliseconds(1234)
-        )
-        val roomKeyRequest2 = StoredRoomKeyRequest(
-            RoomKeyRequestEventContent(KeyRequestAction.REQUEST, "A", "r2"),
-            setOf("DEV1"),
-            Instant.fromEpochMilliseconds(23)
-        )
+        val roomKeyRequest1 =
+            StoredRoomKeyRequest(
+                RoomKeyRequestEventContent(KeyRequestAction.REQUEST, "A", "r1"),
+                setOf("DEV1", "DEV2"),
+                Instant.fromEpochMilliseconds(1234),
+            )
+        val roomKeyRequest2 =
+            StoredRoomKeyRequest(
+                RoomKeyRequestEventContent(KeyRequestAction.REQUEST, "A", "r2"),
+                setOf("DEV1"),
+                Instant.fromEpochMilliseconds(23),
+            )
         val roomKeyRequest2Copy = roomKeyRequest2.copy(createdAt = Instant.fromEpochMilliseconds(24))
 
         rtm.writeTransaction {
@@ -811,16 +844,18 @@ abstract class RepositoryTestSuite(
         val cut = di.get<RoomKeyRequestRepository>()
         val key1 = "key1"
         val key2 = "key2"
-        val roomKeyRequest1 = StoredRoomKeyRequest(
-            RoomKeyRequestEventContent(KeyRequestAction.REQUEST, "A", "r1"),
-            setOf("DEV1", "DEV2"),
-            Instant.fromEpochMilliseconds(1234)
-        )
-        val roomKeyRequest2 = StoredRoomKeyRequest(
-            RoomKeyRequestEventContent(KeyRequestAction.REQUEST, "A", "r2"),
-            setOf("DEV1"),
-            Instant.fromEpochMilliseconds(23)
-        )
+        val roomKeyRequest1 =
+            StoredRoomKeyRequest(
+                RoomKeyRequestEventContent(KeyRequestAction.REQUEST, "A", "r1"),
+                setOf("DEV1", "DEV2"),
+                Instant.fromEpochMilliseconds(1234),
+            )
+        val roomKeyRequest2 =
+            StoredRoomKeyRequest(
+                RoomKeyRequestEventContent(KeyRequestAction.REQUEST, "A", "r2"),
+                setOf("DEV1"),
+                Instant.fromEpochMilliseconds(23),
+            )
 
         rtm.writeTransaction {
             cut.save(key1, roomKeyRequest1)
@@ -834,18 +869,20 @@ abstract class RepositoryTestSuite(
         val cut = di.get<RoomOutboxMessageRepository>()
         val key1 = RoomOutboxMessageRepositoryKey(RoomId("!room:server"), "transaction1")
         val key2 = RoomOutboxMessageRepositoryKey(RoomId("!room:server"), "transaction2")
-        val message1 = RoomOutboxMessage(
-            key1.roomId,
-            key1.transactionId,
-            TextBased.Text("hi"),
-            Clock.System.now()
-        )
-        val message2 = RoomOutboxMessage(
-            key2.roomId,
-            key2.transactionId,
-            FileBased.Image("hi"),
-            Clock.System.now()
-        )
+        val message1 =
+            RoomOutboxMessage(
+                key1.roomId,
+                key1.transactionId,
+                TextBased.Text("hi"),
+                Clock.System.now(),
+            )
+        val message2 =
+            RoomOutboxMessage(
+                key2.roomId,
+                key2.transactionId,
+                FileBased.Image("hi"),
+                Clock.System.now(),
+            )
         val message2Copy = message2.copy(sentAt = Instant.fromEpochMilliseconds(24))
 
         rtm.writeTransaction {
@@ -871,18 +908,20 @@ abstract class RepositoryTestSuite(
         val cut = di.get<RoomOutboxMessageRepository>()
         val key1 = RoomOutboxMessageRepositoryKey(RoomId("!room1:server"), "transaction1")
         val key2 = RoomOutboxMessageRepositoryKey(RoomId("!room2:server"), "transaction2")
-        val message1 = RoomOutboxMessage(
-            key1.roomId,
-            key1.transactionId,
-            TextBased.Text("hi"),
-            Clock.System.now()
-        )
-        val message2 = RoomOutboxMessage(
-            key2.roomId,
-            key2.transactionId,
-            FileBased.Image("hi"),
-            Clock.System.now()
-        )
+        val message1 =
+            RoomOutboxMessage(
+                key1.roomId,
+                key1.transactionId,
+                TextBased.Text("hi"),
+                Clock.System.now(),
+            )
+        val message2 =
+            RoomOutboxMessage(
+                key2.roomId,
+                key2.transactionId,
+                FileBased.Image("hi"),
+                Clock.System.now(),
+            )
 
         rtm.writeTransaction {
             cut.save(key1, message1)
@@ -897,24 +936,27 @@ abstract class RepositoryTestSuite(
         val key1 = RoomOutboxMessageRepositoryKey(RoomId("!room1:server"), "transaction1")
         val key2 = RoomOutboxMessageRepositoryKey(RoomId("!room2:server"), "transaction2")
         val key3 = RoomOutboxMessageRepositoryKey(RoomId("!room2:server"), "transaction3")
-        val message1 = RoomOutboxMessage(
-            key1.roomId,
-            key1.transactionId,
-            TextBased.Text("hi"),
-            Clock.System.now()
-        )
-        val message2 = RoomOutboxMessage(
-            key2.roomId,
-            key2.transactionId,
-            FileBased.Image("hi"),
-            Clock.System.now()
-        )
-        val message3 = RoomOutboxMessage(
-            key3.roomId,
-            key3.transactionId,
-            FileBased.Image("hi"),
-            Clock.System.now()
-        )
+        val message1 =
+            RoomOutboxMessage(
+                key1.roomId,
+                key1.transactionId,
+                TextBased.Text("hi"),
+                Clock.System.now(),
+            )
+        val message2 =
+            RoomOutboxMessage(
+                key2.roomId,
+                key2.transactionId,
+                FileBased.Image("hi"),
+                Clock.System.now(),
+            )
+        val message3 =
+            RoomOutboxMessage(
+                key3.roomId,
+                key3.transactionId,
+                FileBased.Image("hi"),
+                Clock.System.now(),
+            )
 
         rtm.writeTransaction {
             cut.save(key1, message1)
@@ -930,31 +972,34 @@ abstract class RepositoryTestSuite(
         val cut = di.get<RoomStateRepository>()
         val key1 = RoomStateRepositoryKey(RoomId("!room1:server"), "m.room.member")
         val key2 = RoomStateRepositoryKey(RoomId("!room2:server"), "m.room.name")
-        val state1 = StateEvent(
-            MemberEventContent(membership = Membership.JOIN),
-            EventId("$1event"),
-            UserId("alice", "server"),
-            RoomId("!room1:server"),
-            1234,
-            stateKey = "@alice:server"
-        )
+        val state1 =
+            StateEvent(
+                MemberEventContent(membership = Membership.JOIN),
+                EventId("$1event"),
+                UserId("alice", "server"),
+                RoomId("!room1:server"),
+                1234,
+                stateKey = "@alice:server",
+            )
         val state1Copy = state1.copy(id = EventId("$2event"))
-        val state2 = StateEvent(
-            NameEventContent("room name"),
-            EventId("$2eventId"),
-            UserId("bob", "server"),
-            RoomId("!room2:server"),
-            originTimestamp = 24,
-            stateKey = ""
-        )
-        val state3 = StateEvent(
-            NameEventContent("room name"),
-            EventId("$2eventId"),
-            UserId("celina", "server"),
-            RoomId("!room2:server"),
-            originTimestamp = 24,
-            stateKey = ""
-        )
+        val state2 =
+            StateEvent(
+                NameEventContent("room name"),
+                EventId("$2eventId"),
+                UserId("bob", "server"),
+                RoomId("!room2:server"),
+                originTimestamp = 24,
+                stateKey = "",
+            )
+        val state3 =
+            StateEvent(
+                NameEventContent("room name"),
+                EventId("$2eventId"),
+                UserId("celina", "server"),
+                RoomId("!room2:server"),
+                originTimestamp = 24,
+                stateKey = "",
+            )
 
         rtm.writeTransaction {
             cut.save(key1, "@alice:server", state1)
@@ -966,10 +1011,11 @@ abstract class RepositoryTestSuite(
             cut.get(key1, "@alice:server") shouldBe state1Copy
             cut.delete(key1, "@alice:server")
             cut.get(key1) shouldHaveSize 0
-            cut.get(key2) shouldBe mapOf(
-                "@bob:server" to state2,
-                "@celina:server" to state3
-            )
+            cut.get(key2) shouldBe
+                mapOf(
+                    "@bob:server" to state2,
+                    "@celina:server" to state3,
+                )
         }
     }
 
@@ -977,14 +1023,15 @@ abstract class RepositoryTestSuite(
     fun `RoomStateRepository - save and get by second key`() = runTestWithSetup {
         val cut = di.get<RoomStateRepository>()
         val key = RoomStateRepositoryKey(RoomId("!room3:server"), "m.room.member")
-        val event = StateEvent(
-            MemberEventContent(membership = Membership.JOIN),
-            EventId("\$event"),
-            UserId("alice", "server"),
-            RoomId("!room1:server"),
-            1234,
-            stateKey = "@cedric:server"
-        )
+        val event =
+            StateEvent(
+                MemberEventContent(membership = Membership.JOIN),
+                EventId("\$event"),
+                UserId("alice", "server"),
+                RoomId("!room1:server"),
+                1234,
+                stateKey = "@cedric:server",
+            )
 
         rtm.writeTransaction {
             cut.save(key, "@cedric:server", event)
@@ -998,30 +1045,33 @@ abstract class RepositoryTestSuite(
         val key1 = RoomStateRepositoryKey(RoomId("!room1:server"), "m.room.member")
         val key2 = RoomStateRepositoryKey(RoomId("!room2:server"), "m.room.name")
         val key3 = RoomStateRepositoryKey(RoomId("!room2:server"), "m.room.member")
-        val state1 = StateEvent(
-            MemberEventContent(membership = Membership.JOIN),
-            EventId("$1event"),
-            UserId("alice", "server"),
-            RoomId("!room1:server"),
-            1234,
-            stateKey = "@alice:server"
-        )
-        val state2 = StateEvent(
-            NameEventContent("room name"),
-            EventId("$2event"),
-            UserId("bob", "server"),
-            RoomId("!room2:server"),
-            originTimestamp = 24,
-            stateKey = ""
-        )
-        val state3 = StateEvent(
-            MemberEventContent(membership = Membership.INVITE),
-            EventId("$1event"),
-            UserId("alice", "server"),
-            RoomId("!room2:server"),
-            1234,
-            stateKey = "@alice:server"
-        )
+        val state1 =
+            StateEvent(
+                MemberEventContent(membership = Membership.JOIN),
+                EventId("$1event"),
+                UserId("alice", "server"),
+                RoomId("!room1:server"),
+                1234,
+                stateKey = "@alice:server",
+            )
+        val state2 =
+            StateEvent(
+                NameEventContent("room name"),
+                EventId("$2event"),
+                UserId("bob", "server"),
+                RoomId("!room2:server"),
+                originTimestamp = 24,
+                stateKey = "",
+            )
+        val state3 =
+            StateEvent(
+                MemberEventContent(membership = Membership.INVITE),
+                EventId("$1event"),
+                UserId("alice", "server"),
+                RoomId("!room2:server"),
+                1234,
+                stateKey = "@alice:server",
+            )
 
         rtm.writeTransaction {
             cut.save(key1, "@alice:server", state1)
@@ -1029,12 +1079,13 @@ abstract class RepositoryTestSuite(
             cut.save(key3, "@alice:server", state3)
             cut.getByRooms(
                 setOf(RoomId("!room2:server")),
-                "m.room.member", "@alice:server"
+                "m.room.member",
+                "@alice:server",
             ) shouldContainExactly setOf(state3)
             cut.getByRooms(
                 setOf(RoomId("!room1:server"), RoomId("!room2:server")),
                 "m.room.member",
-                "@alice:server"
+                "@alice:server",
             ) shouldContainExactly setOf(state1, state3)
         }
     }
@@ -1046,30 +1097,33 @@ abstract class RepositoryTestSuite(
         val key2 = RoomStateRepositoryKey(RoomId("!room2:server"), "m.room.name")
         val key3 = RoomStateRepositoryKey(RoomId("!room1:server"), "m.room.name")
 
-        val state1 = StateEvent(
-            MemberEventContent(membership = Membership.JOIN),
-            EventId("$1event"),
-            UserId("alice", "server"),
-            RoomId("!room1:server"),
-            1234,
-            stateKey = "@alice:server"
-        )
-        val state2 = StateEvent(
-            NameEventContent("room name"),
-            EventId("$2eventId"),
-            UserId("bob", "server"),
-            RoomId("!room2:server"),
-            originTimestamp = 24,
-            stateKey = ""
-        )
-        val state3 = StateEvent(
-            NameEventContent("room name"),
-            EventId("$2eventId"),
-            UserId("bob", "server"),
-            RoomId("!room1:server"),
-            originTimestamp = 24,
-            stateKey = ""
-        )
+        val state1 =
+            StateEvent(
+                MemberEventContent(membership = Membership.JOIN),
+                EventId("$1event"),
+                UserId("alice", "server"),
+                RoomId("!room1:server"),
+                1234,
+                stateKey = "@alice:server",
+            )
+        val state2 =
+            StateEvent(
+                NameEventContent("room name"),
+                EventId("$2eventId"),
+                UserId("bob", "server"),
+                RoomId("!room2:server"),
+                originTimestamp = 24,
+                stateKey = "",
+            )
+        val state3 =
+            StateEvent(
+                NameEventContent("room name"),
+                EventId("$2eventId"),
+                UserId("bob", "server"),
+                RoomId("!room1:server"),
+                originTimestamp = 24,
+                stateKey = "",
+            )
 
         rtm.writeTransaction {
             cut.save(key1, "@alice:server", state1)
@@ -1087,30 +1141,42 @@ abstract class RepositoryTestSuite(
         val cut = di.get<RoomUserReceiptsRepository>()
         val key1 = RoomId("!room1:server")
         val key2 = RoomId("!room2:server")
-        val userReceipt1 = RoomUserReceipts(
-            key1, UserId("alice", "server"), mapOf(
-                ReceiptType.FullyRead to RoomUserReceipts.Receipt(
-                    EventId("event"),
-                    ReceiptEventContent.Receipt(1L)
-                )
+        val userReceipt1 =
+            RoomUserReceipts(
+                key1,
+                UserId("alice", "server"),
+                mapOf(
+                    ReceiptType.FullyRead to
+                        RoomUserReceipts.Receipt(
+                            EventId("event"),
+                            ReceiptEventContent.Receipt(1L),
+                        )
+                ),
             )
-        )
-        val userReceipt2 = RoomUserReceipts(
-            key1, UserId("bob", "server"), mapOf(
-                ReceiptType.Unknown("bla") to RoomUserReceipts.Receipt(
-                    EventId("event"),
-                    ReceiptEventContent.Receipt(1L)
-                )
+        val userReceipt2 =
+            RoomUserReceipts(
+                key1,
+                UserId("bob", "server"),
+                mapOf(
+                    ReceiptType.Unknown("bla") to
+                        RoomUserReceipts.Receipt(
+                            EventId("event"),
+                            ReceiptEventContent.Receipt(1L),
+                        )
+                ),
             )
-        )
-        val userReceipt3 = RoomUserReceipts(
-            key1, UserId("cedric", "server"), mapOf(
-                ReceiptType.FullyRead to RoomUserReceipts.Receipt(
-                    EventId("event"),
-                    ReceiptEventContent.Receipt(1L)
-                )
+        val userReceipt3 =
+            RoomUserReceipts(
+                key1,
+                UserId("cedric", "server"),
+                mapOf(
+                    ReceiptType.FullyRead to
+                        RoomUserReceipts.Receipt(
+                            EventId("event"),
+                            ReceiptEventContent.Receipt(1L),
+                        )
+                ),
             )
-        )
 
         rtm.writeTransaction {
             cut.save(key1, userReceipt1.userId, userReceipt1)
@@ -1129,14 +1195,18 @@ abstract class RepositoryTestSuite(
     fun `RoomUserReceiptsRepository - save and get by second key`() = runTestWithSetup {
         val cut = di.get<RoomUserReceiptsRepository>()
         val key = RoomId("!room1:server")
-        val userReceipt = RoomUserReceipts(
-            key, UserId("alice", "server"), mapOf(
-                ReceiptType.FullyRead to RoomUserReceipts.Receipt(
-                    EventId("event"),
-                    ReceiptEventContent.Receipt(1L)
-                )
+        val userReceipt =
+            RoomUserReceipts(
+                key,
+                UserId("alice", "server"),
+                mapOf(
+                    ReceiptType.FullyRead to
+                        RoomUserReceipts.Receipt(
+                            EventId("event"),
+                            ReceiptEventContent.Receipt(1L),
+                        )
+                ),
             )
-        )
 
         rtm.writeTransaction {
             cut.save(key, userReceipt.userId, userReceipt)
@@ -1149,36 +1219,48 @@ abstract class RepositoryTestSuite(
         val cut = di.get<RoomUserRepository>()
         val key1 = RoomId("!room1:server")
         val key2 = RoomId("!room2:server")
-        val user1 = RoomUser(
-            key1, UserId("alice", "server"), "ALIC", StateEvent(
-                MemberEventContent(membership = Membership.JOIN),
-                EventId("\$event1"),
-                UserId("alice", "server"),
+        val user1 =
+            RoomUser(
                 key1,
-                1234,
-                stateKey = "@alice:server"
-            )
-        )
-        val user2 = RoomUser(
-            key1, UserId("bob", "server"), "BO", StateEvent(
-                MemberEventContent(membership = Membership.LEAVE),
-                EventId("\$event2"),
                 UserId("alice", "server"),
-                key2,
-                1234,
-                stateKey = "@bob:server"
+                "ALIC",
+                StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event1"),
+                    UserId("alice", "server"),
+                    key1,
+                    1234,
+                    stateKey = "@alice:server",
+                ),
             )
-        )
-        val user3 = RoomUser(
-            key1, UserId("cedric", "server"), "CEDRIC", StateEvent(
-                MemberEventContent(membership = Membership.JOIN),
-                EventId("\$event3"),
+        val user2 =
+            RoomUser(
+                key1,
+                UserId("bob", "server"),
+                "BO",
+                StateEvent(
+                    MemberEventContent(membership = Membership.LEAVE),
+                    EventId("\$event2"),
+                    UserId("alice", "server"),
+                    key2,
+                    1234,
+                    stateKey = "@bob:server",
+                ),
+            )
+        val user3 =
+            RoomUser(
+                key1,
                 UserId("cedric", "server"),
-                key2,
-                1234,
-                stateKey = "@cedric:server"
+                "CEDRIC",
+                StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event3"),
+                    UserId("cedric", "server"),
+                    key2,
+                    1234,
+                    stateKey = "@cedric:server",
+                ),
             )
-        )
 
         rtm.writeTransaction {
             cut.save(key1, user1.userId, user1)
@@ -1197,16 +1279,20 @@ abstract class RepositoryTestSuite(
     fun `RoomUserRepository - save and get by second key`() = runTestWithSetup {
         val cut = di.get<RoomUserRepository>()
         val key = RoomId("!room1:server")
-        val user = RoomUser(
-            key, UserId("alice", "server"), "ALIC", StateEvent(
-                MemberEventContent(membership = Membership.JOIN),
-                EventId("\$event1"),
-                UserId("alice", "server"),
+        val user =
+            RoomUser(
                 key,
-                1234,
-                stateKey = "@alice:server"
+                UserId("alice", "server"),
+                "ALIC",
+                StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event1"),
+                    UserId("alice", "server"),
+                    key,
+                    1234,
+                    stateKey = "@alice:server",
+                ),
             )
-        )
 
         rtm.writeTransaction {
             cut.save(key, user.userId, user)
@@ -1219,16 +1305,18 @@ abstract class RepositoryTestSuite(
         val cut = di.get<SecretKeyRequestRepository>()
         val key1 = "key1"
         val key2 = "key2"
-        val secretKeyRequest1 = StoredSecretKeyRequest(
-            SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
-            setOf("DEV1", "DEV2"),
-            Instant.fromEpochMilliseconds(1234)
-        )
-        val secretKeyRequest2 = StoredSecretKeyRequest(
-            SecretKeyRequestEventContent("2", KeyRequestAction.REQUEST, "A", "r2"),
-            setOf("DEV1"),
-            Instant.fromEpochMilliseconds(23)
-        )
+        val secretKeyRequest1 =
+            StoredSecretKeyRequest(
+                SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
+                setOf("DEV1", "DEV2"),
+                Instant.fromEpochMilliseconds(1234),
+            )
+        val secretKeyRequest2 =
+            StoredSecretKeyRequest(
+                SecretKeyRequestEventContent("2", KeyRequestAction.REQUEST, "A", "r2"),
+                setOf("DEV1"),
+                Instant.fromEpochMilliseconds(23),
+            )
         val secretKeyRequest2Copy = secretKeyRequest2.copy(createdAt = Instant.fromEpochMilliseconds(24))
 
         rtm.writeTransaction {
@@ -1248,16 +1336,18 @@ abstract class RepositoryTestSuite(
         val cut = di.get<SecretKeyRequestRepository>()
         val key1 = "key1"
         val key2 = "key2"
-        val secretKeyRequest1 = StoredSecretKeyRequest(
-            SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
-            setOf("DEV1", "DEV2"),
-            Instant.fromEpochMilliseconds(1234)
-        )
-        val secretKeyRequest2 = StoredSecretKeyRequest(
-            SecretKeyRequestEventContent("2", KeyRequestAction.REQUEST, "A", "r2"),
-            setOf("DEV1"),
-            Instant.fromEpochMilliseconds(23)
-        )
+        val secretKeyRequest1 =
+            StoredSecretKeyRequest(
+                SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
+                setOf("DEV1", "DEV2"),
+                Instant.fromEpochMilliseconds(1234),
+            )
+        val secretKeyRequest2 =
+            StoredSecretKeyRequest(
+                SecretKeyRequestEventContent("2", KeyRequestAction.REQUEST, "A", "r2"),
+                setOf("DEV1"),
+                Instant.fromEpochMilliseconds(23),
+            )
 
         rtm.writeTransaction {
             cut.save(key1, secretKeyRequest1)
@@ -1269,14 +1359,18 @@ abstract class RepositoryTestSuite(
     @Test
     fun `SecretsRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<SecretsRepository>()
-        val secret1 = SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-            GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf("a" to JsonObject(mapOf())))),
-            "priv1"
-        )
-        val secret2 = SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-            GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf("b" to JsonObject(mapOf())))),
-            "priv2"
-        )
+        val secret1 =
+            SecretType.M_CROSS_SIGNING_SELF_SIGNING to
+                StoredSecret(
+                    GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf("a" to JsonObject(mapOf())))),
+                    "priv1",
+                )
+        val secret2 =
+            SecretType.M_CROSS_SIGNING_USER_SIGNING to
+                StoredSecret(
+                    GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf("b" to JsonObject(mapOf())))),
+                    "priv2",
+                )
 
         rtm.writeTransaction {
             cut.save(1, mapOf(secret1))
@@ -1288,91 +1382,90 @@ abstract class RepositoryTestSuite(
         }
     }
 
-
     @Test
     fun `TimelineEventRelationRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<TimelineEventRelationRepository>()
-        val relation1 = TimelineEventRelation(
-            RoomId("!room1:server"),
-            EventId("$1event"),
-            RelationType.Reference,
-            EventId("\$relatedEvent1")
-        )
-        val relation2 = TimelineEventRelation(
-            RoomId("!room1:server"),
-            EventId("$2event"),
-            RelationType.Unknown("bla"),
-            EventId("\$relatedEvent1"),
-        )
-        val relation3 = TimelineEventRelation(
-            RoomId("!room1:server"),
-            EventId("$3event"),
-            RelationType.Unknown("bla"),
-            EventId("\$relatedEvent1"),
-        )
+        val relation1 =
+            TimelineEventRelation(
+                RoomId("!room1:server"),
+                EventId("$1event"),
+                RelationType.Reference,
+                EventId("\$relatedEvent1"),
+            )
+        val relation2 =
+            TimelineEventRelation(
+                RoomId("!room1:server"),
+                EventId("$2event"),
+                RelationType.Unknown("bla"),
+                EventId("\$relatedEvent1"),
+            )
+        val relation3 =
+            TimelineEventRelation(
+                RoomId("!room1:server"),
+                EventId("$3event"),
+                RelationType.Unknown("bla"),
+                EventId("\$relatedEvent1"),
+            )
 
         rtm.writeTransaction {
             cut.save(
                 TimelineEventRelationKey(relation1.relatedEventId, relation1.roomId, relation1.relationType),
                 relation1.eventId,
-                relation1
+                relation1,
             )
             cut.save(
                 TimelineEventRelationKey(relation2.relatedEventId, relation2.roomId, relation2.relationType),
                 relation2.eventId,
-                relation2
+                relation2,
             )
             cut.save(
                 TimelineEventRelationKey(relation3.relatedEventId, relation3.roomId, relation3.relationType),
                 relation3.eventId,
-                relation3
+                relation3,
             )
 
             cut.get(
                 TimelineEventRelationKey(
                     relation1.relatedEventId,
                     relation1.roomId,
-                    relation1.relationType
+                    relation1.relationType,
                 )
-            ) shouldBe mapOf(
-                relation1.eventId to relation1
-            )
+            ) shouldBe mapOf(relation1.eventId to relation1)
             cut.get(
                 TimelineEventRelationKey(
                     relation2.relatedEventId,
                     relation2.roomId,
-                    relation2.relationType
+                    relation2.relationType,
                 )
-            ) shouldBe mapOf(
-                relation2.eventId to relation2,
-                relation3.eventId to relation3,
-            )
+            ) shouldBe
+                mapOf(
+                    relation2.eventId to relation2,
+                    relation3.eventId to relation3,
+                )
             cut.get(
                 TimelineEventRelationKey(relation1.relatedEventId, relation1.roomId, relation1.relationType),
-                relation1.eventId
+                relation1.eventId,
             ) shouldBe relation1
 
             cut.delete(
                 TimelineEventRelationKey(relation2.relatedEventId, relation2.roomId, relation2.relationType),
-                relation2.eventId
+                relation2.eventId,
             )
             cut.get(
                 TimelineEventRelationKey(
                     relation2.relatedEventId,
                     relation2.roomId,
-                    relation2.relationType
+                    relation2.relationType,
                 )
-            ) shouldBe mapOf(
-                relation3.eventId to relation3,
-            )
+            ) shouldBe mapOf(relation3.eventId to relation3)
 
             cut.delete(
                 TimelineEventRelationKey(relation1.relatedEventId, relation1.roomId, relation1.relationType),
-                relation1.eventId
+                relation1.eventId,
             )
             cut.get(
                 TimelineEventRelationKey(relation1.relatedEventId, relation1.roomId, relation1.relationType),
-                relation1.eventId
+                relation1.eventId,
             ) shouldBe null
         }
     }
@@ -1385,50 +1478,50 @@ abstract class RepositoryTestSuite(
                 RoomId("!room1:server"),
                 EventId("$1event"),
                 RelationType.Reference,
-                EventId("\$relatedEvent1")
+                EventId("\$relatedEvent1"),
             )
         val relation2 =
             TimelineEventRelation(
                 RoomId("!room2:server"),
                 EventId("$1event"),
                 RelationType.Reference,
-                EventId("\$relatedEvent2")
+                EventId("\$relatedEvent2"),
             )
         val relation3 =
             TimelineEventRelation(
                 RoomId("!room1:server"),
                 EventId("$1event"),
                 RelationType.Reference,
-                EventId("\$relatedEvent3")
+                EventId("\$relatedEvent3"),
             )
         val relation4 =
             TimelineEventRelation(
                 RoomId("!room1:server"),
                 EventId("$1event"),
                 RelationType.Reference,
-                EventId("\$relatedEvent24")
+                EventId("\$relatedEvent24"),
             )
 
         rtm.writeTransaction {
             cut.save(
                 TimelineEventRelationKey(relation1.relatedEventId, relation1.roomId, relation1.relationType),
                 relation1.eventId,
-                relation1
+                relation1,
             )
             cut.save(
                 TimelineEventRelationKey(relation2.relatedEventId, relation2.roomId, relation2.relationType),
                 relation2.eventId,
-                relation2
+                relation2,
             )
             cut.save(
                 TimelineEventRelationKey(relation3.relatedEventId, relation3.roomId, relation3.relationType),
                 relation3.eventId,
-                relation3
+                relation3,
             )
             cut.save(
                 TimelineEventRelationKey(relation4.relatedEventId, relation4.roomId, relation4.relationType),
                 relation4.eventId,
-                relation4
+                relation4,
             )
 
             cut.deleteByRoomId(RoomId("!room1:server"))
@@ -1457,30 +1550,32 @@ abstract class RepositoryTestSuite(
         val cut = di.get<TimelineEventRepository>()
         val key1 = TimelineEventKey(EventId("\$event1"), RoomId("!room1:server"))
         val key2 = TimelineEventKey(EventId("\$event2"), RoomId("!room1:server"))
-        val event1 = TimelineEvent(
-            MessageEvent(
-                TextBased.Text("message"),
-                EventId("\$event1"),
-                UserId("sender", "server"),
-                RoomId("!room1:server"),
-                1234
-            ),
-            previousEventId = null,
-            nextEventId = null,
-            gap = TimelineEvent.Gap.GapBefore("batch")
-        )
-        val event2 = TimelineEvent(
-            MessageEvent(
-                TextBased.Text("message"),
-                EventId("\$event2"),
-                UserId("sender", "server"),
-                RoomId("!room1:server"),
-                1234
-            ),
-            previousEventId = null,
-            nextEventId = null,
-            gap = null
-        )
+        val event1 =
+            TimelineEvent(
+                MessageEvent(
+                    TextBased.Text("message"),
+                    EventId("\$event1"),
+                    UserId("sender", "server"),
+                    RoomId("!room1:server"),
+                    1234,
+                ),
+                previousEventId = null,
+                nextEventId = null,
+                gap = TimelineEvent.Gap.GapBefore("batch"),
+            )
+        val event2 =
+            TimelineEvent(
+                MessageEvent(
+                    TextBased.Text("message"),
+                    EventId("\$event2"),
+                    UserId("sender", "server"),
+                    RoomId("!room1:server"),
+                    1234,
+                ),
+                previousEventId = null,
+                nextEventId = null,
+                gap = null,
+            )
         val session2Copy = event2.copy(nextEventId = EventId("\$superfancy"))
 
         rtm.writeTransaction {
@@ -1499,19 +1594,20 @@ abstract class RepositoryTestSuite(
     fun `TimelineEventRepository - redacted events`() = runTestWithSetup {
         val cut = di.get<TimelineEventRepository>()
         val key = TimelineEventKey(EventId("\$event1"), RoomId("!room1:server"))
-        val event = TimelineEvent(
-            MessageEvent(
-                RedactedEventContent("m.room.message"),
-                EventId("\$event1"),
-                UserId("sender", "server"),
-                RoomId("!room1:server"),
-                1234
-            ),
-            content = Result.success(RedactedEventContent("m.room.message")),
-            previousEventId = null,
-            nextEventId = null,
-            gap = TimelineEvent.Gap.GapBefore("batch")
-        )
+        val event =
+            TimelineEvent(
+                MessageEvent(
+                    RedactedEventContent("m.room.message"),
+                    EventId("\$event1"),
+                    UserId("sender", "server"),
+                    RoomId("!room1:server"),
+                    1234,
+                ),
+                content = Result.success(RedactedEventContent("m.room.message")),
+                previousEventId = null,
+                nextEventId = null,
+                gap = TimelineEvent.Gap.GapBefore("batch"),
+            )
         rtm.writeTransaction {
             cut.save(key, event)
             cut.get(key) shouldBe event
@@ -1524,42 +1620,45 @@ abstract class RepositoryTestSuite(
         val key1 = TimelineEventKey(EventId("\$event1"), RoomId("!room1:server"))
         val key2 = TimelineEventKey(EventId("\$event2"), RoomId("!room2:server"))
         val key3 = TimelineEventKey(EventId("\$event3"), RoomId("!room1:server"))
-        val event1 = TimelineEvent(
-            MessageEvent(
-                TextBased.Text("message"),
-                EventId("\$event1"),
-                UserId("sender", "server"),
-                RoomId("!room1:server"),
-                1234
-            ),
-            previousEventId = null,
-            nextEventId = null,
-            gap = TimelineEvent.Gap.GapBefore("batch")
-        )
-        val event2 = TimelineEvent(
-            MessageEvent(
-                TextBased.Text("message"),
-                EventId("\$event2"),
-                UserId("sender", "server"),
-                RoomId("!room2:server"),
-                1234
-            ),
-            previousEventId = null,
-            nextEventId = null,
-            gap = null
-        )
-        val event3 = TimelineEvent(
-            MessageEvent(
-                TextBased.Text("message"),
-                EventId("\$event2"),
-                UserId("sender", "server"),
-                RoomId("!room1:server"),
-                1234
-            ),
-            previousEventId = null,
-            nextEventId = null,
-            gap = null
-        )
+        val event1 =
+            TimelineEvent(
+                MessageEvent(
+                    TextBased.Text("message"),
+                    EventId("\$event1"),
+                    UserId("sender", "server"),
+                    RoomId("!room1:server"),
+                    1234,
+                ),
+                previousEventId = null,
+                nextEventId = null,
+                gap = TimelineEvent.Gap.GapBefore("batch"),
+            )
+        val event2 =
+            TimelineEvent(
+                MessageEvent(
+                    TextBased.Text("message"),
+                    EventId("\$event2"),
+                    UserId("sender", "server"),
+                    RoomId("!room2:server"),
+                    1234,
+                ),
+                previousEventId = null,
+                nextEventId = null,
+                gap = null,
+            )
+        val event3 =
+            TimelineEvent(
+                MessageEvent(
+                    TextBased.Text("message"),
+                    EventId("\$event2"),
+                    UserId("sender", "server"),
+                    RoomId("!room1:server"),
+                    1234,
+                ),
+                previousEventId = null,
+                nextEventId = null,
+                gap = null,
+            )
 
         rtm.writeTransaction {
             cut.save(key1, event1)
@@ -1573,7 +1672,7 @@ abstract class RepositoryTestSuite(
         }
     }
 
-    @OptIn(MSC4143::class, MSC4354::class)
+    @OptIn(MSC4143::class, MSC4354::class, MSC4193::class)
     @Test
     fun `StickyRoomEventRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<StickyEventRepository>()
@@ -1586,50 +1685,82 @@ abstract class RepositoryTestSuite(
         val eventId1 = EventId("\$event1")
         val eventId2 = EventId("\$event2")
 
-        val value1 = StoredStickyEvent(
-            event = MessageEvent(
-                RtcMemberEventContent(stickyKey1, "slot") as StickyEventContent,
-                eventId1,
-                sender1,
-                roomId1,
-                1234,
-            ),
-            startTime = Instant.fromEpochMilliseconds(23),
-            endTime = Instant.fromEpochMilliseconds(24),
-        )
-        val value2 = StoredStickyEvent(
-            event = MessageEvent(
-                RtcMemberEventContent(stickyKey2, "slot") as StickyEventContent,
-                eventId2,
-                sender1,
-                roomId1,
-                1234,
-            ),
-            startTime = Instant.fromEpochMilliseconds(24),
-            endTime = Instant.fromEpochMilliseconds(25),
-        )
-        val value3 = StoredStickyEvent(
-            event = MessageEvent(
-                RtcMemberEventContent(stickyKey1, "slot") as StickyEventContent,
-                eventId2,
-                sender1,
-                roomId2,
-                1234,
-            ),
-            startTime = Instant.fromEpochMilliseconds(23),
-            endTime = Instant.fromEpochMilliseconds(24),
-        )
-        val value4 = StoredStickyEvent(
-            event = MessageEvent(
-                RtcMemberEventContent(stickyKey1, "slot") as StickyEventContent,
-                eventId2,
-                sender2,
-                roomId2,
-                1234,
-            ),
-            startTime = Instant.fromEpochMilliseconds(24),
-            endTime = Instant.fromEpochMilliseconds(25),
-        )
+        val value1 =
+            StoredStickyEvent(
+                event =
+                    MessageEvent(
+                        RtcMemberEventContent.Join(
+                            CallRtcApplication.SLOT_ID,
+                            RtcMemberEventContent.Member("memberId1"),
+                            CallRtcApplication.Member(),
+                            null,
+                            stickyKey1,
+                        ) as StickyEventContent,
+                        eventId1,
+                        sender1,
+                        roomId1,
+                        1234,
+                    ),
+                startTime = Instant.fromEpochMilliseconds(23),
+                endTime = Instant.fromEpochMilliseconds(24),
+            )
+        val value2 =
+            StoredStickyEvent(
+                event =
+                    MessageEvent(
+                        RtcMemberEventContent.Join(
+                            CallRtcApplication.SLOT_ID,
+                            RtcMemberEventContent.Member("memberId2"),
+                            CallRtcApplication.Member(),
+                            null,
+                            stickyKey2,
+                        ) as StickyEventContent,
+                        eventId2,
+                        sender1,
+                        roomId1,
+                        1234,
+                    ),
+                startTime = Instant.fromEpochMilliseconds(24),
+                endTime = Instant.fromEpochMilliseconds(25),
+            )
+        val value3 =
+            StoredStickyEvent(
+                event =
+                    MessageEvent(
+                        RtcMemberEventContent.Join(
+                            CallRtcApplication.SLOT_ID,
+                            RtcMemberEventContent.Member("memberId1"),
+                            CallRtcApplication.Member(),
+                            null,
+                            stickyKey1,
+                        ) as StickyEventContent,
+                        eventId2,
+                        sender1,
+                        roomId2,
+                        1234,
+                    ),
+                startTime = Instant.fromEpochMilliseconds(23),
+                endTime = Instant.fromEpochMilliseconds(24),
+            )
+        val value4 =
+            StoredStickyEvent(
+                event =
+                    MessageEvent(
+                        RtcMemberEventContent.Join(
+                            CallRtcApplication.SLOT_ID,
+                            RtcMemberEventContent.Member("memberId"),
+                            CallRtcApplication.Member(),
+                            null,
+                            stickyKey1,
+                        ) as StickyEventContent,
+                        eventId2,
+                        sender2,
+                        roomId2,
+                        1234,
+                    ),
+                startTime = Instant.fromEpochMilliseconds(24),
+                endTime = Instant.fromEpochMilliseconds(25),
+            )
 
         rtm.writeTransaction {
             cut.save(
@@ -1669,22 +1800,24 @@ abstract class RepositoryTestSuite(
                 StickyEventRepositorySecondKey(sender2, stickyKey1),
             ) shouldBe value4
 
-            cut.get(StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"))
-                .values shouldBe setOf(value1, value2)
-            cut.getByEventId(roomId1, eventId1) shouldBe Pair(
-                StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
-                StickyEventRepositorySecondKey(sender1, stickyKey1),
-            )
-            cut.getByEndTimeBefore(Instant.fromEpochMilliseconds(25)) shouldBe setOf(
+            cut.get(StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member")).values shouldBe
+                setOf(value1, value2)
+            cut.getByEventId(roomId1, eventId1) shouldBe
                 Pair(
                     StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
                     StickyEventRepositorySecondKey(sender1, stickyKey1),
-                ),
-                Pair(
-                    StickyEventRepositoryFirstKey(roomId2, "org.matrix.msc4143.rtc.member"),
-                    StickyEventRepositorySecondKey(sender1, stickyKey1),
                 )
-            )
+            cut.getByEndTimeBefore(Instant.fromEpochMilliseconds(25)) shouldBe
+                setOf(
+                    Pair(
+                        StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
+                        StickyEventRepositorySecondKey(sender1, stickyKey1),
+                    ),
+                    Pair(
+                        StickyEventRepositoryFirstKey(roomId2, "org.matrix.msc4143.rtc.member"),
+                        StickyEventRepositorySecondKey(sender1, stickyKey1),
+                    ),
+                )
             cut.delete(
                 StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"),
                 StickyEventRepositorySecondKey(sender1, stickyKey1),
@@ -1695,8 +1828,8 @@ abstract class RepositoryTestSuite(
             ) shouldBe null
 
             cut.deleteByRoomId(roomId2)
-            cut.get(StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member"))
-                .values shouldBe setOf(value2)
+            cut.get(StickyEventRepositoryFirstKey(roomId1, "org.matrix.msc4143.rtc.member")).values shouldBe
+                setOf(value2)
             cut.get(StickyEventRepositoryFirstKey(roomId2, "org.matrix.msc4143.rtc.member")) shouldBe mapOf()
         }
     }
@@ -1725,12 +1858,13 @@ abstract class RepositoryTestSuite(
     @Test
     fun `NotificationRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<NotificationRepository>()
-        val notification1 = StoredNotification.Message(
-            sortKey = "A",
-            roomId = RoomId("!room1"),
-            eventId = EventId("\$event1"),
-            actions = setOf()
-        )
+        val notification1 =
+            StoredNotification.Message(
+                sortKey = "A",
+                roomId = RoomId("!room1"),
+                eventId = EventId("\$event1"),
+                actions = setOf(),
+            )
         val notification2 =
             StoredNotification.State(
                 sortKey = "A",
@@ -1738,7 +1872,7 @@ abstract class RepositoryTestSuite(
                 eventId = EventId("\$event2"),
                 type = "m.room.member",
                 stateKey = "@user:localhost",
-                actions = setOf()
+                actions = setOf(),
             )
         val notification2Copy = notification2.copy(dismissed = true)
 
@@ -1757,12 +1891,13 @@ abstract class RepositoryTestSuite(
     @Test
     fun `NotificationRepository - deleteByRoomId`() = runTestWithSetup {
         val cut = di.get<NotificationRepository>()
-        val notification1 = StoredNotification.Message(
-            sortKey = "A",
-            roomId = RoomId("!room1"),
-            eventId = EventId("\$event1"),
-            actions = setOf()
-        )
+        val notification1 =
+            StoredNotification.Message(
+                sortKey = "A",
+                roomId = RoomId("!room1"),
+                eventId = EventId("\$event1"),
+                actions = setOf(),
+            )
         val notification2 =
             StoredNotification.State(
                 "A",
@@ -1770,15 +1905,15 @@ abstract class RepositoryTestSuite(
                 EventId("\$event2"),
                 "m.room.member",
                 "@user:localhost",
-                setOf()
+                setOf(),
             )
-        val notification3 = StoredNotification.Message(
-            sortKey = "A",
-            roomId = RoomId("!room2"),
-            eventId = EventId("\$event1"),
-            actions = setOf()
-        )
-
+        val notification3 =
+            StoredNotification.Message(
+                sortKey = "A",
+                roomId = RoomId("!room2"),
+                eventId = EventId("\$event1"),
+                actions = setOf(),
+            )
 
         rtm.writeTransaction {
             cut.save(notification1.id, notification1)
@@ -1794,14 +1929,16 @@ abstract class RepositoryTestSuite(
     @Test
     fun `NotificationUpdateRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<NotificationUpdateRepository>()
-        val notificationUpdate1 = StoredNotificationUpdate.Remove(
-            StoredNotification.State.id(RoomId("!room1"), "m.room.member", "@user:localhost"),
-            RoomId("!room1"),
-        )
-        val notificationUpdate2 = StoredNotificationUpdate.Remove(
-            StoredNotification.State.id(RoomId("!room2"), "m.room.member", "@user:localhost"),
-            RoomId("!room2"),
-        )
+        val notificationUpdate1 =
+            StoredNotificationUpdate.Remove(
+                StoredNotification.State.id(RoomId("!room1"), "m.room.member", "@user:localhost"),
+                RoomId("!room1"),
+            )
+        val notificationUpdate2 =
+            StoredNotificationUpdate.Remove(
+                StoredNotification.State.id(RoomId("!room2"), "m.room.member", "@user:localhost"),
+                RoomId("!room2"),
+            )
         val notificationUpdate2Copy = notificationUpdate2.copy(roomId = RoomId("!room2"))
 
         rtm.writeTransaction {
@@ -1819,19 +1956,21 @@ abstract class RepositoryTestSuite(
     @Test
     fun `NotificationUpdateRepository - deleteByRoomId`() = runTestWithSetup {
         val cut = di.get<NotificationUpdateRepository>()
-        val notificationUpdate1 = StoredNotificationUpdate.Remove(
-            StoredNotification.State.id(RoomId("!room1"), "m.room.member", "@user:localhost"),
-            RoomId("!room1"),
-        )
-        val notificationUpdate2 = StoredNotificationUpdate.Remove(
-            StoredNotification.State.id(RoomId("!room1"), "m.room.member", "@user:localhost"),
-            RoomId("!room1"),
-        )
-        val notificationUpdate3 = StoredNotificationUpdate.Remove(
-            StoredNotification.State.id(RoomId("!room2"), "m.room.member", "@user:localhost"),
-            RoomId("!room2"),
-        )
-
+        val notificationUpdate1 =
+            StoredNotificationUpdate.Remove(
+                StoredNotification.State.id(RoomId("!room1"), "m.room.member", "@user:localhost"),
+                RoomId("!room1"),
+            )
+        val notificationUpdate2 =
+            StoredNotificationUpdate.Remove(
+                StoredNotification.State.id(RoomId("!room1"), "m.room.member", "@user:localhost"),
+                RoomId("!room1"),
+            )
+        val notificationUpdate3 =
+            StoredNotificationUpdate.Remove(
+                StoredNotification.State.id(RoomId("!room2"), "m.room.member", "@user:localhost"),
+                RoomId("!room2"),
+            )
 
         rtm.writeTransaction {
             cut.save(notificationUpdate1.id, notificationUpdate1)
@@ -1857,7 +1996,7 @@ abstract class RepositoryTestSuite(
                 lastEventId = EventId("\$event1"),
                 lastRelevantEventId = null,
                 lastProcessedEventId = null,
-                expectedMaxNotificationCount = null
+                expectedMaxNotificationCount = null,
             )
         val notificationState2Copy = notificationState2.copy(needsSync = true)
 
@@ -1892,11 +2031,12 @@ abstract class RepositoryTestSuite(
     @Test
     fun `MigrationRepository - delete all`() = runTestWithSetup {
         val cut = di.get<MigrationRepository>()
-        val data = listOf(
-            "migration1" to "metadata1",
-            "migration2" to "metadata2",
-            "migration3" to "metadata3",
-        )
+        val data =
+            listOf(
+                "migration1" to "metadata1",
+                "migration2" to "metadata2",
+                "migration3" to "metadata3",
+            )
         rtm.writeTransaction {
             data.forEach { cut.save(it.first, it.second) }
             data.forEach { cut.get(it.first) shouldBe it.second }
