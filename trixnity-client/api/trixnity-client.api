@@ -2485,18 +2485,20 @@ public final class de/connect2x/trixnity/client/store/RootStore : de/connect2x/t
 
 public final class de/connect2x/trixnity/client/store/ServerData {
 	public static final field Companion Lde/connect2x/trixnity/client/store/ServerData$Companion;
-	public fun <init> (Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;)V
-	public synthetic fun <init> (Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;Ljava/util/List;)V
+	public synthetic fun <init> (Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;
 	public final fun component2 ()Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;
 	public final fun component3 ()Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;
 	public final fun component4 ()Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;
-	public final fun copy (Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;)Lde/connect2x/trixnity/client/store/ServerData;
-	public static synthetic fun copy$default (Lde/connect2x/trixnity/client/store/ServerData;Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;ILjava/lang/Object;)Lde/connect2x/trixnity/client/store/ServerData;
+	public final fun component5 ()Ljava/util/List;
+	public final fun copy (Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;Ljava/util/List;)Lde/connect2x/trixnity/client/store/ServerData;
+	public static synthetic fun copy$default (Lde/connect2x/trixnity/client/store/ServerData;Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;Ljava/util/List;ILjava/lang/Object;)Lde/connect2x/trixnity/client/store/ServerData;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAuth ()Lde/connect2x/trixnity/clientserverapi/model/authentication/oauth2/ServerMetadata;
 	public final fun getCapabilities ()Lde/connect2x/trixnity/clientserverapi/model/server/GetCapabilities$Response;
 	public final fun getMediaConfig ()Lde/connect2x/trixnity/clientserverapi/model/media/GetMediaConfig$Response;
+	public final fun getRtcTransports ()Ljava/util/List;
 	public final fun getVersions ()Lde/connect2x/trixnity/clientserverapi/model/server/GetVersions$Response;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;

@@ -397,6 +397,7 @@ public abstract interface class de/connect2x/trixnity/clientserverapi/client/Mat
 	public abstract fun getMedia ()Lde/connect2x/trixnity/clientserverapi/client/MediaApiClient;
 	public abstract fun getPush ()Lde/connect2x/trixnity/clientserverapi/client/PushApiClient;
 	public abstract fun getRoom ()Lde/connect2x/trixnity/clientserverapi/client/RoomApiClient;
+	public abstract fun getRtc ()Lde/connect2x/trixnity/clientserverapi/client/RtcApiClient;
 	public abstract fun getServer ()Lde/connect2x/trixnity/clientserverapi/client/ServerApiClient;
 	public abstract fun getSync ()Lde/connect2x/trixnity/clientserverapi/client/SyncApiClient;
 	public abstract fun getUser ()Lde/connect2x/trixnity/clientserverapi/client/UserApiClient;
@@ -450,6 +451,8 @@ public final class de/connect2x/trixnity/clientserverapi/client/MatrixClientServ
 	public fun getPush ()Lde/connect2x/trixnity/clientserverapi/client/PushApiClientImpl;
 	public synthetic fun getRoom ()Lde/connect2x/trixnity/clientserverapi/client/RoomApiClient;
 	public fun getRoom ()Lde/connect2x/trixnity/clientserverapi/client/RoomApiClientImpl;
+	public synthetic fun getRtc ()Lde/connect2x/trixnity/clientserverapi/client/RtcApiClient;
+	public fun getRtc ()Lde/connect2x/trixnity/clientserverapi/client/RtcApiClientImpl;
 	public synthetic fun getServer ()Lde/connect2x/trixnity/clientserverapi/client/ServerApiClient;
 	public fun getServer ()Lde/connect2x/trixnity/clientserverapi/client/ServerApiClientImpl;
 	public synthetic fun getSync ()Lde/connect2x/trixnity/clientserverapi/client/SyncApiClient;
@@ -742,6 +745,15 @@ public final class de/connect2x/trixnity/clientserverapi/client/RoomApiClientImp
 	public fun timestampToEvent-9UWP1Xc (Ljava/lang/String;JLde/connect2x/trixnity/clientserverapi/model/room/TimestampToEvent$Direction;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun unbanUser-REn5ilA (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun upgradeRoom-9UWP1Xc (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class de/connect2x/trixnity/clientserverapi/client/RtcApiClient {
+	public abstract fun getTransports-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class de/connect2x/trixnity/clientserverapi/client/RtcApiClientImpl : de/connect2x/trixnity/clientserverapi/client/RtcApiClient {
+	public fun <init> (Lde/connect2x/trixnity/clientserverapi/client/MatrixClientServerApiBaseClient;)V
+	public fun getTransports-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public abstract interface class de/connect2x/trixnity/clientserverapi/client/ServerApiClient {

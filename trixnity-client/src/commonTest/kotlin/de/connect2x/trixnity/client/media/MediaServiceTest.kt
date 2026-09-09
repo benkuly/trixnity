@@ -8,6 +8,7 @@ import de.connect2x.trixnity.client.store.MediaCacheMapping
 import de.connect2x.trixnity.client.store.repository.NoOpStoreTransactionManager
 import de.connect2x.trixnity.clientserverapi.client.DownloadLimitExceededException
 import de.connect2x.trixnity.clientserverapi.model.media.FileTransferProgress
+import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.model.events.m.room.EncryptedFile
 import de.connect2x.trixnity.test.utils.TrixnityBaseTest
 import de.connect2x.trixnity.test.utils.runTest
@@ -442,6 +443,7 @@ class MediaServiceTest : TrixnityBaseTest() {
         calledCount shouldBe 1
     }
 
+    @OptIn(MSC4143::class)
     @Test
     fun `uploadMedia » contain exception when file too large`() = runTest {
         val oldServerData = serverDataStore.getServerData()

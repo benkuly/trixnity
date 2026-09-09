@@ -2,6 +2,7 @@ package de.connect2x.trixnity.clientserverapi.client
 
 import de.connect2x.lognity.api.logger.Logger
 import de.connect2x.lognity.api.logger.error
+import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.serialization.createMatrixEventJson
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -39,6 +40,7 @@ interface MatrixClientServerApiClient : AutoCloseable {
     val media: MediaApiClient
     val device: DeviceApiClient
     val push: PushApiClient
+    @MSC4143 val rtc: RtcApiClient
 
     val eventContentSerializerMappings: EventContentSerializerMappings
     val json: Json
@@ -176,6 +178,7 @@ class MatrixClientServerApiClientImpl(
     override val media = MediaApiClientImpl(baseClient)
     override val device = DeviceApiClientImpl(baseClient)
     override val push = PushApiClientImpl(baseClient)
+    @MSC4143 override val rtc = RtcApiClientImpl(baseClient)
 
     override fun close() {
         coroutineScope.cancel()
