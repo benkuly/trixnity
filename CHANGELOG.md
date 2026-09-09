@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ### Added
 
 - Support MSC4140 Cancellable delayed events
+- Support for MSC4195 (LiveKit Transport for MatrixRTC)
 
 ### Changed
 

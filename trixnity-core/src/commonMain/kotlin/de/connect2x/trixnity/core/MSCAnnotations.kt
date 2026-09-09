@@ -70,6 +70,20 @@ annotation class MSC4193
 )
 annotation class MSC4354
 
+/** @see <a href="https://github.com/matrix-org/matrix-spec-proposals/pull/4195">MSC4195</a> */
+@RequiresOptIn(message = "This API is experimental. It could change in the future without notice.")
+@Retention(AnnotationRetention.BINARY)
+@Target(
+    AnnotationTarget.CLASS,
+    AnnotationTarget.ANNOTATION_CLASS,
+    AnnotationTarget.PROPERTY,
+    AnnotationTarget.FIELD,
+    AnnotationTarget.CONSTRUCTOR,
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.TYPEALIAS,
+)
+annotation class MSC4195
+
 /** @see <a href="https://github.com/matrix-org/matrix-spec-proposals/pull/4140">MSC4140</a> */
 @RequiresOptIn(message = "This API is experimental. It could change in the future without notice.")
 @Retention(AnnotationRetention.BINARY)

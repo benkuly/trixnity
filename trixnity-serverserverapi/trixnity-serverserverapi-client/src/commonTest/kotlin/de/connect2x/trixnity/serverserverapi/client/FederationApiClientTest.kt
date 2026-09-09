@@ -1,5 +1,6 @@
 package de.connect2x.trixnity.serverserverapi.client
 
+import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomAliasId
 import de.connect2x.trixnity.core.model.RoomId
@@ -15,6 +16,7 @@ import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId
 import de.connect2x.trixnity.core.model.events.m.space.ChildEventContent
 import de.connect2x.trixnity.core.model.keys.CrossSigningKeys
 import de.connect2x.trixnity.core.model.keys.CrossSigningKeysUsage
@@ -2375,5 +2377,56 @@ class FederationApiClientTest : TrixnityBaseTest() {
                 media.location shouldBe "https://example.org/mediablabla"
             }
             .getOrThrow()
+    }
+
+    @Test
+    @MSC4195
+    fun shouldGetLiveKitToken() = runTest {
+        val matrixRestClient =
+            MatrixServerServerApiClientImpl(
+                hostname = "matrix.host",
+                getDelegatedDestination = { host, port -> host to port },
+                sign = { Key.Ed25519Key("key", "value") },
+                roomVersionStore = TestRoomVersionStore("12"),
+                httpClientEngine =
+                    scopedMockEngine {
+                        addHandler { request ->
+                            assertEquals(
+                                "/_matrix/federation/unstable/io.element.msc4195/rtc/livekit/get_token",
+                                request.url.fullPath,
+                            )
+                            assertEquals(HttpMethod.Post, request.method)
+                            request.body.toByteArray().decodeToString() shouldBe
+                                """
+                                {
+                                    "user_id": "@woof:matrix.host",
+                                    "url": "wss://livekit.matrix2.host",
+                                    "room_id": "!room:matrix2.host",
+                                    "slot_id": "call#123",
+                                    "member_id": "member-123"
+                                }
+                            """
+                                    .trimToFlatJson()
+
+                            respond(
+                                """
+                                {
+                                    "jwt": "abc.abc.abc"
+                                }
+                                """
+                                    .trimIndent()
+                            )
+                        }
+                    },
+            )
+        matrixRestClient.federation
+            .getLiveKitToken(
+                UserId("@woof:matrix.host"),
+                "wss://livekit.matrix2.host",
+                RoomId("!room:matrix2.host"),
+                RtcSlotId("call", "123"),
+                "member-123",
+            )
+            .getOrThrow() shouldBe "abc.abc.abc"
     }
 }
