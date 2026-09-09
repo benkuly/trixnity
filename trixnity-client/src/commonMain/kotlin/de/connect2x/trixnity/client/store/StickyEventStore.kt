@@ -139,13 +139,13 @@ class StickyEventStore(
 
     private fun <C : StickyEventContent> Flow<StoredStickyEvent<*>?>.filterIsContent(eventContentClass: KClass<C>) =
         map {
-                val event = it?.event
-                if (event?.content?.instanceOf(eventContentClass) == true) it else null
-            }
-            .let {
-                @Suppress("UNCHECKED_CAST")
-                it as Flow<StoredStickyEvent<C>?>
-            }
+            val event = it?.event
+            if (event?.content?.instanceOf(eventContentClass) == true) it else null
+        }
+        .let {
+            @Suppress("UNCHECKED_CAST")
+            it as Flow<StoredStickyEvent<C>?>
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun <C : StickyEventContent> Flow<StoredStickyEvent<C>?>.filterValid(): Flow<StoredStickyEvent<C>?> =
@@ -190,6 +190,6 @@ inline fun <reified C : StickyEventContent> StickyEventStore.get(
 inline fun <reified C : StickyEventContent> StickyEventStore.getBySenderAndStickyKey(
     roomId: RoomId,
     sender: UserId,
-    stateKey: String? = null,
+    stickyKey: String? = null,
 ): Flow<StoredStickyEvent<C>?> =
-    getBySenderAndStickyKey(roomId = roomId, eventContentClass = C::class, sender = sender, stickyKey = stateKey)
+    getBySenderAndStickyKey(roomId = roomId, eventContentClass = C::class, sender = sender, stickyKey = stickyKey)
