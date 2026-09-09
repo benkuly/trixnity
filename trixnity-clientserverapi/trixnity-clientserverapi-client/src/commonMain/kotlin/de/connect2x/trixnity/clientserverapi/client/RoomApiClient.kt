@@ -63,6 +63,7 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import de.connect2x.trixnity.core.model.events.DelayId
 import de.connect2x.trixnity.core.model.events.DelayedEvent
 import de.connect2x.trixnity.core.model.events.InitialStateEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
@@ -206,7 +207,7 @@ interface RoomApiClient {
         txnId: String = Random.nextString(22),
         delayMs: Long,
         ts: Long? = null,
-    ): Result<String>
+    ): Result<DelayId>
 
     /** @see [SendDelayedEvent] */
     @MSC4140
@@ -216,13 +217,13 @@ interface RoomApiClient {
         txnId: String = Random.nextString(22),
         delayMs: Long,
         ts: Long? = null,
-    ): Result<String>
+    ): Result<DelayId>
 
     /** @see [DelayedEventAction] */
-    @MSC4140 suspend fun delayedEventAction(delayId: String, action: DelayedEventAction.Action): Result<Unit>
+    @MSC4140 suspend fun delayedEventAction(delayId: DelayId, action: DelayedEventAction.Action): Result<Unit>
 
     /** @see [GetDelayedEvent] */
-    @MSC4140 suspend fun getDelayedEvent(delayId: String): Result<DelayedEvent<*>>
+    @MSC4140 suspend fun getDelayedEvent(delayId: DelayId): Result<DelayedEvent<*>>
 
     /** @see [RedactEvent] */
     suspend fun redactEvent(
@@ -561,7 +562,7 @@ class RoomApiClientImpl(
         txnId: String,
         delayMs: Long,
         ts: Long?,
-    ): Result<String> {
+    ): Result<DelayId> {
         val eventType = contentMappings.state.contentType(eventContent)
         return baseClient
             .request(
@@ -578,7 +579,7 @@ class RoomApiClientImpl(
         txnId: String,
         delayMs: Long,
         ts: Long?,
-    ): Result<String> {
+    ): Result<DelayId> {
         val eventType = contentMappings.message.contentType(eventContent)
         return baseClient
             .request(
@@ -589,11 +590,11 @@ class RoomApiClientImpl(
     }
 
     @MSC4140
-    override suspend fun delayedEventAction(delayId: String, action: DelayedEventAction.Action): Result<Unit> =
+    override suspend fun delayedEventAction(delayId: DelayId, action: DelayedEventAction.Action): Result<Unit> =
         baseClient.request(DelayedEventAction(delayId, action))
 
     @MSC4140
-    override suspend fun getDelayedEvent(delayId: String): Result<DelayedEvent<*>> =
+    override suspend fun getDelayedEvent(delayId: DelayId): Result<DelayedEvent<*>> =
         baseClient.request(GetDelayedEvent(delayId))
 
     override suspend fun redactEvent(

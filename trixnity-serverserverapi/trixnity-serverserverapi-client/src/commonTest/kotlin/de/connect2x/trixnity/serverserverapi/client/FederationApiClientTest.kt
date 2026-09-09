@@ -16,6 +16,7 @@ import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId
 import de.connect2x.trixnity.core.model.events.m.space.ChildEventContent
 import de.connect2x.trixnity.core.model.keys.CrossSigningKeys
@@ -2422,10 +2423,10 @@ class FederationApiClientTest : TrixnityBaseTest() {
         matrixRestClient.federation
             .getLiveKitToken(
                 UserId("@woof:matrix.host"),
-                "wss://livekit.matrix2.host",
+                Url("wss://livekit.matrix2.host"),
                 RoomId("!room:matrix2.host"),
                 RtcSlotId("call", "123"),
-                "member-123",
+                RtcMemberId("member-123"),
             )
             .getOrThrow() shouldBe "abc.abc.abc"
     }

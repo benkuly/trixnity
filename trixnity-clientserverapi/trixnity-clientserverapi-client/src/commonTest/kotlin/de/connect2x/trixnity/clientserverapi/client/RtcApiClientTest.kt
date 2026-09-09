@@ -3,6 +3,7 @@ package de.connect2x.trixnity.clientserverapi.client
 import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.DelayId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport
@@ -97,7 +98,7 @@ class RtcApiClientTest : TrixnityBaseTest() {
                 Url("wss://livekit.matrix2.host"),
                 RoomId("!room:matrix2.host"),
                 RtcSlotId("call", "123"),
-                "member-123",
+                RtcMemberId("member-123"),
             )
             .getOrThrow() shouldBe "abc.abc.abc"
     }
@@ -111,10 +112,7 @@ class RtcApiClientTest : TrixnityBaseTest() {
                 httpClientEngine =
                     scopedMockEngine {
                         addHandler { request ->
-                            assertEquals(
-                                "/_matrix/client/v1/rtc/livekit/delegate_delayed_leave",
-                                request.url.fullPath,
-                            )
+                            assertEquals("/_matrix/client/v1/rtc/livekit/delegate_delayed_leave", request.url.fullPath)
                             assertEquals(HttpMethod.Post, request.method)
                             request.body.toByteArray().decodeToString() shouldBe
                                 """
@@ -145,7 +143,7 @@ class RtcApiClientTest : TrixnityBaseTest() {
                 RoomId("!room:matrix2.host"),
                 RtcSlotId("call", "123"),
                 RtcMemberId("member-123"),
-                "123"
+                DelayId("123"),
             )
             .getOrThrow()
     }

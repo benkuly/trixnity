@@ -7,6 +7,7 @@ import de.connect2x.trixnity.core.HttpMethodType.POST
 import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.MatrixEndpoint
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.DelayId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId
 import io.ktor.http.Url
@@ -26,6 +27,6 @@ object DelegateDelayedLeave : MatrixEndpoint<DelegateDelayedLeave.Request, Unit>
         @SerialName("room_id") val roomId: RoomId,
         @SerialName("slot_id") val slotId: RtcSlotId,
         @SerialName("member_id") val memberId: RtcMemberId,
-        @SerialName("delay_id") val delayId: String,
+        @SerialName("delay_id") val delayId: DelayId,
     )
 }

@@ -15,7 +15,7 @@ import kotlinx.serialization.json.jsonObject
 
 @MSC4140
 sealed interface DelayedEvent<C : RoomEventContent> : Event<C> {
-    val delayId: String
+    val delayId: DelayId
     val roomId: RoomId
     val delayMs: Long
     val delayedSinceTs: Long
@@ -23,7 +23,7 @@ sealed interface DelayedEvent<C : RoomEventContent> : Event<C> {
 
     @Serializable
     data class DelayedStateEvent<C : StateEventContent>(
-        @SerialName("delay_id") override val delayId: String,
+        @SerialName("delay_id") override val delayId: DelayId,
         @SerialName("room_id") override val roomId: RoomId,
         @SerialName("state_key") val stateKey: String,
         @SerialName("delay_ms") override val delayMs: Long,
@@ -34,7 +34,7 @@ sealed interface DelayedEvent<C : RoomEventContent> : Event<C> {
 
     @Serializable
     data class DelayedMessageEvent<C : MessageEventContent>(
-        @SerialName("delay_id") override val delayId: String,
+        @SerialName("delay_id") override val delayId: DelayId,
         @SerialName("room_id") override val roomId: RoomId,
         @SerialName("delay_ms") override val delayMs: Long,
         @SerialName("delayed_since_ts") override val delayedSinceTs: Long,

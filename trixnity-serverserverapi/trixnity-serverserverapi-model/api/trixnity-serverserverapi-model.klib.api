@@ -1934,6 +1934,75 @@ final object de.connect2x.trixnity.serverserverapi.model.discovery/QueryServerKe
     }
 }
 
+final object de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken : de.connect2x.trixnity.core/MatrixEndpoint<de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request, de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response>, kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken|null[0]
+    final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken> // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.serializer|serializer(){}[0]
+    final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]
+
+    final class Request { // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request|null[0]
+        constructor <init>(de.connect2x.trixnity.core.model/UserId, io.ktor.http/Url, de.connect2x.trixnity.core.model/RoomId, de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId, de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberId) // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.<init>|<init>(de.connect2x.trixnity.core.model.UserId;io.ktor.http.Url;de.connect2x.trixnity.core.model.RoomId;de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId){}[0]
+
+        final val memberId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.memberId|{}memberId[0]
+            final fun <get-memberId>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.memberId.<get-memberId>|<get-memberId>(){}[0]
+        final val roomId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.roomId|{}roomId[0]
+            final fun <get-roomId>(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.roomId.<get-roomId>|<get-roomId>(){}[0]
+        final val slotId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.slotId|{}slotId[0]
+            final fun <get-slotId>(): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.slotId.<get-slotId>|<get-slotId>(){}[0]
+        final val url // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.url|{}url[0]
+            final fun <get-url>(): io.ktor.http/Url // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.url.<get-url>|<get-url>(){}[0]
+        final val userId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.userId|{}userId[0]
+            final fun <get-userId>(): de.connect2x.trixnity.core.model/UserId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.userId.<get-userId>|<get-userId>(){}[0]
+
+        final fun component1(): de.connect2x.trixnity.core.model/UserId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.component1|component1(){}[0]
+        final fun component2(): io.ktor.http/Url // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.component2|component2(){}[0]
+        final fun component3(): de.connect2x.trixnity.core.model/RoomId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.component3|component3(){}[0]
+        final fun component4(): de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.component4|component4(){}[0]
+        final fun component5(): de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberId // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.component5|component5(){}[0]
+        final fun copy(de.connect2x.trixnity.core.model/UserId = ..., io.ktor.http/Url = ..., de.connect2x.trixnity.core.model/RoomId = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcSlotId = ..., de.connect2x.trixnity.core.model.events.m.rtc/RtcMemberId = ...): de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.copy|copy(de.connect2x.trixnity.core.model.UserId;io.ktor.http.Url;de.connect2x.trixnity.core.model.RoomId;de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId;de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request> { // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request) // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit.GetLiveKitToken.Request){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request> // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Request.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class Response { // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response|null[0]
+        constructor <init>(kotlin/String) // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.<init>|<init>(kotlin.String){}[0]
+
+        final val jwt // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.jwt|{}jwt[0]
+            final fun <get-jwt>(): kotlin/String // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.jwt.<get-jwt>|<get-jwt>(){}[0]
+
+        final fun component1(): kotlin/String // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response> { // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.$serializer|null[0]
+            final val descriptor // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response) // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit.GetLiveKitToken.Response){}[0]
+        }
+
+        final object Companion { // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response> // de.connect2x.trixnity.serverserverapi.model.federation.rtc.livekit/GetLiveKitToken.Response.Companion.serializer|serializer(){}[0]
+        }
+    }
+}
+
 final object de.connect2x.trixnity.serverserverapi.model.federation/ClaimKeys : de.connect2x.trixnity.core/MatrixEndpoint<de.connect2x.trixnity.serverserverapi.model.federation/ClaimKeys.Request, de.connect2x.trixnity.serverserverapi.model.federation/ClaimKeys.Response>, kotlinx.serialization.internal/SerializerFactory { // de.connect2x.trixnity.serverserverapi.model.federation/ClaimKeys|null[0]
     final fun serializer(): kotlinx.serialization/KSerializer<de.connect2x.trixnity.serverserverapi.model.federation/ClaimKeys> // de.connect2x.trixnity.serverserverapi.model.federation/ClaimKeys.serializer|serializer(){}[0]
     final fun serializer(kotlin/Array<out kotlinx.serialization/KSerializer<*>>...): kotlinx.serialization/KSerializer<*> // de.connect2x.trixnity.serverserverapi.model.federation/ClaimKeys.serializer|serializer(kotlin.Array<out|kotlinx.serialization.KSerializer<*>>...){}[0]

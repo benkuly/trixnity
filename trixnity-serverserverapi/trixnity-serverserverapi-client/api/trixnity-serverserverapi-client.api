@@ -38,6 +38,7 @@ public abstract interface class de/connect2x/trixnity/serverserverapi/client/Fed
 	public abstract fun getHierarchy-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun getHierarchy-lefIFc8$default (Lde/connect2x/trixnity/serverserverapi/client/FederationApiClient;Lio/ktor/http/Url;Ljava/lang/String;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun getKeys-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/GetKeys$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getLiveKitToken-LrYfV5A (Ljava/lang/String;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getMissingEvents-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/GetMissingEvents$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getOIDCUserInfo-0E7RQCE (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getPublicRooms-hUnOzRk (Lio/ktor/http/Url;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -86,6 +87,7 @@ public final class de/connect2x/trixnity/serverserverapi/client/FederationApiCli
 	public fun getEventAuthChain-1Z6OzSE (Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getHierarchy-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getKeys-0E7RQCE (Lio/ktor/http/Url;Lde/connect2x/trixnity/serverserverapi/model/federation/GetKeys$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getLiveKitToken-LrYfV5A (Ljava/lang/String;Lio/ktor/http/Url;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getMissingEvents-lefIFc8 (Lio/ktor/http/Url;Ljava/lang/String;Lde/connect2x/trixnity/serverserverapi/model/federation/GetMissingEvents$Request;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getOIDCUserInfo-0E7RQCE (Lio/ktor/http/Url;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getPublicRooms-hUnOzRk (Lio/ktor/http/Url;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

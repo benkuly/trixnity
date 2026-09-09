@@ -29,6 +29,7 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent
+import de.connect2x.trixnity.core.model.events.DelayId
 import de.connect2x.trixnity.core.model.events.DelayedEvent
 import de.connect2x.trixnity.core.model.events.Event
 import de.connect2x.trixnity.core.model.events.MessageEventContent
@@ -807,7 +808,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
                     delayMs = 60000,
                 )
                 .getOrThrow()
-        assertEquals("someDelayId", result)
+        assertEquals(DelayId("someDelayId"), result)
     }
 
     @Test
@@ -877,7 +878,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
                     delayMs = 60000,
                 )
                 .getOrThrow()
-        assertEquals("someDelayId", result)
+        assertEquals(DelayId("someDelayId"), result)
     }
 
     @Test
@@ -933,7 +934,7 @@ class RoomApiClientTest : TrixnityBaseTest() {
                     },
             )
         matrixRestClient.room
-            .delayedEventAction(delayId = "someDelayId", action = DelayedEventAction.Action.RESTART)
+            .delayedEventAction(delayId = DelayId("someDelayId"), action = DelayedEventAction.Action.RESTART)
             .getOrThrow()
     }
 
@@ -972,11 +973,11 @@ class RoomApiClientTest : TrixnityBaseTest() {
                         }
                     },
             )
-        val result = matrixRestClient.room.getDelayedEvent(delayId = "someDelayId").getOrThrow()
+        val result = matrixRestClient.room.getDelayedEvent(delayId = DelayId("someDelayId")).getOrThrow()
         result shouldBe
             DelayedEvent.DelayedStateEvent(
                 content = CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
-                delayId = "delay123",
+                delayId = DelayId("delay123"),
                 roomId = RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 stateKey = "",
                 delayMs = 1000,

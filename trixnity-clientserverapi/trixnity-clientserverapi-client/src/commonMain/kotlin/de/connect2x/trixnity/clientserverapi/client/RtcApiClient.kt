@@ -6,6 +6,7 @@ import de.connect2x.trixnity.clientserverapi.model.rtc.livekit.GetLiveKitToken
 import de.connect2x.trixnity.core.MSC4143
 import de.connect2x.trixnity.core.MSC4195
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.DelayId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcSlotId
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcTransport
@@ -26,9 +27,15 @@ interface RtcApiClient {
         memberId: RtcMemberId,
     ): Result<String>
 
-    /** @see [DelegateDelayedLeave] **/
+    /** @see [DelegateDelayedLeave] * */
     @MSC4195
-    suspend fun delegateDelayedLeave(url: Url, roomId: RoomId, slotId: RtcSlotId, memberId: RtcMemberId, delayId: String): Result<Unit>
+    suspend fun delegateDelayedLeave(
+        url: Url,
+        roomId: RoomId,
+        slotId: RtcSlotId,
+        memberId: RtcMemberId,
+        delayId: DelayId,
+    ): Result<Unit>
 }
 
 @MSC4143
@@ -54,6 +61,7 @@ class RtcApiClientImpl(private val baseClient: MatrixClientServerApiBaseClient) 
         roomId: RoomId,
         slotId: RtcSlotId,
         memberId: RtcMemberId,
-        delayId: String
-    ): Result<Unit> = baseClient.request(DelegateDelayedLeave, DelegateDelayedLeave.Request(url, roomId, slotId, memberId, delayId))
+        delayId: DelayId,
+    ): Result<Unit> =
+        baseClient.request(DelegateDelayedLeave, DelegateDelayedLeave.Request(url, roomId, slotId, memberId, delayId))
 }

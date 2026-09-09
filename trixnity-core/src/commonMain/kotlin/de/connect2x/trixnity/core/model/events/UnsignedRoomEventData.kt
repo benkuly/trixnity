@@ -19,7 +19,7 @@ sealed interface UnsignedRoomEventData {
     val relations: Relations?
     val membership: Membership?
     @MSC4354 val stickyDurationTtlMs: Long?
-    @MSC4140 val delayId: String?
+    @MSC4140 val delayId: DelayId?
 
     @Serializable
     data class UnsignedMessageEventData(
@@ -37,7 +37,7 @@ sealed interface UnsignedRoomEventData {
         @OptIn(ExperimentalSerializationApi::class)
         @JsonNames("delay_id")
         @SerialName("org.matrix.msc4140.delay_id")
-        override val delayId: String? = null,
+        override val delayId: DelayId? = null,
     ) : UnsignedRoomEventData
 
     @Serializable
@@ -59,6 +59,6 @@ sealed interface UnsignedRoomEventData {
         @OptIn(ExperimentalSerializationApi::class)
         @JsonNames("delay_id")
         @SerialName("org.matrix.msc4140.delay_id")
-        override val delayId: String? = null,
+        override val delayId: DelayId? = null,
     ) : UnsignedRoomEventData
 }

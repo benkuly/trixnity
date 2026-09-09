@@ -51,6 +51,7 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import de.connect2x.trixnity.core.model.events.ClientEvent.StrippedStateEvent
+import de.connect2x.trixnity.core.model.events.DelayId
 import de.connect2x.trixnity.core.model.events.DelayedEvent
 import de.connect2x.trixnity.core.model.events.UnknownEventContent
 import de.connect2x.trixnity.core.model.events.UnsignedRoomEventData
@@ -921,7 +922,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
     @OptIn(MSC4140::class)
     fun shouldSendDelayedMessageEvent() = testApplication {
         initCut()
-        everySuspend { handlerMock.sendDelayedEvent(any()) }.returns(SendDelayedEvent.Response("someDelayId"))
+        everySuspend { handlerMock.sendDelayedEvent(any()) }.returns(SendDelayedEvent.Response(DelayId("someDelayId")))
         val response =
             client.put(
                 "/_matrix/client/unstable/org.matrix.msc4140/rooms/!room:server/delayed_event/m.room.message/someTxnId"
@@ -958,7 +959,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
     @OptIn(MSC4140::class)
     fun shouldSendDelayedStateEvent() = testApplication {
         initCut()
-        everySuspend { handlerMock.sendDelayedEvent(any()) }.returns(SendDelayedEvent.Response("someDelayId"))
+        everySuspend { handlerMock.sendDelayedEvent(any()) }.returns(SendDelayedEvent.Response(DelayId("someDelayId")))
         val response =
             client.put(
                 "/_matrix/client/unstable/org.matrix.msc4140/rooms/!room:server/delayed_event/m.room.name/someTxnId"
@@ -1010,7 +1011,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         verifySuspend {
             handlerMock.delayedEventAction(
                 assert {
-                    it.endpoint.delayId shouldBe "someDelayId"
+                    it.endpoint.delayId shouldBe DelayId("someDelayId")
                     it.endpoint.action shouldBe DelayedEventAction.Action.RESTART
                 }
             )
@@ -1025,7 +1026,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
             .returns(
                 DelayedEvent.DelayedStateEvent(
                     content = CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
-                    delayId = "delay123",
+                    delayId = DelayId("delay123"),
                     roomId = RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                     stateKey = "",
                     delayMs = 1000,
@@ -1058,7 +1059,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
             """
                     .trimToFlatJson()
         }
-        verifySuspend { handlerMock.getDelayedEvent(assert { it.endpoint.delayId shouldBe "someDelayId" }) }
+        verifySuspend { handlerMock.getDelayedEvent(assert { it.endpoint.delayId shouldBe DelayId("someDelayId") }) }
     }
 
     @Test
