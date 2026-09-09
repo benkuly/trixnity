@@ -23,8 +23,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+@OptIn(MSC4354::class)
 @MSC4143
-@MSC4354
 @Serializable(with = RtcMemberEventContent.Serializer::class)
 sealed interface RtcMemberEventContent : StickyEventContent {
     val slotId: RtcSlotId
@@ -32,7 +32,6 @@ sealed interface RtcMemberEventContent : StickyEventContent {
     override val relatesTo: RelatesTo.Reference?
 
     @MSC4143
-    @MSC4354
     @Serializable
     data class Join(
         @SerialName("slot_id") override val slotId: RtcSlotId,
@@ -44,17 +43,15 @@ sealed interface RtcMemberEventContent : StickyEventContent {
         @JsonNames("sticky_key")
         @SerialName("msc4354_sticky_key")
         override val stickyKey: String,
-        @SerialName("m.relates_to") override val relatesTo: RelatesTo.Reference? = null,
     ) : RtcMemberEventContent {
         override val mentions: Mentions? = null
         override val externalUrl: String? = null
+        override val relatesTo: RelatesTo.Reference? = null
 
-        override fun copyWith(relatesTo: RelatesTo?): MessageEventContent =
-            copy(relatesTo = relatesTo as? RelatesTo.Reference)
+        override fun copyWith(relatesTo: RelatesTo?): MessageEventContent = copy()
     }
 
     @MSC4143
-    @MSC4354
     @Serializable
     data class Leave(
         @SerialName("slot_id") override val slotId: RtcSlotId,
@@ -65,13 +62,12 @@ sealed interface RtcMemberEventContent : StickyEventContent {
         @JsonNames("sticky_key")
         @SerialName("msc4354_sticky_key")
         override val stickyKey: String,
-        @SerialName("m.relates_to") override val relatesTo: RelatesTo.Reference? = null,
     ) : RtcMemberEventContent {
         override val mentions: Mentions? = null
         override val externalUrl: String? = null
+        override val relatesTo: RelatesTo.Reference? = null
 
-        override fun copyWith(relatesTo: RelatesTo?): MessageEventContent =
-            copy(relatesTo = relatesTo as? RelatesTo.Reference)
+        override fun copyWith(relatesTo: RelatesTo?): MessageEventContent = copy()
 
         @MSC4143
         @Serializable

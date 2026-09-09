@@ -8,7 +8,6 @@ import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import de.connect2x.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
-import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.rtc.CallRtcApplication
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberEventContent
 import de.connect2x.trixnity.core.model.events.m.rtc.RtcMemberId
@@ -35,10 +34,6 @@ class RtcMemberEventContentSerializerTest : TrixnityBaseTest() {
           "content": {
             "application": {
               "type": "m.call"
-            },
-            "m.relates_to":{
-              "event_id":"$125",
-              "rel_type":"m.reference"
             },
             "member": {
               "id": "{member_id}",
@@ -76,7 +71,6 @@ class RtcMemberEventContentSerializerTest : TrixnityBaseTest() {
                     slotId = CallRtcApplication.SLOT_ID,
                     application = CallRtcApplication.Member(),
                     member = RtcMemberEventContent.Member(id = RtcMemberId("{member_id}")),
-                    relatesTo = RelatesTo.Reference(EventId("$125")),
                     transports =
                         RtcMemberEventContent.RtcTransports(
                             listOf(
@@ -120,10 +114,6 @@ class RtcMemberEventContentSerializerTest : TrixnityBaseTest() {
               "code":"err",
               "reason":"blub"
             },
-            "m.relates_to":{
-              "event_id":"$125",
-              "rel_type":"m.reference"
-            },
             "member": {
               "id": "{member_id}",
               "membership": "leave"
@@ -149,7 +139,6 @@ class RtcMemberEventContentSerializerTest : TrixnityBaseTest() {
                 RtcMemberEventContent.Leave(
                     slotId = CallRtcApplication.SLOT_ID,
                     member = RtcMemberEventContent.Member(id = RtcMemberId("{member_id}")),
-                    relatesTo = RelatesTo.Reference(EventId("$125")),
                     reason = RtcMemberEventContent.Leave.Reason("err", "blub"),
                     stickyKey = "{member_id}",
                 ),
