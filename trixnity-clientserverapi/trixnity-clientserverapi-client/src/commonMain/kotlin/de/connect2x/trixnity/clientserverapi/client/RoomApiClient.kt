@@ -200,6 +200,7 @@ interface RoomApiClient {
 
     /** @see [SendDelayedEvent] */
     @MSC4140
+    @MSC4354
     suspend fun sendDelayedStateEvent(
         roomId: RoomId,
         eventContent: StateEventContent,
@@ -207,16 +208,19 @@ interface RoomApiClient {
         txnId: String = Random.nextString(22),
         delayMs: Long,
         ts: Long? = null,
+        stickyDurationMs: Long? = null,
     ): Result<DelayId>
 
     /** @see [SendDelayedEvent] */
     @MSC4140
+    @MSC4354
     suspend fun sendDelayedMessageEvent(
         roomId: RoomId,
         eventContent: MessageEventContent,
         txnId: String = Random.nextString(22),
         delayMs: Long,
         ts: Long? = null,
+        stickyDurationMs: Long? = null,
     ): Result<DelayId>
 
     /** @see [DelayedEventAction] */
@@ -555,6 +559,7 @@ class RoomApiClientImpl(
     ): Result<EventId> = sendMessageEvent(roomId, eventContent, txnId, ts, null)
 
     @MSC4140
+    @MSC4354
     override suspend fun sendDelayedStateEvent(
         roomId: RoomId,
         eventContent: StateEventContent,
@@ -562,28 +567,31 @@ class RoomApiClientImpl(
         txnId: String,
         delayMs: Long,
         ts: Long?,
+        stickyDurationMs: Long?,
     ): Result<DelayId> {
         val eventType = contentMappings.state.contentType(eventContent)
         return baseClient
             .request(
-                SendDelayedEvent(roomId, eventType, txnId, ts),
+                SendDelayedEvent(roomId, eventType, txnId, ts, null, stickyDurationMs),
                 SendDelayedEvent.Request.State(eventContent, delayMs, stateKey),
             )
             .mapCatching { it.delayId }
     }
 
     @MSC4140
+    @MSC4354
     override suspend fun sendDelayedMessageEvent(
         roomId: RoomId,
         eventContent: MessageEventContent,
         txnId: String,
         delayMs: Long,
         ts: Long?,
+        stickyDurationMs: Long?,
     ): Result<DelayId> {
         val eventType = contentMappings.message.contentType(eventContent)
         return baseClient
             .request(
-                SendDelayedEvent(roomId, eventType, txnId, ts),
+                SendDelayedEvent(roomId, eventType, txnId, ts, null, stickyDurationMs),
                 SendDelayedEvent.Request.Message(eventContent, delayMs),
             )
             .mapCatching { it.delayId }
